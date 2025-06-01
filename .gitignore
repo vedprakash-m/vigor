@@ -9,6 +9,7 @@ backend/.pytest_cache/
 .env
 .env.local
 .env.production
+.env.staging
 backend/.env
 frontend/.env
 
@@ -129,4 +130,29 @@ venv.bak/
 # mypy
 .mypy_cache/
 .dmypy.json
-dmypy.json 
+dmypy.json
+
+# Security & Secrets
+.env
+.env.local
+.env.production
+.env.staging
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.json
+credentials.json
+service-account.json
+auth.json
+
+# Secret scanning reports
+*secret*report*
+*security*report*
+trufflehog-results.json
+bandit-report.json
+
+# API Keys (common patterns)
+*api*key*
+*secret*key*
+*private*key* 

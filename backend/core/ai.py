@@ -1,210 +1,216 @@
+"""
+AI module for fitness coaching and workout plan generation.
+"""
+
 import json
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
+from core.admin_llm_manager import AdminLLMManager
+from core.config import get_settings
 from database.connection import get_db
+from database.models import UserProfile
 
 from .admin_llm_manager import get_admin_llm_manager
 
+settings = get_settings()
+
+# Initialize AdminLLMManager for proper cost tracking and provider management
+admin_manager = AdminLLMManager()
+
 
 async def generate_workout_plan(
-    user_goals: List[str],
-    equipment: str,
+    user_profile: UserProfile,
+    goals: Optional[List[str]] = None,
+    equipment: Optional[str] = None,
     duration_minutes: int = 45,
     focus_areas: Optional[List[str]] = None,
-    user_id: Optional[str] = None,
-    db: Session = None,
 ) -> Dict[str, Any]:
-    """Generate a personalized workout plan using admin-managed LLM system."""
+    """
+    Generate personalized workout plan using AI.
+    """
+    # Use user's goals if not provided
+    goals = goals or user_profile.goals
+    equipment = equipment or user_profile.equipment
 
-    if db is None:
-        db = next(get_db())
+    prompt = f"""
+Create a personalized workout plan for a user with the following profile:
+- Fitness Level: {user_profile.fitness_level}
+- Goals: {', '.join(goals) if goals else 'General fitness'}
+- Available Equipment: {equipment}
+- Workout Duration: {duration_minutes} minutes
+- Focus Areas: {', '.join(focus_areas) if focus_areas else 'Full body'}
 
-    llm_manager = get_admin_llm_manager(db)
-
-    # Create system prompt
-    system_prompt = """You are an expert fitness trainer creating personalized workout plans. 
-    Respond with a valid JSON object containing: name, description, exercises (array), 
-    duration_minutes, difficulty, equipment_needed (array), and notes."""
-
-    # Create user message
-    focus_text = f" focusing on {', '.join(focus_areas)}" if focus_areas else ""
-    user_message = f"""Create a {duration_minutes}-minute workout plan for someone with goals: {', '.join(user_goals)}. 
-    Available equipment: {equipment}.{focus_text}
-    
-    Include specific exercises with sets, reps, and brief instructions."""
-
-    messages = [{"role": "user", "content": user_message}]
+Please provide a detailed workout plan in JSON format with the following structure:
+{{
+    "name": "Workout Plan Name",
+    "description": "Brief description",
+    "exercises": [
+        {{
+            "name": "Exercise Name",
+            "sets": 3,
+            "reps": "8-12",
+            "rest_seconds": 60,
+            "instructions": "How to perform the exercise",
+            "modifications": "Easier/harder variations"
+        }}
+    ],
+    "duration_minutes": {duration_minutes},
+    "difficulty": "Beginner/Intermediate/Advanced",
+    "equipment_needed": ["equipment1", "equipment2"],
+    "notes": "Additional tips and notes"
+}}
+"""
 
     try:
-        response, cost, provider_used = await llm_manager.chat_completion(
-            messages=messages,
-            system_prompt=system_prompt,
-            max_tokens=800,
-            temperature=0.7,
-            json_response=True,
-            user_id=user_id,
-            endpoint="workout-plan",
+        # Use AdminLLMManager to make the AI call with cost tracking
+        response = await admin_manager.make_ai_call(
+            prompt=prompt,
+            user_id=user_profile.id,
+            call_type="workout_generation",
+            context={
+                "fitness_level": user_profile.fitness_level,
+                "goals": goals,
+                "equipment": equipment,
+                "duration_minutes": duration_minutes,
+            },
         )
 
         # Parse JSON response
         workout_data = json.loads(response)
-
-        # Add metadata
-        workout_data["ai_cost"] = cost
-        workout_data["ai_provider"] = provider_used
-
         return workout_data
 
     except json.JSONDecodeError:
-        # Fallback if JSON parsing fails
+        # If JSON parsing fails, return a basic workout plan
         return {
-            "name": "Custom Workout",
-            "description": "A personalized workout plan",
+            "name": "Basic Workout Plan",
+            "description": "A simple workout plan generated for your fitness level",
             "exercises": [
                 {
-                    "name": "Push-ups",
+                    "name": "Bodyweight Squats",
                     "sets": 3,
-                    "reps": "8-12",
-                    "rest": "60 seconds",
-                    "instructions": "Keep your core tight and lower your chest to the ground",
-                },
-                {
-                    "name": "Squats",
-                    "sets": 3,
-                    "reps": "12-15",
-                    "rest": "60 seconds",
-                    "instructions": "Keep your chest up and weight in your heels",
-                },
+                    "reps": "10-15",
+                    "rest_seconds": 60,
+                    "instructions": "Stand with feet shoulder-width apart, "
+                    "lower your body as if sitting back into a chair",
+                    "modifications": "Hold onto a chair for support if needed",
+                }
             ],
             "duration_minutes": duration_minutes,
-            "difficulty": "intermediate",
-            "equipment_needed": [equipment] if equipment != "none" else [],
-            "notes": "AI response parsing failed - using fallback workout",
-            "ai_cost": 0.0,
-            "ai_provider": "fallback",
+            "difficulty": user_profile.fitness_level,
+            "equipment_needed": [equipment] if equipment else [],
+            "notes": "Start slowly and focus on proper form",
+        }
+
+    except Exception:
+        # Log the error but don't expose internal details
+        return {
+            "error": "Sorry, I'm having trouble generating a workout plan right now. "
+            "Please try again later.",
+            "name": "Error",
+            "description": "Unable to generate workout plan",
+            "exercises": [],
+            "duration_minutes": duration_minutes,
+            "difficulty": "Unknown",
+            "equipment_needed": [],
+            "notes": "Please try again later",
         }
 
 
 async def get_ai_coach_response(
-    user_message: str,
-    user_context: Optional[Dict[str, Any]] = None,
-    user_id: Optional[str] = None,
-    db: Session = None,
+    user_profile: UserProfile, message: str, conversation_history: List[Dict] = None
 ) -> str:
-    """Get a response from the AI fitness coach using admin-managed LLM system."""
+    """
+    Get response from AI fitness coach.
+    """
+    conversation_history = conversation_history or []
 
-    if db is None:
-        db = next(get_db())
+    # Build context from user profile
+    context = f"""
+You are an expert fitness coach. Here's information about the user you're helping:
+- Fitness Level: {user_profile.fitness_level}
+- Goals: {', '.join(user_profile.goals) if user_profile.goals else 'General fitness'}
+- Available Equipment: {user_profile.equipment}
+- Injuries/Limitations: {', '.join(user_profile.injuries) if user_profile.injuries else 'None'}
 
-    llm_manager = get_admin_llm_manager(db)
+Previous conversation context:
+{json.dumps(conversation_history[-5:]) if conversation_history else 'No previous conversation'}
 
-    # Create system prompt
-    system_prompt = """You are a knowledgeable, encouraging fitness coach. Provide helpful, 
-    personalized advice about workouts, nutrition, motivation, and fitness goals. 
-    Keep responses conversational but informative. Always prioritize safety."""
+User's current message: {message}
 
-    # Add context if available
-    context_text = ""
-    if user_context:
-        if user_context.get("fitness_level"):
-            context_text += f"User fitness level: {user_context['fitness_level']}. "
-        if user_context.get("goals"):
-            context_text += f"User goals: {', '.join(user_context['goals'])}. "
-        if user_context.get("equipment"):
-            context_text += f"Available equipment: {user_context['equipment']}. "
-
-    full_message = f"{context_text}User question: {user_message}"
-    messages = [{"role": "user", "content": full_message}]
+Please provide helpful, encouraging, and safe fitness advice. Always prioritize user safety
+and recommend consulting healthcare providers for medical concerns.
+"""
 
     try:
-        response, cost, provider_used = await llm_manager.chat_completion(
-            messages=messages,
-            system_prompt=system_prompt,
-            max_tokens=500,
-            temperature=0.8,
-            json_response=False,
-            user_id=user_id,
-            endpoint="chat",
+        # Use AdminLLMManager for cost tracking
+        response = await admin_manager.make_ai_call(
+            prompt=context,
+            user_id=user_profile.id,
+            call_type="coaching_chat",
+            context={
+                "message": message,
+                "conversation_length": len(conversation_history),
+            },
         )
 
         return response
 
-    except Exception as e:
-        # Log error and return fallback
-        return f"I'm having trouble connecting to my AI systems right now. In the meantime, remember that consistency is key to achieving your fitness goals! If you have specific questions about exercises or nutrition, I'd be happy to help once my systems are back online."
+    except Exception:
+        return (
+            "I'm sorry, I'm having some technical difficulties right now. "
+            "Please try asking your question again in a moment."
+        )
 
 
 async def analyze_workout_log(
-    workout_data: Dict[str, Any],
-    user_context: Optional[Dict[str, Any]] = None,
-    user_id: Optional[str] = None,
-    db: Session = None,
+    user_profile: UserProfile, workout_data: Dict[str, Any]
 ) -> Dict[str, Any]:
-    """Analyze a completed workout and provide feedback using admin-managed LLM system."""
+    """
+    Analyze a completed workout and provide feedback.
+    """
+    prompt = f"""
+Analyze this workout log for a user with the following profile:
+- Fitness Level: {user_profile.fitness_level}
+- Goals: {', '.join(user_profile.goals) if user_profile.goals else 'General fitness'}
 
-    if db is None:
-        db = next(get_db())
+Workout Data: {json.dumps(workout_data)}
 
-    llm_manager = get_admin_llm_manager(db)
-
-    # Create system prompt
-    system_prompt = """You are a fitness coach analyzing a completed workout. 
-    Respond with a valid JSON object containing: overall_assessment, strengths (array), 
-    areas_for_improvement (array), recommendations (array), and next_steps."""
-
-    # Create analysis message
-    workout_summary = f"""Analyze this completed workout:
-    Duration: {workout_data.get('duration_minutes', 'unknown')} minutes
-    Exercises completed: {len(workout_data.get('exercises_completed', []))}
-    User notes: {workout_data.get('notes', 'None')}
-    
-    Exercise details: {json.dumps(workout_data.get('exercises_completed', []), indent=2)}"""
-
-    if user_context:
-        workout_summary += f"\n\nUser context - Fitness level: {user_context.get('fitness_level', 'unknown')}, Goals: {user_context.get('goals', [])}"
-
-    messages = [{"role": "user", "content": workout_summary}]
+Please provide analysis in JSON format:
+{{
+    "overall_assessment": "Overall performance summary",
+    "strengths": ["strength1", "strength2"],
+    "areas_for_improvement": ["area1", "area2"],
+    "recommendations": ["recommendation1", "recommendation2"],
+    "next_steps": "What to focus on next"
+}}
+"""
 
     try:
-        response, cost, provider_used = await llm_manager.chat_completion(
-            messages=messages,
-            system_prompt=system_prompt,
-            max_tokens=600,
-            temperature=0.7,
-            json_response=True,
-            user_id=user_id,
-            endpoint="analysis",
+        response = await admin_manager.make_ai_call(
+            prompt=prompt,
+            user_id=user_profile.id,
+            call_type="workout_analysis",
+            context={"workout_data": workout_data},
         )
 
-        # Parse JSON response
-        analysis_data = json.loads(response)
-
-        # Add metadata
-        analysis_data["ai_cost"] = cost
-        analysis_data["ai_provider"] = provider_used
-
-        return analysis_data
+        return json.loads(response)
 
     except json.JSONDecodeError:
-        # Fallback analysis
         return {
-            "overall_assessment": "Good job completing your workout! Consistency is the key to progress.",
-            "strengths": [
-                "Completed the planned workout",
-                "Stayed committed to your fitness goals",
-            ],
-            "areas_for_improvement": [
-                "Consider tracking more detailed metrics",
-                "Focus on proper form",
-            ],
-            "recommendations": [
-                "Stay hydrated",
-                "Get adequate rest",
-                "Continue with regular workouts",
-            ],
-            "next_steps": "Keep up the great work and consider gradually increasing intensity",
-            "ai_cost": 0.0,
-            "ai_provider": "fallback",
+            "overall_assessment": "Good workout! Keep up the consistency.",
+            "strengths": ["Completed the workout", "Showed up and put in effort"],
+            "areas_for_improvement": ["Consider tracking more details"],
+            "recommendations": ["Focus on proper form", "Gradually increase intensity"],
+            "next_steps": "Continue with regular workouts and track progress",
+        }
+
+    except Exception:
+        return {
+            "overall_assessment": "Unable to analyze workout at this time",
+            "strengths": [],
+            "areas_for_improvement": [],
+            "recommendations": ["Please try the analysis again later"],
+            "next_steps": "Continue with your fitness routine",
         }

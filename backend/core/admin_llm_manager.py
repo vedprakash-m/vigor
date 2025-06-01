@@ -9,15 +9,12 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database.connection import get_db
-from database.sql_models import AIProviderPriorityDB, AIUsageLogDB, BudgetSettingsDB
+from database.sql_models import (AIProviderPriorityDB, AIUsageLogDB,
+                                 BudgetSettingsDB)
 
 from .config import get_settings
-from .llm_providers import (
-    FallbackProvider,
-    GeminiProvider,
-    OpenAIProvider,
-    PerplexityProvider,
-)
+from .llm_providers import (FallbackProvider, GeminiProvider, OpenAIProvider,
+                            PerplexityProvider)
 
 logger = logging.getLogger(__name__)
 settings = get_settings()

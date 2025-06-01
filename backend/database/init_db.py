@@ -1,11 +1,6 @@
 from .connection import Base, engine
-from .sql_models import (
-    AICoachMessageDB,
-    ProgressMetricsDB,
-    UserProfileDB,
-    WorkoutLogDB,
-    WorkoutPlanDB,
-)
+from .sql_models import (AICoachMessageDB, ProgressMetricsDB, UserProfileDB,
+                         WorkoutLogDB, WorkoutPlanDB)
 
 
 def init_db():

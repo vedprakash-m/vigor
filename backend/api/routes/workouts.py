@@ -1,21 +1,13 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from api.schemas.workouts import (
-    WorkoutLogCreate,
-    WorkoutLogResponse,
-    WorkoutPlanCreate,
-    WorkoutPlanResponse,
-)
-from api.services.workouts import (
-    create_workout_plan,
-    get_user_workout_logs,
-    get_user_workout_plans,
-    get_workout_plan,
-    log_workout,
-)
+from api.schemas.workouts import (WorkoutLogCreate, WorkoutLogResponse,
+                                  WorkoutPlanCreate, WorkoutPlanResponse)
+from api.services.workouts import (create_workout_plan, get_user_workout_logs,
+                                   get_user_workout_plans, get_workout_plan,
+                                   log_workout)
 from core.security import get_current_active_user
 from database.connection import get_db
 from database.models import UserProfile

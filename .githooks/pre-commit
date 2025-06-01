@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# Pre-commit hook to prevent secrets from being committed
+# This runs locally before each commit
+
+echo "🔍 Pre-commit: Scanning for secrets..."
+
+# Check if detect-secrets is installed
+if ! command -v detect-secrets &> /dev/null; then
+    echo "⚠️  detect-secrets not found. Installing..."
+    pip install detect-secrets
+fi
+
+# Get list of staged files (excluding node_modules and cache)
+STAGED_FILES=$(git diff --cached --name-only | grep -v node_modules | grep -v ".mypy_cache" | grep -v ".git/")
+
+if [ -z "$STAGED_FILES" ]; then
+    echo "✅ No files to scan"
+    exit 0
+fi
+
+echo "📁 Scanning staged files:"
+echo "$STAGED_FILES"
+
+# Run detect-secrets on staged files
+TEMP_BASELINE=$(mktemp)
+cp .secrets.baseline "$TEMP_BASELINE" 2>/dev/null || echo '{"results": {}}' > "$TEMP_BASELINE"
+
+# Scan staged files
+echo "$STAGED_FILES" | xargs detect-secrets scan --baseline "$TEMP_BASELINE" --force-use-all-plugins
+
+SCAN_RESULT=$?
+
+if [ $SCAN_RESULT -ne 0 ]; then
+    echo ""
+    echo "❌ COMMIT BLOCKED: Potential secrets detected!"
+    echo ""
+    echo "🔧 To fix this:"
+    echo "1. Remove the secrets from your staged files"
+    echo "2. Use environment variables instead (add to .env.example as placeholders)"
+    echo "3. Add false positives to .secrets.baseline"
+    echo ""
+    echo "📝 To bypass this check (NOT recommended):"
+    echo "   git commit --no-verify"
+    echo ""
+    echo "📁 Files with potential secrets:"
+    echo "$STAGED_FILES"
+    
+    # Clean up
+    rm -f "$TEMP_BASELINE"
+    exit 1
+fi
+
+# Quick regex check for common patterns
+echo "🔎 Quick pattern check..."
+
+# Check staged content for API key patterns
+STAGED_CONTENT=$(git diff --cached)
+
+if echo "$STAGED_CONTENT" | grep -qE "(sk-[a-zA-Z0-9]{48}|AIza[0-9A-Za-z_\-]{35}|ghp_[a-zA-Z0-9]{36}|glpat-[a-zA-Z0-9\-]{20})"; then
+    echo "❌ COMMIT BLOCKED: API key pattern detected in staged changes!"
+    echo "Please remove API keys and use environment variables instead."
+    rm -f "$TEMP_BASELINE"
+    exit 1
+fi
+
+# Check for hardcoded passwords/secrets
+if echo "$STAGED_CONTENT" | grep -qE "(password|secret|key)\s*[:=]\s*['\"][^'\"]{8,}[^'\"]*['\"]"; then
+    echo "⚠️  WARNING: Potential hardcoded password/secret detected!"
+    echo "Consider using environment variables for sensitive data."
+fi
+
+# Clean up
+rm -f "$TEMP_BASELINE"
+
+echo "✅ Pre-commit: No secrets detected"
+exit 0 

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { AuthResponse, LoginRequest, RegisterRequest, User, TokenRefreshResponse } from '../types/auth'
+import type { AuthResponse, TokenRefreshResponse, User } from '../types/auth'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -31,10 +31,10 @@ api.interceptors.response.use(
           const response = await axios.post<TokenRefreshResponse>(`${API_BASE_URL}/auth/refresh`, {
             refresh_token: refreshToken,
           })
-          
+
           const { access_token } = response.data
           localStorage.setItem('accessToken', access_token)
-          
+
           // Retry the original request
           error.config.headers.Authorization = `Bearer ${access_token}`
           return api.request(error.config)
