@@ -2,7 +2,7 @@
 
 > **Transform your fitness journey with personalized AI coaching, smart workout generation, and cost-optimized LLM integration.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![React 18](https://img.shields.io/badge/react-18+-blue.svg)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
@@ -83,7 +83,7 @@
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/your-username/vigor.git
+git clone https://github.com/vedprakash-m/vigor.git
 cd vigor
 ```
 
@@ -252,21 +252,20 @@ npm run test:e2e
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
 
-### Development Workflow
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and add tests
-4. Commit with conventional commits: `git commit -m "feat: add amazing feature"`
-5. Push to your fork: `git push origin feature/amazing-feature`
-6. Open a Pull Request
+- 🐛 **Bug reports and feature requests**
+- 💻 **Code contributions and pull requests**
+- 📝 **Documentation improvements**
+- 🧪 **Testing and quality assurance**
 
-### Code Standards
-- **Backend**: Follow PEP 8, use type hints
-- **Frontend**: Use TypeScript, follow React best practices
-- **Tests**: Maintain >80% code coverage
-- **Documentation**: Update README and API docs
+**Contributors must agree that their contributions will be licensed under AGPLv3.**
+
+### Community
+
+- **GitHub Issues**: [Report bugs or request features](https://github.com/vedprakash-m/vigor/issues)
+- **GitHub Discussions**: [Ask questions and share ideas](https://github.com/vedprakash-m/vigor/discussions)
+- **Documentation**: [Read the docs](https://github.com/vedprakash-m/vigor/wiki)
 
 ---
 
@@ -275,7 +274,7 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 ### Documentation
 - [LLM Provider Setup Guide](backend/LLM_SETUP.md)
 - [API Reference](http://localhost:8000/docs)
-- [Contributing Guidelines](CONTRIBUTING.md)
+- [Contributing Guide](CONTRIBUTING.md)
 
 ### Getting API Keys
 - [Google Gemini (Free Tier)](https://makersuite.google.com/app/apikey)
@@ -284,25 +283,63 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 ### Community
 - [Discord Community](https://discord.gg/vigor-fitness) (coming soon)
-- [GitHub Discussions](https://github.com/your-username/vigor/discussions)
-- [Issue Tracker](https://github.com/your-username/vigor/issues)
+- [GitHub Discussions](https://github.com/vedprakash-m/vigor/discussions)
+- [Issue Tracker](https://github.com/vedprakash-m/vigor/issues)
 
 ---
 
-## 📄 License
+## 📄 License & Contributing
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### License
+
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**.
+
+**What this means:**
+- ✅ **Free to use, modify, and distribute**
+- ✅ **Commercial use allowed**
+- ⚠️ **Source code must be disclosed when distributed**
+- ⚠️ **Network use requires source disclosure** (AGPLv3 specific requirement)
+- ⚠️ **Derivative works must use the same license**
+
+**Important:** If you run Vigor on a server and provide access to users over a network, you must make the source code available to those users. This includes any modifications you make.
+
+For the full license text, see the [LICENSE](LICENSE) file.
+
+### Alternative Licensing
+
+For commercial entities that prefer not to comply with AGPLv3 requirements, alternative commercial licensing may be available. Please contact the copyright holder for more information.
+
+### Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- 🐛 **Bug reports and feature requests**
+- 💻 **Code contributions and pull requests**
+- 📝 **Documentation improvements**
+- 🧪 **Testing and quality assurance**
+
+**Contributors must agree that their contributions will be licensed under AGPLv3.**
+
+### Community
+
+- **GitHub Issues**: [Report bugs or request features](https://github.com/vedprakash-m/vigor/issues)
+- **GitHub Discussions**: [Ask questions and share ideas](https://github.com/vedprakash-m/vigor/discussions)
+- **Documentation**: [Read the docs](https://github.com/vedprakash-m/vigor/wiki)
 
 ---
 
 ## 🙏 Acknowledgments
 
-- **OpenAI**: For pioneering conversational AI
-- **Google**: For Gemini's cost-effective AI capabilities
-- **Perplexity**: For real-time AI with excellent value
-- **FastAPI**: For the excellent Python web framework
-- **React Team**: For the robust frontend framework
-- **Chakra UI**: For the beautiful component library
+- **OpenAI, Google, and Perplexity** for providing excellent AI APIs
+- **FastAPI** and **React** communities for amazing frameworks
+- **Chakra UI** for the beautiful component library
+- **Open source community** for inspiration and tools
+
+---
+
+**Copyright (C) 2025 Vedprakash Mishra**
+
+*This project is licensed under AGPLv3. See [LICENSE](LICENSE) and [NOTICE](NOTICE) files for details.*
 
 ---
 
@@ -324,6 +361,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for the fitness community**
 
-[⭐ Star us on GitHub](https://github.com/your-username/vigor) • [🐛 Report Bug](https://github.com/your-username/vigor/issues) • [💡 Request Feature](https://github.com/your-username/vigor/issues)
+[⭐ Star us on GitHub](https://github.com/vedprakash-m/vigor) • [🐛 Report Bug](https://github.com/vedprakash-m/vigor/issues) • [💡 Request Feature](https://github.com/vedprakash-m/vigor/issues)
 
 </div>

@@ -1,0 +1,102 @@
+VIGOR - AI-POWERED FITNESS AND WELLNESS PLATFORM
+===============================================
+
+Copyright (C) 2025 Vedprakash Mishra
+
+This project is licensed under the GNU Affero General Public License version 3 (AGPLv3).
+See the LICENSE file for the complete license text.
+
+LICENSING SUMMARY
+================
+
+This software is free and open source, released under the AGPLv3 license, which means:
+
+✅ PERMITTED:
+- Commercial use
+- Distribution
+- Modification
+- Private use
+- Patent use
+
+❗ CONDITIONS:
+- License and copyright notice must be included
+- Source code must be disclosed
+- Modifications must be released under the same license
+- Changes must be documented
+- Network use requires source disclosure (AGPL specific requirement)
+
+❌ LIMITATIONS:
+- No warranty provided
+- No liability accepted
+- No trademark rights granted
+
+NETWORK USE REQUIREMENT (AGPL-3.0)
+=================================
+
+If you run this software on a server and provide access to users over a network,
+you MUST provide those users with access to the source code of your version,
+including any modifications you have made. This is the key difference between
+the AGPL and the regular GPL.
+
+ATTRIBUTION REQUIREMENTS
+========================
+
+When redistributing or modifying this software, you must:
+
+1. Include this NOTICE file
+2. Include the LICENSE file
+3. Preserve all copyright notices
+4. Document any changes made to the original code
+5. Use the same AGPLv3 license for your derivative work
+
+PROJECT INFORMATION
+==================
+
+Project Name: Vigor
+Description: AI-Powered Fitness and Wellness Platform
+Original Author: Vedprakash Mishra
+License: AGPLv3
+Repository: https://github.com/vedprakash-m/vigor
+
+CONTACT INFORMATION
+==================
+
+For questions about licensing, contributions, or general inquiries:
+- GitHub: https://github.com/vedprakash-m/vigor
+- Issues: https://github.com/vedprakash-m/vigor/issues
+
+THIRD-PARTY COMPONENTS
+=====================
+
+This project may include dependencies and third-party libraries with their own
+licenses. Please refer to the respective package.json, requirements.txt, and
+other dependency files for specific license information of included components.
+
+TRADEMARK NOTICE
+===============
+
+"Vigor" and associated logos and branding materials are proprietary to
+Vedprakash Mishra. The AGPLv3 license does not grant permission to use
+these trademarks or branding elements without explicit written permission.
+
+DUAL LICENSING
+==============
+
+For commercial entities that wish to use this software without complying with
+the AGPLv3 requirements (particularly the network use disclosure requirement),
+alternative commercial licensing may be available. Please contact the copyright
+holder for more information.
+
+WARRANTY DISCLAIMER
+==================
+
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+For the complete license terms, please see the LICENSE file included with
+this distribution or visit https://www.gnu.org/licenses/agpl-3.0.html 
