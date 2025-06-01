@@ -1,13 +1,11 @@
-from logging.config import fileConfig
-
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
-from alembic import context
-
 import os
 import sys
+from logging.config import fileConfig
+
 from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
+
+from alembic import context
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -20,7 +18,9 @@ load_dotenv()
 config = context.config
 
 # Override sqlalchemy.url with environment variable
-config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL", "sqlite:///./vigor.db"))
+config.set_main_option(
+    "sqlalchemy.url", os.getenv("DATABASE_URL", "sqlite:///./vigor.db")
+)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -30,6 +30,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from database.sql_models import Base
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -76,9 +77,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
@@ -87,4 +86,4 @@ def run_migrations_online() -> None:
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    run_migrations_online() 
+    run_migrations_online()

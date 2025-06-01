@@ -1,12 +1,15 @@
 from datetime import datetime
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
+
 
 class FitnessLevel(str, Enum):
     BEGINNER = "beginner"
     INTERMEDIATE = "intermediate"
     ADVANCED = "advanced"
+
 
 class Goal(str, Enum):
     WEIGHT_LOSS = "weight_loss"
@@ -15,11 +18,13 @@ class Goal(str, Enum):
     FLEXIBILITY = "flexibility"
     GENERAL_FITNESS = "general_fitness"
 
+
 class Equipment(str, Enum):
     NONE = "none"
     MINIMAL = "minimal"  # Dumbbells, resistance bands
     MODERATE = "moderate"  # Basic home gym
     FULL = "full"  # Full gym access
+
 
 class UserProfile(BaseModel):
     id: str
@@ -33,6 +38,7 @@ class UserProfile(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class WorkoutPlan(BaseModel):
     id: str
     user_id: str
@@ -45,6 +51,7 @@ class WorkoutPlan(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class WorkoutLog(BaseModel):
     id: str
     user_id: str
@@ -53,6 +60,7 @@ class WorkoutLog(BaseModel):
     duration_minutes: int
     notes: Optional[str] = None
     completed_at: datetime
+
 
 class ProgressMetrics(BaseModel):
     id: str
@@ -64,6 +72,7 @@ class ProgressMetrics(BaseModel):
     notes: Optional[str]
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+
 class AICoachMessage(BaseModel):
     id: str
     user_id: str
@@ -72,12 +81,14 @@ class AICoachMessage(BaseModel):
     context: Optional[dict]
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+
 class ChatMessage(BaseModel):
     id: str
     user_id: str
     message: str
     response: str
     created_at: datetime
+
 
 class AIProviderPriority(BaseModel):
     id: str
@@ -91,6 +102,7 @@ class AIProviderPriority(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class BudgetSettings(BaseModel):
     id: str
     total_weekly_budget: float  # dollars
@@ -99,6 +111,7 @@ class BudgetSettings(BaseModel):
     auto_disable_on_budget_exceeded: bool = True
     created_at: datetime
     updated_at: datetime
+
 
 class AIUsageLog(BaseModel):
     id: str
@@ -114,10 +127,11 @@ class AIUsageLog(BaseModel):
     error_message: Optional[str] = None
     created_at: datetime
 
+
 class AdminSettings(BaseModel):
     id: str
     key: str  # setting name
     value: str  # JSON string for complex values
     description: Optional[str] = None
     created_at: datetime
-    updated_at: datetime 
+    updated_at: datetime

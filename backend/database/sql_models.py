@@ -1,13 +1,18 @@
-from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey, JSON, Enum as SQLEnum, Boolean, Text, Index
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import func
-from datetime import datetime
-from .connection import Base
-from .models import FitnessLevel, Goal, Equipment
 import uuid
+from datetime import datetime
+
+from sqlalchemy import JSON, Boolean, Column, DateTime
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from .connection import Base
+from .models import Equipment, FitnessLevel, Goal
 
 Base = declarative_base()
+
 
 class UserProfileDB(Base):
     __tablename__ = "user_profiles"
@@ -30,6 +35,7 @@ class UserProfileDB(Base):
     progress_metrics = relationship("ProgressMetricsDB", back_populates="user")
     ai_messages = relationship("AICoachMessageDB", back_populates="user")
 
+
 class WorkoutPlanDB(Base):
     __tablename__ = "workout_plans"
 
@@ -48,6 +54,7 @@ class WorkoutPlanDB(Base):
     user = relationship("UserProfileDB", back_populates="workout_plans")
     workout_logs = relationship("WorkoutLogDB", back_populates="plan")
 
+
 class WorkoutLogDB(Base):
     __tablename__ = "workout_logs"
 
@@ -65,6 +72,7 @@ class WorkoutLogDB(Base):
     user = relationship("UserProfileDB", back_populates="workout_logs")
     plan = relationship("WorkoutPlanDB", back_populates="workout_logs")
 
+
 class ProgressMetricsDB(Base):
     __tablename__ = "progress_metrics"
 
@@ -80,6 +88,7 @@ class ProgressMetricsDB(Base):
     # Relationships
     user = relationship("UserProfileDB", back_populates="progress_metrics")
 
+
 class AICoachMessageDB(Base):
     __tablename__ = "ai_coach_messages"
 
@@ -93,18 +102,20 @@ class AICoachMessageDB(Base):
     # Relationships
     user = relationship("UserProfileDB", back_populates="ai_messages")
 
+
 class ChatMessageDB(Base):
     __tablename__ = "chat_messages"
-    
+
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String, index=True)
     message = Column(Text)
     response = Column(Text)
     created_at = Column(DateTime, default=func.now())
 
+
 class AIProviderPriorityDB(Base):
     __tablename__ = "ai_provider_priorities"
-    
+
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     provider_name = Column(String, index=True)
     model_name = Column(String)
@@ -115,14 +126,13 @@ class AIProviderPriorityDB(Base):
     max_monthly_cost = Column(Float)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
-    
-    __table_args__ = (
-        Index('idx_provider_priority', 'priority', 'is_enabled'),
-    )
+
+    __table_args__ = (Index("idx_provider_priority", "priority", "is_enabled"),)
+
 
 class BudgetSettingsDB(Base):
     __tablename__ = "budget_settings"
-    
+
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     total_weekly_budget = Column(Float)
     total_monthly_budget = Column(Float)
@@ -131,9 +141,10 @@ class BudgetSettingsDB(Base):
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
+
 class AIUsageLogDB(Base):
     __tablename__ = "ai_usage_logs"
-    
+
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     provider_name = Column(String, index=True)
     model_name = Column(String, index=True)
@@ -146,18 +157,19 @@ class AIUsageLogDB(Base):
     success = Column(Boolean, index=True)
     error_message = Column(Text)
     created_at = Column(DateTime, default=func.now(), index=True)
-    
+
     __table_args__ = (
-        Index('idx_usage_date_provider', 'created_at', 'provider_name'),
-        Index('idx_usage_cost_tracking', 'created_at', 'cost', 'provider_name'),
+        Index("idx_usage_date_provider", "created_at", "provider_name"),
+        Index("idx_usage_cost_tracking", "created_at", "cost", "provider_name"),
     )
+
 
 class AdminSettingsDB(Base):
     __tablename__ = "admin_settings"
-    
+
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     key = Column(String, unique=True, index=True)
     value = Column(Text)
     description = Column(Text)
     created_at = Column(DateTime, default=func.now())
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now()) 
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())

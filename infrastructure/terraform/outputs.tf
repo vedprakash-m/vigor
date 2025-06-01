@@ -164,14 +164,14 @@ output "unique_suffix" {
 output "deployment_summary" {
   description = "Summary of deployed resources"
   value = {
-    environment     = var.environment
-    location        = var.location
-    resource_group  = azurerm_resource_group.main.name
-    backend_url     = "https://${azurerm_linux_web_app.backend.default_hostname}"
-    frontend_url    = "https://${azurerm_static_site.frontend.default_host_name}"
-    postgres_server = azurerm_postgresql_flexible_server.main.fqdn
-    redis_hostname  = azurerm_redis_cache.main.hostname
-    key_vault      = azurerm_key_vault.main.name
+    environment        = var.environment
+    location           = var.location
+    resource_group     = azurerm_resource_group.main.name
+    backend_url        = "https://${azurerm_linux_web_app.backend.default_hostname}"
+    frontend_url       = "https://${azurerm_static_site.frontend.default_host_name}"
+    postgres_server    = azurerm_postgresql_flexible_server.main.fqdn
+    redis_hostname     = azurerm_redis_cache.main.hostname
+    key_vault          = azurerm_key_vault.main.name
     container_registry = azurerm_container_registry.main.login_server
   }
 }
@@ -182,15 +182,15 @@ output "estimated_monthly_cost" {
   value = {
     total_estimated = var.environment == "production" ? "$180-220" : "$45-65"
     breakdown = {
-      app_service_plan = var.environment == "production" ? "$73" : "$13"
-      postgresql      = var.environment == "production" ? "$45-65" : "$15-25"
-      redis_cache     = var.environment == "production" ? "$25" : "$8"
-      static_web_app  = var.environment == "production" ? "$10" : "$0"
-      storage_account = "$2-5"
-      key_vault      = "$1-3"
+      app_service_plan     = var.environment == "production" ? "$73" : "$13"
+      postgresql           = var.environment == "production" ? "$45-65" : "$15-25"
+      redis_cache          = var.environment == "production" ? "$25" : "$8"
+      static_web_app       = var.environment == "production" ? "$10" : "$0"
+      storage_account      = "$2-5"
+      key_vault            = "$1-3"
       application_insights = "$5-10"
-      container_registry = var.environment == "production" ? "$5" : "$5"
-      bandwidth      = "$5-15"
+      container_registry   = var.environment == "production" ? "$5" : "$5"
+      bandwidth            = "$5-15"
     }
     notes = [
       "Costs vary based on usage and region",

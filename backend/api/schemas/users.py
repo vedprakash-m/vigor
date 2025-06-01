@@ -1,7 +1,10 @@
-from pydantic import BaseModel, EmailStr, Field
-from typing import List, Optional, Dict
 from datetime import datetime
-from database.models import FitnessLevel, Goal, Equipment
+from typing import Dict, List, Optional
+
+from pydantic import BaseModel, EmailStr, Field
+
+from database.models import Equipment, FitnessLevel, Goal
+
 
 class UserProfileResponse(BaseModel):
     id: str
@@ -15,6 +18,7 @@ class UserProfileResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class UserProfileUpdate(BaseModel):
     fitness_level: Optional[FitnessLevel] = None
     goals: Optional[List[Goal]] = None
@@ -22,11 +26,13 @@ class UserProfileUpdate(BaseModel):
     injuries: Optional[List[str]] = None
     preferences: Optional[Dict] = None
 
+
 class ProgressMetricCreate(BaseModel):
     weight: Optional[float] = None
     body_fat: Optional[float] = None
     measurements: Optional[Dict] = None
     notes: Optional[str] = None
+
 
 class ProgressMetricResponse(BaseModel):
     id: str
@@ -36,4 +42,4 @@ class ProgressMetricResponse(BaseModel):
     body_fat: Optional[float]
     measurements: Optional[Dict]
     notes: Optional[str]
-    created_at: datetime 
+    created_at: datetime
