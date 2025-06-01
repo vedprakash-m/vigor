@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Text, Badge, VStack, HStack, Spinner } from '@chakra-ui/react';
+import { Badge, Box, HStack, Spinner, Text, VStack } from '@chakra-ui/react';
+import React, { useEffect, useState } from 'react';
 
 interface ProviderInfo {
   configured: boolean;
@@ -24,7 +24,7 @@ const LLMStatus: React.FC = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const response = await fetch('http://localhost:8000/ai/provider-status');
+        const response = await fetch('http://localhost:8001/ai/provider-status');
         const data = await response.json();
         setStatus(data);
       } catch (error) {
@@ -79,10 +79,10 @@ const LLMStatus: React.FC = () => {
             {status.active_provider}
           </Badge>
         </HStack>
-        
+
         <VStack align="start">
           <Text fontSize="xs" color="gray.600">Available Providers:</Text>
-          
+
           <HStack flexWrap="wrap">
             <HStack>
               <Text fontSize="xs">OpenAI:</Text>
@@ -90,14 +90,14 @@ const LLMStatus: React.FC = () => {
                 {getStatusText('openai')}
               </Badge>
             </HStack>
-            
+
             <HStack>
               <Text fontSize="xs">Gemini:</Text>
               <Badge size="sm" colorScheme={getProviderColor('gemini')}>
                 {getStatusText('gemini')}
               </Badge>
             </HStack>
-            
+
             <HStack>
               <Text fontSize="xs">Perplexity:</Text>
               <Badge size="sm" colorScheme={getProviderColor('perplexity')}>
@@ -106,7 +106,7 @@ const LLMStatus: React.FC = () => {
             </HStack>
           </HStack>
         </VStack>
-        
+
         {status.active_provider === 'FallbackProvider' && (
           <Text fontSize="xs" color="orange.600">
             Using fallback responses. Configure an API key for personalized AI features.

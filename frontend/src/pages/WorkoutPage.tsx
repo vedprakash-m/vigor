@@ -1,16 +1,16 @@
-import React, { useState } from 'react'
 import {
   Box,
-  Heading,
-  Text,
   Button,
   Grid,
   GridItem,
-  Select,
-  Input,
-  VStack,
+  Heading,
   HStack,
+  Input,
+  Select,
+  Text,
+  VStack,
 } from '@chakra-ui/react'
+import { useState } from 'react'
 
 interface Exercise {
   name: string
@@ -38,9 +38,9 @@ export const WorkoutPage = () => {
 
   const generateWorkout = async () => {
     setIsGenerating(true)
-    
+
     try {
-      const response = await fetch('http://localhost:8000/ai/workout-plan', {
+      const response = await fetch('http://localhost:8001/ai/workout-plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,11 +71,11 @@ export const WorkoutPage = () => {
   return (
     <Box>
       <Heading mb={6}>Workouts</Heading>
-      
+
       {/* Workout Generator */}
       <Box bg="white" p={6} rounded="lg" shadow="sm" border="1px" borderColor="gray.200" mb={6}>
         <Heading size="md" mb={4}>Generate AI Workout Plan</Heading>
-        
+
         <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={4} mb={4}>
           <GridItem>
             <Text mb={2} fontWeight="bold">Duration (minutes)</Text>
@@ -87,7 +87,7 @@ export const WorkoutPage = () => {
               max={120}
             />
           </GridItem>
-          
+
           <GridItem>
             <Text mb={2} fontWeight="bold">Equipment</Text>
             <Select value={equipment} onChange={(e) => setEquipment(e.target.value)}>
@@ -98,7 +98,7 @@ export const WorkoutPage = () => {
               <option value="kettlebells">Kettlebells</option>
             </Select>
           </GridItem>
-          
+
           <GridItem display="flex" alignItems="end">
             <Button
               onClick={generateWorkout}
@@ -125,11 +125,11 @@ export const WorkoutPage = () => {
               <Text fontSize="sm" color="gray.600">Difficulty: {workoutPlan.difficulty}</Text>
             </Box>
           </HStack>
-          
+
           <Text mb={4} color="gray.700">{workoutPlan.description}</Text>
-          
+
           <Heading size="md" mb={4}>Exercises</Heading>
-          
+
           <VStack align="stretch">
             {workoutPlan.exercises.map((exercise, index) => (
               <Box
@@ -155,14 +155,14 @@ export const WorkoutPage = () => {
               </Box>
             ))}
           </VStack>
-          
+
           {workoutPlan.notes && (
             <Box mt={4} p={4} bg="blue.50" border="1px" borderColor="blue.200" rounded="md">
               <Text fontWeight="bold" mb={2}>Coach Notes:</Text>
               <Text>{workoutPlan.notes}</Text>
             </Box>
           )}
-          
+
           <Box mt={4}>
             <Text fontSize="sm" color="gray.600">
               Equipment needed: {workoutPlan.equipment_needed.join(', ')}

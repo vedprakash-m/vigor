@@ -1,14 +1,14 @@
-import React, { useState } from 'react'
 import {
   Box,
-  Heading,
-  Text,
-  Input,
   Button,
-  VStack,
-  HStack,
   Flex,
+  Heading,
+  HStack,
+  Input,
+  Text,
+  VStack,
 } from '@chakra-ui/react'
+import React, { useState } from 'react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -42,7 +42,7 @@ export const CoachPage = () => {
 
     try {
       // This would be replaced with actual API call to the AI service
-      const response = await fetch('http://localhost:8000/ai/chat', {
+      const response = await fetch('http://localhost:8001/ai/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -85,7 +85,7 @@ export const CoachPage = () => {
   return (
     <Box h="calc(100vh - 200px)" display="flex" flexDirection="column">
       <Heading mb={6}>AI Coach</Heading>
-      
+
       {/* Chat Messages */}
       <Box
         flex="1"
