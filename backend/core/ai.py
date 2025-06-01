@@ -5,19 +5,12 @@ AI module for fitness coaching and workout plan generation.
 import json
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy.orm import Session
-
 from core.admin_llm_manager import AdminLLMManager
 from core.config import get_settings
-from database.connection import get_db
 from database.models import UserProfile
-
-from .admin_llm_manager import get_admin_llm_manager
+from database.connection import get_db
 
 settings = get_settings()
-
-# Initialize AdminLLMManager for proper cost tracking and provider management
-admin_manager = AdminLLMManager()
 
 
 async def generate_workout_plan(
@@ -34,7 +27,10 @@ async def generate_workout_plan(
     goals = goals or user_profile.goals
     equipment = equipment or user_profile.equipment
 
-    prompt = f"""
+    system_prompt = """You are an expert fitness coach. Create personalized workout plans in JSON format only. 
+    Always respond with valid JSON that matches the required structure."""
+
+    user_message = f"""
 Create a personalized workout plan for a user with the following profile:
 - Fitness Level: {user_profile.fitness_level}
 - Goals: {', '.join(goals) if goals else 'General fitness'}
@@ -42,7 +38,7 @@ Create a personalized workout plan for a user with the following profile:
 - Workout Duration: {duration_minutes} minutes
 - Focus Areas: {', '.join(focus_areas) if focus_areas else 'Full body'}
 
-Please provide a detailed workout plan in JSON format with the following structure:
+Provide the workout plan in this exact JSON structure:
 {{
     "name": "Workout Plan Name",
     "description": "Brief description",
@@ -64,17 +60,18 @@ Please provide a detailed workout plan in JSON format with the following structu
 """
 
     try:
+        # Get database session and create admin manager
+        db = next(get_db())
+        admin_manager = AdminLLMManager(db)
+        
         # Use AdminLLMManager to make the AI call with cost tracking
-        response = await admin_manager.make_ai_call(
-            prompt=prompt,
+        response, cost, provider = await admin_manager.chat_completion(
+            messages=[{"role": "user", "content": user_message}],
+            system_prompt=system_prompt,
             user_id=user_profile.id,
-            call_type="workout_generation",
-            context={
-                "fitness_level": user_profile.fitness_level,
-                "goals": goals,
-                "equipment": equipment,
-                "duration_minutes": duration_minutes,
-            },
+            endpoint="workout_generation",
+            json_response=True,
+            max_tokens=1000
         )
 
         # Parse JSON response
@@ -92,8 +89,7 @@ Please provide a detailed workout plan in JSON format with the following structu
                     "sets": 3,
                     "reps": "10-15",
                     "rest_seconds": 60,
-                    "instructions": "Stand with feet shoulder-width apart, "
-                    "lower your body as if sitting back into a chair",
+                    "instructions": "Stand with feet shoulder-width apart, lower your body as if sitting back into a chair",
                     "modifications": "Hold onto a chair for support if needed",
                 }
             ],
@@ -103,11 +99,11 @@ Please provide a detailed workout plan in JSON format with the following structu
             "notes": "Start slowly and focus on proper form",
         }
 
-    except Exception:
+    except Exception as e:
         # Log the error but don't expose internal details
+        print(f"Error generating workout plan: {e}")
         return {
-            "error": "Sorry, I'm having trouble generating a workout plan right now. "
-            "Please try again later.",
+            "error": "Sorry, I'm having trouble generating a workout plan right now. Please try again later.",
             "name": "Error",
             "description": "Unable to generate workout plan",
             "exercises": [],
@@ -126,38 +122,38 @@ async def get_ai_coach_response(
     """
     conversation_history = conversation_history or []
 
+    system_prompt = """You are an expert fitness coach. Provide helpful, encouraging, and safe fitness advice. 
+    Always prioritize user safety and recommend consulting healthcare providers for medical concerns."""
+
     # Build context from user profile
-    context = f"""
-You are an expert fitness coach. Here's information about the user you're helping:
+    user_context = f"""
+User Profile:
 - Fitness Level: {user_profile.fitness_level}
 - Goals: {', '.join(user_profile.goals) if user_profile.goals else 'General fitness'}
 - Available Equipment: {user_profile.equipment}
 - Injuries/Limitations: {', '.join(user_profile.injuries) if user_profile.injuries else 'None'}
 
-Previous conversation context:
-{json.dumps(conversation_history[-5:]) if conversation_history else 'No previous conversation'}
-
-User's current message: {message}
-
-Please provide helpful, encouraging, and safe fitness advice. Always prioritize user safety
-and recommend consulting healthcare providers for medical concerns.
+User's message: {message}
 """
 
     try:
+        # Get database session and create admin manager
+        db = next(get_db())
+        admin_manager = AdminLLMManager(db)
+        
         # Use AdminLLMManager for cost tracking
-        response = await admin_manager.make_ai_call(
-            prompt=context,
+        response, cost, provider = await admin_manager.chat_completion(
+            messages=[{"role": "user", "content": user_context}],
+            system_prompt=system_prompt,
             user_id=user_profile.id,
-            call_type="coaching_chat",
-            context={
-                "message": message,
-                "conversation_length": len(conversation_history),
-            },
+            endpoint="coaching_chat",
+            max_tokens=500
         )
 
         return response
 
-    except Exception:
+    except Exception as e:
+        print(f"Error in AI coach response: {e}")
         return (
             "I'm sorry, I'm having some technical difficulties right now. "
             "Please try asking your question again in a moment."
@@ -170,14 +166,16 @@ async def analyze_workout_log(
     """
     Analyze a completed workout and provide feedback.
     """
-    prompt = f"""
-Analyze this workout log for a user with the following profile:
+    system_prompt = """You are a fitness coach analyzing workout logs. Provide constructive feedback in JSON format only."""
+
+    user_message = f"""
+Analyze this workout for a user:
 - Fitness Level: {user_profile.fitness_level}
 - Goals: {', '.join(user_profile.goals) if user_profile.goals else 'General fitness'}
 
 Workout Data: {json.dumps(workout_data)}
 
-Please provide analysis in JSON format:
+Provide analysis in this exact JSON structure:
 {{
     "overall_assessment": "Overall performance summary",
     "strengths": ["strength1", "strength2"],
@@ -188,11 +186,17 @@ Please provide analysis in JSON format:
 """
 
     try:
-        response = await admin_manager.make_ai_call(
-            prompt=prompt,
+        # Get database session and create admin manager
+        db = next(get_db())
+        admin_manager = AdminLLMManager(db)
+        
+        response, cost, provider = await admin_manager.chat_completion(
+            messages=[{"role": "user", "content": user_message}],
+            system_prompt=system_prompt,
             user_id=user_profile.id,
-            call_type="workout_analysis",
-            context={"workout_data": workout_data},
+            endpoint="workout_analysis",
+            json_response=True,
+            max_tokens=500
         )
 
         return json.loads(response)
@@ -206,7 +210,8 @@ Please provide analysis in JSON format:
             "next_steps": "Continue with regular workouts and track progress",
         }
 
-    except Exception:
+    except Exception as e:
+        print(f"Error analyzing workout: {e}")
         return {
             "overall_assessment": "Unable to analyze workout at this time",
             "strengths": [],

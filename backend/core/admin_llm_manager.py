@@ -20,6 +20,17 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
+# Custom Exceptions
+class BudgetExceededException(Exception):
+    """Raised when budget limits are exceeded."""
+    pass
+
+
+class ProviderUnavailableException(Exception):
+    """Raised when no providers are available."""
+    pass
+
+
 class CostCalculator:
     """Calculate costs for different LLM providers."""
 
@@ -200,8 +211,8 @@ class AdminLLMManager:
         success: bool,
         error_message: Optional[str] = None,
     ):
-        """Log AI usage for tracking and billing."""
-        usage_log = AIUsageLogDB(
+        """Log AI usage for analytics and billing."""
+        log_entry = AIUsageLogDB(
             provider_name=provider_name,
             model_name=model_name,
             user_id=user_id,
@@ -213,8 +224,13 @@ class AdminLLMManager:
             success=success,
             error_message=error_message,
         )
-        self.db.add(usage_log)
-        self.db.commit()
+        
+        self.db.add(log_entry)
+        try:
+            self.db.commit()
+        except Exception as e:
+            logger.error(f"Failed to log usage: {e}")
+            self.db.rollback()
 
     async def chat_completion(
         self,
@@ -227,9 +243,24 @@ class AdminLLMManager:
         endpoint: str = "chat",
     ) -> Tuple[str, float, str]:
         """
-        Get chat completion using priority-based provider selection.
-        Returns: (response, cost, provider_used)
+        Get chat completion with automatic provider fallback and budget monitoring.
+        
+        Returns (response, cost, provider_used)
         """
+        priorities = self.get_provider_priorities()
+        if not priorities:
+            # Fallback to default provider
+            provider = self.providers.get("fallback")
+            if provider:
+                response = await provider.chat_completion(
+                    messages=messages,
+                    system_prompt=system_prompt,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    json_response=json_response,
+                )
+                return response, 0.0, "fallback"
+            raise ProviderUnavailableException("No providers available")
 
         # Prepare input text for cost estimation
         input_text = ""
@@ -237,9 +268,6 @@ class AdminLLMManager:
             input_text += system_prompt + " "
         for msg in messages:
             input_text += msg.get("content", "") + " "
-
-        # Try providers in priority order
-        priorities = self.get_provider_priorities()
 
         for priority_setting in priorities:
             provider_name = priority_setting.provider_name
@@ -317,35 +345,8 @@ class AdminLLMManager:
                 logger.error(f"Provider {provider_name} failed: {e}")
                 continue
 
-        # Fallback to basic provider
-        try:
-            fallback_provider = self.providers["fallback"]
-            response = await fallback_provider.chat_completion(
-                messages=messages,
-                system_prompt=system_prompt,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                json_response=json_response,
-            )
-
-            # Log fallback usage (no cost)
-            self.log_usage(
-                provider_name="fallback",
-                model_name="built-in",
-                user_id=user_id,
-                endpoint=endpoint,
-                input_tokens=0,
-                output_tokens=0,
-                cost=0,
-                response_time_ms=0,
-                success=True,
-            )
-
-            return response, 0.0, "fallback:built-in"
-
-        except Exception as e:
-            logger.error(f"Fallback provider failed: {e}")
-            raise Exception("All AI providers failed")
+        # If all providers failed, raise exception
+        raise ProviderUnavailableException("All configured providers failed or exceeded budget")
 
 
 def get_admin_llm_manager(db: Session = None) -> AdminLLMManager:

@@ -91,14 +91,16 @@ class ChatMessage(BaseModel):
 
 
 class AIProviderPriority(BaseModel):
+    model_config = {"protected_namespaces": ()}  # Allow model_ fields
+    
     id: str
     provider_name: str  # openai, gemini, perplexity
-    model_name: str
-    priority: int  # 1 = highest priority, 2 = second, etc.
+    model_name: str  # gpt-4o, gemini-2.5-flash, etc.
+    priority: int = 1  # 1 = highest priority
     is_enabled: bool = True
-    max_daily_cost: Optional[float] = None  # dollars
-    max_weekly_cost: Optional[float] = None  # dollars
-    max_monthly_cost: Optional[float] = None  # dollars
+    max_daily_cost: Optional[float] = None
+    max_weekly_cost: Optional[float] = None
+    max_monthly_cost: Optional[float] = None
     created_at: datetime
     updated_at: datetime
 
@@ -114,14 +116,16 @@ class BudgetSettings(BaseModel):
 
 
 class AIUsageLog(BaseModel):
+    model_config = {"protected_namespaces": ()}  # Allow model_ fields
+    
     id: str
-    provider_name: str
-    model_name: str
-    user_id: Optional[str] = None
-    endpoint: str  # chat, workout-plan, analysis
+    user_id: Optional[str]  # Track per-user usage
+    provider_name: str  # openai, gemini, perplexity
+    model_name: str  # specific model used
+    endpoint: str  # chat, completion, etc.
     input_tokens: int
     output_tokens: int
-    cost: float  # in dollars
+    cost: float  # calculated cost in USD
     response_time_ms: int
     success: bool
     error_message: Optional[str] = None
