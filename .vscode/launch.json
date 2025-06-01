@@ -1,0 +1,61 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: FastAPI Backend",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend",
+                "ENVIRONMENT": "development",
+                "DEBUG": "true",
+                "LLM_PROVIDER": "fallback",
+                "OPENAI_API_KEY": "sk-placeholder",
+                "DATABASE_URL": "sqlite:///./test.db"
+            },
+            "args": []
+        },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend"
+        },
+        {
+            "name": "Python: Backend Tests",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend",
+                "ENVIRONMENT": "testing"
+            },
+            "args": [
+                "-v",
+                "--tb=short"
+            ]
+        },
+        {
+            "name": "Attach to Docker Backend",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}/backend",
+                    "remoteRoot": "/app"
+                }
+            ]
+        }
+    ]
+}

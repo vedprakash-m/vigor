@@ -25,8 +25,9 @@ logs/
 frontend/dist/
 backend/build/
 
-# IDE
-.vscode/
+# IDE - Allow workspace settings but ignore personal settings
+.vscode/settings_personal.json
+.vscode/launch_personal.json
 .idea/
 *.swp
 *.swo
