@@ -82,4 +82,4 @@ If deployment fails:
 
 ---
 
-**Ready to deploy?** Add the GitHub secrets and push a change to trigger the pipeline! 
+**Ready to deploy?** Add the GitHub secrets and push a change to trigger the pipeline! # Minor update to trigger workflow
