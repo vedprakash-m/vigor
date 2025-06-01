@@ -29,11 +29,18 @@ def init_db():
     """Initialize database tables."""
     # Import all the SQLAlchemy models here to make sure they are registered
     try:
-        from database.sql_models import (AdminSettingsDB, AICoachMessageDB,
-                                         AIProviderPriorityDB, AIUsageLogDB,
-                                         BudgetSettingsDB, ChatMessageDB,
-                                         ProgressMetricsDB, UserProfileDB,
-                                         WorkoutLogDB, WorkoutPlanDB)
+        from database.sql_models import (
+            AdminSettingsDB,
+            AICoachMessageDB,
+            AIProviderPriorityDB,
+            AIUsageLogDB,
+            BudgetSettingsDB,
+            ChatMessageDB,
+            ProgressMetricsDB,
+            UserProfileDB,
+            WorkoutLogDB,
+            WorkoutPlanDB,
+        )
 
         # Create all tables
         Base.metadata.create_all(bind=engine)

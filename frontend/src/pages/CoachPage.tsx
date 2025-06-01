@@ -9,7 +9,6 @@ import {
   HStack,
   Flex,
 } from '@chakra-ui/react'
-import { authService } from '../services/authService'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -98,7 +97,7 @@ export const CoachPage = () => {
         overflowY="auto"
         mb={4}
       >
-        <VStack spacing={4} align="stretch">
+        <VStack gap={4} align="stretch">
           {messages.map((message, index) => (
             <Flex
               key={index}

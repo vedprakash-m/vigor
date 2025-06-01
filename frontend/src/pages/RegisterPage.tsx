@@ -27,8 +27,9 @@ export const RegisterPage = () => {
     try {
       await register(email, username, password)
       navigate('/')
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Registration failed')
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      setError(error.response?.data?.detail || 'Registration failed')
     } finally {
       setIsLoading(false)
     }

@@ -11,9 +11,7 @@ import {
 } from '@chakra-ui/react';
 import { authService } from '../services/authService';
 
-interface AdminPageProps {}
-
-const AdminPage: React.FC<AdminPageProps> = () => {
+const AdminPage: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('providers');

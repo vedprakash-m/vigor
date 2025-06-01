@@ -113,14 +113,44 @@ resource "azurerm_storage_account" "main" {
   account_tier             = "Standard"
   account_replication_type = var.environment == "production" ? "ZRS" : "LRS"
 
+  # Security configurations
+  public_network_access_enabled   = false
+  allow_nested_items_to_be_public = false
+  shared_access_key_enabled       = true
+  default_to_oauth_authentication = true
+
+  # Enable HTTPS traffic only
+  enable_https_traffic_only = true
+  min_tls_version           = "TLS1_2"
+
   blob_properties {
+    # Restrict public access
+    public_access_enabled = false
+
     cors_rule {
-      allowed_headers    = ["*"]
-      allowed_methods    = ["GET", "HEAD", "POST", "PUT"]
-      allowed_origins    = ["*"]
-      exposed_headers    = ["*"]
+      allowed_headers = ["Content-Type", "x-ms-blob-type", "x-ms-blob-content-type"]
+      allowed_methods = ["GET", "HEAD", "POST", "PUT"]
+      allowed_origins = [
+        "https://${local.app_service_name}-frontend.azurestaticapps.net",
+        var.environment != "production" ? "http://localhost:5173" : ""
+      ]
+      exposed_headers    = [""]
       max_age_in_seconds = 3600
     }
+
+    # Enable versioning and soft delete for production
+    versioning_enabled = var.environment == "production"
+
+    delete_retention_policy {
+      days = var.environment == "production" ? 30 : 7
+    }
+  }
+
+  network_rules {
+    default_action             = "Deny"
+    bypass                     = ["AzureServices"]
+    virtual_network_subnet_ids = []
+    ip_rules                   = []
   }
 
   tags = local.common_tags
@@ -134,6 +164,23 @@ resource "azurerm_container_registry" "main" {
   sku                 = var.environment == "production" ? "Premium" : "Basic"
   admin_enabled       = true
 
+  # Security configurations
+  public_network_access_enabled = var.environment == "production" ? false : true
+  zone_redundancy_enabled       = var.environment == "production"
+  export_policy_enabled         = false
+  quarantine_policy_enabled     = var.environment == "production"
+  trust_policy_enabled          = var.environment == "production"
+  retention_policy_enabled      = var.environment == "production"
+
+  dynamic "network_rule_set" {
+    for_each = var.environment == "production" ? [1] : []
+    content {
+      default_action  = "Deny"
+      ip_rule         = []
+      virtual_network = []
+    }
+  }
+
   tags = local.common_tags
 }
 
@@ -145,8 +192,21 @@ resource "azurerm_key_vault" "main" {
   tenant_id           = data.azurerm_client_config.current.tenant_id
   sku_name            = "standard"
 
-  soft_delete_retention_days = 7
+  soft_delete_retention_days = 30
   purge_protection_enabled   = var.environment == "production"
+
+  # Security configurations
+  public_network_access_enabled   = false
+  enable_rbac_authorization       = false
+  enabled_for_deployment          = false
+  enabled_for_disk_encryption     = false
+  enabled_for_template_deployment = false
+
+  network_acls {
+    default_action = "Deny"
+    bypass         = "AzureServices"
+    ip_rules       = []
+  }
 
   access_policy {
     tenant_id = data.azurerm_client_config.current.tenant_id
@@ -179,11 +239,28 @@ resource "azurerm_postgresql_flexible_server" "main" {
 
   backup_retention_days = var.environment == "production" ? 35 : 7
 
+  # Security configurations
+  geo_redundant_backup_enabled  = var.environment == "production"
+  public_network_access_enabled = false
+
+  # Encryption
+  customer_managed_key {
+    key_vault_key_id = null # Use service-managed keys for simplicity
+  }
+
   high_availability {
     mode = var.environment == "production" ? "ZoneRedundant" : "Disabled"
   }
 
   tags = local.common_tags
+}
+
+# PostgreSQL Firewall Rule (allow Azure services)
+resource "azurerm_postgresql_flexible_server_firewall_rule" "azure_services" {
+  name             = "AllowAzureServices"
+  server_id        = azurerm_postgresql_flexible_server.main.id
+  start_ip_address = "0.0.0.0"
+  end_ip_address   = "0.0.0.0"
 }
 
 # PostgreSQL Database

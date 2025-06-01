@@ -38,7 +38,7 @@ api.interceptors.response.use(
           // Retry the original request
           error.config.headers.Authorization = `Bearer ${access_token}`
           return api.request(error.config)
-        } catch (refreshError) {
+        } catch {
           // Refresh failed, redirect to login
           localStorage.removeItem('accessToken')
           localStorage.removeItem('refreshToken')
