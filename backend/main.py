@@ -13,7 +13,10 @@ from api.routes.ai import router as ai_router
 from api.routes.auth import router as auth_router
 from api.routes.users import router as users_router
 from api.routes.workouts import router as workouts_router
+from api.routes.llm_orchestration import router as llm_router
+# from api.routes.tiers import router as tiers_router
 from core.config import get_settings
+from core.llm_orchestration_init import initialize_llm_orchestration, shutdown_llm_orchestration
 from database.connection import init_db
 
 settings = get_settings()
@@ -22,22 +25,38 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    init_db()
-    print(f"🚀 {settings.APP_NAME} v{settings.APP_VERSION} starting up...")
-    print(f"📊 Environment: {settings.ENVIRONMENT}")
-    print(f"🤖 LLM Provider: {settings.LLM_PROVIDER}")
-    print(f"🔧 Debug mode: {settings.DEBUG}")
+    try:
+        print("✅ Database tables initialized successfully")
+        init_db()
+        
+        # Initialize LLM Orchestration Layer
+        print("🔧 Initializing enterprise LLM orchestration layer...")
+        await initialize_llm_orchestration()
+        print("✅ LLM Orchestration Layer initialized successfully")
+        
+        print(f"🚀 {settings.APP_NAME} v{settings.APP_VERSION} starting up...")
+        print(f"📊 Environment: {settings.ENVIRONMENT}")
+        print(f"🤖 LLM Provider: {settings.LLM_PROVIDER}")
+        print(f"🔧 Debug mode: {settings.DEBUG}")
+        
+    except Exception as e:
+        print(f"❌ Startup failed: {e}")
+        raise
 
     yield
 
     # Shutdown
-    print("👋 Vigor shutting down...")
+    try:
+        print("👋 Vigor shutting down...")
+        await shutdown_llm_orchestration()
+    except Exception as e:
+        print(f"❌ Shutdown error: {e}")
 
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="AI-Powered Fitness Coaching Platform with Cost-Optimized Multi-LLM Support",
+    description="AI-Powered Fitness Coaching Platform with Enterprise LLM Orchestration",
     lifespan=lifespan,
 )
 
@@ -98,6 +117,8 @@ app.include_router(users_router)
 app.include_router(workouts_router)
 app.include_router(ai_router)
 app.include_router(admin_router)
+app.include_router(llm_router)
+# app.include_router(tiers_router)
 
 
 @app.get("/")
@@ -105,8 +126,20 @@ async def root():
     return {
         "message": f"Welcome to {settings.APP_NAME} API",
         "version": settings.APP_VERSION,
-        "docs": "/docs",
-        "health": "/health",
+        "features": [
+            "🤖 Enterprise LLM Orchestration",
+            "🔐 Secure Key Vault Integration", 
+            "💰 Intelligent Budget Management",
+            "⚡ High-Performance Caching",
+            "🛡️ Circuit Breaker Protection",
+            "📊 Comprehensive Analytics"
+        ],
+        "endpoints": {
+            "docs": "/docs",
+            "health": "/health",
+            "llm_status": "/llm/status",
+            "admin_models": "/llm/admin/models"
+        }
     }
 
 

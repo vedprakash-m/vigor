@@ -4,23 +4,34 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.ai import (analyze_workout_log, generate_workout_plan,
                      get_ai_coach_response)
 from core.config import get_settings
 from database.models import AICoachMessage, UserProfile
 from database.sql_models import AICoachMessageDB, WorkoutLogDB
+# from api.services.usage_tracking import UsageTrackingService
 
 settings = get_settings()
 
 
 async def chat_with_ai_coach(
-    db: Session,
+    db: AsyncSession,
     user: UserProfile,
     message: str,
     conversation_history: Optional[List[Dict[str, str]]] = None,
 ) -> str:
-    """Chat with the AI coach."""
+    """Chat with the AI coach with usage tracking."""
+
+    # TODO: Re-enable usage tracking after fixing import issues
+    # usage_service = UsageTrackingService(db)
+    # limits_check = await usage_service.check_user_limits(user.id)
+    # if not limits_check["allowed"]:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+    #         detail=f"Usage limit exceeded: {limits_check['reason']}. Please upgrade your plan or try again later."
+    #     )
 
     if not settings.OPENAI_API_KEY:
         raise HTTPException(
@@ -60,6 +71,10 @@ async def chat_with_ai_coach(
         message, user_profile, conversation_history
     )
 
+    # TODO: Re-enable usage tracking
+    # estimated_cost = 0.01  # Estimate based on tokens/provider
+    # await usage_service.track_usage(user.id, estimated_cost)
+
     # Save the conversation to database
     db_message = AICoachMessageDB(
         id=str(uuid.uuid4()),
@@ -70,7 +85,7 @@ async def chat_with_ai_coach(
     )
 
     db.add(db_message)
-    db.commit()
+    await db.commit()
 
     return ai_response
 

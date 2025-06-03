@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 
-from sqlalchemy import JSON, Boolean, Column, DateTime
+from sqlalchemy import JSON, Boolean, Column, DateTime, Date
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
@@ -26,6 +26,10 @@ class UserProfileDB(Base):
     equipment = Column(SQLEnum(Equipment))
     injuries = Column(JSON, default=list)  # Store as JSON array
     preferences = Column(JSON, default=dict)
+    user_tier = Column(String, default="free")
+    tier_updated_at = Column(DateTime, nullable=True)
+    monthly_budget = Column(Float, default=5.0)
+    current_month_usage = Column(Float, default=0.0)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
@@ -34,6 +38,7 @@ class UserProfileDB(Base):
     workout_logs = relationship("WorkoutLogDB", back_populates="user")
     progress_metrics = relationship("ProgressMetricsDB", back_populates="user")
     ai_messages = relationship("AICoachMessageDB", back_populates="user")
+    usage_limits = relationship("UserUsageLimitsDB", back_populates="user")
 
 
 class WorkoutPlanDB(Base):
@@ -171,5 +176,34 @@ class AdminSettingsDB(Base):
     key = Column(String, unique=True, index=True)
     value = Column(Text)
     description = Column(Text)
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class UserUsageLimitsDB(Base):
+    __tablename__ = "user_usage_limits"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String, ForeignKey("user_profiles.id"))
+    daily_requests_used = Column(Integer, default=0)
+    weekly_requests_used = Column(Integer, default=0)
+    monthly_requests_used = Column(Integer, default=0)
+    last_reset_date = Column(Date, nullable=True)
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    # Relationships
+    user = relationship("UserProfileDB", back_populates="usage_limits")
+
+
+class UserTierLimitsDB(Base):
+    __tablename__ = "user_tier_limits"
+
+    id = Column(Integer, primary_key=True)
+    tier_name = Column(String, unique=True)
+    daily_limit = Column(Integer)
+    weekly_limit = Column(Integer)
+    monthly_limit = Column(Integer)
+    monthly_budget = Column(Float)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())

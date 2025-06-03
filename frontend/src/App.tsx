@@ -1,16 +1,17 @@
 import { ChakraProvider, extendTheme } from '@chakra-ui/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { AuthProvider } from './contexts/AuthContext'
+import { Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import { Layout } from './components/Layout'
-import { LoginPage } from './pages/LoginPage'
-import { RegisterPage } from './pages/RegisterPage'
-import { DashboardPage } from './pages/DashboardPage'
-import { WorkoutPage } from './pages/WorkoutPage'
-import { CoachPage } from './pages/CoachPage'
-import { ProfilePage } from './pages/ProfilePage'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { AuthProvider } from './contexts/AuthContext'
 import AdminPage from './pages/AdminPage'
+import { CoachPage } from './pages/CoachPage'
+import { DashboardPage } from './pages/DashboardPage'
+import LLMOrchestrationPage from './pages/LLMOrchestrationPage'
+import { LoginPage } from './pages/LoginPage'
+import { ProfilePage } from './pages/ProfilePage'
+import { RegisterPage } from './pages/RegisterPage'
+import { WorkoutPage } from './pages/WorkoutPage'
 
 // Extend the theme for fitness app
 const theme = extendTheme({
@@ -57,7 +58,7 @@ function App() {
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              
+
               {/* Protected routes */}
               <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                 <Route index element={<DashboardPage />} />
@@ -65,6 +66,7 @@ function App() {
                 <Route path="/coach" element={<CoachPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/admin" element={<AdminPage />} />
+                <Route path="/llm" element={<LLMOrchestrationPage />} />
               </Route>
             </Routes>
           </Router>

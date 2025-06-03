@@ -26,3 +26,17 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     user_id: Optional[str] = None
+
+
+class UserResponse(BaseModel):
+    id: str
+    email: EmailStr
+    username: str
+    fitness_level: str
+    goals: list[str]
+    equipment: str
+    user_tier: str = "free"
+    monthly_budget: float = 5.0
+    current_month_usage: float = 0.0
+    created_at: datetime
+    updated_at: datetime

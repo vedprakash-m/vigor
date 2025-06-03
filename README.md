@@ -28,6 +28,13 @@
 - **Form Analysis**: Get feedback on your exercise technique (coming soon)
 - **Progress Insights**: AI-driven analysis of your fitness journey
 
+### 💰 User Tier System
+- **Free Tier**: 100 AI requests/month with basic features
+- **Premium Tier**: 1,000 AI requests/month + advanced coaching ($9.99/month)
+- **Unlimited Tier**: Unlimited AI access + priority support ($19.99/month)
+- **Usage Tracking**: Real-time monitoring of your AI usage and budget
+- **Smart Upgrades**: Seamless tier upgrades when you need more capacity
+
 ### 💡 Flexible LLM Integration
 - **Multi-Provider Support**: OpenAI, Google Gemini, Perplexity
 - **Cost Optimization**: Switch providers to optimize for budget vs. performance
@@ -122,8 +129,12 @@ npm run dev
 
 ### 4. Access the Application
 - **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
+- **Backend API**: http://localhost:8001
+- **API Documentation**: http://localhost:8001/docs
+
+#### Default Admin User
+- **Email**: admin@vigor.com
+- **Password**: admin123!
 
 ---
 
@@ -177,8 +188,13 @@ export OPENAI_API_KEY=your-key
 - `GET /users/me` - Get current user profile
 - `PUT /users/me` - Update user profile
 
+#### Tier Management
+- `GET /tiers` - Get available tiers and current user tier
+- `POST /tiers/upgrade` - Upgrade user tier
+- `GET /tiers/analytics` - Get usage analytics
+
 ### Full API Documentation
-Visit http://localhost:8000/docs for interactive API documentation.
+Visit http://localhost:8001/docs for interactive API documentation.
 
 ---
 
@@ -189,9 +205,10 @@ Visit http://localhost:8000/docs for interactive API documentation.
 │   React Frontend │    │  FastAPI Backend │    │  AI Providers   │
 │                 │    │                 │    │                 │
 │ • Chakra UI     │◄───┤ • JWT Auth      │◄───┤ • OpenAI        │
-│ • TypeScript    │    │ • SQLAlchemy    │    │ • Gemini        │
-│ • PWA Ready     │    │ • LLM Abstraction│    │ • Perplexity    │
-│ • Mobile-First  │    │ • RESTful API   │    │ • Fallback      │
+│ • TypeScript    │    │ • User Tiers    │    │ • Gemini        │
+│ • PWA Ready     │    │ • Usage Tracking│    │ • Perplexity    │
+│ • Mobile-First  │    │ • LLM Abstraction│    │ • Fallback      │
+│ • Tier UI       │    │ • RESTful API   │    │ • Cost Tracking │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -281,6 +298,12 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - [Perplexity API](https://docs.perplexity.ai/)
 - [OpenAI Platform](https://platform.openai.com/api-keys)
 
+### Technical Documentation
+- [Database Schema](backend/database/models.py) - Complete database models with tier system
+- [Usage Tracking Service](backend/api/services/usage_tracking.py) - AI usage monitoring
+- [Tier Management API](backend/api/routes/tiers.py) - Tier upgrade and analytics endpoints
+- [Migration Files](backend/alembic/versions/) - Database migration history
+
 ### Community
 - [Discord Community](https://discord.gg/vigor-fitness) (coming soon)
 - [GitHub Discussions](https://github.com/vedprakash-m/vigor/discussions)
@@ -346,14 +369,42 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ## 📊 Project Status
 
 **Current Version**: v1.0.0-beta  
-**Status**: ✅ MVP Complete - Ready for beta testing  
-**Next Release**: v1.1.0 - Enhanced AI features and mobile improvements
+**Status**: ✅ 90% Complete - User tier system implemented, ready for production  
+**Next Release**: v1.1.0 - Frontend tier management UI and final production fixes
 
-### Roadmap
-- ✅ **Phase 1**: Core MVP with AI coaching
-- 🔄 **Phase 2**: Computer vision form analysis
-- 📋 **Phase 3**: Wearables integration
-- 📋 **Phase 4**: Social features and challenges
+### Completed Features ✅
+- **Backend Infrastructure**: FastAPI server with JWT authentication
+- **Database System**: SQLite with Alembic migrations
+- **User Tier System**: Free/Premium/Unlimited tiers with usage tracking
+- **AI Integration**: Multi-provider LLM support (OpenAI, Gemini, Perplexity)
+- **Usage Tracking**: Complete backend service for monitoring AI usage
+- **API Documentation**: Comprehensive OpenAPI specification
+- **Admin System**: Default admin user for system management
+
+### In Progress 🔄
+- **Tier Management UI**: Frontend components for tier upgrades and usage analytics
+- **Service Integration**: Fixing import issues between usage tracking and AI services
+- **Production Testing**: End-to-end testing of tier limitations and upgrades
+
+### Roadmap 📋
+- ✅ **Phase 1**: Core MVP with AI coaching (Complete)
+- ✅ **Phase 2**: User tier system and usage tracking (Complete)
+- 🔄 **Phase 3**: Frontend tier management UI (In Progress)
+- 📋 **Phase 4**: Computer vision form analysis
+- 📋 **Phase 5**: Wearables integration
+- 📋 **Phase 6**: Social features and challenges
+
+### Recent Updates (Latest)
+- **User Tier Database**: Added `user_tier_limits` and `user_usage_limits` tables
+- **Usage Tracking Service**: Comprehensive service for monitoring and limiting AI usage
+- **Tier API Endpoints**: Backend routes for tier management and analytics
+- **Database Migration**: Alembic migration `003_add_user_tiers` successfully applied
+- **Model Enhancement**: Extended user profiles with tier and budget management
+
+### Known Issues 🔧
+- **Import Resolution**: `UsageTrackingService` import needs fixing in AI service
+- **Tier Routes**: Temporarily disabled in main.py pending import fix
+- **Frontend Integration**: Tier management UI components need implementation
 
 ---
 

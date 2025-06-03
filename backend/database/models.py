@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -26,6 +26,12 @@ class Equipment(str, Enum):
     FULL = "full"  # Full gym access
 
 
+class UserTier(str, Enum):
+    FREE = "free"
+    PREMIUM = "premium"
+    UNLIMITED = "unlimited"
+
+
 class UserProfile(BaseModel):
     id: str
     email: str
@@ -35,6 +41,10 @@ class UserProfile(BaseModel):
     equipment: Equipment
     injuries: List[str] = []
     preferences: Dict[str, Any] = {}
+    user_tier: UserTier = UserTier.FREE
+    tier_updated_at: Optional[datetime] = None
+    monthly_budget: float = 5.0
+    current_month_usage: float = 0.0
     created_at: datetime
     updated_at: datetime
 
@@ -137,5 +147,27 @@ class AdminSettings(BaseModel):
     key: str  # setting name
     value: str  # JSON string for complex values
     description: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class UserUsageLimits(BaseModel):
+    id: int
+    user_id: str
+    daily_requests_used: int = 0
+    weekly_requests_used: int = 0
+    monthly_requests_used: int = 0
+    last_reset_date: Optional[date] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class UserTierLimits(BaseModel):
+    id: int
+    tier_name: str
+    daily_limit: int
+    weekly_limit: int
+    monthly_limit: int
+    monthly_budget: float
     created_at: datetime
     updated_at: datetime
