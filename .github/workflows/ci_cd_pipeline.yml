@@ -131,29 +131,3 @@ jobs:
         run: |
           cd frontend
           npm run build
-
-  deploy:
-    name: Deploy to Azure
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Azure CLI
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Deploy infrastructure
-        run: |
-          cd infra
-          az deployment group create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --template-file main.bicep
-
-      - name: Deploy backend
-        run: |
-          az webapp create --name vigor-backend --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --plan vigor-plan --deployment-container-image-name vigor-backend
-
-      - name: Deploy frontend
-        run: |
-          az storage blob upload-batch -d \$web -s frontend/dist --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT }}
