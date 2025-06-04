@@ -14,7 +14,7 @@ from api.routes.auth import router as auth_router
 from api.routes.users import router as users_router
 from api.routes.workouts import router as workouts_router
 from api.routes.llm_orchestration import router as llm_router
-# from api.routes.tiers import router as tiers_router
+from api.routes.tiers import router as tiers_router
 from core.config import get_settings
 from core.llm_orchestration_init import initialize_llm_orchestration, shutdown_llm_orchestration
 from database.connection import init_db
@@ -118,7 +118,7 @@ app.include_router(workouts_router)
 app.include_router(ai_router)
 app.include_router(admin_router)
 app.include_router(llm_router)
-# app.include_router(tiers_router)
+app.include_router(tiers_router)
 
 
 @app.get("/")

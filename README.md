@@ -23,31 +23,36 @@
 ## 🚀 Key Features
 
 ### 🤖 AI-Powered Coaching
+
 - **Interactive Chat**: Real-time conversations with your AI fitness coach
 - **Smart Workout Generation**: Personalized workout plans based on your profile
 - **Form Analysis**: Get feedback on your exercise technique (coming soon)
 - **Progress Insights**: AI-driven analysis of your fitness journey
 
 ### 💰 User Tier System
+
 - **Free Tier**: 100 AI requests/month with basic features
-- **Premium Tier**: 1,000 AI requests/month + advanced coaching ($9.99/month)
-- **Unlimited Tier**: Unlimited AI access + priority support ($19.99/month)
+- **Premium Tier**: 1,000 AI requests/month + advanced coaching
+- **Unlimited Tier**: Unlimited AI access + priority support
 - **Usage Tracking**: Real-time monitoring of your AI usage and budget
 - **Smart Upgrades**: Seamless tier upgrades when you need more capacity
 
 ### 💡 Flexible LLM Integration
+
 - **Multi-Provider Support**: OpenAI, Google Gemini, Perplexity
 - **Cost Optimization**: Switch providers to optimize for budget vs. performance
 - **Graceful Fallback**: Works even without AI providers configured
 - **Real-time Provider Status**: Monitor which AI service is active
 
 ### 📱 Modern User Experience
+
 - **Responsive Design**: Optimized for mobile, tablet, and desktop
 - **Progressive Web App**: Install directly on your device
 - **Dark/Light Mode**: Comfortable viewing in any environment
 - **Offline Support**: Core features work without internet (coming soon)
 
 ### 🔧 Developer-Friendly
+
 - **Clean Architecture**: Modular, scalable codebase
 - **Comprehensive API**: RESTful endpoints with OpenAPI documentation
 - **Type Safety**: Full TypeScript support
@@ -58,6 +63,7 @@
 ## 🏗️ Technology Stack
 
 ### Backend
+
 - **Framework**: FastAPI (Python 3.9+)
 - **Database**: SQLite (dev) / PostgreSQL (prod)
 - **Authentication**: JWT with refresh tokens
@@ -66,6 +72,7 @@
 - **Validation**: Pydantic models
 
 ### Frontend
+
 - **Framework**: React 18 + TypeScript
 - **UI Library**: Chakra UI v3
 - **State Management**: React Context + Hooks
@@ -74,6 +81,7 @@
 - **PWA**: Service Worker ready
 
 ### AI Providers
+
 - **OpenAI**: GPT-3.5-turbo, GPT-4
 - **Google Gemini**: Gemini-2.5-flash, Gemini-2.5-pro
 - **Perplexity**: Llama-3.1-sonar models
@@ -84,17 +92,20 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - **Python 3.9+**
 - **Node.js 18+**
 - **Git**
 
 ### 1. Clone Repository
+
 ```bash
 git clone https://github.com/vedprakash-m/vigor.git
 cd vigor
 ```
 
 ### 2. Backend Setup
+
 ```bash
 cd backend
 
@@ -117,6 +128,7 @@ python main.py
 ```
 
 ### 3. Frontend Setup
+
 ```bash
 cd frontend
 
@@ -128,11 +140,13 @@ npm run dev
 ```
 
 ### 4. Access the Application
+
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8001
 - **API Documentation**: http://localhost:8001/docs
 
 #### Default Admin User
+
 - **Email**: admin@vigor.com
 - **Password**: admin123!
 
@@ -142,18 +156,20 @@ npm run dev
 
 ### LLM Provider Comparison
 
-| Provider | Cost (per 1M tokens) | Free Tier | Best For |
-|----------|---------------------|-----------|----------|
-| **Google Gemini** | $0.075 - $0.30 | ✅ Available | Development, Budget |
-| **Perplexity** | $0.20 - $0.20 | ❌ Paid | Real-time data, Production |
-| **OpenAI** | $0.50 - $1.50 | ❌ Paid | Advanced reasoning |
+| Provider          | Cost (per 1M tokens) | Free Tier    | Best For                   |
+| ----------------- | -------------------- | ------------ | -------------------------- |
+| **Google Gemini** | $0.075 - $0.30       | ✅ Available | Development, Budget        |
+| **Perplexity**    | $0.20 - $0.20        | ❌ Paid      | Real-time data, Production |
+| **OpenAI**        | $0.50 - $1.50        | ❌ Paid      | Advanced reasoning         |
 
 ### Recommended Setup
+
 1. **Development**: Use Gemini with free tier
 2. **Production**: Switch to Perplexity for cost-effectiveness
 3. **Premium Features**: Upgrade to OpenAI for advanced capabilities
 
 ### Switch Providers Instantly
+
 ```bash
 # Use Google Gemini (recommended for cost)
 export LLM_PROVIDER=gemini
@@ -175,25 +191,30 @@ export OPENAI_API_KEY=your-key
 ### Core Endpoints
 
 #### Authentication
+
 - `POST /auth/register` - User registration
 - `POST /auth/login` - User login
 - `POST /auth/refresh` - Refresh access token
 
 #### AI Services
+
 - `POST /ai/chat` - Chat with AI coach
 - `POST /ai/workout-plan` - Generate workout plan
 - `GET /ai/provider-status` - Check active AI provider
 
 #### User Management
+
 - `GET /users/me` - Get current user profile
 - `PUT /users/me` - Update user profile
 
 #### Tier Management
+
 - `GET /tiers` - Get available tiers and current user tier
 - `POST /tiers/upgrade` - Upgrade user tier
 - `GET /tiers/analytics` - Get usage analytics
 
 ### Full API Documentation
+
 Visit http://localhost:8001/docs for interactive API documentation.
 
 ---
@@ -213,6 +234,7 @@ Visit http://localhost:8001/docs for interactive API documentation.
 ```
 
 ### Key Design Principles
+
 - **Separation of Concerns**: Clear boundaries between UI, business logic, and AI services
 - **Provider Agnostic**: LLM abstraction allows seamless provider switching
 - **Progressive Enhancement**: Core features work offline, AI enhances the experience
@@ -225,12 +247,14 @@ Visit http://localhost:8001/docs for interactive API documentation.
 ### Environment Variables
 
 #### Required
+
 ```bash
 SECRET_KEY=your-super-secret-key-for-jwt
 DATABASE_URL=sqlite:///./vigor.db  # or PostgreSQL URL
 ```
 
 #### Optional (AI Features)
+
 ```bash
 LLM_PROVIDER=gemini
 GEMINI_API_KEY=your-gemini-api-key
@@ -239,6 +263,7 @@ PERPLEXITY_API_KEY=your-perplexity-api-key
 ```
 
 ### Production Deployment
+
 1. **Backend**: Deploy FastAPI app to cloud provider (Heroku, AWS, Azure)
 2. **Frontend**: Build and deploy to CDN (Vercel, Netlify, CloudFlare)
 3. **Database**: Use managed PostgreSQL service
@@ -249,18 +274,21 @@ PERPLEXITY_API_KEY=your-perplexity-api-key
 ## 🧪 Testing
 
 ### Backend Tests
+
 ```bash
 cd backend
 pytest tests/ -v
 ```
 
 ### Frontend Tests
+
 ```bash
 cd frontend
 npm test
 ```
 
 ### E2E Tests
+
 ```bash
 npm run test:e2e
 ```
@@ -289,22 +317,26 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ## 📖 Additional Resources
 
 ### Documentation
+
 - [LLM Provider Setup Guide](backend/LLM_SETUP.md)
 - [API Reference](http://localhost:8000/docs)
 - [Contributing Guide](CONTRIBUTING.md)
 
 ### Getting API Keys
+
 - [Google Gemini (Free Tier)](https://makersuite.google.com/app/apikey)
 - [Perplexity API](https://docs.perplexity.ai/)
 - [OpenAI Platform](https://platform.openai.com/api-keys)
 
 ### Technical Documentation
+
 - [Database Schema](backend/database/models.py) - Complete database models with tier system
 - [Usage Tracking Service](backend/api/services/usage_tracking.py) - AI usage monitoring
 - [Tier Management API](backend/api/routes/tiers.py) - Tier upgrade and analytics endpoints
 - [Migration Files](backend/alembic/versions/) - Database migration history
 
 ### Community
+
 - [Discord Community](https://discord.gg/vigor-fitness) (coming soon)
 - [GitHub Discussions](https://github.com/vedprakash-m/vigor/discussions)
 - [Issue Tracker](https://github.com/vedprakash-m/vigor/issues)
@@ -318,6 +350,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**.
 
 **What this means:**
+
 - ✅ **Free to use, modify, and distribute**
 - ✅ **Commercial use allowed**
 - ⚠️ **Source code must be disclosed when distributed**
@@ -362,7 +395,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 **Copyright (C) 2025 Vedprakash Mishra**
 
-*This project is licensed under AGPLv3. See [LICENSE](LICENSE) and [NOTICE](NOTICE) files for details.*
+_This project is licensed under AGPLv3. See [LICENSE](LICENSE) and [NOTICE](NOTICE) files for details._
 
 ---
 
@@ -373,6 +406,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 **Next Release**: v1.1.0 - Frontend tier management UI and final production fixes
 
 ### Completed Features ✅
+
 - **Backend Infrastructure**: FastAPI server with JWT authentication
 - **Database System**: SQLite with Alembic migrations
 - **User Tier System**: Free/Premium/Unlimited tiers with usage tracking
@@ -382,11 +416,13 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - **Admin System**: Default admin user for system management
 
 ### In Progress 🔄
+
 - **Tier Management UI**: Frontend components for tier upgrades and usage analytics
 - **Service Integration**: Fixing import issues between usage tracking and AI services
 - **Production Testing**: End-to-end testing of tier limitations and upgrades
 
 ### Roadmap 📋
+
 - ✅ **Phase 1**: Core MVP with AI coaching (Complete)
 - ✅ **Phase 2**: User tier system and usage tracking (Complete)
 - 🔄 **Phase 3**: Frontend tier management UI (In Progress)
@@ -395,6 +431,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - 📋 **Phase 6**: Social features and challenges
 
 ### Recent Updates (Latest)
+
 - **User Tier Database**: Added `user_tier_limits` and `user_usage_limits` tables
 - **Usage Tracking Service**: Comprehensive service for monitoring and limiting AI usage
 - **Tier API Endpoints**: Backend routes for tier management and analytics
@@ -402,6 +439,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - **Model Enhancement**: Extended user profiles with tier and budget management
 
 ### Known Issues 🔧
+
 - **Import Resolution**: `UsageTrackingService` import needs fixing in AI service
 - **Tier Routes**: Temporarily disabled in main.py pending import fix
 - **Frontend Integration**: Tier management UI components need implementation

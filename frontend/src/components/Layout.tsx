@@ -1,5 +1,4 @@
-import React from 'react'
-import { Box, Flex, Text, Heading } from '@chakra-ui/react'
+import { Box, Flex, Heading, Text } from '@chakra-ui/react'
 import { Outlet, Link as RouterLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -7,6 +6,7 @@ const Links = [
   { name: 'Dashboard', path: '/' },
   { name: 'Workouts', path: '/workouts' },
   { name: 'AI Coach', path: '/coach' },
+  { name: 'Tier Management', path: '/tiers' },
   { name: 'Profile', path: '/profile' },
 ]
 

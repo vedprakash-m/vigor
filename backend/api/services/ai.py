@@ -11,7 +11,7 @@ from core.ai import (analyze_workout_log, generate_workout_plan,
 from core.config import get_settings
 from database.models import AICoachMessage, UserProfile
 from database.sql_models import AICoachMessageDB, WorkoutLogDB
-# from api.services.usage_tracking import UsageTrackingService
+from api.services.usage_tracking import UsageTrackingService
 
 settings = get_settings()
 
@@ -24,14 +24,14 @@ async def chat_with_ai_coach(
 ) -> str:
     """Chat with the AI coach with usage tracking."""
 
-    # TODO: Re-enable usage tracking after fixing import issues
-    # usage_service = UsageTrackingService(db)
-    # limits_check = await usage_service.check_user_limits(user.id)
-    # if not limits_check["allowed"]:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-    #         detail=f"Usage limit exceeded: {limits_check['reason']}. Please upgrade your plan or try again later."
-    #     )
+    # Check user limits before processing request
+    usage_service = UsageTrackingService(db)
+    limits_check = await usage_service.check_user_limits(user.id)
+    if not limits_check["allowed"]:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Usage limit exceeded: {limits_check['reason']}. Please upgrade your plan or try again later."
+        )
 
     if not settings.OPENAI_API_KEY:
         raise HTTPException(
@@ -71,9 +71,9 @@ async def chat_with_ai_coach(
         message, user_profile, conversation_history
     )
 
-    # TODO: Re-enable usage tracking
-    # estimated_cost = 0.01  # Estimate based on tokens/provider
-    # await usage_service.track_usage(user.id, estimated_cost)
+    # Track usage after successful AI response
+    estimated_cost = 0.01  # Estimate based on tokens/provider
+    await usage_service.track_usage(user.id, estimated_cost)
 
     # Save the conversation to database
     db_message = AICoachMessageDB(
