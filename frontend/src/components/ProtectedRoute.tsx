@@ -1,7 +1,7 @@
+import { Center, Spinner } from '@chakra-ui/react'
 import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { Spinner, Center } from '@chakra-ui/react'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../contexts/useAuth'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -25,4 +25,4 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   return <>{children}</>
-} 
+}

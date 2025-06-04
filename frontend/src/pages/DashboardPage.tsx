@@ -1,7 +1,7 @@
+import { Box, Container, Grid, Heading, Text } from '@chakra-ui/react'
 import React from 'react'
-import { Box, Container, Heading, Text, Grid } from '@chakra-ui/react'
-import { useAuth } from '../contexts/AuthContext'
 import LLMStatus from '../components/LLMStatus'
+import { useAuth } from '../contexts/useAuth'
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth()
@@ -59,4 +59,4 @@ const DashboardPage: React.FC = () => {
   )
 }
 
-export default DashboardPage 
+export default DashboardPage

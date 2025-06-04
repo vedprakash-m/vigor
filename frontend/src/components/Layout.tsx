@@ -1,6 +1,6 @@
 import { Box, Flex, Heading, Text } from '@chakra-ui/react'
 import { Outlet, Link as RouterLink, useLocation } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../contexts/useAuth'
 
 const Links = [
   { name: 'Dashboard', path: '/' },
@@ -91,4 +91,4 @@ export const Layout = () => {
       </Box>
     </Flex>
   )
-} 
+}

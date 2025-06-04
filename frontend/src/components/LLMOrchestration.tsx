@@ -201,7 +201,7 @@ export const LLMOrchestration: React.FC = () => {
             <Grid templateColumns="repeat(auto-fit, minmax(250px, 1fr))" gap={4}>
               <Box p={4} borderWidth={1} borderRadius="md">
                 <Heading size="sm" mb={2}>🤖 Models</Heading>
-                <VStack spacing={2} align="stretch">
+                <VStack align="stretch">
                   <Flex justify="space-between">
                     <Text>Active:</Text>
                     <Badge>{systemStatus.active_models}</Badge>
@@ -215,7 +215,7 @@ export const LLMOrchestration: React.FC = () => {
 
               <Box p={4} borderWidth={1} borderRadius="md">
                 <Heading size="sm" mb={2}>⚡ Cache</Heading>
-                <VStack spacing={2} align="stretch">
+                <VStack align="stretch">
                   <Flex justify="space-between">
                     <Text>Hit Rate:</Text>
                     <Badge colorScheme="green">{systemStatus.cache_stats.hit_rate.toFixed(1)}%</Badge>
@@ -229,7 +229,7 @@ export const LLMOrchestration: React.FC = () => {
 
               <Box p={4} borderWidth={1} borderRadius="md">
                 <Heading size="sm" mb={2}>💰 Budget</Heading>
-                <VStack spacing={2} align="stretch">
+                <VStack align="stretch">
                   <Flex justify="space-between">
                     <Text>Usage:</Text>
                     <Badge>${systemStatus.budget_status.total_usage.toFixed(2)}</Badge>

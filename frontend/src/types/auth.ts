@@ -6,6 +6,7 @@ export interface User {
   is_active: boolean
   created_at: string
   updated_at: string
+  fitness_level?: string; // Added fitness_level property
 }
 
 export interface LoginRequest {

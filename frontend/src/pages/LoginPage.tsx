@@ -1,14 +1,14 @@
-import React, { useState } from 'react'
 import {
-  Box,
-  Flex,
-  Heading,
-  Text,
-  Input,
-  Button,
+    Box,
+    Button,
+    Flex,
+    Heading,
+    Input,
+    Text,
 } from '@chakra-ui/react'
+import React, { useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../contexts/useAuth'
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('')
@@ -93,4 +93,4 @@ export const LoginPage = () => {
       </Box>
     </Flex>
   )
-} 
+}
