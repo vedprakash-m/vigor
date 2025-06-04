@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Optional
 
 from core.admin_llm_manager import AdminLLMManager
 from core.config import get_settings
-from database.models import UserProfile
 from database.connection import get_db
+from database.models import UserProfile
 
 settings = get_settings()
 
@@ -63,7 +63,7 @@ Provide the workout plan in this exact JSON structure:
         # Get database session and create admin manager
         db = next(get_db())
         admin_manager = AdminLLMManager(db)
-        
+
         # Use AdminLLMManager to make the AI call with cost tracking
         response, cost, provider = await admin_manager.chat_completion(
             messages=[{"role": "user", "content": user_message}],
@@ -71,7 +71,7 @@ Provide the workout plan in this exact JSON structure:
             user_id=user_profile.id,
             endpoint="workout_generation",
             json_response=True,
-            max_tokens=1000
+            max_tokens=1000,
         )
 
         # Parse JSON response
@@ -140,14 +140,14 @@ User's message: {message}
         # Get database session and create admin manager
         db = next(get_db())
         admin_manager = AdminLLMManager(db)
-        
+
         # Use AdminLLMManager for cost tracking
         response, cost, provider = await admin_manager.chat_completion(
             messages=[{"role": "user", "content": user_context}],
             system_prompt=system_prompt,
             user_id=user_profile.id,
             endpoint="coaching_chat",
-            max_tokens=500
+            max_tokens=500,
         )
 
         return response
@@ -189,14 +189,14 @@ Provide analysis in this exact JSON structure:
         # Get database session and create admin manager
         db = next(get_db())
         admin_manager = AdminLLMManager(db)
-        
+
         response, cost, provider = await admin_manager.chat_completion(
             messages=[{"role": "user", "content": user_message}],
             system_prompt=system_prompt,
             user_id=user_profile.id,
             endpoint="workout_analysis",
             json_response=True,
-            max_tokens=500
+            max_tokens=500,
         )
 
         return json.loads(response)

@@ -112,27 +112,29 @@ async def get_current_active_user(
 
 
 async def get_current_admin_user(
-    current_user: UserProfile = Depends(get_current_user)
+    current_user: UserProfile = Depends(get_current_user),
 ) -> UserProfile:
     """
     Verify that the current user has admin privileges.
     """
     # Check if user has admin role/permissions
     # For now, we'll check if user has an 'is_admin' field or admin role
-    if hasattr(current_user, 'is_admin') and current_user.is_admin:
+    if hasattr(current_user, "is_admin") and current_user.is_admin:
         return current_user
-    
+
     # Alternative: check for admin role in user profile
-    if hasattr(current_user, 'role') and current_user.role == 'admin':
+    if hasattr(current_user, "role") and current_user.role == "admin":
         return current_user
-    
+
     # Alternative: check email domain or specific user IDs
     # This is a fallback - in production you'd have proper role management
-    admin_emails = ['admin@vigor.com', 'admin@example.com']  # Configure based on your needs
-    if hasattr(current_user, 'email') and current_user.email in admin_emails:
+    admin_emails = [
+        "admin@vigor.com",
+        "admin@example.com",
+    ]  # Configure based on your needs
+    if hasattr(current_user, "email") and current_user.email in admin_emails:
         return current_user
-    
+
     raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Admin privileges required"
+        status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required"
     )

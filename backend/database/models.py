@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -102,7 +102,7 @@ class ChatMessage(BaseModel):
 
 class AIProviderPriority(BaseModel):
     model_config = {"protected_namespaces": ()}  # Allow model_ fields
-    
+
     id: str
     provider_name: str  # openai, gemini, perplexity
     model_name: str  # gpt-4o, gemini-2.5-flash, etc.
@@ -127,7 +127,7 @@ class BudgetSettings(BaseModel):
 
 class AIUsageLog(BaseModel):
     model_config = {"protected_namespaces": ()}  # Allow model_ fields
-    
+
     id: str
     user_id: Optional[str]  # Track per-user usage
     provider_name: str  # openai, gemini, perplexity

@@ -1,16 +1,15 @@
 import {
-  Box,
-  Button,
-  Flex,
-  Heading,
-  HStack,
-  Spacer,
-  Text,
-  Textarea,
-  VStack
+    Box,
+    Button,
+    Flex,
+    Heading,
+    HStack,
+    Spacer,
+    Text,
+    Textarea,
+    VStack
 } from '@chakra-ui/react';
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 
 interface LLMResponse {
   content: string;
@@ -24,7 +23,6 @@ interface LLMResponse {
 }
 
 export const LLMOrchestrationPage: React.FC = () => {
-  const { user } = useAuth();
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState<LLMResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -83,14 +81,14 @@ export const LLMOrchestrationPage: React.FC = () => {
         </Box>
       )}
 
-      <VStack spacing={6} align="stretch">
+      <VStack gap={6} align="stretch">
         <Box p={6} borderWidth={1} borderRadius="lg" bg="white" boxShadow="sm">
           <Heading size="md" mb={4}>🧠 Enterprise AI Chat</Heading>
           <Text color="gray.600" fontSize="sm" mb={4}>
             Powered by intelligent routing, budget management, and enterprise security
           </Text>
 
-          <VStack spacing={4} align="stretch">
+          <VStack gap={4} align="stretch">
             <Box>
               <Text fontWeight="bold" mb={2}>Your Prompt</Text>
               <Textarea
@@ -103,8 +101,8 @@ export const LLMOrchestrationPage: React.FC = () => {
 
             <Button
               onClick={sendLLMRequest}
-              isLoading={loading}
-              disabled={!prompt.trim()}
+              loading={loading}
+              disabled={loading}
               colorScheme="blue"
               size="lg"
               width="full"
@@ -116,7 +114,7 @@ export const LLMOrchestrationPage: React.FC = () => {
               <Box p={4} borderWidth={1} borderRadius="md" bg="gray.50">
                 <Flex align="center" justify="space-between" mb={3}>
                   <Heading size="sm">Response</Heading>
-                  <HStack spacing={2}>
+                  <HStack gap={2}>
                     <Text fontSize="xs" bg="blue.100" px={2} py={1} borderRadius="sm">
                       {response.provider}
                     </Text>
@@ -133,7 +131,7 @@ export const LLMOrchestrationPage: React.FC = () => {
 
                 <Text mb={4} whiteSpace="pre-wrap">{response.content}</Text>
 
-                <VStack spacing={2} align="stretch" fontSize="sm" color="gray.600">
+                <VStack gap={2} align="stretch" fontSize="sm" color="gray.600">
                   <HStack justify="space-between">
                     <Text fontWeight="bold">Tokens:</Text>
                     <Text>{response.tokens_used}</Text>
@@ -158,7 +156,7 @@ export const LLMOrchestrationPage: React.FC = () => {
 
         <Box p={6} borderWidth={1} borderRadius="lg" bg="white" boxShadow="sm">
           <Heading size="md" mb={4}>🎯 Enterprise Features</Heading>
-          <VStack spacing={3} align="stretch">
+          <VStack gap={3} align="stretch">
             <HStack>
               <Text fontSize="lg">🔐</Text>
               <Text><strong>Secure Key Vault Integration:</strong> API keys stored securely in Azure/AWS/HashiCorp vaults</Text>
@@ -190,4 +188,4 @@ export const LLMOrchestrationPage: React.FC = () => {
   );
 };
 
-export default LLMOrchestrationPage; 
+export default LLMOrchestrationPage;

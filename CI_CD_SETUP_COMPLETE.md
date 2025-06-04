@@ -131,15 +131,19 @@ The following secrets must be configured in the GitHub repository:
 ### Enhancements to CI/CD Pipeline
 
 1. **Branch-Based Deployment Rules**:
+
    - The pipeline now deploys only from the `main` branch.
 
 2. **Error Handling**:
+
    - Added error handling to the deployment steps to ensure graceful failure and rollback if any step fails.
 
 3. **Dependency Caching**:
+
    - Implemented caching for `npm` and `pip` dependencies to speed up the pipeline.
 
 4. **Separate Jobs**:
+
    - Backend and frontend jobs are now separated for better modularity and parallel execution.
 
 5. **Secrets Management**:

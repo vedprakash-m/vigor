@@ -3,15 +3,15 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
+from api.services.usage_tracking import UsageTrackingService
 from core.ai import (analyze_workout_log, generate_workout_plan,
                      get_ai_coach_response)
 from core.config import get_settings
 from database.models import AICoachMessage, UserProfile
 from database.sql_models import AICoachMessageDB, WorkoutLogDB
-from api.services.usage_tracking import UsageTrackingService
 
 settings = get_settings()
 
@@ -30,7 +30,7 @@ async def chat_with_ai_coach(
     if not limits_check["allowed"]:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"Usage limit exceeded: {limits_check['reason']}. Please upgrade your plan or try again later."
+            detail=f"Usage limit exceeded: {limits_check['reason']}. Please upgrade your plan or try again later.",
         )
 
     if not settings.OPENAI_API_KEY:

@@ -7,14 +7,24 @@ from pydantic import BaseModel, Field
 # AI Provider Priority Schemas
 class AIProviderPriorityBase(BaseModel):
     model_config = {"protected_namespaces": ()}  # Allow model_ fields
-    
-    provider_name: str = Field(..., description="Name of the AI provider (openai, gemini, perplexity)")
+
+    provider_name: str = Field(
+        ..., description="Name of the AI provider (openai, gemini, perplexity)"
+    )
     model_name: str = Field(..., description="Specific model name")
     priority: int = Field(..., ge=1, le=10, description="Priority order (1 = highest)")
-    is_enabled: bool = Field(default=True, description="Whether this provider is enabled")
-    max_daily_cost: Optional[float] = Field(None, ge=0, description="Maximum daily cost limit")
-    max_weekly_cost: Optional[float] = Field(None, ge=0, description="Maximum weekly cost limit")
-    max_monthly_cost: Optional[float] = Field(None, ge=0, description="Maximum monthly cost limit")
+    is_enabled: bool = Field(
+        default=True, description="Whether this provider is enabled"
+    )
+    max_daily_cost: Optional[float] = Field(
+        None, ge=0, description="Maximum daily cost limit"
+    )
+    max_weekly_cost: Optional[float] = Field(
+        None, ge=0, description="Maximum weekly cost limit"
+    )
+    max_monthly_cost: Optional[float] = Field(
+        None, ge=0, description="Maximum monthly cost limit"
+    )
 
 
 class AIProviderPriorityCreate(AIProviderPriorityBase):
@@ -23,7 +33,7 @@ class AIProviderPriorityCreate(AIProviderPriorityBase):
 
 class AIProviderPriorityResponse(AIProviderPriorityBase):
     model_config = {"protected_namespaces": (), "from_attributes": True}
-    
+
     id: str
     created_at: datetime
     updated_at: datetime
@@ -31,10 +41,18 @@ class AIProviderPriorityResponse(AIProviderPriorityBase):
 
 # Budget Settings Schemas
 class BudgetSettingsBase(BaseModel):
-    total_weekly_budget: float = Field(..., ge=0, description="Total weekly budget in USD")
-    total_monthly_budget: float = Field(..., ge=0, description="Total monthly budget in USD")
-    alert_threshold_percentage: float = Field(default=80.0, ge=0, le=100, description="Alert when this % of budget is used")
-    auto_disable_on_budget_exceeded: bool = Field(default=True, description="Automatically disable AI when budget exceeded")
+    total_weekly_budget: float = Field(
+        ..., ge=0, description="Total weekly budget in USD"
+    )
+    total_monthly_budget: float = Field(
+        ..., ge=0, description="Total monthly budget in USD"
+    )
+    alert_threshold_percentage: float = Field(
+        default=80.0, ge=0, le=100, description="Alert when this % of budget is used"
+    )
+    auto_disable_on_budget_exceeded: bool = Field(
+        default=True, description="Automatically disable AI when budget exceeded"
+    )
 
 
 class BudgetSettingsUpdate(BudgetSettingsBase):
@@ -43,7 +61,7 @@ class BudgetSettingsUpdate(BudgetSettingsBase):
 
 class BudgetSettingsResponse(BudgetSettingsBase):
     model_config = {"from_attributes": True}
-    
+
     id: str
     created_at: datetime
     updated_at: datetime
@@ -52,7 +70,7 @@ class BudgetSettingsResponse(BudgetSettingsBase):
 # AI Usage Log Schemas
 class AIUsageLogResponse(BaseModel):
     model_config = {"protected_namespaces": (), "from_attributes": True}
-    
+
     id: str
     user_id: Optional[str]
     provider_name: str
@@ -85,7 +103,7 @@ class AdminSettingsUpdate(BaseModel):
 
 class AdminSettingsResponse(AdminSettingsBase):
     model_config = {"from_attributes": True}
-    
+
     id: str
     created_at: datetime
     updated_at: datetime
@@ -105,7 +123,7 @@ class UsageStatsResponse(BaseModel):
 
 class ProviderStatsResponse(BaseModel):
     model_config = {"protected_namespaces": ()}  # Allow model_ fields
-    
+
     provider_name: str
     model_name: str
     total_requests: int
@@ -145,4 +163,4 @@ class AlertResponse(BaseModel):
     data: Optional[Dict]
     acknowledged: bool
     created_at: datetime
-    acknowledged_at: Optional[datetime] 
+    acknowledged_at: Optional[datetime]

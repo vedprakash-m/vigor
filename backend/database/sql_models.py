@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime, date
+from datetime import date, datetime
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Date
+from sqlalchemy import JSON, Boolean, Column, Date, DateTime
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base

@@ -2,10 +2,11 @@
 Analytics Collector
 Comprehensive analytics and monitoring for LLM orchestration
 """
+
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class RequestMetrics:
     """Request-level metrics"""
+
     timestamp: datetime
     user_id: str
     model_used: str
@@ -30,17 +32,17 @@ class AnalyticsCollector:
     Comprehensive analytics collection and reporting
     Provides insights for optimization and monitoring
     """
-    
+
     def __init__(self, db_session=None):
         self.db = db_session
         self._metrics_buffer: List[RequestMetrics] = []
         self._buffer_size = 1000
-    
+
     async def record_request(
         self,
         request: Any,  # GatewayRequest
         response: Any,  # LLMResponse
-        request_id: str
+        request_id: str,
     ):
         """Record request metrics"""
         try:
@@ -54,23 +56,20 @@ class AnalyticsCollector:
                 cost=response.cost_estimate,
                 success=True,
                 cached=response.cached,
-                task_type=request.task_type
+                task_type=request.task_type,
             )
-            
+
             self._metrics_buffer.append(metrics)
-            
+
             # Flush buffer if full
             if len(self._metrics_buffer) >= self._buffer_size:
                 await self._flush_metrics()
-                
+
         except Exception as e:
             logger.error(f"Failed to record analytics: {e}")
-    
+
     async def get_usage_report(
-        self,
-        start_date: datetime,
-        end_date: datetime,
-        user_id: Optional[str] = None
+        self, start_date: datetime, end_date: datetime, user_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """Generate usage report"""
         try:
@@ -86,26 +85,26 @@ class AnalyticsCollector:
                 "top_models": [
                     {"model": "gpt-4", "requests": 600, "cost": 85.20},
                     {"model": "gemini-pro", "requests": 500, "cost": 25.10},
-                    {"model": "claude-3-sonnet", "requests": 400, "cost": 15.20}
-                ]
+                    {"model": "claude-3-sonnet", "requests": 400, "cost": 15.20},
+                ],
             }
         except Exception as e:
             logger.error(f"Failed to generate usage report: {e}")
             return {"error": str(e)}
-    
+
     async def _flush_metrics(self):
         """Flush metrics buffer to database"""
         try:
             if not self._metrics_buffer:
                 return
-            
+
             # Implementation would batch insert to database
             logger.debug(f"Flushing {len(self._metrics_buffer)} metrics records")
             self._metrics_buffer.clear()
-            
+
         except Exception as e:
             logger.error(f"Failed to flush metrics: {e}")
-    
+
     async def shutdown(self):
         """Shutdown and flush remaining metrics"""
-        await self._flush_metrics() 
+        await self._flush_metrics()

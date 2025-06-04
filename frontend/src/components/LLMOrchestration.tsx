@@ -1,19 +1,18 @@
 import {
-  Alert,
-  AlertIcon,
-  Badge,
-  Box,
-  Button,
-  Flex,
-  Grid,
-  Heading,
-  HStack,
-  Select,
-  Spacer,
-  Spinner,
-  Text,
-  Textarea,
-  VStack
+    Alert,
+    AlertIcon,
+    Badge,
+    Box,
+    Button,
+    Flex,
+    Grid,
+    Heading,
+    HStack,
+    Select,
+    Spinner,
+    Text,
+    Textarea,
+    VStack
 } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
@@ -44,11 +43,11 @@ interface SystemStatus {
     global_limit: number;
     usage_percentage: number;
   };
-  providers: Record<string, any>;
+  providers: Record<string, { is_healthy: boolean; status: string; provider: string; model_name: string; latency_ms?: number }>; // Updated type
 }
 
 export const LLMOrchestration: React.FC = () => {
-  const { user } = useAuth();
+  const { user }: { user: User | null } = useAuth();
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState<LLMResponse | null>(null);
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
@@ -83,7 +82,7 @@ export const LLMOrchestration: React.FC = () => {
     setSuccess(null);
 
     try {
-      const response = await fetch('/api/llm/chat', {
+      const response: LLMResponse = await fetch('/api/llm/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,6 +120,10 @@ export const LLMOrchestration: React.FC = () => {
     }
   }, [user]);
 
+  // Fix implicit 'any' types
+  const handleTaskTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => setTaskType(e.target.value);
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => setPrompt(e.target.value);
+
   return (
     <Box p={6} maxW="1200px" mx="auto">
       <Flex align="center" mb={6}>
@@ -157,8 +160,9 @@ export const LLMOrchestration: React.FC = () => {
             <Box>
               <Text fontWeight="bold" mb={2}>Task Type</Text>
               <Select
+                placeholder="Select task type"
                 value={taskType}
-                onChange={(e) => setTaskType(e.target.value)}
+                onChange={handleTaskTypeChange}
               >
                 <option value="chat">General Chat</option>
                 <option value="coding">Code Generation</option>
@@ -171,9 +175,9 @@ export const LLMOrchestration: React.FC = () => {
             <Box>
               <Text fontWeight="bold" mb={2}>Your Prompt</Text>
               <Textarea
+                placeholder="Enter prompt"
                 value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Ask me anything..."
+                onChange={handlePromptChange}
                 rows={4}
               />
             </Box>
@@ -181,7 +185,7 @@ export const LLMOrchestration: React.FC = () => {
             <Button
               onClick={sendLLMRequest}
               isLoading={loading}
-              isDisabled={!prompt.trim()}
+              isDisabled={!taskType || !prompt}
               colorScheme="blue"
               size="lg"
               width="full"
@@ -289,22 +293,18 @@ export const LLMOrchestration: React.FC = () => {
           <Box p={6} borderWidth={1} borderRadius="lg" bg="white" boxShadow="sm">
             <Heading size="md" mb={4}>🛡️ Provider Health</Heading>
             <Grid templateColumns="repeat(auto-fit, minmax(250px, 1fr))" gap={4}>
-              {Object.entries(systemStatus.providers).map(([modelId, provider]: [string, any]) => (
+              {Object.entries(systemStatus.providers).map(([modelId, provider]: [string, { is_healthy: boolean; status: string; provider: string; model_name: string; latency_ms?: number }]) => (
                 <Box key={modelId} p={3} borderWidth={1} borderRadius="md">
                   <Flex align="center" justify="space-between" mb={2}>
                     <Text fontWeight="bold">{modelId}</Text>
-                    <Badge
-                      colorScheme={provider.is_healthy ? "green" : "red"}
-                    >
+                    <Badge colorScheme={provider.is_healthy ? "green" : "red"}>
                       {provider.is_healthy ? '✅ Healthy' : '❌ Unhealthy'}
                     </Badge>
                   </Flex>
                   <VStack align="start" spacing={1} fontSize="sm" color="gray.600">
                     <Text>Provider: {provider.provider}</Text>
                     <Text>Model: {provider.model_name}</Text>
-                    {provider.latency_ms && (
-                      <Text>Latency: {provider.latency_ms}ms</Text>
-                    )}
+                    {provider.latency_ms && <Text>Latency: {provider.latency_ms}ms</Text>}
                   </VStack>
                 </Box>
               ))}
@@ -314,4 +314,4 @@ export const LLMOrchestration: React.FC = () => {
       </VStack>
     </Box>
   );
-}; 
+};

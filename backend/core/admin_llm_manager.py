@@ -23,11 +23,13 @@ settings = get_settings()
 # Custom Exceptions
 class BudgetExceededException(Exception):
     """Raised when budget limits are exceeded."""
+
     pass
 
 
 class ProviderUnavailableException(Exception):
     """Raised when no providers are available."""
+
     pass
 
 
@@ -224,7 +226,7 @@ class AdminLLMManager:
             success=success,
             error_message=error_message,
         )
-        
+
         self.db.add(log_entry)
         try:
             self.db.commit()
@@ -244,7 +246,7 @@ class AdminLLMManager:
     ) -> Tuple[str, float, str]:
         """
         Get chat completion with automatic provider fallback and budget monitoring.
-        
+
         Returns (response, cost, provider_used)
         """
         priorities = self.get_provider_priorities()
@@ -346,7 +348,9 @@ class AdminLLMManager:
                 continue
 
         # If all providers failed, raise exception
-        raise ProviderUnavailableException("All configured providers failed or exceeded budget")
+        raise ProviderUnavailableException(
+            "All configured providers failed or exceeded budget"
+        )
 
 
 def get_admin_llm_manager(db: Session = None) -> AdminLLMManager:

@@ -2,10 +2,11 @@
 Usage Logger
 Comprehensive logging system for LLM usage analytics and billing
 """
+
 import logging
-from datetime import datetime
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class UsageRecord:
     """Individual usage record"""
+
     request_id: str
     user_id: str
     model_used: str
@@ -32,12 +34,12 @@ class UsageLogger:
     """
     Usage logging system for analytics and billing
     """
-    
+
     def __init__(self, db_session=None):
         self.db = db_session
         self._buffer = []
         self._buffer_size = 100
-    
+
     async def log_request(
         self,
         request_id: str,
@@ -51,7 +53,7 @@ class UsageLogger:
         task_type: Optional[str] = None,
         session_id: Optional[str] = None,
         success: bool = True,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
     ):
         """Log a usage record"""
         try:
@@ -68,31 +70,31 @@ class UsageLogger:
                 session_id=session_id,
                 timestamp=datetime.utcnow(),
                 success=success,
-                error_message=error_message
+                error_message=error_message,
             )
-            
+
             self._buffer.append(record)
-            
+
             # Flush buffer if full
             if len(self._buffer) >= self._buffer_size:
                 await self._flush_buffer()
-                
+
         except Exception as e:
             logger.error(f"Failed to log usage record: {e}")
-    
+
     async def _flush_buffer(self):
         """Flush buffered records to database"""
         try:
             if not self._buffer:
                 return
-            
+
             # Implementation would batch insert to database
             logger.debug(f"Flushing {len(self._buffer)} usage records")
             self._buffer.clear()
-            
+
         except Exception as e:
             logger.error(f"Failed to flush usage buffer: {e}")
-    
+
     async def shutdown(self):
         """Shutdown and flush remaining records"""
-        await self._flush_buffer() 
+        await self._flush_buffer()

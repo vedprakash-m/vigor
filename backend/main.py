@@ -11,12 +11,13 @@ from pydantic import BaseModel
 from api.routes.admin import router as admin_router
 from api.routes.ai import router as ai_router
 from api.routes.auth import router as auth_router
-from api.routes.users import router as users_router
-from api.routes.workouts import router as workouts_router
 from api.routes.llm_orchestration import router as llm_router
 from api.routes.tiers import router as tiers_router
+from api.routes.users import router as users_router
+from api.routes.workouts import router as workouts_router
 from core.config import get_settings
-from core.llm_orchestration_init import initialize_llm_orchestration, shutdown_llm_orchestration
+from core.llm_orchestration_init import (initialize_llm_orchestration,
+                                         shutdown_llm_orchestration)
 from database.connection import init_db
 
 settings = get_settings()
@@ -28,17 +29,17 @@ async def lifespan(app: FastAPI):
     try:
         print("✅ Database tables initialized successfully")
         init_db()
-        
+
         # Initialize LLM Orchestration Layer
         print("🔧 Initializing enterprise LLM orchestration layer...")
         await initialize_llm_orchestration()
         print("✅ LLM Orchestration Layer initialized successfully")
-        
+
         print(f"🚀 {settings.APP_NAME} v{settings.APP_VERSION} starting up...")
         print(f"📊 Environment: {settings.ENVIRONMENT}")
         print(f"🤖 LLM Provider: {settings.LLM_PROVIDER}")
         print(f"🔧 Debug mode: {settings.DEBUG}")
-        
+
     except Exception as e:
         print(f"❌ Startup failed: {e}")
         raise
@@ -128,18 +129,18 @@ async def root():
         "version": settings.APP_VERSION,
         "features": [
             "🤖 Enterprise LLM Orchestration",
-            "🔐 Secure Key Vault Integration", 
+            "🔐 Secure Key Vault Integration",
             "💰 Intelligent Budget Management",
             "⚡ High-Performance Caching",
             "🛡️ Circuit Breaker Protection",
-            "📊 Comprehensive Analytics"
+            "📊 Comprehensive Analytics",
         ],
         "endpoints": {
             "docs": "/docs",
             "health": "/health",
             "llm_status": "/llm/status",
-            "admin_models": "/llm/admin/models"
-        }
+            "admin_models": "/llm/admin/models",
+        },
     }
 
 
