@@ -79,7 +79,7 @@ def upgrade():
     op.execute(
         """
         INSERT INTO user_tier_limits (tier_name, daily_limit, weekly_limit, monthly_limit, monthly_budget, created_at, updated_at)
-        VALUES 
+        VALUES
             ('free', 10, 50, 200, 5.0, datetime('now'), datetime('now')),
             ('premium', 50, 300, 1000, 25.0, datetime('now'), datetime('now')),
             ('unlimited', 1000, 5000, 20000, 100.0, datetime('now'), datetime('now'))

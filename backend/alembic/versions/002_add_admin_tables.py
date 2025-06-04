@@ -109,7 +109,7 @@ def upgrade():
     op.execute(
         """
         INSERT INTO ai_provider_priorities (id, provider_name, model_name, priority, is_enabled, created_at, updated_at)
-        VALUES 
+        VALUES
             ('default-gemini', 'gemini', 'gemini-2.5-flash', 1, 1, datetime('now'), datetime('now')),
             ('default-perplexity', 'perplexity', 'llama-3.1-sonar-small-128k-online', 2, 1, datetime('now'), datetime('now')),
             ('default-openai-4o-mini', 'openai', 'gpt-4o-mini', 3, 1, datetime('now'), datetime('now')),

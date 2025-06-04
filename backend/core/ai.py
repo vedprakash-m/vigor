@@ -27,7 +27,7 @@ async def generate_workout_plan(
     goals = goals or user_profile.goals
     equipment = equipment or user_profile.equipment
 
-    system_prompt = """You are an expert fitness coach. Create personalized workout plans in JSON format only. 
+    system_prompt = """You are an expert fitness coach. Create personalized workout plans in JSON format only.
     Always respond with valid JSON that matches the required structure."""
 
     user_message = f"""
@@ -122,7 +122,7 @@ async def get_ai_coach_response(
     """
     conversation_history = conversation_history or []
 
-    system_prompt = """You are an expert fitness coach. Provide helpful, encouraging, and safe fitness advice. 
+    system_prompt = """You are an expert fitness coach. Provide helpful, encouraging, and safe fitness advice.
     Always prioritize user safety and recommend consulting healthcare providers for medical concerns."""
 
     # Build context from user profile

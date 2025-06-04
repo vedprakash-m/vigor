@@ -120,4 +120,4 @@ The app will automatically detect and use your configured provider. You'll see p
 1. **Provider not working**: Check API key and network connection
 2. **High costs**: Monitor usage and consider switching providers
 3. **Rate limits**: Implement caching and request batching
-4. **No responses**: Check logs for specific error messages 
+4. **No responses**: Check logs for specific error messages

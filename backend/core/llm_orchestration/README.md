@@ -412,7 +412,7 @@ class CustomRoutingStrategy:
 ## 🎯 **Key Benefits**
 
 ✨ **Enterprise-Ready**: Built for scale with thousands of concurrent users
-🔐 **Security-First**: Key Vault integration with zero-trust architecture  
+🔐 **Security-First**: Key Vault integration with zero-trust architecture
 💰 **Cost-Optimized**: Intelligent budget management and cost tracking
 🚀 **High-Performance**: Advanced caching and optimization strategies
 🛡️ **Resilient**: Circuit breakers and automatic failover
@@ -420,4 +420,4 @@ class CustomRoutingStrategy:
 🎛️ **Configurable**: Flexible admin interface for all settings
 🔄 **Extensible**: Easy integration of new providers and features
 
-This enterprise LLM orchestration layer provides everything needed to deploy AI capabilities at scale while maintaining the highest standards of security, reliability, and cost efficiency. 
+This enterprise LLM orchestration layer provides everything needed to deploy AI capabilities at scale while maintaining the highest standards of security, reliability, and cost efficiency.
