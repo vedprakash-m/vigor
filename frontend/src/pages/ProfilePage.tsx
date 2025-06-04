@@ -1,4 +1,3 @@
-import React from 'react'
 import { Box, Heading, Text } from '@chakra-ui/react'
 
 export const ProfilePage = () => {
@@ -8,4 +7,4 @@ export const ProfilePage = () => {
       <Text>Your profile settings and preferences will appear here.</Text>
     </Box>
   )
-} 
+}

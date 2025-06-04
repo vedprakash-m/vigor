@@ -32,19 +32,19 @@ export const Layout = () => {
         <Box>
           {Links.map((link) => (
             <Box key={link.name} mb={2}>
-              <Text
-                as={RouterLink}
+              <RouterLink
                 to={link.path}
-                display="block"
-                p={3}
-                rounded="md"
-                bg={location.pathname === link.path ? 'blue.500' : 'transparent'}
-                color={location.pathname === link.path ? 'white' : 'gray.700'}
-                _hover={{ bg: location.pathname === link.path ? 'blue.600' : 'gray.100' }}
-                textDecoration="none"
+                style={{
+                  display: 'block',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  backgroundColor: location.pathname === link.path ? 'blue.500' : 'transparent',
+                  color: location.pathname === link.path ? 'white' : 'gray.700',
+                  textDecoration: 'none',
+                }}
               >
                 {link.name}
-              </Text>
+              </RouterLink>
             </Box>
           ))}
         </Box>

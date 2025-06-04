@@ -265,7 +265,7 @@ export const LLMOrchestration: React.FC = () => {
                       {provider.is_healthy ? '✅ Healthy' : '❌ Unhealthy'}
                     </Badge>
                   </Flex>
-                  <VStack align="start" spacing={1} fontSize="sm" color="gray.600">
+                  <VStack align="start" fontSize="sm" color="gray.600">
                     <Text>Provider: {provider.provider}</Text>
                     <Text>Model: {provider.model_name}</Text>
                     {provider.latency_ms && <Text>Latency: {provider.latency_ms}ms</Text>}
