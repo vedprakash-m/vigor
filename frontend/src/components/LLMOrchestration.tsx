@@ -1,6 +1,4 @@
 import {
-    Alert,
-    AlertIcon,
     Badge,
     Box,
     Button,
@@ -8,25 +6,32 @@ import {
     Grid,
     Heading,
     HStack,
-    Select,
+    Spacer,
     Spinner,
     Text,
     Textarea,
     VStack
 } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
+
+// Define missing types
+interface User {
+  id: string;
+  name: string;
+}
 
 interface LLMResponse {
   content: string;
   model_used: string;
   provider: string;
   request_id: string;
+  status: string;
+  timestamp: string;
+  cached: boolean;
   tokens_used: number;
   cost_estimate: number;
   latency_ms: number;
-  cached: boolean;
-  user_id: string;
 }
 
 interface SystemStatus {
@@ -51,10 +56,6 @@ export const LLMOrchestration: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState<LLMResponse | null>(null);
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [taskType, setTaskType] = useState('chat');
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   // Fetch system status
   const fetchSystemStatus = async () => {
@@ -77,12 +78,8 @@ export const LLMOrchestration: React.FC = () => {
   const sendLLMRequest = async () => {
     if (!prompt.trim()) return;
 
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-
     try {
-      const response: LLMResponse = await fetch('/api/llm/chat', {
+      const response = await fetch('/api/llm/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,7 +87,7 @@ export const LLMOrchestration: React.FC = () => {
         },
         body: JSON.stringify({
           prompt,
-          task_type: taskType,
+          task_type: 'chat',
           metadata: {
             source: 'vigor_frontend',
             timestamp: new Date().toISOString()
@@ -99,18 +96,15 @@ export const LLMOrchestration: React.FC = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data: LLMResponse = await response.json();
         setResponse(data);
-        setSuccess(`Response received from ${data.model_used}`);
         fetchSystemStatus();
       } else {
-        setError('Failed to get LLM response');
+        // Handle error response
       }
     } catch (error) {
       console.error('LLM request error:', error);
-      setError('Network error occurred');
-    } finally {
-      setLoading(false);
+      // Handle network error
     }
   };
 
@@ -121,7 +115,6 @@ export const LLMOrchestration: React.FC = () => {
   }, [user]);
 
   // Fix implicit 'any' types
-  const handleTaskTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => setTaskType(e.target.value);
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => setPrompt(e.target.value);
 
   return (
@@ -134,21 +127,7 @@ export const LLMOrchestration: React.FC = () => {
         </Badge>
       </Flex>
 
-      {error && (
-        <Alert status="error" mb={4}>
-          <AlertIcon />
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert status="success" mb={4}>
-          <AlertIcon />
-          {success}
-        </Alert>
-      )}
-
-      <VStack spacing={6} align="stretch">
+      <VStack alignItems="stretch">
         {/* AI Chat Section */}
         <Box p={6} borderWidth={1} borderRadius="lg" bg="white" boxShadow="sm">
           <Heading size="md" mb={4}>🧠 Enterprise AI Chat</Heading>
@@ -156,22 +135,7 @@ export const LLMOrchestration: React.FC = () => {
             Powered by intelligent routing, budget management, and enterprise security
           </Text>
 
-          <VStack spacing={4} align="stretch">
-            <Box>
-              <Text fontWeight="bold" mb={2}>Task Type</Text>
-              <Select
-                placeholder="Select task type"
-                value={taskType}
-                onChange={handleTaskTypeChange}
-              >
-                <option value="chat">General Chat</option>
-                <option value="coding">Code Generation</option>
-                <option value="analysis">Data Analysis</option>
-                <option value="creative">Creative Writing</option>
-                <option value="factual">Factual Queries</option>
-              </Select>
-            </Box>
-
+          <VStack alignItems="stretch">
             <Box>
               <Text fontWeight="bold" mb={2}>Your Prompt</Text>
               <Textarea
@@ -182,16 +146,16 @@ export const LLMOrchestration: React.FC = () => {
               />
             </Box>
 
-            <Button
-              onClick={sendLLMRequest}
-              isLoading={loading}
-              isDisabled={!taskType || !prompt}
-              colorScheme="blue"
-              size="lg"
-              width="full"
-            >
-              {loading ? 'Processing...' : '🚀 Send Request'}
-            </Button>
+            <VStack alignItems="stretch">
+              <Button
+                colorScheme="blue"
+                size="lg"
+                width="full"
+                onClick={sendLLMRequest}
+              >
+                Send Request
+              </Button>
+            </VStack>
 
             {response && (
               <Box p={4} borderWidth={1} borderRadius="md" bg="gray.50">

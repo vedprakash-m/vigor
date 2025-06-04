@@ -2,6 +2,7 @@ export interface User {
   id: string
   email: string
   username: string
+  name: string // Added name property
   is_active: boolean
   created_at: string
   updated_at: string
@@ -32,4 +33,4 @@ export interface TokenRefreshRequest {
 export interface TokenRefreshResponse {
   access_token: string
   token_type: string
-} 
+}

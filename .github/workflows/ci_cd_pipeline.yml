@@ -29,6 +29,18 @@ jobs:
           source venv/bin/activate
           pip install -r requirements.txt
 
+      - name: Install black
+        run: |
+          cd backend
+          source venv/bin/activate
+          pip install black
+
+      - name: Install isort
+        run: |
+          cd backend
+          source venv/bin/activate
+          pip install isort
+
       - name: Lint backend
         run: |
           cd backend
