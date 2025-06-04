@@ -1,14 +1,13 @@
 import {
-  Box,
-  Button,
-  Grid,
-  GridItem,
-  Heading,
-  HStack,
-  Input,
-  Select,
-  Text,
-  VStack,
+    Box,
+    Button,
+    Grid,
+    GridItem,
+    Heading,
+    HStack,
+    Input,
+    Text,
+    VStack,
 } from '@chakra-ui/react'
 import { useState } from 'react'
 
@@ -34,7 +33,7 @@ export const WorkoutPage = () => {
   const [isGenerating, setIsGenerating] = useState(false)
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null)
   const [duration, setDuration] = useState(45)
-  const [equipment, setEquipment] = useState('bodyweight')
+  const [equipment, setEquipment] = useState<'bodyweight' | 'dumbbells' | 'full_gym' | 'resistance_bands' | 'kettlebells'>('bodyweight')
 
   const generateWorkout = async () => {
     setIsGenerating(true)
@@ -90,13 +89,17 @@ export const WorkoutPage = () => {
 
           <GridItem>
             <Text mb={2} fontWeight="bold">Equipment</Text>
-            <Select value={equipment} onChange={(e) => setEquipment(e.target.value)}>
+            <select
+              value={equipment}
+              onChange={(e) => setEquipment(e.target.value as 'bodyweight' | 'dumbbells' | 'full_gym' | 'resistance_bands' | 'kettlebells')}
+              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            >
               <option value="bodyweight">Bodyweight Only</option>
               <option value="dumbbells">Dumbbells</option>
               <option value="full_gym">Full Gym</option>
               <option value="resistance_bands">Resistance Bands</option>
               <option value="kettlebells">Kettlebells</option>
-            </Select>
+            </select>
           </GridItem>
 
           <GridItem display="flex" alignItems="end">
@@ -172,4 +175,4 @@ export const WorkoutPage = () => {
       )}
     </Box>
   )
-} 
+}
