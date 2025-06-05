@@ -22,7 +22,7 @@
 **Current Default Configuration:**
 ```
 Priority 1: Gemini Flash 2.5    (ENABLED)  - $0.075/$0.30 per 1M tokens
-Priority 2: Perplexity Llama    (ENABLED)  - $0.20/$0.20 per 1M tokens  
+Priority 2: Perplexity Llama    (ENABLED)  - $0.20/$0.20 per 1M tokens
 Priority 3: GPT-4o Mini         (ENABLED)  - $0.15/$0.60 per 1M tokens
 Priority 4: GPT-4o              (DISABLED) - $2.50/$10.00 per 1M tokens
 Priority 5: GPT-3.5-turbo       (DISABLED) - $0.50/$1.50 per 1M tokens
@@ -46,7 +46,7 @@ User: "Generate a workout plan"
 System: Try Priority 1 (Gemini Flash 2.5)
 ├─ Success? → Use Gemini (cost: $0.003)
 ├─ Failed?  → Try Priority 2 (Perplexity)
-│  ├─ Success? → Use Perplexity (cost: $0.008) 
+│  ├─ Success? → Use Perplexity (cost: $0.008)
 │  ├─ Failed?  → Try Priority 3 (GPT-4o Mini)
 │  │  ├─ Success? → Use GPT-4o Mini (cost: $0.025)
 │  │  ├─ Failed?  → Built-in Fallback Response
@@ -123,7 +123,7 @@ Response:
 }
 ```
 
-### Example 2: Premium Quality Setup  
+### Example 2: Premium Quality Setup
 ```json
 {
   "goal": "Best quality with automatic fallback",
@@ -142,7 +142,7 @@ Response:
 Priority 1: Gemini Flash (Free tier)
 Budget: $5/week
 
-# Production Environment  
+# Production Environment
 Priority 1: Gemini Flash ($0.075 tokens)
 Priority 2: GPT-4o Mini ($0.15 tokens)
 Priority 3: Perplexity ($0.20 tokens)
@@ -193,11 +193,11 @@ Real-time budget protection
 
 ## 🎯 Key Benefits You Get
 
-✅ **Complete Control**: Configure any provider priority via UI  
-✅ **Auto-Fallback**: If provider 1 fails → try 2 → try 3 → etc.  
-✅ **Budget Protection**: Hard limits prevent surprise bills  
-✅ **Cost Optimization**: Use cheapest providers first  
-✅ **Zero Code Changes**: All configuration via admin interface  
-✅ **Real-time Monitoring**: Track every request and cost  
+✅ **Complete Control**: Configure any provider priority via UI
+✅ **Auto-Fallback**: If provider 1 fails → try 2 → try 3 → etc.
+✅ **Budget Protection**: Hard limits prevent surprise bills
+✅ **Cost Optimization**: Use cheapest providers first
+✅ **Zero Code Changes**: All configuration via admin interface
+✅ **Real-time Monitoring**: Track every request and cost
 
-The system gives you exactly what you requested - full admin control over AI provider priorities and budgets with automatic fallback! 
+The system gives you exactly what you requested - full admin control over AI provider priorities and budgets with automatic fallback!

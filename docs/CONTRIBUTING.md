@@ -121,14 +121,14 @@ npm run dev
 ```python
 def example_function(param1: str, param2: int) -> dict:
     """Example function with proper typing and documentation.
-    
+
     Args:
         param1: Description of parameter 1
         param2: Description of parameter 2
-        
+
     Returns:
         Dictionary containing the result
-        
+
     Raises:
         ValueError: If parameters are invalid
     """
@@ -358,4 +358,4 @@ Thank you for contributing to Vigor! 🏋️‍♀️💪
 
 ---
 
-*This document is licensed under AGPLv3 along with the rest of the project.* 
+*This document is licensed under AGPLv3 along with the rest of the project.*

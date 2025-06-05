@@ -154,4 +154,4 @@ Vigor is an AI-powered fitness and wellness companion designed to provide person
 - Voice-guided workouts
 - Mood tracking
 - Community features
-- AI-powered workout reflections 
+- AI-powered workout reflections

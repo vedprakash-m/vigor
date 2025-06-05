@@ -12,7 +12,7 @@ These extensions are defined in `.vscode/extensions.json` and will be automatica
 
 ### **Core Development (Must Have)**
 - ✅ **Python** (ms-python.python) - Python language support
-- ✅ **Pylance** (ms-python.vscode-pylance) - Advanced Python IntelliSense  
+- ✅ **Pylance** (ms-python.vscode-pylance) - Advanced Python IntelliSense
 - ✅ **Black Formatter** (ms-python.black-formatter) - Python code formatting
 - ✅ **isort** (ms-python.isort) - Python import organization
 - ✅ **Flake8** (ms-python.flake8) - Python linting
@@ -76,7 +76,7 @@ The workspace already includes optimized settings in `.vscode/settings.json`:
 - ✅ Flake8 linting enabled
 - ✅ Import sorting with isort
 
-### **TypeScript/React Configuration**  
+### **TypeScript/React Configuration**
 - ✅ ESLint auto-fix on save
 - ✅ Relative import preferences
 - ✅ Prettier formatting
@@ -96,7 +96,7 @@ The workspace already includes optimized settings in `.vscode/settings.json`:
 Press `Cmd+Shift+P` → "Tasks: Run Task" to access these pre-configured tasks:
 
 - **Start Backend Server** - Launch FastAPI with fallback LLM
-- **Start Frontend Dev Server** - Launch React dev server  
+- **Start Frontend Dev Server** - Launch React dev server
 - **Run Backend Tests** - Execute Python tests with pytest
 - **Run Frontend Tests** - Execute React/TypeScript tests
 - **Format Backend Code** - Run Black + isort formatting
@@ -111,7 +111,7 @@ Press `F5` or go to Run & Debug panel for these configurations:
 
 - **Python: FastAPI Backend** - Debug the backend server
 - **Python: Current File** - Debug any Python file
-- **Python: Backend Tests** - Debug pytest tests  
+- **Python: Backend Tests** - Debug pytest tests
 - **Attach to Docker Backend** - Debug containerized backend
 
 ## 🔥 Pro Tips
@@ -129,7 +129,7 @@ Press `F5` or go to Run & Debug panel for these configurations:
 - Type `import` and let Pylance auto-complete
 - Use `Cmd+.` for quick fixes and refactoring
 
-### **React Development**  
+### **React Development**
 - Type `rafce` for React arrow function component
 - Type `useState` for React hooks snippets
 - Use `Cmd+.` for ESLint quick fixes
@@ -171,11 +171,11 @@ Create `.vscode/settings_personal.json` for your personal preferences (this file
 
 With all extensions installed and configured, you now have:
 - ✅ Full-stack development environment
-- ✅ Intelligent code completion and error detection  
+- ✅ Intelligent code completion and error detection
 - ✅ Automated formatting and linting
 - ✅ Integrated debugging capabilities
 - ✅ Git and GitHub integration
 - ✅ Infrastructure as Code support
 - ✅ Database and API tools
 
-Happy coding with your supercharged Cursor setup! 🎉 
+Happy coding with your supercharged Cursor setup! 🎉

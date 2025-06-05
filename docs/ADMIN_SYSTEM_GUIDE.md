@@ -30,7 +30,7 @@ The Vigor admin system provides comprehensive control over AI provider prioritie
 When a user makes an AI request (chat, workout generation, etc.):
 
 1. **Check Priority List**: System gets enabled providers ordered by priority (1=highest)
-2. **Budget Validation**: Ensures request won't exceed budget limits  
+2. **Budget Validation**: Ensures request won't exceed budget limits
 3. **Try Provider #1**: Attempts to use highest priority provider
 4. **If Provider #1 Fails**: Automatically tries Provider #2
 5. **If Provider #2 Fails**: Automatically tries Provider #3
@@ -58,7 +58,7 @@ When a user makes an AI request (chat, workout generation, etc.):
 
 **Budget Settings (Default):**
 - **Weekly Budget**: $10.00
-- **Monthly Budget**: $30.00  
+- **Monthly Budget**: $30.00
 - **Alert Threshold**: 80%
 - **Auto-disable**: Enabled
 
@@ -80,7 +80,7 @@ Requirements: Username must contain 'admin'
 **Example Configuration:**
 ```
 Priority 1: Gemini Flash 2.5 (Enabled, $2/day limit)
-Priority 2: Perplexity Llama (Enabled, $3/day limit) 
+Priority 2: Perplexity Llama (Enabled, $3/day limit)
 Priority 3: GPT-4o Mini (Enabled, $5/day limit)
 Priority 4: GPT-4o (Disabled, $10/day limit)
 ```
@@ -128,7 +128,7 @@ POST /admin/ai-providers
 # Update provider priority
 PUT /admin/ai-providers/{id}
 
-# Delete provider priority  
+# Delete provider priority
 DELETE /admin/ai-providers/{id}
 ```
 
@@ -165,7 +165,7 @@ Priority 2: GPT-4o Mini (Very cost-effective OpenAI)
 Budget: $5/week
 ```
 
-### 2. Production Phase  
+### 2. Production Phase
 ```
 Priority 1: Gemini Flash 2.5 (Most cost-effective)
 Priority 2: Perplexity Llama (Good value + real-time data)
@@ -237,7 +237,7 @@ http://localhost:5173/admin
 ```bash
 # Enable cost-effective providers
 Priority 1: Gemini Flash 2.5 ✅
-Priority 2: Perplexity Llama ✅  
+Priority 2: Perplexity Llama ✅
 Priority 3: GPT-4o Mini ✅
 
 # Set reasonable budget
@@ -256,11 +256,11 @@ Monthly: $30-50
 
 ## Benefits Achieved
 
-✅ **70-90% Cost Reduction** vs pure OpenAI  
-✅ **Zero Downtime** with automatic fallback  
-✅ **Budget Protection** with hard limits  
-✅ **Real-time Monitoring** of all AI usage  
-✅ **Flexible Configuration** without code changes  
-✅ **Performance Optimization** through smart routing  
+✅ **70-90% Cost Reduction** vs pure OpenAI
+✅ **Zero Downtime** with automatic fallback
+✅ **Budget Protection** with hard limits
+✅ **Real-time Monitoring** of all AI usage
+✅ **Flexible Configuration** without code changes
+✅ **Performance Optimization** through smart routing
 
-The admin system gives you complete control over AI costs while maintaining service reliability and performance. You can start with the most cost-effective providers and automatically fall back to premium options only when needed. 
+The admin system gives you complete control over AI costs while maintaining service reliability and performance. You can start with the most cost-effective providers and automatically fall back to premium options only when needed.

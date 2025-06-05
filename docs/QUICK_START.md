@@ -97,4 +97,4 @@ git push origin main
 - GitHub Actions failing? Check secrets are set correctly
 - Azure login issues? Run `az login` again
 - Terraform errors? Check permissions and quotas
-- App not working? Check Application Insights logs 
+- App not working? Check Application Insights logs

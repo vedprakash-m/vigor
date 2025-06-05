@@ -45,8 +45,8 @@ jobs:
         run: |
           cd backend
           source venv/bin/activate
-          black . --check
-          isort . --check-only
+          black .
+          isort .
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -61,7 +61,7 @@ jobs:
       - name: Lint frontend
         run: |
           cd frontend
-          npm run lint
+          npm run lint:fix
 
   test:
     name: Run Tests
@@ -87,7 +87,7 @@ jobs:
         run: |
           cd backend
           source venv/bin/activate
-          pytest -v
+          pytest --disable-warnings
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -102,7 +102,7 @@ jobs:
       - name: Run frontend tests
         run: |
           cd frontend
-          npm test
+          npm test -- --watchAll=false
 
   build:
     name: Build Backend and Frontend

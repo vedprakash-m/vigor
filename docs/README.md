@@ -401,8 +401,8 @@ _This project is licensed under AGPLv3. See [LICENSE](LICENSE) and [NOTICE](NOTI
 
 ## 📊 Project Status
 
-**Current Version**: v1.0.0-beta  
-**Status**: ✅ 90% Complete - User tier system implemented, ready for production  
+**Current Version**: v1.0.0-beta
+**Status**: ✅ 90% Complete - User tier system implemented, ready for production
 **Next Release**: v1.1.0 - Frontend tier management UI and final production fixes
 
 ### Completed Features ✅

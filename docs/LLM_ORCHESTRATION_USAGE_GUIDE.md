@@ -5,7 +5,7 @@
 Your **Enterprise LLM Orchestration Layer** is a production-ready system designed to handle thousands of concurrent users with enterprise-grade features including:
 
 - 🔐 **Secure Key Vault Integration** (Azure, AWS, HashiCorp)
-- 💰 **Intelligent Budget Management** 
+- 💰 **Intelligent Budget Management**
 - ⚡ **High-Performance Caching**
 - 🛡️ **Circuit Breaker Protection**
 - 🎯 **Context-Aware Intelligent Routing**
@@ -94,7 +94,7 @@ Instead of storing raw API keys, store **secret references** in your Key Vault:
 ```python
 # In Azure Key Vault, store secrets with names like:
 # - openai-api-key
-# - gemini-api-key  
+# - gemini-api-key
 # - perplexity-api-key
 
 # In your configuration, reference them like:
@@ -347,14 +347,14 @@ from core.llm_orchestration_init import get_llm_gateway
 
 async def ask_ai(prompt: str, user_id: str, task_type: str = "chat"):
     gateway = get_llm_gateway()
-    
+
     response = await gateway.process_request(
         prompt=prompt,
         user_id=user_id,
         task_type=task_type,
         metadata={"source": "api", "timestamp": "2024-01-01T12:00:00Z"}
     )
-    
+
     return {
         "content": response.content,
         "model": response.model_used,
@@ -364,8 +364,8 @@ async def ask_ai(prompt: str, user_id: str, task_type: str = "chat"):
 
 # Usage
 result = asyncio.run(ask_ai(
-    "What's the best exercise for abs?", 
-    "user123", 
+    "What's the best exercise for abs?",
+    "user123",
     "fitness"
 ))
 ```
@@ -384,14 +384,14 @@ async def ask_ai_endpoint(
     current_user = Depends(get_current_user)
 ):
     gateway = get_llm_gateway()
-    
+
     response = await gateway.process_request(
         prompt=request["prompt"],
         user_id=current_user.id,
         task_type=request.get("task_type", "chat"),
         metadata={"source": "web_api"}
     )
-    
+
     return response
 ```
 
@@ -401,7 +401,7 @@ async def ask_ai_endpoint(
 // React component example
 const useLLMOrchestration = () => {
   const [loading, setLoading] = useState(false);
-  
+
   const sendRequest = async (prompt, taskType = 'chat') => {
     setLoading(true);
     try {
@@ -413,13 +413,13 @@ const useLLMOrchestration = () => {
         },
         body: JSON.stringify({ prompt, task_type: taskType })
       });
-      
+
       return await response.json();
     } finally {
       setLoading(false);
     }
   };
-  
+
   return { sendRequest, loading };
 };
 ```
@@ -433,7 +433,7 @@ const useLLMOrchestration = () => {
    # Check environment variables
    echo $AZURE_CLIENT_ID
    echo $AZURE_TENANT_ID
-   
+
    # Verify vault permissions
    az keyvault secret show --vault-name your-vault --name openai-api-key
    ```
@@ -443,7 +443,7 @@ const useLLMOrchestration = () => {
    # Check current usage
    usage = await gateway.budget_manager.get_global_usage()
    print(f"Current usage: ${usage.current_usage:.2f}")
-   
+
    # Temporarily increase limit
    await gateway.budget_manager.update_budget_limit(2000.00)
    ```
@@ -452,7 +452,7 @@ const useLLMOrchestration = () => {
    ```python
    # Check circuit breaker status
    status = await gateway.circuit_breaker.get_status("openai")
-   
+
    # Manually reset if needed
    if status.state == "open":
        await gateway.circuit_breaker.reset("openai")
@@ -464,7 +464,7 @@ const useLLMOrchestration = () => {
    ```python
    # Analyze cache performance
    stats = await gateway.cache_manager.get_cache_stats()
-   
+
    if stats.hit_rate < 0.3:
        # Increase cache TTL
        await gateway.cache_manager.update_ttl(7200)  # 2 hours
@@ -474,7 +474,7 @@ const useLLMOrchestration = () => {
    ```python
    # Get latency metrics
    metrics = await gateway.analytics.get_latency_metrics()
-   
+
    # If average latency > 5000ms, consider:
    # - Adding more models for load balancing
    # - Increasing cache TTL
@@ -509,4 +509,4 @@ const useLLMOrchestration = () => {
 4. **Train your team** on admin operations
 5. **Scale gradually** and monitor performance
 
-Your enterprise LLM orchestration system is now ready to handle production workloads with enterprise-grade security, cost optimization, and operational excellence! 🚀 
+Your enterprise LLM orchestration system is now ready to handle production workloads with enterprise-grade security, cost optimization, and operational excellence! 🚀

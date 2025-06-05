@@ -676,4 +676,4 @@
    - Usage alerts
    - Budget limits
    - Resource optimization
-   - Regular cost reviews 
+   - Regular cost reviews

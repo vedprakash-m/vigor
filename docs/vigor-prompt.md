@@ -98,11 +98,11 @@
 
 ## 🧪 Deliverables for Dev (Cursor, GitHub, etc.)
 
-1. ✅ Directory & code scaffold  
-2. ✅ Backend module stubs:  
-   - `WorkoutPlanner`, `ReadinessEngine`, `UserTracker`, `AIJournalService`, `HabitService`, etc.  
-3. ✅ REST API endpoints: `/users`, `/plan`, `/log`, `/habit`, `/coach`, `/journal`, `/upload-video`  
-4. ✅ LLM prompt libraries (plan generation, journaling, Q&A)  
-5. ✅ Frontend wireframes: dashboard, planner, coach chat, journal, habits, calendar  
-6. ✅ Integration stubs for wearables + calendar API  
+1. ✅ Directory & code scaffold
+2. ✅ Backend module stubs:
+   - `WorkoutPlanner`, `ReadinessEngine`, `UserTracker`, `AIJournalService`, `HabitService`, etc.
+3. ✅ REST API endpoints: `/users`, `/plan`, `/log`, `/habit`, `/coach`, `/journal`, `/upload-video`
+4. ✅ LLM prompt libraries (plan generation, journaling, Q&A)
+5. ✅ Frontend wireframes: dashboard, planner, coach chat, journal, habits, calendar
+6. ✅ Integration stubs for wearables + calendar API
 7. ✅ Docker + deployment script

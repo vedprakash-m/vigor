@@ -387,4 +387,4 @@ psql "postgresql://username:password@server:5432/database?sslmode=require"
 
 ---
 
-**🎉 Congratulations!** Your Vigor fitness app is now deployed on Azure with enterprise-grade infrastructure, AI provider management, and cost optimization features! 
+**🎉 Congratulations!** Your Vigor fitness app is now deployed on Azure with enterprise-grade infrastructure, AI provider management, and cost optimization features!
