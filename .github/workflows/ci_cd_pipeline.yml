@@ -102,7 +102,7 @@ jobs:
       - name: Run frontend tests
         run: |
           cd frontend
-          npm test -- --watchAll=false
+          npm test -- --watchAll=false --config jest.config.js
 
   build:
     name: Build Backend and Frontend
