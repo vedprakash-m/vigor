@@ -4,11 +4,19 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from api.schemas.ai import (ChatMessage, ChatResponse, GeneratedWorkoutPlan,
-                            WorkoutAnalysis, WorkoutRecommendationRequest)
-from api.services.ai import (analyze_user_workout, chat_with_ai_coach,
-                             generate_ai_workout_plan,
-                             get_conversation_history)
+from api.schemas.ai import (
+    ChatMessage,
+    ChatResponse,
+    GeneratedWorkoutPlan,
+    WorkoutAnalysis,
+    WorkoutRecommendationRequest,
+)
+from api.services.ai import (
+    analyze_user_workout,
+    chat_with_ai_coach,
+    generate_ai_workout_plan,
+    get_conversation_history,
+)
 from core.config import get_settings
 from core.llm_providers import get_llm_provider
 from core.security import get_current_user

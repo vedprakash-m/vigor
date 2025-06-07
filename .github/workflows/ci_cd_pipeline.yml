@@ -108,6 +108,7 @@ jobs:
           file: backend/coverage.xml
           flags: backend
           name: backend-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   # Frontend Jobs
   frontend-lint-test:
@@ -151,6 +152,7 @@ jobs:
           file: frontend/coverage/lcov.info
           flags: frontend
           name: frontend-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   # Build Jobs
   backend-build:
@@ -216,6 +218,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
 
       - name: Install dependencies
         run: |

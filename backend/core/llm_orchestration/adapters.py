@@ -12,8 +12,7 @@ from enum import Enum
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 from .config_manager import ModelConfiguration
-from .key_vault import (KeyVaultClientService, SecretReference,
-                        key_vault_service)
+from .key_vault import KeyVaultClientService, SecretReference, key_vault_service
 
 logger = logging.getLogger(__name__)
 

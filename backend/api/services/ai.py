@@ -7,8 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from api.services.usage_tracking import UsageTrackingService
-from core.ai import (analyze_workout_log, generate_workout_plan,
-                     get_ai_coach_response)
+from core.ai import analyze_workout_log, generate_workout_plan, get_ai_coach_response
 from core.config import get_settings
 from database.models import AICoachMessage, UserProfile
 from database.sql_models import AICoachMessageDB, WorkoutLogDB

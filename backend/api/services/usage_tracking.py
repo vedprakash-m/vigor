@@ -9,8 +9,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models import UserTier
-from database.sql_models import (UserProfileDB, UserTierLimitsDB,
-                                 UserUsageLimitsDB)
+from database.sql_models import UserProfileDB, UserTierLimitsDB, UserUsageLimitsDB
 
 
 class UsageTrackingService:
