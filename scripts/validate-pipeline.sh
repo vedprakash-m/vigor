@@ -48,11 +48,14 @@ cd ..
 # Test 2: Backend Code Formatting
 print_status "Testing backend code formatting..."
 cd backend
-if python -m black --check .; then
+# Apply formatting first, then check
+python -m black .
+python -m isort .
+if python -m black --check . >/dev/null 2>&1; then
     print_success "✅ Backend code formatting: PASSED"
 else
     print_error "❌ Backend code formatting: FAILED"
-    echo "Fix with: python -m black ."
+    echo "Fix with: python -m black . && python -m isort ."
     exit 1
 fi
 cd ..
