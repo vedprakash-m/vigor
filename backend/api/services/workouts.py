@@ -2,10 +2,11 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
-from database.models import FitnessLevel, UserProfile, WorkoutLog, WorkoutPlan
-from database.sql_models import WorkoutLogDB, WorkoutPlanDB
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+
+from database.models import FitnessLevel, UserProfile, WorkoutLog, WorkoutPlan
+from database.sql_models import WorkoutLogDB, WorkoutPlanDB
 
 
 async def create_workout_plan(

@@ -2,15 +2,16 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.orm import Session
+
 from core.config import get_settings
 from core.security import (create_access_token, get_password_hash,
                            verify_password, verify_token)
 from database.connection import get_db
 from database.models import UserProfile
 from database.sql_models import UserProfileDB
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.orm import Session
 
 settings = get_settings()
 security = HTTPBearer()

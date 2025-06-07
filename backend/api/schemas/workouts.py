@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from database.models import FitnessLevel
 from pydantic import BaseModel, Field
+
+from database.models import FitnessLevel
 
 
 class Exercise(BaseModel):

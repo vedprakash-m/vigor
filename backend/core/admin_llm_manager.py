@@ -5,11 +5,12 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
 from database.connection import get_db
 from database.sql_models import (AIProviderPriorityDB, AIUsageLogDB,
                                  BudgetSettingsDB)
-from sqlalchemy import func
-from sqlalchemy.orm import Session
 
 from .config import get_settings
 from .llm_providers import (FallbackProvider, GeminiProvider, OpenAIProvider,
