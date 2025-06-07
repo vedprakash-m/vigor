@@ -59,18 +59,7 @@ async def register_user(db: Session, user_data: dict) -> UserProfile:
     db.refresh(db_user)
 
     # Convert to Pydantic model
-    return UserProfile(
-        id=db_user.id,
-        email=db_user.email,
-        username=db_user.username,
-        fitness_level=db_user.fitness_level,
-        goals=db_user.goals or [],
-        equipment=db_user.equipment,
-        injuries=db_user.injuries or [],
-        preferences=db_user.preferences or {},
-        created_at=db_user.created_at,
-        updated_at=db_user.updated_at,
-    )
+    return UserProfile.model_validate(db_user)
 
 
 async def authenticate_user(
@@ -80,21 +69,10 @@ async def authenticate_user(
     user = db.query(UserProfileDB).filter(UserProfileDB.email == email).first()
     if not user:
         return None
-    if not verify_password(password, user.hashed_password):
+    if not verify_password(password, str(user.hashed_password)):
         return None
 
-    return UserProfile(
-        id=user.id,
-        email=user.email,
-        username=user.username,
-        fitness_level=user.fitness_level,
-        goals=user.goals or [],
-        equipment=user.equipment,
-        injuries=user.injuries or [],
-        preferences=user.preferences or {},
-        created_at=user.created_at,
-        updated_at=user.updated_at,
-    )
+    return UserProfile.model_validate(user)
 
 
 async def create_user_token(user: UserProfile) -> dict:
@@ -140,15 +118,4 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return UserProfile(
-        id=user.id,
-        email=user.email,
-        username=user.username,
-        fitness_level=user.fitness_level,
-        goals=user.goals or [],
-        equipment=user.equipment,
-        injuries=user.injuries or [],
-        preferences=user.preferences or {},
-        created_at=user.created_at,
-        updated_at=user.updated_at,
-    )
+    return UserProfile.model_validate(user)

@@ -82,18 +82,7 @@ async def get_ai_provider_priorities(
         db.query(AIProviderPriorityDB).order_by(AIProviderPriorityDB.priority).all()
     )
     return [
-        AIProviderPriority(
-            id=p.id,
-            provider_name=p.provider_name,
-            model_name=p.model_name,
-            priority=p.priority,
-            is_enabled=p.is_enabled,
-            max_daily_cost=p.max_daily_cost,
-            max_weekly_cost=p.max_weekly_cost,
-            max_monthly_cost=p.max_monthly_cost,
-            created_at=p.created_at,
-            updated_at=p.updated_at,
-        )
+        AIProviderPriority.model_validate(p)
         for p in priorities
     ]
 
@@ -134,18 +123,7 @@ async def create_ai_provider_priority(
     db.commit()
     db.refresh(db_priority)
 
-    return AIProviderPriority(
-        id=db_priority.id,
-        provider_name=db_priority.provider_name,
-        model_name=db_priority.model_name,
-        priority=db_priority.priority,
-        is_enabled=db_priority.is_enabled,
-        max_daily_cost=db_priority.max_daily_cost,
-        max_weekly_cost=db_priority.max_weekly_cost,
-        max_monthly_cost=db_priority.max_monthly_cost,
-        created_at=db_priority.created_at,
-        updated_at=db_priority.updated_at,
-    )
+    return AIProviderPriority.model_validate(db_priority)
 
 
 @router.put("/ai-providers/{provider_id}", response_model=AIProviderPriority)
@@ -183,30 +161,19 @@ async def update_ai_provider_priority(
             )
 
     # Update fields
-    db_priority.provider_name = priority_data.provider_name
-    db_priority.model_name = priority_data.model_name
-    db_priority.priority = priority_data.priority
-    db_priority.is_enabled = priority_data.is_enabled
-    db_priority.max_daily_cost = priority_data.max_daily_cost
-    db_priority.max_weekly_cost = priority_data.max_weekly_cost
-    db_priority.max_monthly_cost = priority_data.max_monthly_cost
-    db_priority.updated_at = datetime.utcnow()
+    db_priority.provider_name = priority_data.provider_name  # type: ignore[assignment]
+    db_priority.model_name = priority_data.model_name  # type: ignore[assignment]
+    db_priority.priority = priority_data.priority  # type: ignore[assignment]
+    db_priority.is_enabled = priority_data.is_enabled  # type: ignore[assignment]
+    db_priority.max_daily_cost = priority_data.max_daily_cost  # type: ignore[assignment]
+    db_priority.max_weekly_cost = priority_data.max_weekly_cost  # type: ignore[assignment]
+    db_priority.max_monthly_cost = priority_data.max_monthly_cost  # type: ignore[assignment]
+    db_priority.updated_at = datetime.utcnow()  # type: ignore[assignment]
 
     db.commit()
     db.refresh(db_priority)
 
-    return AIProviderPriority(
-        id=db_priority.id,
-        provider_name=db_priority.provider_name,
-        model_name=db_priority.model_name,
-        priority=db_priority.priority,
-        is_enabled=db_priority.is_enabled,
-        max_daily_cost=db_priority.max_daily_cost,
-        max_weekly_cost=db_priority.max_weekly_cost,
-        max_monthly_cost=db_priority.max_monthly_cost,
-        created_at=db_priority.created_at,
-        updated_at=db_priority.updated_at,
-    )
+    return AIProviderPriority.model_validate(db_priority)
 
 
 @router.delete("/ai-providers/{provider_id}")
@@ -241,15 +208,7 @@ async def get_budget_settings(
     if not budget:
         return None
 
-    return BudgetSettings(
-        id=budget.id,
-        total_weekly_budget=budget.total_weekly_budget,
-        total_monthly_budget=budget.total_monthly_budget,
-        alert_threshold_percentage=budget.alert_threshold_percentage,
-        auto_disable_on_budget_exceeded=budget.auto_disable_on_budget_exceeded,
-        created_at=budget.created_at,
-        updated_at=budget.updated_at,
-    )
+    return BudgetSettings.model_validate(budget)
 
 
 @router.post("/budget", response_model=BudgetSettings)
@@ -263,15 +222,11 @@ async def create_or_update_budget_settings(
 
     if existing_budget:
         # Update existing
-        existing_budget.total_weekly_budget = budget_data.total_weekly_budget
-        existing_budget.total_monthly_budget = budget_data.total_monthly_budget
-        existing_budget.alert_threshold_percentage = (
-            budget_data.alert_threshold_percentage
-        )
-        existing_budget.auto_disable_on_budget_exceeded = (
-            budget_data.auto_disable_on_budget_exceeded
-        )
-        existing_budget.updated_at = datetime.utcnow()
+        existing_budget.total_weekly_budget = budget_data.total_weekly_budget  # type: ignore[assignment]
+        existing_budget.total_monthly_budget = budget_data.total_monthly_budget  # type: ignore[assignment]
+        existing_budget.alert_threshold_percentage = budget_data.alert_threshold_percentage  # type: ignore[assignment]
+        existing_budget.auto_disable_on_budget_exceeded = budget_data.auto_disable_on_budget_exceeded  # type: ignore[assignment]
+        existing_budget.updated_at = datetime.utcnow()  # type: ignore[assignment]
 
         db.commit()
         db.refresh(existing_budget)
@@ -290,15 +245,7 @@ async def create_or_update_budget_settings(
         db.commit()
         db.refresh(budget)
 
-    return BudgetSettings(
-        id=budget.id,
-        total_weekly_budget=budget.total_weekly_budget,
-        total_monthly_budget=budget.total_monthly_budget,
-        alert_threshold_percentage=budget.alert_threshold_percentage,
-        auto_disable_on_budget_exceeded=budget.auto_disable_on_budget_exceeded,
-        created_at=budget.created_at,
-        updated_at=budget.updated_at,
-    )
+    return BudgetSettings.model_validate(budget)
 
 
 # Usage Analytics
@@ -320,18 +267,18 @@ async def get_usage_statistics(
             func.sum(AIUsageLogDB.cost).label("total_cost"),
             func.count(AIUsageLogDB.id).label("total_requests"),
         )
-        .filter(AIUsageLogDB.created_at >= day_start, AIUsageLogDB.success == True)
+        .filter(AIUsageLogDB.created_at >= day_start, AIUsageLogDB.success.is_(True))
         .first()
     )
 
-    daily_spending = daily_result.total_cost or 0.0
-    daily_requests = daily_result.total_requests or 0
+    daily_spending = daily_result.total_cost if daily_result else 0.0
+    daily_requests = daily_result.total_requests if daily_result else 0
 
     # Weekly request count
     week_start = datetime.now() - timedelta(days=7)
     weekly_requests = (
         db.query(func.count(AIUsageLogDB.id))
-        .filter(AIUsageLogDB.created_at >= week_start, AIUsageLogDB.success == True)
+        .filter(AIUsageLogDB.created_at >= week_start, AIUsageLogDB.success.is_(True))
         .scalar()
         or 0
     )
@@ -346,7 +293,7 @@ async def get_usage_statistics(
             func.count(AIUsageLogDB.id).label("request_count"),
             func.sum(AIUsageLogDB.cost).label("total_cost"),
         )
-        .filter(AIUsageLogDB.created_at >= week_start, AIUsageLogDB.success == True)
+        .filter(AIUsageLogDB.created_at >= week_start, AIUsageLogDB.success.is_(True))
         .group_by(AIUsageLogDB.provider_name)
         .order_by(desc(func.count(AIUsageLogDB.id)))
         .limit(5)
@@ -407,7 +354,7 @@ async def get_cost_breakdown(
             func.sum(AIUsageLogDB.input_tokens).label("total_input_tokens"),
             func.sum(AIUsageLogDB.output_tokens).label("total_output_tokens"),
         )
-        .filter(AIUsageLogDB.created_at >= start_date, AIUsageLogDB.success == True)
+        .filter(AIUsageLogDB.created_at >= start_date, AIUsageLogDB.success.is_(True))
         .group_by(AIUsageLogDB.provider_name, AIUsageLogDB.model_name)
         .order_by(desc(func.sum(AIUsageLogDB.cost)))
         .all()

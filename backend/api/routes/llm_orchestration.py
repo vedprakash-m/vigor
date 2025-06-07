@@ -182,7 +182,7 @@ async def process_llm_request(
             cost_estimate=response.cost_estimate,
             latency_ms=response.latency_ms,
             cached=response.cached,
-            user_id=response.user_id,
+            user_id=response.user_id or str(current_user.id),
             metadata=response.metadata,
         )
 
@@ -244,9 +244,9 @@ async def get_system_status(current_user: UserProfile = Depends(get_current_user
     """
     try:
         gateway = get_llm_gateway()
-        status = await gateway.get_provider_status()
+        provider_status = await gateway.get_provider_status()
 
-        return SystemStatusResponse(**status)
+        return SystemStatusResponse(**provider_status)
 
     except Exception as e:
         raise HTTPException(

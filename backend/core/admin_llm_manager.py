@@ -88,7 +88,9 @@ class BudgetMonitor:
         week_start = datetime.now() - timedelta(days=7)
         result = (
             self.db.query(func.sum(AIUsageLogDB.cost))
-            .filter(AIUsageLogDB.created_at >= week_start, AIUsageLogDB.success == True)
+            .filter(
+                AIUsageLogDB.created_at >= week_start, AIUsageLogDB.success.is_(True)
+            )
             .scalar()
         )
         return result or 0.0
@@ -99,7 +101,7 @@ class BudgetMonitor:
         result = (
             self.db.query(func.sum(AIUsageLogDB.cost))
             .filter(
-                AIUsageLogDB.created_at >= month_start, AIUsageLogDB.success == True
+                AIUsageLogDB.created_at >= month_start, AIUsageLogDB.success.is_(True)
             )
             .scalar()
         )
@@ -113,7 +115,7 @@ class BudgetMonitor:
             .filter(
                 AIUsageLogDB.provider_name == provider,
                 AIUsageLogDB.created_at >= day_start,
-                AIUsageLogDB.success == True,
+                AIUsageLogDB.success.is_(True),
             )
             .scalar()
         )
@@ -148,7 +150,7 @@ class BudgetMonitor:
             self.db.query(AIProviderPriorityDB)
             .filter(
                 AIProviderPriorityDB.provider_name == provider,
-                AIProviderPriorityDB.is_enabled == True,
+                AIProviderPriorityDB.is_enabled.is_(True),
             )
             .first()
         )
@@ -181,7 +183,7 @@ class AdminLLMManager:
         """Get enabled providers ordered by priority."""
         return (
             self.db.query(AIProviderPriorityDB)
-            .filter(AIProviderPriorityDB.is_enabled == True)
+            .filter(AIProviderPriorityDB.is_enabled.is_(True))
             .order_by(AIProviderPriorityDB.priority)
             .all()
         )
@@ -275,8 +277,8 @@ class AdminLLMManager:
             input_text += msg.get("content", "") + " "
 
         for priority_setting in priorities:
-            provider_name = priority_setting.provider_name
-            model_name = priority_setting.model_name
+            provider_name = str(priority_setting.provider_name)  # Convert Column to str
+            model_name = str(priority_setting.model_name)  # Convert Column to str
 
             # Check if provider is available
             provider = self.providers.get(provider_name)
@@ -356,7 +358,7 @@ class AdminLLMManager:
         )
 
 
-def get_admin_llm_manager(db: Session = None) -> AdminLLMManager:
+def get_admin_llm_manager(db: Session | None = None) -> AdminLLMManager:
     """Get admin LLM manager instance."""
     if db is None:
         db = next(get_db())

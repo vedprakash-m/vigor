@@ -9,7 +9,8 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, AsyncGenerator, Dict, List, Optional, Union
+from typing import Any, AsyncIterator, Dict, List, Optional, Union
+from collections.abc import AsyncGenerator
 
 from .config_manager import ModelConfiguration
 from .key_vault import KeyVaultClientService, SecretReference, key_vault_service
@@ -128,7 +129,7 @@ class LLMServiceAdapter(ABC):
         pass
 
     @abstractmethod
-    async def generate_stream(self, request: LLMRequest) -> AsyncGenerator[str, None]:
+    def generate_stream(self, request: LLMRequest) -> AsyncIterator[str]:
         """Generate a streaming response for the given request"""
         pass
 
@@ -164,15 +165,15 @@ class OpenAIAdapter(LLMServiceAdapter):
         """Get OpenAI client with fresh API key"""
         if self._client is None:
             # In production: from openai import AsyncOpenAI
-            api_key = await self.get_api_key()
-            # self._client = AsyncOpenAI(api_key=api_key)
+            _api_key = await self.get_api_key()  # noqa: F841
+            # self._client = AsyncOpenAI(api_key=_api_key)
         return self._client
 
     async def generate_response(self, request: LLMRequest) -> LLMResponse:
         """Generate response using OpenAI API"""
         try:
             start_time = time.time()
-            api_key = await self.get_api_key()
+            _api_key = await self.get_api_key()  # noqa: F841
 
             # Production implementation would use:
             # client = await self._get_client()
@@ -205,10 +206,10 @@ class OpenAIAdapter(LLMServiceAdapter):
             logger.error(f"OpenAI API error for {self.model_id}: {e}")
             raise
 
-    async def generate_stream(self, request: LLMRequest) -> AsyncGenerator[str, None]:
+    async def generate_stream(self, request: LLMRequest) -> AsyncIterator[str]:
         """Generate streaming response"""
         try:
-            api_key = await self.get_api_key()
+            _api_key = await self.get_api_key()  # noqa: F841
 
             # Production implementation would stream from OpenAI API
             # Mock streaming response
@@ -232,7 +233,7 @@ class OpenAIAdapter(LLMServiceAdapter):
         """Check OpenAI API health"""
         try:
             start_time = time.time()
-            api_key = await self.get_api_key()
+            _api_key = await self.get_api_key()  # noqa: F841
 
             # Production: Make a simple API call to check health
             # For now, just check if we can get the API key
@@ -270,8 +271,8 @@ class GeminiAdapter(LLMServiceAdapter):
         """Get Gemini client with fresh API key"""
         if self._client is None:
             # In production: import google.generativeai as genai
-            api_key = await self.get_api_key()
-            # genai.configure(api_key=api_key)
+            _api_key = await self.get_api_key()  # noqa: F841
+            # genai.configure(api_key=_api_key)
             # self._client = genai.GenerativeModel(self.model_config.model_name)
         return self._client
 
@@ -279,7 +280,7 @@ class GeminiAdapter(LLMServiceAdapter):
         """Generate response using Gemini API"""
         try:
             start_time = time.time()
-            api_key = await self.get_api_key()
+            _api_key = await self.get_api_key()  # noqa: F841
 
             # Production implementation would use Gemini API
             # Mock response for demonstration
@@ -304,10 +305,10 @@ class GeminiAdapter(LLMServiceAdapter):
             logger.error(f"Gemini API error for {self.model_id}: {e}")
             raise
 
-    async def generate_stream(self, request: LLMRequest) -> AsyncGenerator[str, None]:
+    async def generate_stream(self, request: LLMRequest) -> AsyncIterator[str]:
         """Generate streaming response"""
         try:
-            api_key = await self.get_api_key()
+            _api_key = await self.get_api_key()  # noqa: F841
 
             # Production implementation would stream from Gemini API
             # Mock streaming response
@@ -331,7 +332,7 @@ class GeminiAdapter(LLMServiceAdapter):
         """Check Gemini API health"""
         try:
             start_time = time.time()
-            api_key = await self.get_api_key()
+            _api_key = await self.get_api_key()  # noqa: F841
 
             latency_ms = int((time.time() - start_time) * 1000)
 
@@ -366,7 +367,7 @@ class PerplexityAdapter(LLMServiceAdapter):
         """Generate response using Perplexity API"""
         try:
             start_time = time.time()
-            api_key = await self.get_api_key()
+            _api_key = await self.get_api_key()  # noqa: F841
 
             # Production implementation would use Perplexity API
             # Mock response for demonstration
@@ -391,10 +392,10 @@ class PerplexityAdapter(LLMServiceAdapter):
             logger.error(f"Perplexity API error for {self.model_id}: {e}")
             raise
 
-    async def generate_stream(self, request: LLMRequest) -> AsyncGenerator[str, None]:
+    async def generate_stream(self, request: LLMRequest) -> AsyncIterator[str]:
         """Generate streaming response"""
         try:
-            api_key = await self.get_api_key()
+            _api_key = await self.get_api_key()  # noqa: F841
 
             # Mock streaming response
             response_parts = [
@@ -417,7 +418,7 @@ class PerplexityAdapter(LLMServiceAdapter):
         """Check Perplexity API health"""
         try:
             start_time = time.time()
-            api_key = await self.get_api_key()
+            _api_key = await self.get_api_key()  # noqa: F841
 
             latency_ms = int((time.time() - start_time) * 1000)
 
@@ -484,7 +485,7 @@ class FallbackAdapter(LLMServiceAdapter):
             logger.error(f"Fallback adapter error: {e}")
             raise
 
-    async def generate_stream(self, request: LLMRequest) -> AsyncGenerator[str, None]:
+    async def generate_stream(self, request: LLMRequest) -> AsyncIterator[str]:
         """Generate fallback streaming response"""
         response = await self.generate_response(request)
         words = response.content.split()
@@ -524,10 +525,10 @@ class AdapterFactory:
             provider = LLMProvider(model_config.provider)
             adapter_class = cls._adapter_classes.get(provider)
 
-            if not adapter_class:
+            if adapter_class is None:
                 raise ValueError(f"Unsupported provider: {model_config.provider}")
 
-            return adapter_class(model_config, key_vault_service)
+            return adapter_class(model_config, key_vault_service)  # type: ignore[abstract]
 
         except Exception as e:
             logger.error(f"Failed to create adapter for {model_config.model_id}: {e}")
@@ -577,6 +578,7 @@ async def health_check_all_adapters(
                 is_healthy=False, error_message=str(result), last_check=time.time()
             )
         else:
-            results[model_id] = result
+            # result is guaranteed to be HealthCheckResult here
+            results[model_id] = result  # type: ignore[assignment]
 
     return results

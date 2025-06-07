@@ -17,18 +17,7 @@ async def get_user_profile(db: Session, user_id: str) -> UserProfile:
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
-    return UserProfile(
-        id=user.id,
-        email=user.email,
-        username=user.username,
-        fitness_level=user.fitness_level,
-        goals=user.goals or [],
-        equipment=user.equipment,
-        injuries=user.injuries or [],
-        preferences=user.preferences or {},
-        created_at=user.created_at,
-        updated_at=user.updated_at,
-    )
+    return UserProfile.model_validate(user)
 
 
 async def update_user_profile(
@@ -46,22 +35,11 @@ async def update_user_profile(
         if value is not None:
             setattr(user, field, value)
 
-    user.updated_at = datetime.utcnow()
+    user.updated_at = datetime.utcnow()  # type: ignore[assignment]
     db.commit()
     db.refresh(user)
 
-    return UserProfile(
-        id=user.id,
-        email=user.email,
-        username=user.username,
-        fitness_level=user.fitness_level,
-        goals=user.goals or [],
-        equipment=user.equipment,
-        injuries=user.injuries or [],
-        preferences=user.preferences or {},
-        created_at=user.created_at,
-        updated_at=user.updated_at,
-    )
+    return UserProfile.model_validate(user)
 
 
 async def create_progress_metric(
@@ -82,16 +60,7 @@ async def create_progress_metric(
     db.commit()
     db.refresh(db_metric)
 
-    return ProgressMetrics(
-        id=db_metric.id,
-        user_id=db_metric.user_id,
-        date=db_metric.date,
-        weight=db_metric.weight,
-        body_fat=db_metric.body_fat,
-        measurements=db_metric.measurements,
-        notes=db_metric.notes,
-        created_at=db_metric.created_at,
-    )
+    return ProgressMetrics.model_validate(db_metric)
 
 
 async def get_user_progress(
@@ -107,15 +76,5 @@ async def get_user_progress(
     )
 
     return [
-        ProgressMetrics(
-            id=metric.id,
-            user_id=metric.user_id,
-            date=metric.date,
-            weight=metric.weight,
-            body_fat=metric.body_fat,
-            measurements=metric.measurements,
-            notes=metric.notes,
-            created_at=metric.created_at,
-        )
-        for metric in metrics
+        ProgressMetrics.model_validate(metric) for metric in metrics
     ]

@@ -52,8 +52,9 @@ class Settings(BaseSettings):
     ]
 
     # Add any additional CORS origins from environment
-    if os.getenv("CORS_ORIGINS"):
-        CORS_ORIGINS.extend(os.getenv("CORS_ORIGINS").split(","))
+    cors_origins_env = os.getenv("CORS_ORIGINS")
+    if cors_origins_env:
+        CORS_ORIGINS.extend(cors_origins_env.split(","))
 
     class Config:
         case_sensitive = True

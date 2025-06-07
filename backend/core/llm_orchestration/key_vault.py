@@ -280,6 +280,7 @@ async def initialize_key_vault_service():
     try:
         # Initialize based on environment configuration
         provider = os.getenv("KEY_VAULT_PROVIDER", "local").lower()
+        client: Optional[BaseKeyVaultClient] = None
 
         if provider == "azure":
             vault_url = os.getenv("AZURE_KEY_VAULT_URL")

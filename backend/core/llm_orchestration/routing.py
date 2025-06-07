@@ -220,7 +220,7 @@ class LoadBalancingStrategy:
         total_weight = sum(model_weights.values())
         random_value = random.uniform(0, total_weight)
 
-        cumulative_weight = 0
+        cumulative_weight = 0.0
         for model, weight in model_weights.items():
             cumulative_weight += weight
             if random_value <= cumulative_weight:
@@ -343,22 +343,25 @@ def calculate_model_score(
         score = 0.0
 
         # Priority score (higher priority = higher score)
-        priority_score = (6 - model_config.priority.value) * 20  # 20-100 range
+        priority_value = getattr(model_config.priority, 'value', 3)  # default priority
+        priority_score = (6 - priority_value) * 20.0  # 20-100 range
         score += priority_score
 
         # Cost efficiency score (lower cost = higher score)
-        if model_config.cost_per_token > 0:
-            cost_score = max(0, 50 - (model_config.cost_per_token * 100000))
+        cost_per_token = getattr(model_config, 'cost_per_token', 0.001)
+        if cost_per_token > 0:
+            cost_score = max(0.0, 50.0 - (cost_per_token * 100000))
             score += cost_score
 
         # Performance score based on current metrics
-        latency = current_metrics.get(f"{model_config.model_id}_latency", 1000)
-        latency_score = max(0, 50 - (latency / 20))  # Lower latency = higher score
+        model_id = getattr(model_config, 'model_id', 'unknown')
+        latency = current_metrics.get(f"{model_id}_latency", 1000.0)
+        latency_score = max(0.0, 50.0 - (latency / 20.0))  # Lower latency = higher score
         score += latency_score
 
         # Availability score
-        error_rate = current_metrics.get(f"{model_config.model_id}_error_rate", 0)
-        availability_score = max(0, 50 - (error_rate * 500))
+        error_rate = current_metrics.get(f"{model_id}_error_rate", 0.0)
+        availability_score = max(0.0, 50.0 - (error_rate * 500.0))
         score += availability_score
 
         return score

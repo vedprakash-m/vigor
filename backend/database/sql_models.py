@@ -1,5 +1,6 @@
 import uuid
-from datetime import date, datetime
+from datetime import date as date_type
+from datetime import datetime
 
 from sqlalchemy import JSON, Boolean, Column, Date, DateTime
 from sqlalchemy import Enum as SQLEnum
@@ -11,8 +12,6 @@ from sqlalchemy.sql import func
 from .connection import Base
 from .models import Equipment, FitnessLevel, Goal
 
-Base = declarative_base()
-
 
 class UserProfileDB(Base):
     __tablename__ = "user_profiles"
@@ -21,9 +20,9 @@ class UserProfileDB(Base):
     email = Column(String, unique=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
-    fitness_level = Column(SQLEnum(FitnessLevel))
+    fitness_level: Column[FitnessLevel] = Column(SQLEnum(FitnessLevel))
     goals = Column(JSON)  # Store as JSON array
-    equipment = Column(SQLEnum(Equipment))
+    equipment: Column[Equipment] = Column(SQLEnum(Equipment))
     injuries = Column(JSON, default=list)  # Store as JSON array
     preferences = Column(JSON, default=dict)
     user_tier = Column(String, default="free")
@@ -50,7 +49,7 @@ class WorkoutPlanDB(Base):
     description = Column(Text)
     exercises = Column(JSON)  # Store as JSON array
     duration_minutes = Column(Integer)
-    difficulty = Column(SQLEnum(FitnessLevel))
+    difficulty: Column[FitnessLevel] = Column(SQLEnum(FitnessLevel))
     equipment_needed = Column(JSON)  # Store as JSON array
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())

@@ -24,7 +24,7 @@ async def generate_workout_plan(
     Generate personalized workout plan using AI.
     """
     # Use user's goals if not provided
-    goals = goals or user_profile.goals
+    goals = goals or [g.value for g in user_profile.goals] if user_profile.goals else None
     equipment = equipment or user_profile.equipment
 
     system_prompt = """You are an expert fitness coach. Create personalized workout plans in JSON format only.
@@ -76,7 +76,7 @@ Provide the workout plan in this exact JSON structure:
 
         # Parse JSON response
         workout_data = json.loads(response)
-        return workout_data
+        return workout_data  # type: ignore[no-any-return]
 
     except json.JSONDecodeError:
         # If JSON parsing fails, return a basic workout plan
@@ -115,7 +115,7 @@ Provide the workout plan in this exact JSON structure:
 
 
 async def get_ai_coach_response(
-    user_profile: UserProfile, message: str, conversation_history: List[Dict] = None
+    user_profile: UserProfile, message: str, conversation_history: List[Dict[Any, Any]] | None = None
 ) -> str:
     """
     Get response from AI fitness coach.
@@ -126,10 +126,12 @@ async def get_ai_coach_response(
     Always prioritize user safety and recommend consulting healthcare providers for medical concerns."""
 
     # Build context from user profile
+    goals_str = ', '.join([g.value for g in user_profile.goals]) if user_profile.goals else 'General fitness'
+
     user_context = f"""
 User Profile:
 - Fitness Level: {user_profile.fitness_level}
-- Goals: {', '.join(user_profile.goals) if user_profile.goals else 'General fitness'}
+- Goals: {goals_str}
 - Available Equipment: {user_profile.equipment}
 - Injuries/Limitations: {', '.join(user_profile.injuries) if user_profile.injuries else 'None'}
 
@@ -199,7 +201,7 @@ Provide analysis in this exact JSON structure:
             max_tokens=500,
         )
 
-        return json.loads(response)
+        return json.loads(response)  # type: ignore[no-any-return]
 
     except json.JSONDecodeError:
         return {

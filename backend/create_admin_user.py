@@ -28,16 +28,16 @@ async def create_admin_user():
     try:
         # Try to create admin user
         user = await register_user(db, admin_data)
-        print(f"✅ Admin user created successfully!")
+        print("✅ Admin user created successfully!")
         print(f"   Email: {user.email}")
         print(f"   Username: {user.username}")
         print(f"   User ID: {user.id}")
-        print(f"   Default Password: admin123! (CHANGE IN PRODUCTION)")
+        print("   Default Password: admin123! (CHANGE IN PRODUCTION)")
 
         # Note: In a real system, you'd set admin privileges in a separate table
         # For now, we'll document that this user should be treated as admin
         print(
-            f"\n📝 To grant admin privileges, add this user ID to your admin configuration"
+            "\n📝 To grant admin privileges, add this user ID to your admin configuration"
         )
         return user
 

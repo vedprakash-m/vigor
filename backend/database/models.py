@@ -33,6 +33,8 @@ class UserTier(str, Enum):
 
 
 class UserProfile(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: str
     email: str
     username: str
@@ -50,6 +52,8 @@ class UserProfile(BaseModel):
 
 
 class WorkoutPlan(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: str
     user_id: str
     name: str
@@ -63,16 +67,22 @@ class WorkoutPlan(BaseModel):
 
 
 class WorkoutLog(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: str
     user_id: str
-    workout_plan_id: Optional[str] = None
-    exercises_completed: List[Dict[str, Any]]
+    plan_id: Optional[str] = None
+    exercises: List[Dict[str, Any]]
     duration_minutes: int
     notes: Optional[str] = None
+    rating: Optional[int] = None
     completed_at: datetime
+    created_at: datetime
 
 
 class ProgressMetrics(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: str
     user_id: str
     date: datetime
@@ -84,6 +94,8 @@ class ProgressMetrics(BaseModel):
 
 
 class AICoachMessage(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: str
     user_id: str
     message: str

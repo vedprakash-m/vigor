@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Any
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -24,12 +24,12 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    return bool(pwd_context.verify(plain_password, hashed_password))
 
 
 def get_password_hash(password: str) -> str:
     """Generate password hash."""
-    return pwd_context.hash(password)
+    return str(pwd_context.hash(password))
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -46,16 +46,16 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     encoded_jwt = jwt.encode(
         to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )
-    return encoded_jwt
+    return str(encoded_jwt)
 
 
-def verify_token(token: str) -> dict:
+def verify_token(token: str) -> dict[Any, Any]:
     """Verify and decode JWT token."""
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
-        return payload
+        return payload  # type: ignore[no-any-return]
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -89,18 +89,7 @@ async def get_current_user(
         raise credentials_exception
 
     # Convert SQLAlchemy model to Pydantic model
-    return UserProfile(
-        id=user.id,
-        email=user.email,
-        username=user.username,
-        fitness_level=user.fitness_level,
-        goals=user.goals or [],
-        equipment=user.equipment,
-        injuries=user.injuries or [],
-        preferences=user.preferences or {},
-        created_at=user.created_at,
-        updated_at=user.updated_at,
-    )
+    return UserProfile.model_validate(user)
 
 
 async def get_current_active_user(

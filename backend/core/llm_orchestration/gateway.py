@@ -98,7 +98,7 @@ class LLMGateway:
         self.adapters: Dict[str, LLMServiceAdapter] = {}
         self.is_initialized = False
         self._health_check_interval = 60  # seconds
-        self._last_health_check = 0
+        self._last_health_check = 0.0
 
     async def initialize(self):
         """Initialize the gateway and all components"""
@@ -289,7 +289,7 @@ class LLMGateway:
         if current_time - self._last_health_check > self._health_check_interval:
             await self._perform_health_check()
 
-        status = {
+        status: Dict[str, Any] = {
             "active_models": len([a for a in self.adapters.values() if a.is_healthy()]),
             "total_models": len(self.adapters),
             "circuit_breakers": self.circuit_breaker.get_status(),
@@ -419,8 +419,8 @@ class LLMGateway:
         context = {
             "user_id": request.user_id,
             "task_type": request.task_type,
-            "user_tier": request.context.get("user_tier"),
-            "priority": request.context.get("priority"),
+            "user_tier": request.context.get("user_tier") if request.context else None,
+            "priority": request.context.get("priority") if request.context else None,
         }
 
         selected_model_id = await self.routing_engine.select_model(
