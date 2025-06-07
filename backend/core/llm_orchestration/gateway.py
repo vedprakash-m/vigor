@@ -117,7 +117,7 @@ class LLMGateway:
 
                 fallback_ref = SecretReference(
                     provider=KeyVaultProvider.LOCAL_ENV,
-                    secret_identifier="FALLBACK_KEY",
+                    secret_identifier="FALLBACK_KEY",  # nosec B106
                 )
                 fallback_config = ModelConfiguration(
                     model_id="fallback",

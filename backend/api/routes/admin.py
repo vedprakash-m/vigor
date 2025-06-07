@@ -81,10 +81,7 @@ async def get_ai_provider_priorities(
     priorities = (
         db.query(AIProviderPriorityDB).order_by(AIProviderPriorityDB.priority).all()
     )
-    return [
-        AIProviderPriority.model_validate(p)
-        for p in priorities
-    ]
+    return [AIProviderPriority.model_validate(p) for p in priorities]
 
 
 @router.post("/ai-providers", response_model=AIProviderPriority)

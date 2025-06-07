@@ -7,10 +7,10 @@ import asyncio
 import logging
 import time
 from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, AsyncIterator, Dict, List, Optional, Union
-from collections.abc import AsyncGenerator
 
 from .config_manager import ModelConfiguration
 from .key_vault import KeyVaultClientService, SecretReference, key_vault_service

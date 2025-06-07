@@ -75,6 +75,4 @@ async def get_user_progress(
         .all()
     )
 
-    return [
-        ProgressMetrics.model_validate(metric) for metric in metrics
-    ]
+    return [ProgressMetrics.model_validate(metric) for metric in metrics]

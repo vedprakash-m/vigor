@@ -59,9 +59,7 @@ async def chat_with_ai_coach(
     }
 
     # Get AI response
-    ai_response = await get_ai_coach_response(
-        user, message, conversation_history
-    )
+    ai_response = await get_ai_coach_response(user, message, conversation_history)
 
     # Save the conversation to database
     db_message = AICoachMessageDB(
@@ -174,7 +172,4 @@ async def get_conversation_history(
         .all()
     )
 
-    return [
-        AICoachMessage.model_validate(msg)
-        for msg in messages
-    ]
+    return [AICoachMessage.model_validate(msg) for msg in messages]

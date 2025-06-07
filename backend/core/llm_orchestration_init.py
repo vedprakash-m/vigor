@@ -108,7 +108,8 @@ async def setup_openai_config(config_manager: AdminConfigManager):
     """Set up OpenAI model configuration"""
     try:
         secret_ref = SecretReference(
-            provider=KeyVaultProvider.LOCAL_ENV, secret_identifier="OPENAI_API_KEY"
+            provider=KeyVaultProvider.LOCAL_ENV,
+            secret_identifier="OPENAI_API_KEY",  # nosec B106
         )
 
         # GPT-4 (primary)
@@ -147,7 +148,8 @@ async def setup_gemini_config(config_manager: AdminConfigManager):
     """Set up Google Gemini model configuration"""
     try:
         secret_ref = SecretReference(
-            provider=KeyVaultProvider.LOCAL_ENV, secret_identifier="GEMINI_API_KEY"
+            provider=KeyVaultProvider.LOCAL_ENV,
+            secret_identifier="GEMINI_API_KEY",  # nosec B106
         )
 
         await config_manager.add_model_configuration(
@@ -172,7 +174,8 @@ async def setup_perplexity_config(config_manager: AdminConfigManager):
     """Set up Perplexity model configuration"""
     try:
         secret_ref = SecretReference(
-            provider=KeyVaultProvider.LOCAL_ENV, secret_identifier="PERPLEXITY_API_KEY"
+            provider=KeyVaultProvider.LOCAL_ENV,
+            secret_identifier="PERPLEXITY_API_KEY",  # nosec B106
         )
 
         await config_manager.add_model_configuration(
@@ -197,7 +200,8 @@ async def setup_fallback_config(config_manager: AdminConfigManager):
     """Set up fallback model configuration"""
     try:
         secret_ref = SecretReference(
-            provider=KeyVaultProvider.LOCAL_ENV, secret_identifier="FALLBACK_KEY"
+            provider=KeyVaultProvider.LOCAL_ENV,
+            secret_identifier="FALLBACK_KEY",  # nosec B106
         )
 
         await config_manager.add_model_configuration(

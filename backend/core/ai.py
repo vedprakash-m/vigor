@@ -24,7 +24,9 @@ async def generate_workout_plan(
     Generate personalized workout plan using AI.
     """
     # Use user's goals if not provided
-    goals = goals or [g.value for g in user_profile.goals] if user_profile.goals else None
+    goals = (
+        goals or [g.value for g in user_profile.goals] if user_profile.goals else None
+    )
     equipment = equipment or user_profile.equipment
 
     system_prompt = """You are an expert fitness coach. Create personalized workout plans in JSON format only.
@@ -115,7 +117,9 @@ Provide the workout plan in this exact JSON structure:
 
 
 async def get_ai_coach_response(
-    user_profile: UserProfile, message: str, conversation_history: List[Dict[Any, Any]] | None = None
+    user_profile: UserProfile,
+    message: str,
+    conversation_history: List[Dict[Any, Any]] | None = None,
 ) -> str:
     """
     Get response from AI fitness coach.
@@ -126,7 +130,11 @@ async def get_ai_coach_response(
     Always prioritize user safety and recommend consulting healthcare providers for medical concerns."""
 
     # Build context from user profile
-    goals_str = ', '.join([g.value for g in user_profile.goals]) if user_profile.goals else 'General fitness'
+    goals_str = (
+        ", ".join([g.value for g in user_profile.goals])
+        if user_profile.goals
+        else "General fitness"
+    )
 
     user_context = f"""
 User Profile:

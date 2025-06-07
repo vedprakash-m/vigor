@@ -43,9 +43,7 @@ async def get_user_workout_plans(
         .all()
     )
 
-    return [
-        WorkoutPlan.model_validate(plan) for plan in plans
-    ]
+    return [WorkoutPlan.model_validate(plan) for plan in plans]
 
 
 async def get_workout_plan(db: Session, plan_id: str, user_id: str) -> WorkoutPlan:
@@ -110,6 +108,4 @@ async def get_user_workout_logs(
         .all()
     )
 
-    return [
-        WorkoutLog.model_validate(log) for log in logs
-    ]
+    return [WorkoutLog.model_validate(log) for log in logs]

@@ -6,6 +6,7 @@ Implements intelligent model selection based on various strategies
 import hashlib
 import logging
 import random
+import secrets
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -218,7 +219,7 @@ class LoadBalancingStrategy:
             raise ValueError("No models with weights")
 
         total_weight = sum(model_weights.values())
-        random_value = random.uniform(0, total_weight)
+        random_value = secrets.SystemRandom().uniform(0, total_weight)
 
         cumulative_weight = 0.0
         for model, weight in model_weights.items():
@@ -343,20 +344,22 @@ def calculate_model_score(
         score = 0.0
 
         # Priority score (higher priority = higher score)
-        priority_value = getattr(model_config.priority, 'value', 3)  # default priority
+        priority_value = getattr(model_config.priority, "value", 3)  # default priority
         priority_score = (6 - priority_value) * 20.0  # 20-100 range
         score += priority_score
 
         # Cost efficiency score (lower cost = higher score)
-        cost_per_token = getattr(model_config, 'cost_per_token', 0.001)
+        cost_per_token = getattr(model_config, "cost_per_token", 0.001)
         if cost_per_token > 0:
             cost_score = max(0.0, 50.0 - (cost_per_token * 100000))
             score += cost_score
 
         # Performance score based on current metrics
-        model_id = getattr(model_config, 'model_id', 'unknown')
+        model_id = getattr(model_config, "model_id", "unknown")
         latency = current_metrics.get(f"{model_id}_latency", 1000.0)
-        latency_score = max(0.0, 50.0 - (latency / 20.0))  # Lower latency = higher score
+        latency_score = max(
+            0.0, 50.0 - (latency / 20.0)
+        )  # Lower latency = higher score
         score += latency_score
 
         # Availability score
