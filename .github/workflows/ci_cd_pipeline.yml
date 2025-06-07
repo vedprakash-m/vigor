@@ -1,145 +1,570 @@
-name: CI/CD Pipeline
+name: Vigor CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - main
+    branches: [main, develop, staging]
   pull_request:
-    branches:
-      - main
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+
+env:
+  REGISTRY: vigor.azurecr.io
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
 
 jobs:
-  lint:
-    name: Lint Backend and Frontend
+  # Security and Quality Gates
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+
+  # Backend Jobs
+  backend-lint-test:
+    name: Backend Lint & Test
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
 
-      - name: Install backend dependencies
+      - name: Install dependencies
         run: |
           cd backend
-          python -m venv venv
-          source venv/bin/activate
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install black isort flake8 bandit safety
 
-      - name: Install black
+      - name: Format code with black
         run: |
           cd backend
-          source venv/bin/activate
-          pip install black
+          black --check --diff .
 
-      - name: Install isort
+      - name: Sort imports with isort
         run: |
           cd backend
-          source venv/bin/activate
-          pip install isort
+          isort --check-only --diff .
 
-      - name: Lint backend
+      - name: Lint with flake8
         run: |
           cd backend
-          source venv/bin/activate
-          black .
-          isort .
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Security check with bandit
+        run: |
+          cd backend
+          bandit -r . -f json -o bandit_report.json || true
+          bandit -r . --severity-level medium
+
+      - name: Check dependencies for security vulnerabilities
+        run: |
+          cd backend
+          safety check --json --output safety_report.json || true
+          safety check
+
+      - name: Run tests with coverage
+        run: |
+          cd backend
+          pip install pytest-cov
+          pytest --cov=. --cov-report=xml --cov-report=html --disable-warnings
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
         with:
-          node-version: "18"
+          file: backend/coverage.xml
+          flags: backend
+          name: backend-coverage
 
-      - name: Install frontend dependencies
-        run: |
-          cd frontend
-          npm install
-
-      - name: Lint frontend
-        run: |
-          cd frontend
-          npm run lint:fix
-
-  test:
-    name: Run Tests
+  # Frontend Jobs
+  frontend-lint-test:
+    name: Frontend Lint & Test
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-
-      - name: Install backend dependencies
-        run: |
-          cd backend
-          python -m venv venv
-          source venv/bin/activate
-          pip install -r requirements.txt
-
-      - name: Run backend tests
-        run: |
-          cd backend
-          source venv/bin/activate
-          pytest --disable-warnings
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
 
-      - name: Install frontend dependencies
+      - name: Install dependencies
         run: |
           cd frontend
-          npm install
+          npm ci
 
-      - name: Run frontend tests
+      - name: Lint code
         run: |
           cd frontend
-          npm test -- --watchAll=false --config jest.config.js
+          npm run lint
 
-  build:
-    name: Build Backend and Frontend
+      - name: Type check
+        run: |
+          cd frontend
+          npx tsc --noEmit
+
+      - name: Run tests with coverage
+        run: |
+          cd frontend
+          npm test -- --coverage --watchAll=false
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          file: frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+
+  # Build Jobs
+  backend-build:
+    name: Build Backend
     runs-on: ubuntu-latest
+    needs: [security-scan, backend-lint-test]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging'
+
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Azure Container Registry
+        uses: azure/docker-login@v2
         with:
-          python-version: "3.9"
+          login-server: ${{ env.REGISTRY }}
+          username: ${{ secrets.AZURE_CLIENT_ID }}
+          password: ${{ secrets.AZURE_CLIENT_SECRET }}
 
-      - name: Install backend dependencies
-        run: |
-          cd backend
-          python -m venv venv
-          source venv/bin/activate
-          pip install -r requirements.txt
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/vigor-backend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build backend Docker image
-        run: |
-          cd backend
-          docker build -t vigor-backend .
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+  frontend-build:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    needs: [frontend-lint-test]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
 
-      - name: Install frontend dependencies
+      - name: Install dependencies
         run: |
           cd frontend
-          npm install
+          npm ci
 
-      - name: Build frontend
+      - name: Build application
         run: |
           cd frontend
           npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+          retention-days: 7
+
+  # Infrastructure Validation
+  infrastructure-validate:
+    name: Validate Infrastructure
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ~1.0
+
+      - name: Azure CLI Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Terraform Format Check
+        id: fmt
+        run: |
+          cd infrastructure/terraform
+          terraform fmt -check -recursive
+
+      - name: Terraform Init
+        id: init
+        run: |
+          cd infrastructure/terraform
+          terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: |
+          cd infrastructure/terraform
+          terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          cd infrastructure/terraform
+          terraform plan -var-file="environments/${{ github.ref_name == 'main' && 'production' || github.ref_name == 'staging' && 'staging' || 'dev' }}.tfvars" -no-color
+        env:
+          TF_VAR_postgres_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+          TF_VAR_secret_key: ${{ secrets.SECRET_KEY }}
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_google_ai_api_key: ${{ secrets.GOOGLE_AI_API_KEY }}
+          TF_VAR_perplexity_api_key: ${{ secrets.PERPLEXITY_API_KEY }}
+
+  # Development Environment Deployment
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: [backend-build, frontend-build, infrastructure-validate]
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: development
+      url: ${{ steps.deploy.outputs.backend-url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure CLI Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+
+      - name: Deploy Infrastructure
+        run: |
+          cd infrastructure/terraform
+          terraform init
+          terraform apply -var-file="environments/dev.tfvars" -auto-approve
+        env:
+          TF_VAR_postgres_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+          TF_VAR_secret_key: ${{ secrets.SECRET_KEY }}
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_google_ai_api_key: ${{ secrets.GOOGLE_AI_API_KEY }}
+          TF_VAR_perplexity_api_key: ${{ secrets.PERPLEXITY_API_KEY }}
+
+      - name: Deploy Backend to App Service
+        id: deploy-backend
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: vigor-dev-app
+          images: ${{ needs.backend-build.outputs.image-tag }}
+
+      - name: Deploy Frontend to Static Web App
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_DEV }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "frontend/dist"
+          skip_app_build: true
+
+      - name: Run Database Migrations
+        run: |
+          # Set up database connection and run migrations
+          az webapp config appsettings set --resource-group vigor-dev-rg --name vigor-dev-app --settings "DATABASE_URL=${{ secrets.DATABASE_URL_DEV }}"
+          az webapp ssh --resource-group vigor-dev-rg --name vigor-dev-app --command "cd /home/site/wwwroot && python -m alembic upgrade head"
+
+  # Staging Environment Deployment
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [backend-build, frontend-build, infrastructure-validate]
+    if: github.ref == 'refs/heads/staging'
+    environment:
+      name: staging
+      url: ${{ steps.deploy.outputs.backend-url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure CLI Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+
+      - name: Deploy Infrastructure
+        run: |
+          cd infrastructure/terraform
+          terraform init
+          terraform apply -var-file="environments/staging.tfvars" -auto-approve
+        env:
+          TF_VAR_postgres_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+          TF_VAR_secret_key: ${{ secrets.SECRET_KEY }}
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_google_ai_api_key: ${{ secrets.GOOGLE_AI_API_KEY }}
+          TF_VAR_perplexity_api_key: ${{ secrets.PERPLEXITY_API_KEY }}
+
+      - name: Deploy Backend to App Service
+        id: deploy-backend
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: vigor-staging-app
+          images: ${{ needs.backend-build.outputs.image-tag }}
+
+      - name: Deploy Frontend to Static Web App
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_STAGING }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "frontend/dist"
+          skip_app_build: true
+
+      - name: Run Database Migrations
+        run: |
+          az webapp config appsettings set --resource-group vigor-staging-rg --name vigor-staging-app --settings "DATABASE_URL=${{ secrets.DATABASE_URL_STAGING }}"
+          az webapp ssh --resource-group vigor-staging-rg --name vigor-staging-app --command "cd /home/site/wwwroot && python -m alembic upgrade head"
+
+      - name: Run Smoke Tests
+        run: |
+          # Health check and basic API tests
+          curl -f https://vigor-staging-app.azurewebsites.net/health || exit 1
+          curl -f https://vigor-staging-app.azurewebsites.net/api/v1/health || exit 1
+
+  # Production Environment Deployment
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [backend-build, frontend-build, infrastructure-validate]
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.backend-url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure CLI Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+
+      - name: Deploy Infrastructure
+        run: |
+          cd infrastructure/terraform
+          terraform init
+          terraform apply -var-file="environments/production.tfvars" -auto-approve
+        env:
+          TF_VAR_postgres_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+          TF_VAR_secret_key: ${{ secrets.SECRET_KEY }}
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_google_ai_api_key: ${{ secrets.GOOGLE_AI_API_KEY }}
+          TF_VAR_perplexity_api_key: ${{ secrets.PERPLEXITY_API_KEY }}
+
+      - name: Blue-Green Deployment Setup
+        run: |
+          # Create deployment slot for zero-downtime deployment
+          az webapp deployment slot create --resource-group vigor-production-rg --name vigor-production-app --slot staging
+
+      - name: Deploy Backend to Staging Slot
+        id: deploy-backend-staging
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: vigor-production-app
+          slot-name: staging
+          images: ${{ needs.backend-build.outputs.image-tag }}
+
+      - name: Run Database Migrations
+        run: |
+          az webapp config appsettings set --resource-group vigor-production-rg --name vigor-production-app --slot staging --settings "DATABASE_URL=${{ secrets.DATABASE_URL_PRODUCTION }}"
+          az webapp ssh --resource-group vigor-production-rg --name vigor-production-app --slot staging --command "cd /home/site/wwwroot && python -m alembic upgrade head"
+
+      - name: Run Production Tests
+        run: |
+          # Comprehensive production readiness tests
+          curl -f https://vigor-production-app-staging.azurewebsites.net/health || exit 1
+          curl -f https://vigor-production-app-staging.azurewebsites.net/api/v1/health || exit 1
+          # Add more comprehensive API tests here
+
+      - name: Swap Deployment Slots
+        run: |
+          az webapp deployment slot swap --resource-group vigor-production-rg --name vigor-production-app --slot staging --target-slot production
+
+      - name: Deploy Frontend to Production
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PRODUCTION }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "frontend/dist"
+          skip_app_build: true
+
+      - name: Post-Deployment Verification
+        run: |
+          # Verify production deployment
+          curl -f https://vigor-production-app.azurewebsites.net/health || exit 1
+          curl -f https://vigor-production-app.azurewebsites.net/api/v1/health || exit 1
+
+  # Preview Environment for PRs
+  deploy-preview:
+    name: Deploy PR Preview
+    runs-on: ubuntu-latest
+    needs: [backend-build, frontend-build]
+    if: github.event_name == 'pull_request'
+    environment:
+      name: preview-${{ github.event.number }}
+      url: ${{ steps.deploy.outputs.preview-url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure CLI Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+
+      - name: Create PR Preview Environment
+        run: |
+          # Create temporary container instance for PR preview
+          az container create \
+            --resource-group vigor-dev-rg \
+            --name vigor-preview-${{ github.event.number }} \
+            --image ${{ needs.backend-build.outputs.image-tag }} \
+            --dns-name-label vigor-preview-${{ github.event.number }} \
+            --ports 80 \
+            --environment-variables \
+              DATABASE_URL="${{ secrets.DATABASE_URL_DEV }}" \
+              SECRET_KEY="${{ secrets.SECRET_KEY }}" \
+              OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+
+      - name: Deploy Frontend Preview
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_DEV }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "frontend/dist"
+          skip_app_build: true
+          deployment_environment: "preview-${{ github.event.number }}"
+
+      - name: Comment PR with Preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const previewUrl = `https://vigor-preview-${{ github.event.number }}.eastus.azurecontainer.io`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 **Preview Environment Ready!**\n\n**Backend**: ${previewUrl}\n**Frontend**: Available in Static Web Apps preview\n\nThis preview will be automatically cleaned up when the PR is closed.`
+            })
+
+  # Cleanup Preview Environment
+  cleanup-preview:
+    name: Cleanup PR Preview
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+
+    steps:
+      - name: Azure CLI Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Cleanup Preview Resources
+        run: |
+          az container delete \
+            --resource-group vigor-dev-rg \
+            --name vigor-preview-${{ github.event.number }} \
+            --yes
