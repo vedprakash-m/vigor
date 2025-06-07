@@ -8,8 +8,7 @@ from .cache_manager import CacheManager
 from .circuit_breaker import CircuitBreakerManager
 from .config_manager import AdminConfigManager
 from .cost_estimator import CostEstimator
-from .gateway import (GatewayRequest, GatewayResponse, LLMGateway,
-                      initialize_gateway)
+from .gateway import GatewayRequest, GatewayResponse, LLMGateway, initialize_gateway
 from .key_vault import KeyVaultClientService
 from .routing import RoutingStrategyEngine
 from .usage_logger import UsageLogger

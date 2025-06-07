@@ -16,8 +16,10 @@ from api.routes.tiers import router as tiers_router
 from api.routes.users import router as users_router
 from api.routes.workouts import router as workouts_router
 from core.config import get_settings
-from core.llm_orchestration_init import (initialize_llm_orchestration,
-                                         shutdown_llm_orchestration)
+from core.llm_orchestration_init import (
+    initialize_llm_orchestration,
+    shutdown_llm_orchestration,
+)
 from database.connection import init_db
 
 settings = get_settings()
