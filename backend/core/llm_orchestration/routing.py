@@ -9,7 +9,8 @@ import random
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from .config_manager import ABTestConfiguration, AdminConfigManager, RoutingRule
+from .config_manager import (ABTestConfiguration, AdminConfigManager,
+                             RoutingRule)
 
 logger = logging.getLogger(__name__)
 

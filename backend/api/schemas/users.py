@@ -1,9 +1,8 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, EmailStr, Field
-
 from database.models import Equipment, FitnessLevel, Goal
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserProfileResponse(BaseModel):

@@ -1,22 +1,14 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-
-from api.schemas.users import (
-    ProgressMetricCreate,
-    ProgressMetricResponse,
-    UserProfileResponse,
-    UserProfileUpdate,
-)
-from api.services.users import (
-    create_progress_metric,
-    get_user_progress,
-    update_user_profile,
-)
+from api.schemas.users import (ProgressMetricCreate, ProgressMetricResponse,
+                               UserProfileResponse, UserProfileUpdate)
+from api.services.users import (create_progress_metric, get_user_progress,
+                                update_user_profile)
 from core.security import get_current_active_user
 from database.connection import get_db
 from database.models import UserProfile
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/users", tags=["users"])
 

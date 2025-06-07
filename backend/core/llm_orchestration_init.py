@@ -7,18 +7,13 @@ import logging
 import os
 from typing import Optional
 
-from core.llm_orchestration import (
-    AdminConfigManager,
-    KeyVaultClientService,
-    LLMGateway,
-    initialize_gateway,
-)
-from core.llm_orchestration.config_manager import ModelConfiguration, ModelPriority
-from core.llm_orchestration.key_vault import (
-    KeyVaultProvider,
-    SecretReference,
-    initialize_key_vault_service,
-)
+from core.llm_orchestration import (AdminConfigManager, KeyVaultClientService,
+                                    LLMGateway, initialize_gateway)
+from core.llm_orchestration.config_manager import (ModelConfiguration,
+                                                   ModelPriority)
+from core.llm_orchestration.key_vault import (KeyVaultProvider,
+                                              SecretReference,
+                                              initialize_key_vault_service)
 from database.connection import SessionLocal
 
 logger = logging.getLogger(__name__)
@@ -43,10 +38,8 @@ async def initialize_llm_orchestration():
         # Register local client for development (if no other provider configured)
         provider = os.getenv("KEY_VAULT_PROVIDER", "local").lower()
         if provider == "local":
-            from core.llm_orchestration.key_vault import (
-                KeyVaultProvider,
-                LocalEnvClient,
-            )
+            from core.llm_orchestration.key_vault import (KeyVaultProvider,
+                                                          LocalEnvClient)
 
             client = LocalEnvClient()
             key_vault_service.register_client(KeyVaultProvider.LOCAL_ENV, client)

@@ -1,15 +1,14 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
+from database.connection import get_db
+from database.models import UserProfile
+from database.sql_models import UserProfileDB
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-
-from database.connection import get_db
-from database.models import UserProfile
-from database.sql_models import UserProfileDB
 
 from .config import get_settings
 

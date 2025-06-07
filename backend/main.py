@@ -2,12 +2,6 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 import uvicorn
-from fastapi import FastAPI
-from fastapi.exceptions import RequestValidationError
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-
 from api.routes.admin import router as admin_router
 from api.routes.ai import router as ai_router
 from api.routes.auth import router as auth_router
@@ -16,11 +10,14 @@ from api.routes.tiers import router as tiers_router
 from api.routes.users import router as users_router
 from api.routes.workouts import router as workouts_router
 from core.config import get_settings
-from core.llm_orchestration_init import (
-    initialize_llm_orchestration,
-    shutdown_llm_orchestration,
-)
+from core.llm_orchestration_init import (initialize_llm_orchestration,
+                                         shutdown_llm_orchestration)
 from database.connection import init_db
+from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 settings = get_settings()
 

@@ -5,11 +5,11 @@ User tier and usage tracking service
 from datetime import date, datetime
 from typing import Optional
 
+from database.models import UserTier
+from database.sql_models import (UserProfileDB, UserTierLimitsDB,
+                                 UserUsageLimitsDB)
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from database.models import UserTier
-from database.sql_models import UserProfileDB, UserTierLimitsDB, UserUsageLimitsDB
 
 
 class UsageTrackingService:

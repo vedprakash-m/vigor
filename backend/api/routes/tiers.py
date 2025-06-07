@@ -4,14 +4,13 @@ User tier management API routes
 
 from typing import Any, Dict
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from api.schemas.auth import UserResponse
 from api.services.auth import get_current_user
 from api.services.usage_tracking import UsageTrackingService
 from database.connection import get_db
 from database.models import UserTier
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/tiers", tags=["user-tiers"])
 

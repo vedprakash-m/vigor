@@ -2,11 +2,10 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
-
 from database.models import ProgressMetrics, UserProfile
 from database.sql_models import ProgressMetricsDB, UserProfileDB
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
 
 
 async def get_user_profile(db: Session, user_id: str) -> UserProfile:
