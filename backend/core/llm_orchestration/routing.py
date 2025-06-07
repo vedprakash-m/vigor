@@ -113,7 +113,9 @@ class RoutingStrategyEngine:
         try:
             # Create consistent hash for user+test combination
             hash_input = f"{user_id}:{test_id}"
-            hash_value = int(hashlib.md5(hash_input.encode()).hexdigest(), 16)
+            hash_value = int(
+                hashlib.md5(hash_input.encode(), usedforsecurity=False).hexdigest(), 16
+            )
             user_percentage = (hash_value % 100) / 100.0
 
             # Assign to variant based on traffic split
