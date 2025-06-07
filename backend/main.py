@@ -148,4 +148,6 @@ async def root():
 
 if __name__ == "__main__":
     # Binding to 0.0.0.0 is required for containerized applications
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=settings.DEBUG)  # nosec B104
+    uvicorn.run(
+        "main:app", host="0.0.0.0", port=8000, reload=settings.DEBUG
+    )  # nosec B104
