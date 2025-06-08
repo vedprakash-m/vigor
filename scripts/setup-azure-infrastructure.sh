@@ -31,11 +31,11 @@ print_error() {
 
 # Configuration
 SUBSCRIPTION_ID=""
-RESOURCE_GROUP="vigor-infrastructure-rg"
+RESOURCE_GROUP="vigor-rg"
 LOCATION="eastus"
 CONTAINER_REGISTRY="vigoracr"
 SERVICE_PRINCIPAL_NAME="vigor-cicd-sp"
-TERRAFORM_STATE_RG="vigor-tfstate-rg"
+TERRAFORM_STATE_RG="vigor-rg"
 TERRAFORM_STATE_STORAGE="vigortfstate$(openssl rand -hex 4)"
 
 print_status "🚀 Vigor Azure Infrastructure Setup"

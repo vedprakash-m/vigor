@@ -1,22 +1,22 @@
-# Development Environment Configuration
-environment = "dev"
+# Production Environment Configuration
+environment = "prod"
 location    = "East US"
 
 # Database Configuration
 postgres_admin_username = "vigoradmin"
-postgres_storage_mb     = 5120 # 5GB minimum
+postgres_storage_mb     = 10240 # 10GB for production
 
 # Security (these will be overridden by secrets in CI/CD)
 admin_email = "admin@vigor-fitness.com"
 
-# Scaling Configuration (smaller for dev)
-app_service_sku = "B1" # Basic tier
-redis_capacity  = 0    # 250MB
-budget_amount   = 50   # $50/month budget for dev
+# Scaling Configuration (production-ready but cost-optimized)
+app_service_sku = "S1" # Standard tier
+redis_capacity  = 1    # 1GB
+budget_amount   = 150  # $150/month budget for production
 
 # Feature Flags
-enable_high_availability = false
-enable_autoscaling       = false
+enable_high_availability = true
+enable_autoscaling       = true
 enable_monitoring        = true
 enable_backup            = true
 enable_private_endpoint  = false
@@ -26,12 +26,12 @@ enable_geo_redundancy    = false
 budget_alert_threshold = 80
 
 # Backup Configuration
-backup_retention_days = 7
+backup_retention_days = 14
 
 # Additional Tags
 additional_tags = {
-  Purpose     = "development"
+  Purpose     = "production"
   Owner       = "engineering-team"
-  CostCenter  = "development"
-  Environment = "dev"
+  CostCenter  = "production"
+  Environment = "prod"
 }

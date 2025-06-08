@@ -21,7 +21,7 @@ POSTGRES_PASSWORD=$(generate_random 24)
 echo "   $POSTGRES_PASSWORD"
 echo ""
 
-# JWT Secret Key  
+# JWT Secret Key
 echo "🔑 SECRET_KEY:"
 SECRET_KEY=$(generate_random 48)
 echo "   $SECRET_KEY"
@@ -43,7 +43,7 @@ echo ""
 echo "POSTGRES_ADMIN_PASSWORD"
 echo "$POSTGRES_PASSWORD"
 echo ""
-echo "SECRET_KEY" 
+echo "SECRET_KEY"
 echo "$SECRET_KEY"
 echo ""
 echo "ADMIN_EMAIL"
@@ -51,7 +51,7 @@ echo "$ADMIN_EMAIL"
 echo ""
 echo "📝 Additional secrets you need to add manually:"
 echo "- AZURE_CREDENTIALS (from Azure service principal)"
-echo "- TFSTATE_RESOURCE_GROUP (e.g., vigor-tfstate-rg)"
+echo "- TFSTATE_RESOURCE_GROUP (e.g., vigor-rg)"
 echo "- TFSTATE_STORAGE_ACCOUNT (from Azure storage account)"
 echo "- OPENAI_API_KEY (optional)"
 echo "- GEMINI_API_KEY (recommended)"
@@ -67,7 +67,7 @@ ADMIN_EMAIL=$ADMIN_EMAIL
 
 # Add these manually:
 # AZURE_CREDENTIALS=<from Azure service principal>
-# TFSTATE_RESOURCE_GROUP=vigor-tfstate-rg
+# TFSTATE_RESOURCE_GROUP=vigor-rg
 # TFSTATE_STORAGE_ACCOUNT=<from Azure storage account>
 # OPENAI_API_KEY=<your OpenAI key>
 # GEMINI_API_KEY=<your Gemini key>
@@ -77,4 +77,4 @@ EOF
 echo ""
 echo "⚠️  SECURITY WARNING: Delete secrets.txt after copying to GitHub!"
 echo ""
-echo "🔗 Next: Follow DEPLOYMENT_GUIDE.md for complete setup instructions" 
+echo "🔗 Next: Follow DEPLOYMENT_GUIDE.md for complete setup instructions"

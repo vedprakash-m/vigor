@@ -15,9 +15,12 @@ terraform {
     }
   }
 
-  # Use local backend for CI/CD validation
-  # For production deployments, configure azurerm backend via CLI or environment variables
-  backend "local" {}
+  backend "azurerm" {
+    resource_group_name  = "vigor-rg"
+    storage_account_name = "vigortfstate7e37cf1d"
+    container_name       = "tfstate"
+    key                  = "vigor-prod.terraform.tfstate"
+  }
 }
 
 provider "azurerm" {
@@ -52,8 +55,8 @@ locals {
   # Generate unique names
   unique_suffix = random_string.suffix.result
 
-  # Resource naming convention
-  resource_group_name     = "${local.app_name}-${local.environment}-rg"
+  # Resource naming convention - Using single resource group for all environments
+  resource_group_name     = "${local.app_name}-rg"
   app_service_plan_name   = "${local.app_name}-${local.environment}-asp"
   app_service_name        = "${local.app_name}-${local.environment}-app-${local.unique_suffix}"
   postgres_server_name    = "${local.app_name}-${local.environment}-db-${local.unique_suffix}"
@@ -62,7 +65,7 @@ locals {
   key_vault_name          = "${local.app_name}-${local.environment}-kv-${local.unique_suffix}"
   app_insights_name       = "${local.app_name}-${local.environment}-ai"
   log_analytics_name      = "${local.app_name}-${local.environment}-la"
-  container_registry_name = "${local.app_name}${local.environment}acr${local.unique_suffix}"
+  container_registry_name = "${local.app_name}acr"
 
   # Common tags
   common_tags = {
