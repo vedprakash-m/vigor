@@ -64,7 +64,6 @@ EOF
         --template-file main.bicep \
         --parameters parameters-temp.bicepparam \
         --name "$DEPLOYMENT_NAME-$(echo $region | tr ' ' '-' | tr '[:upper:]' '[:lower:]')" \
-        --timeout 600 \
         --only-show-errors; then
 
         echo -e "${GREEN}✅ SUCCESS: Deployment completed with $description${NC}"
