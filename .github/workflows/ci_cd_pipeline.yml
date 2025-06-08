@@ -26,7 +26,7 @@ permissions:
 env:
   REGISTRY: vigoracr.azurecr.io
   PYTHON_VERSION: "3.12"
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
 
 jobs:
   # Security and Quality Gates
