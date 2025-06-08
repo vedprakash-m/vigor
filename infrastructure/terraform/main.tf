@@ -15,13 +15,9 @@ terraform {
     }
   }
 
-  backend "azurerm" {
-    # This will be configured via environment variables or CLI
-    # resource_group_name  = "vigor-tfstate-rg"
-    # storage_account_name = "vigortfstate"
-    # container_name       = "tfstate"
-    # key                  = "vigor.terraform.tfstate"
-  }
+  # Use local backend for CI/CD validation
+  # For production deployments, configure azurerm backend via CLI or environment variables
+  backend "local" {}
 }
 
 provider "azurerm" {
@@ -412,4 +408,4 @@ resource "azurerm_key_vault_secret" "secrets" {
   key_vault_id = azurerm_key_vault.main.id
 
   depends_on = [azurerm_key_vault.main]
-} 
+}

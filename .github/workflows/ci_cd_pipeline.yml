@@ -259,6 +259,7 @@ jobs:
   infrastructure-validate:
     name: Validate Infrastructure
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging'
 
     steps:
@@ -280,12 +281,14 @@ jobs:
 
       - name: Terraform Format Check
         id: fmt
+        timeout-minutes: 1
         run: |
           cd infrastructure/terraform
           terraform fmt -check -recursive
 
       - name: Terraform Init
         id: init
+        timeout-minutes: 2
         continue-on-error: true
         run: |
           cd infrastructure/terraform
@@ -293,6 +296,7 @@ jobs:
 
       - name: Terraform Validate
         id: validate
+        timeout-minutes: 1
         continue-on-error: true
         run: |
           cd infrastructure/terraform
@@ -300,6 +304,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
+        timeout-minutes: 2
         continue-on-error: true
         run: |
           cd infrastructure/terraform
