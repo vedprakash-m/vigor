@@ -288,7 +288,7 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
 // Static Web App (Frontend)
 resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
   name: '${appServiceName}-frontend'
-  location: 'West US 2' // Collocated with all other resources for minimal latency
+  location: location // Use same location as other resources
   tags: commonTags
   sku: {
     name: environment == 'production' ? 'Standard' : 'Free'
