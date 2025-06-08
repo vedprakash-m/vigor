@@ -13,8 +13,8 @@ param postgresStorageMb = 10240 // 10GB for production
 param adminEmail = 'admin@vigor-fitness.com'
 
 // Cost-optimized configuration to avoid quota issues
-param appServiceSku = 'B1' // Basic tier instead of Standard
-param redisCapacity = 0 // Start with minimum
+param appServiceSku = 'S1' // Standard tier to avoid Basic quota limits
+param redisCapacity = 1 // 1GB for proper functionality
 
 // Secrets will be provided via Azure CLI or GitHub Actions
 param postgresAdminPassword = '' // Will be overridden
