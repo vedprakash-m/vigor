@@ -274,15 +274,15 @@ git push origin main
 
 ### **Azure Resources Deployed**
 
-| Resource | SKU | Purpose |
-|----------|-----|---------|
-| **App Service** | B1 Basic | Backend API (FastAPI) |
-| **Static Web App** | Standard | Frontend (React + Vite) |
-| **PostgreSQL** | B1ms | Database with 10GB storage |
-| **Redis Cache** | Basic 1GB | Session management |
-| **Container Registry** | Basic | Docker image storage |
-| **Key Vault** | Standard | Secure secret management |
-| **Application Insights** | - | Performance monitoring |
+| Resource                 | SKU       | Purpose                    |
+| ------------------------ | --------- | -------------------------- |
+| **App Service**          | B1 Basic  | Backend API (FastAPI)      |
+| **Static Web App**       | Standard  | Frontend (React + Vite)    |
+| **PostgreSQL**           | B1ms      | Database with 10GB storage |
+| **Redis Cache**          | Basic 1GB | Session management         |
+| **Container Registry**   | Basic     | Docker image storage       |
+| **Key Vault**            | Standard  | Secure secret management   |
+| **Application Insights** | -         | Performance monitoring     |
 
 ### **Environment Setup**
 
@@ -450,6 +450,7 @@ _This project is licensed under AGPLv3. See [LICENSE](LICENSE) and [NOTICE](NOTI
 ### Recent Achievements ✅
 
 **Infrastructure Modernization (December 2024)**
+
 - **✅ Azure Bicep Migration**: Replaced Terraform with modern Azure-native IaC
 - **✅ OIDC Authentication**: Secure GitHub Actions deployment without client secrets
 - **✅ West US 2 Optimization**: <20ms latency for West Coast users
@@ -457,6 +458,7 @@ _This project is licensed under AGPLv3. See [LICENSE](LICENSE) and [NOTICE](NOTI
 - **✅ CI/CD Pipeline**: Fully automated deployment with enhanced error handling
 
 **Application Features (Completed)**
+
 - **✅ Backend Infrastructure**: FastAPI server with JWT authentication
 - **✅ User Tier System**: Free/Premium/Unlimited with usage tracking
 - **✅ Multi-LLM Support**: OpenAI, Gemini, Perplexity with cost optimization
@@ -467,6 +469,7 @@ _This project is licensed under AGPLv3. See [LICENSE](LICENSE) and [NOTICE](NOTI
 ### Current Status 🔄
 
 **Ready for Production**
+
 - ✅ Infrastructure: Fully deployed and tested on Azure
 - ✅ CI/CD Pipeline: Automated deployment via GitHub Actions
 - ✅ Security: Enterprise-grade authentication and secret management
@@ -474,6 +477,7 @@ _This project is licensed under AGPLv3. See [LICENSE](LICENSE) and [NOTICE](NOTI
 - ✅ Cost Management: Optimized resource tiers and quota-aware deployment
 
 **Development Focus**
+
 - 🔄 Frontend tier management UI completion
 - 🔄 Performance optimization and caching
 - 🔄 Enhanced mobile responsiveness
@@ -481,15 +485,15 @@ _This project is licensed under AGPLv3. See [LICENSE](LICENSE) and [NOTICE](NOTI
 
 ### Infrastructure Status 📋
 
-| Component | Status | Performance | Cost/Month |
-|-----------|--------|-------------|------------|
-| **Backend API** | ✅ Deployed | <200ms response | $13-25 |
-| **Frontend** | ✅ Deployed | <800ms load time | $0-10 |
-| **Database** | ✅ Optimized | 10GB PostgreSQL | $15-25 |
-| **Cache** | ✅ Active | Redis 1GB | $8 |
-| **Monitoring** | ✅ Configured | Real-time insights | $5-10 |
-| **Security** | ✅ Hardened | Key Vault + RBAC | $3-5 |
-| **Total** | ✅ Production | High Performance | **$44-83** |
+| Component       | Status        | Performance        | Cost/Month |
+| --------------- | ------------- | ------------------ | ---------- |
+| **Backend API** | ✅ Deployed   | <200ms response    | $13-25     |
+| **Frontend**    | ✅ Deployed   | <800ms load time   | $0-10      |
+| **Database**    | ✅ Optimized  | 10GB PostgreSQL    | $15-25     |
+| **Cache**       | ✅ Active     | Redis 1GB          | $8         |
+| **Monitoring**  | ✅ Configured | Real-time insights | $5-10      |
+| **Security**    | ✅ Hardened   | Key Vault + RBAC   | $3-5       |
+| **Total**       | ✅ Production | High Performance   | **$44-83** |
 
 ### Deployment Regions 🌍
 

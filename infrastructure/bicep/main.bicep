@@ -62,7 +62,7 @@ var storageAccountName = '${appName}${environment}sa${uniqueSuffix}'
 var keyVaultName = '${appName}-${environment}-kv-${uniqueSuffix}'
 var appInsightsName = '${appName}-${environment}-ai'
 var logAnalyticsName = '${appName}-${environment}-la'
-var containerRegistryName = '${appName}acr'
+var containerRegistryName = '${appName}acr${uniqueSuffix}'
 
 // Log Analytics Workspace
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
