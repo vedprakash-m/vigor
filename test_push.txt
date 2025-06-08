@@ -1,3 +1,0 @@
-Test file created on June 7, 2025 to verify git push functionality.
-
-This file can be deleted after confirming the push works correctly.
