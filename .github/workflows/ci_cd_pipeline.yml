@@ -283,7 +283,7 @@ jobs:
         run: |
           cd infrastructure/bicep
           az deployment group validate \
-            --resource-group vigor-rg \
+            --resource-group vigor-prod-rg \
             --template-file main.bicep \
             --parameters parameters.bicepparam \
             --parameters postgresAdminPassword="${{ secrets.POSTGRES_ADMIN_PASSWORD }}" \
@@ -371,41 +371,37 @@ jobs:
 
           echo "✅ All required secrets are available"
 
-      - name: Deploy Infrastructure
+      - name: Deploy Infrastructure (Quota-Resilient)
         id: deploy-infrastructure
         run: |
-          echo "🚀 Deploying infrastructure to Azure..."
+          echo "🚀 Starting quota-resilient Azure deployment..."
           cd infrastructure/bicep
 
-          DEPLOYMENT_NAME="vigor-deployment-$(date +%Y%m%d-%H%M%S)"
-          echo "deployment-name=$DEPLOYMENT_NAME" >> $GITHUB_OUTPUT
+          # Export environment variables for the deployment script
+          export POSTGRES_ADMIN_PASSWORD="${{ secrets.POSTGRES_ADMIN_PASSWORD }}"
+          export SECRET_KEY="${{ secrets.SECRET_KEY }}"
+          export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+          export GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
+          export PERPLEXITY_API_KEY="${{ secrets.PERPLEXITY_API_KEY }}"
+          export ADMIN_EMAIL="${{ secrets.ADMIN_EMAIL }}"
 
-          az deployment group create \
-            --resource-group vigor-rg \
-            --name "$DEPLOYMENT_NAME" \
-            --template-file main.bicep \
-            --parameters parameters.bicepparam \
-            --parameters postgresAdminPassword="${{ secrets.POSTGRES_ADMIN_PASSWORD }}" \
-                         secretKey="${{ secrets.SECRET_KEY }}" \
-                         adminEmail="${{ secrets.ADMIN_EMAIL }}" \
-                         openaiApiKey="${{ secrets.OPENAI_API_KEY }}" \
-                         geminiApiKey="${{ secrets.GEMINI_API_KEY }}" \
-                         perplexityApiKey="${{ secrets.PERPLEXITY_API_KEY }}" \
-            --verbose
+          # Make script executable and run quota-resilient deployment
+          chmod +x deploy-quota-resilient.sh
+          ./deploy-quota-resilient.sh
 
       - name: Verify Infrastructure Deployment
         run: |
           echo "🔍 Verifying infrastructure deployment..."
-          echo "📋 Resources in vigor-rg:"
-          az resource list --resource-group vigor-rg --output table
+          echo "📋 Resources in vigor-prod-rg:"
+          az resource list --resource-group vigor-prod-rg --output table
 
           echo ""
           echo "🌐 Static Web Apps:"
-          az staticwebapp list --resource-group vigor-rg --output table || echo "No Static Web Apps found"
+          az staticwebapp list --resource-group vigor-prod-rg --output table || echo "No Static Web Apps found"
 
           echo ""
           echo "🖥️  App Services:"
-          az webapp list --resource-group vigor-rg --output table || echo "No App Services found"
+          az webapp list --resource-group vigor-prod-rg --output table || echo "No App Services found"
 
       - name: Get App Service Name
         id: get-app-name
@@ -413,11 +409,11 @@ jobs:
           # Wait for App Service to be fully deployed
           echo "Getting App Service information..."
 
-          APP_NAME=$(az webapp list --resource-group vigor-rg --query "[?contains(name, 'backend') || contains(name, 'app')].name" --output tsv)
+          APP_NAME=$(az webapp list --resource-group vigor-prod-rg --query "[?contains(name, 'backend') || contains(name, 'app')].name" --output tsv)
 
           if [ -z "$APP_NAME" ]; then
             echo "No App Service found with 'backend' or 'app' in name. Checking all App Services..."
-            APP_NAME=$(az webapp list --resource-group vigor-rg --query "[0].name" --output tsv)
+            APP_NAME=$(az webapp list --resource-group vigor-prod-rg --query "[0].name" --output tsv)
           fi
 
           if [ -z "$APP_NAME" ]; then
@@ -455,11 +451,11 @@ jobs:
           sleep 30
 
           # Get Static Web App name with error handling
-          SWA_NAME=$(az staticwebapp list --resource-group vigor-rg --query "[?contains(name, 'frontend')].name" --output tsv)
+          SWA_NAME=$(az staticwebapp list --resource-group vigor-prod-rg --query "[?contains(name, 'frontend')].name" --output tsv)
 
           if [ -z "$SWA_NAME" ]; then
             echo "Static Web App not found. Checking all static sites..."
-            SWA_NAME=$(az staticwebapp list --resource-group vigor-rg --query "[0].name" --output tsv)
+            SWA_NAME=$(az staticwebapp list --resource-group vigor-prod-rg --query "[0].name" --output tsv)
           fi
 
           if [ -z "$SWA_NAME" ]; then
@@ -477,7 +473,7 @@ jobs:
         if: steps.get-swa-info.outputs.swa-exists == 'true'
         run: |
           SWA_TOKEN=$(az staticwebapp secrets list \
-            --resource-group vigor-rg \
+            --resource-group vigor-prod-rg \
             --name ${{ steps.get-swa-info.outputs.swa-name }} \
             --query "properties.apiKey" \
             --output tsv)
@@ -502,8 +498,8 @@ jobs:
             echo "🌐 Static Web App: ${{ steps.get-swa-info.outputs.swa-name }}"
           else
             echo "⚠️  Static Web App not found - infrastructure deployment may have failed"
-            echo "📋 Available resources in vigor-rg:"
-            az resource list --resource-group vigor-rg --output table || true
+            echo "📋 Available resources in vigor-prod-rg:"
+            az resource list --resource-group vigor-prod-rg --output table || true
           fi
 
       - name: Run Database Migrations
@@ -512,7 +508,7 @@ jobs:
           echo "🗄️  Database migration status..."
 
           # Get PostgreSQL server name
-          PG_SERVER=$(az postgres flexible-server list --resource-group vigor-rg --query "[0].fullyQualifiedDomainName" --output tsv)
+          PG_SERVER=$(az postgres flexible-server list --resource-group vigor-prod-rg --query "[0].fullyQualifiedDomainName" --output tsv)
 
           if [ -z "$PG_SERVER" ]; then
             echo "⚠️  PostgreSQL server not found - skipping migrations"

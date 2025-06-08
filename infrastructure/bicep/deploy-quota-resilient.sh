@@ -47,7 +47,7 @@ param environment = 'prod'
 param location = '$region'
 param appName = 'vigor'
 param postgresAdminUsername = 'vigoradmin'
-param adminEmail = 'admin@vigor-fitness.com'
+param adminEmail = '$ADMIN_EMAIL'
 param appServiceSku = '$sku'
 
 // Secrets from environment variables
