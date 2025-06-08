@@ -37,12 +37,6 @@ param perplexityApiKey string = ''
 @description('App Service SKU')
 param appServiceSku string = 'S1'
 
-@description('Redis capacity')
-param redisCapacity int = 1
-
-@description('PostgreSQL storage in MB')
-param postgresStorageMb int = 10240
-
 // Variables
 var uniqueSuffix = uniqueString(resourceGroup().id)
 var commonTags = {
@@ -108,13 +102,13 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   }
 }
 
-// Container Registry
+// Container Registry - Use Basic (usually has quota) or fallback to shared registry
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   name: containerRegistryName
   location: location
   tags: commonTags
   sku: {
-    name: 'Standard' // Changed to Standard to avoid Basic quota issues
+    name: 'Basic' // Basic is cheapest and usually has quota in East US
   }
   properties: {
     adminUserEnabled: true
@@ -149,25 +143,25 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   }
 }
 
-// PostgreSQL Flexible Server
+// PostgreSQL Flexible Server - Use smallest possible tier
 resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-06-01-preview' = {
   name: postgresServerName
   location: location
   tags: commonTags
   sku: {
-    name: 'GP_Standard_D2s_v3' // Use General Purpose to avoid Basic/Burstable quota issues
-    tier: 'GeneralPurpose'
+    name: 'B_Standard_B1ms' // Burstable B1ms - cheapest option at ~$12/month
+    tier: 'Burstable'
   }
   properties: {
     version: '14'
     administratorLogin: postgresAdminUsername
     administratorLoginPassword: postgresAdminPassword
     storage: {
-      storageSizeGB: postgresStorageMb / 1024
+      storageSizeGB: 32 // Minimum storage for cost savings
     }
     backup: {
-      backupRetentionDays: environment == 'production' ? 35 : 7
-      geoRedundantBackup: environment == 'production' ? 'Enabled' : 'Disabled'
+      backupRetentionDays: 7 // Minimum retention for cost savings
+      geoRedundantBackup: 'Disabled'
     }
     highAvailability: {
       mode: environment == 'production' ? 'ZoneRedundant' : 'Disabled'
@@ -195,15 +189,12 @@ resource redisCache 'Microsoft.Cache/redis@2023-08-01' = {
   tags: commonTags
   properties: {
     sku: {
-      name: 'Standard' // Changed to Standard to avoid Basic quota issues
+      name: 'Basic' // Basic C0 (250MB) - cheapest at ~$16/month
       family: 'C'
-      capacity: redisCapacity
+      capacity: 0 // C0 = 250MB, cheapest option
     }
     enableNonSslPort: false
     minimumTlsVersion: '1.2'
-    redisConfiguration: {
-      'aad-enabled': 'true'
-    }
   }
 }
 
@@ -291,7 +282,7 @@ resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
   location: location // Use same location as other resources
   tags: commonTags
   sku: {
-    name: environment == 'production' ? 'Standard' : 'Free'
+    name: 'Free' // Always use Free tier for cost optimization
   }
   properties: {}
 }
