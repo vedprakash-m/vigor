@@ -258,7 +258,7 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
 // Static Web App (Frontend)
 resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
   name: '${appServiceName}-frontend'
-  location: location // Use same location as other resources
+  location: 'East US 2' // Static Web Apps not available in East US, use East US 2
   tags: commonTags
   sku: {
     name: 'Free' // Always use Free tier for cost optimization
