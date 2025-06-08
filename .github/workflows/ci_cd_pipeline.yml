@@ -207,8 +207,6 @@ jobs:
           file: ./backend/Dockerfile
           push: false
           tags: vigor-backend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           platforms: linux/amd64
 
       - name: Build and push Docker image
@@ -221,8 +219,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           platforms: linux/amd64
 
   frontend-build:
