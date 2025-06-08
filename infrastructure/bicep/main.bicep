@@ -51,7 +51,6 @@ var commonTags = {
 var appServicePlanName = '${appName}-${environment}-asp'
 var appServiceName = '${appName}-${environment}-app-${uniqueSuffix}'
 var postgresServerName = '${appName}-${environment}-db-${uniqueSuffix}'
-var redisName = '${appName}-${environment}-redis-${uniqueSuffix}'
 var storageAccountName = '${appName}${environment}sa${uniqueSuffix}'
 var keyVaultName = '${appName}-${environment}-kv-${uniqueSuffix}'
 var appInsightsName = '${appName}-${environment}-ai'
@@ -182,22 +181,6 @@ resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2
   }
 }
 
-// Redis Cache
-resource redisCache 'Microsoft.Cache/redis@2023-08-01' = {
-  name: redisName
-  location: location
-  tags: commonTags
-  properties: {
-    sku: {
-      name: 'Basic' // Basic C0 (250MB) - cheapest at ~$16/month
-      family: 'C'
-      capacity: 0 // C0 = 250MB, cheapest option
-    }
-    enableNonSslPort: false
-    minimumTlsVersion: '1.2'
-  }
-}
-
 // App Service Plan
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: appServicePlanName
@@ -242,10 +225,6 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
         {
           name: 'DATABASE_URL'
           value: 'postgresql://${postgresAdminUsername}:${postgresAdminPassword}@${postgresServer.properties.fullyQualifiedDomainName}:5432/${postgresDatabase.name}?sslmode=require'
-        }
-        {
-          name: 'REDIS_URL'
-          value: 'rediss://:${redisCache.listKeys().primaryKey}@${redisCache.properties.hostName}:${redisCache.properties.sslPort}'
         }
         {
           name: 'OPENAI_API_KEY'
@@ -342,7 +321,6 @@ output resourceGroupName string = resourceGroup().name
 output backendUrl string = 'https://${appService.properties.defaultHostName}'
 output frontendUrl string = 'https://${staticWebApp.properties.defaultHostname}'
 output postgresServerFqdn string = postgresServer.properties.fullyQualifiedDomainName
-output redisHostname string = redisCache.properties.hostName
 output keyVaultName string = keyVault.name
 output containerRegistryLoginServer string = containerRegistry.properties.loginServer
 output applicationInsightsConnectionString string = appInsights.properties.ConnectionString
