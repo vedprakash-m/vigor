@@ -114,11 +114,11 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' =
   location: location
   tags: commonTags
   sku: {
-    name: 'Basic' // Changed to Basic to avoid quota issues
+    name: 'Standard' // Changed to Standard to avoid Basic quota issues
   }
   properties: {
     adminUserEnabled: true
-    publicNetworkAccess: 'Enabled' // Basic tier doesn't support private endpoints
+    publicNetworkAccess: 'Enabled'
     policies: {
       retentionPolicy: {
         status: 'enabled'
@@ -155,8 +155,8 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-06-01-pr
   location: location
   tags: commonTags
   sku: {
-    name: environment == 'production' ? 'GP_Standard_D2s_v3' : 'B_Standard_B1ms'
-    tier: environment == 'production' ? 'GeneralPurpose' : 'Burstable'
+    name: 'GP_Standard_D2s_v3' // Use General Purpose to avoid Basic/Burstable quota issues
+    tier: 'GeneralPurpose'
   }
   properties: {
     version: '14'
@@ -195,7 +195,7 @@ resource redisCache 'Microsoft.Cache/redis@2023-08-01' = {
   tags: commonTags
   properties: {
     sku: {
-      name: environment == 'production' ? 'Standard' : 'Basic'
+      name: 'Standard' // Changed to Standard to avoid Basic quota issues
       family: 'C'
       capacity: redisCapacity
     }
