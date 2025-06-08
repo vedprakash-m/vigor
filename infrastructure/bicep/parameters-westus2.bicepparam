@@ -2,7 +2,7 @@ using './main.bicep'
 
 // Environment configuration
 param environment = 'prod'
-param location = 'West US 2' // Optimized: West Coast location for best user latency
+param location = 'West US 2' // Different region to avoid quota
 param appName = 'vigor'
 
 // Database configuration
@@ -12,9 +12,9 @@ param postgresStorageMb = 10240 // 10GB for production
 // Admin configuration
 param adminEmail = 'admin@vigor-fitness.com'
 
-// Scaling configuration (optimized for quota availability)
-param appServiceSku = 'B1' // Basic tier to avoid Standard quota limits
-param redisCapacity = 1 // 1GB
+// Cost-optimized configuration to avoid quota issues
+param appServiceSku = 'B1' // Basic tier instead of Standard
+param redisCapacity = 0 // Start with minimum
 
 // Secrets will be provided via Azure CLI or GitHub Actions
 param postgresAdminPassword = '' // Will be overridden

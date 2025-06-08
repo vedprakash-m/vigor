@@ -11,12 +11,14 @@ Vigor is an AI-powered fitness and wellness companion designed to provide person
 ### 1.2 Infrastructure & Deployment Status (December 2024)
 
 **✅ COMPLETED INFRASTRUCTURE MIGRATION:**
+
 - **Migration from Terraform to Azure Bicep**: Completed December 8, 2024
 - **Azure Authentication Issues**: Resolved with OIDC-based authentication
 - **CI/CD Pipeline**: Updated and functioning with Bicep deployment
 - **Cost Optimization**: Eliminated Terraform state storage costs (~$5/month savings)
 
 **🔄 CURRENT DEPLOYMENT ARCHITECTURE:**
+
 - **Infrastructure as Code**: Azure Bicep (migrated from Terraform)
 - **CI/CD Platform**: GitHub Actions with OIDC authentication
 - **Container Registry**: Azure Container Registry (vigoracr.azurecr.io)
@@ -24,6 +26,7 @@ Vigor is an AI-powered fitness and wellness companion designed to provide person
 - **Deployment Strategy**: Automated deployment on main branch with manual triggers
 
 **📋 INFRASTRUCTURE COMPONENTS (Production-Ready):**
+
 - **Resource Group**: vigor-rg (East US)
 - **App Service Plan**: Standard S1 for production workloads
 - **App Service**: Linux-based backend (Python 3.11, FastAPI)
@@ -81,18 +84,21 @@ Vigor is an AI-powered fitness and wellness companion designed to provide person
 **December 6-8, 2024: Complete Infrastructure Overhaul**
 
 **Day 1 (Dec 6): Documentation Cleanup & Preparation**
+
 - ✅ Removed 20+ redundant documentation files
 - ✅ Enhanced PROJECT_METADATA.md with 1,402 lines of comprehensive documentation
 - ✅ Consolidated admin workflow patterns and cost-effective provider hierarchy
 - ✅ Organized docs/ folder structure (5 essential files retained)
 
 **Day 2 (Dec 7): Infrastructure Migration Planning**
+
 - ✅ Created complete Azure Bicep templates (353 lines)
 - ✅ Developed migration scripts with comprehensive validation workflow
 - ✅ Updated GitHub Actions pipeline for Bicep deployment
 - ✅ Prepared environment validation and deployment procedures
 
 **Day 3 (Dec 8): Authentication Fix & Final Migration**
+
 - ✅ Created new Azure Service Principal: "vigor-cicd-sp"
 - ✅ Configured OIDC federated identity credentials for GitHub Actions
 - ✅ Updated GitHub repository secrets with proper OIDC authentication
@@ -100,6 +106,7 @@ Vigor is an AI-powered fitness and wellness companion designed to provide person
 - ✅ Completed migration scripts and documentation
 
 **Migration Benefits Achieved:**
+
 - 🚀 **Faster Deployments**: No state management overhead
 - 💰 **Cost Savings**: Eliminated Terraform state storage (~$5/month)
 - 🔒 **Better Azure Integration**: Native Bicep ARM template compilation
@@ -109,6 +116,7 @@ Vigor is an AI-powered fitness and wellness companion designed to provide person
 ### 2.2 Current Authentication & Security Configuration
 
 **Azure Service Principal Details:**
+
 - **Name**: vigor-cicd-sp
 - **Client ID**: 42aae4cc-5dd0-4469-9f10-87e45dc45088
 - **Tenant ID**: 80fe68b7-105c-4fb9-ab03-c9a818e35848
@@ -117,11 +125,13 @@ Vigor is an AI-powered fitness and wellness companion designed to provide person
 - **Role**: Contributor (resource group scoped)
 
 **Federated Identity Credentials:**
+
 - **Main Branch**: `repo:vedprakash-m/vigor:ref:refs/heads/main`
 - **Pull Requests**: `repo:vedprakash-m/vigor:pull_request`
 - **Authentication Method**: OIDC (OpenID Connect) - no client secrets required
 
 **GitHub Secrets Configuration (Updated Dec 8, 2024):**
+
 ```bash
 # Azure Authentication (OIDC-based)
 AZURE_CLIENT_ID=42aae4cc-5dd0-4469-9f10-87e45dc45088
@@ -165,6 +175,7 @@ PERPLEXITY_API_KEY=(optional)
 ```
 
 **Deployment Configuration (`infrastructure/bicep/parameters.bicepparam`):**
+
 ```bicep
 // Environment-specific parameters
 param environment = 'prod'
@@ -176,6 +187,7 @@ param postgresStorageMb = 10240     // 10GB PostgreSQL storage
 ```
 
 **Deployment Scripts:**
+
 - `infrastructure/bicep/deploy.sh`: Automated deployment with validation
 - `scripts/migrate-to-bicep.sh`: Complete migration workflow
 - Environment variable validation and secure secret management
@@ -232,6 +244,7 @@ The Vigor application utilizes a modernized GitHub Actions CI/CD pipeline with A
 **Pipeline Status**: ✅ **FULLY FUNCTIONAL** (Fixed December 8, 2024)
 
 **Key Updates:**
+
 - **Authentication**: Migrated from client-secret to OIDC federated identity
 - **Infrastructure**: Replaced Terraform with Azure Bicep deployment
 - **Cost Optimization**: Eliminated Terraform state storage requirements
@@ -242,41 +255,48 @@ The Vigor application utilizes a modernized GitHub Actions CI/CD pipeline with A
 **Security-First Pipeline Flow:**
 
 1. **Security Scanning** ✅
+
    - Trivy vulnerability scanner with SARIF upload
    - Critical vulnerabilities block deployment
    - GitHub Security tab integration
 
 2. **Backend Quality & Testing** ✅
+
    - Bandit security analysis
    - Pytest with coverage reporting
    - Black code formatting validation
    - Safety dependency scanning
 
 3. **Frontend Quality & Testing** ✅
+
    - ESLint code quality checks
    - TypeScript compilation validation
    - Jest unit testing with coverage
    - npm audit security scanning
 
 4. **Infrastructure Validation** ✅
+
    - Azure Bicep template validation
    - OIDC authentication verification
    - Resource cost estimation
    - Deployment readiness checks
 
 5. **Container Build & Registry** ✅
+
    - Multi-stage Docker builds
    - Image optimization and layer caching
    - Azure Container Registry push
    - Security scanning of container images
 
 6. **Infrastructure Deployment** ✅
+
    - Azure Bicep template deployment
    - Resource group and service provisioning
    - Key Vault secret configuration
    - Application configuration deployment
 
 7. **Application Deployment** ✅
+
    - Backend deployment to Azure App Service
    - Frontend deployment to Static Web App
    - Environment-specific configuration injection
@@ -318,6 +338,7 @@ pull_request → Preview Environments:
 - **Secrets Management**: Azure Key Vault with system-assigned managed identities
 
 **OIDC Security Benefits:**
+
 - **No Long-Lived Secrets**: Eliminated client secrets from GitHub
 - **Short-Lived Tokens**: Automatic token rotation and expiration
 - **Audit Trail**: Enhanced Azure AD integration and logging
@@ -345,6 +366,7 @@ infrastructure/bicep/
 - **Azure Application Insights**: Real-time monitoring with custom dashboards
 
 **Cost Optimization Achievements:**
+
 - **Terraform State Storage**: Eliminated (~$5)
 - **Container Registry**: Zone redundancy only in production
 - **Database Tier Optimization**: B1ms for development, GP for production
@@ -355,18 +377,21 @@ infrastructure/bicep/
 **Production Deployment Process (Updated):**
 
 1. **Pre-Deployment Validation**
+
    - OIDC token acquisition and validation
    - Azure resource health verification
    - Bicep template syntax and policy validation
    - Cost impact analysis and approval gates
 
 2. **Infrastructure Deployment**
+
    - Bicep template deployment with incremental updates
    - Resource dependency resolution and ordering
    - Configuration drift detection and remediation
    - Post-deployment resource verification
 
 3. **Application Deployment**
+
    - Container image deployment to App Service
    - Static assets deployment to CDN
    - Environment-specific configuration injection
@@ -379,6 +404,7 @@ infrastructure/bicep/
    - User experience validation checkpoints
 
 **Rollback Procedures (Enhanced):**
+
 - **Automatic Triggers**: Health check failures, error rate spikes
 - **Manual Rollback**: GitHub Actions workflow dispatch
 - **Infrastructure Rollback**: Bicep template version reversion
@@ -394,6 +420,7 @@ infrastructure/bicep/
 - **Security Posture**: Continuous compliance and vulnerability assessment
 
 **Application Monitoring Integration:**
+
 - **Azure Application Insights**: Performance metrics and custom dashboards
 - **Log Analytics**: Centralized logging with intelligent alerting
 - **Health Endpoints**: Comprehensive application health monitoring
@@ -421,6 +448,7 @@ PERPLEXITY_API_KEY=(balanced performance option)
 ```
 
 **Azure Key Vault Integration:**
+
 - **System-Assigned Managed Identity**: App Service automatic access
 - **Secret Rotation**: Automated key rotation and lifecycle management
 - **Access Policies**: Principle of least privilege with audit logging
@@ -429,18 +457,21 @@ PERPLEXITY_API_KEY=(balanced performance option)
 ### 2.5.9 Cost Optimization Achievements
 
 **Infrastructure Cost Reduction:**
+
 - **Terraform State Storage**: Eliminated (~$5)
 - **Container Registry**: Zone redundancy only in production
 - **Database Tier Optimization**: B1ms for development, GP for production
 - **Static Web App**: Free tier for development environments
 
 **Pipeline Efficiency Improvements:**
+
 - **Bicep Compilation**: Faster than Terraform planning and applying
 - **Parallel Job Execution**: Optimized dependency chains
 - **Container Layer Caching**: Reduced build and deployment times
 - **Resource Cleanup**: Automated orphaned resource detection
 
 **Monthly Cost Estimate (Optimized):**
+
 ```
 Production Environment: $150-180/month
 ├── App Service Plan (S1): $73/month
@@ -461,12 +492,14 @@ Development Environment: $25-35/month
 ### 2.5.10 Disaster Recovery & Business Continuity
 
 **Enhanced Backup Strategy:**
+
 - **Database Backups**: Automated PostgreSQL backups with 35-day retention
 - **Container Images**: Registry replication with retention policies
 - **Infrastructure Templates**: Version-controlled Bicep templates in Git
 - **Configuration Backup**: Key Vault secret versioning and recovery
 
 **Incident Response (Updated):**
+
 - **OIDC Token Issues**: Automatic token refresh and fallback procedures
 - **Bicep Deployment Failures**: Template rollback and resource cleanup
 - **Application Health**: Automated scaling and traffic routing
@@ -477,6 +510,7 @@ Development Environment: $25-35/month
 **Terraform to Bicep Migration (December 6-8, 2024):**
 
 **✅ Successfully Completed:**
+
 - Infrastructure template conversion (Terraform → Bicep)
 - Authentication modernization (client-secret → OIDC)
 - CI/CD pipeline updates and validation
@@ -484,6 +518,7 @@ Development Environment: $25-35/month
 - Documentation updates and workflow standardization
 
 **🔧 Key Improvements Achieved:**
+
 1. **Simplified Infrastructure**: No state management complexity
 2. **Enhanced Security**: OIDC authentication with managed identities
 3. **Cost Reduction**: Eliminated Terraform backend storage costs
@@ -491,12 +526,14 @@ Development Environment: $25-35/month
 5. **Faster Deployments**: Direct ARM template compilation
 
 **📚 Documentation Updates:**
+
 - PROJECT_METADATA.md: Comprehensive status and architecture documentation
 - DEPLOYMENT_GUIDE.md: Updated with Bicep procedures
 - Infrastructure README: Complete Bicep deployment instructions
 - Migration scripts: Automated Terraform to Bicep conversion tools
 
 **🎯 Next Phase Priorities:**
+
 1. **Application Feature Development**: Resume MVP feature completion
 2. **Performance Optimization**: Application-level optimizations
 3. **User Testing**: Beta user recruitment and feedback collection
@@ -1029,18 +1066,21 @@ docker build -t vigor-frontend frontend/
 **✅ PRODUCTION-READY INFRASTRUCTURE (December 8, 2024)**
 
 **Infrastructure Migration**: Successfully migrated from Terraform to Azure Bicep
+
 - **Cost Savings**: Eliminated Terraform state storage (~$5/month)
 - **Deployment Speed**: 40% faster deployments with Bicep compilation
 - **Maintenance Overhead**: Reduced by 60% with native Azure tooling
 - **Security Posture**: Enhanced with OIDC and managed identities
 
 **CI/CD Pipeline**: Fully functional with modern authentication
+
 - **Authentication Method**: OIDC federated identity (no client secrets)
 - **Deployment Success Rate**: 98% success rate post-migration
 - **Security Scanning**: Comprehensive vulnerability detection and blocking
 - **Quality Gates**: Automated code quality and test coverage enforcement
 
 **Azure Resource Status**: All production resources provisioned and configured
+
 - **Resource Group**: vigor-rg (East US region)
 - **Container Registry**: vigoracr.azurecr.io (fully configured)
 - **App Service**: Linux-based Python 3.11 runtime ready
@@ -1052,6 +1092,7 @@ docker build -t vigor-frontend frontend/
 **✅ BACKEND APPLICATION (FastAPI + SQLAlchemy)**
 
 **Core Features Implemented**:
+
 - **Authentication System**: JWT-based with refresh token rotation
 - **User Management**: Profile creation, tier management, admin controls
 - **LLM Orchestration**: Multi-provider support (OpenAI, Gemini, Perplexity)
@@ -1059,12 +1100,14 @@ docker build -t vigor-frontend frontend/
 - **Admin Dashboard**: User tier management, LLM provider configuration
 
 **Database Schema**: Production-ready with migrations
+
 - **User Profiles**: Comprehensive fitness data and preferences
 - **Workout Plans & Logs**: Detailed exercise tracking with RPE ratings
 - **AI Coach Messages**: Conversation history and coaching interactions
 - **Usage Analytics**: Real-time tier limit enforcement and cost tracking
 
 **API Endpoints**: RESTful API with comprehensive documentation
+
 - **Authentication**: `/auth/login`, `/auth/register`, `/auth/refresh`
 - **AI Integration**: `/ai/chat`, `/ai/generate-workout`, `/ai/recommendations`
 - **User Management**: `/users/profile`, `/users/tier`, `/users/usage`
@@ -1073,6 +1116,7 @@ docker build -t vigor-frontend frontend/
 **✅ FRONTEND APPLICATION (React + TypeScript + Chakra UI)**
 
 **Core Components Implemented**:
+
 - **Authentication UI**: Login, registration, and password management
 - **Dashboard**: User overview with workout summary and AI coaching
 - **Workout Planner**: AI-powered plan generation with customization
@@ -1080,6 +1124,7 @@ docker build -t vigor-frontend frontend/
 - **Admin Panel**: System management for user tiers and LLM providers
 
 **Technical Stack**: Modern React with TypeScript
+
 - **UI Library**: Chakra UI for consistent design system
 - **State Management**: React Context with custom hooks
 - **API Integration**: Axios-based service layer with error handling
@@ -1090,6 +1135,7 @@ docker build -t vigor-frontend frontend/
 **🔄 READY FOR PRODUCTION DEPLOYMENT**
 
 **Prerequisites Completed**:
+
 - ✅ Infrastructure provisioned and configured
 - ✅ CI/CD pipeline tested and validated
 - ✅ Security scanning and compliance verified
@@ -1097,6 +1143,7 @@ docker build -t vigor-frontend frontend/
 - ✅ Application secrets configured in Key Vault
 
 **Pending for Full Production**:
+
 - 🔄 **Environment Variables Setup**: Set required secrets for production deployment
 - 🔄 **Domain Configuration**: Custom domain and SSL certificate setup
 - 🔄 **Final Application Testing**: End-to-end functionality validation
@@ -1104,6 +1151,7 @@ docker build -t vigor-frontend frontend/
 - 🔄 **Monitoring Setup**: Custom dashboards and alerting configuration
 
 **Deployment Commands Ready**:
+
 ```bash
 # Infrastructure deployment (completed)
 cd infrastructure/bicep && ./deploy.sh
@@ -1117,6 +1165,7 @@ cd infrastructure/bicep && ./deploy.sh
 **PHASE 1: PRODUCTION LAUNCH (December 2024)**
 
 **Week 1-2 (December 8-21, 2024)**: Production Deployment
+
 - [ ] **Environment Configuration**: Set production environment variables
 - [ ] **Final Deployment**: Deploy application to production Azure infrastructure
 - [ ] **Testing & Validation**: Comprehensive end-to-end testing
@@ -1124,6 +1173,7 @@ cd infrastructure/bicep && ./deploy.sh
 - [ ] **Monitoring Setup**: Custom Application Insights dashboards
 
 **Week 3-4 (December 22 - January 5, 2025)**: Launch Preparation
+
 - [ ] **Domain & SSL**: Custom domain configuration with SSL certificates
 - [ ] **Content & Documentation**: User guides and help documentation
 - [ ] **Beta User Recruitment**: Initial user onboarding and feedback collection
@@ -1132,12 +1182,14 @@ cd infrastructure/bicep && ./deploy.sh
 **PHASE 2: FEATURE ENHANCEMENT (January - February 2025)**
 
 **January 2025: User Experience & Performance**
+
 - [ ] **Mobile Optimization**: Enhanced responsive design for mobile devices
 - [ ] **Performance Monitoring**: Real user monitoring and optimization
 - [ ] **AI Model Optimization**: Provider performance analysis and routing optimization
 - [ ] **User Feedback Integration**: Feature requests and usability improvements
 
 **February 2025: Advanced Features**
+
 - [ ] **Workout Video Integration**: Exercise demonstration and form guidance
 - [ ] **Nutrition Tracking**: Basic meal logging and macronutrient tracking
 - [ ] **Social Features**: User communities and progress sharing
@@ -1146,6 +1198,7 @@ cd infrastructure/bicep && ./deploy.sh
 **PHASE 3: SCALE & GROWTH (March 2025+)**
 
 **March 2025: Business Development**
+
 - [ ] **Premium Tier Features**: Advanced analytics and personalized coaching
 - [ ] **Payment Integration**: Subscription management and billing automation
 - [ ] **Enterprise Features**: Corporate wellness programs and team challenges
@@ -1154,18 +1207,21 @@ cd infrastructure/bicep && ./deploy.sh
 ### 12.5 Technical Debt & Optimization Backlog
 
 **Infrastructure Optimizations**:
+
 - [ ] **Multi-Region Deployment**: Disaster recovery and global performance
 - [ ] **CDN Optimization**: Global content delivery and edge caching
 - [ ] **Database Performance**: Query optimization and connection pooling
 - [ ] **Security Hardening**: Penetration testing and vulnerability assessment
 
 **Application Optimizations**:
+
 - [ ] **Code Splitting**: Frontend bundle optimization and lazy loading
 - [ ] **API Caching**: Redis-based response caching for improved performance
 - [ ] **Background Jobs**: Asynchronous task processing for AI operations
 - [ ] **Observability**: Comprehensive logging and distributed tracing
 
 **Cost Optimizations**:
+
 - [ ] **Reserved Instances**: Azure Reserved Virtual Machine Instances
 - [ ] **Auto-Scaling**: Dynamic resource scaling based on demand
 - [ ] **Storage Optimization**: Lifecycle management and archival policies
@@ -1174,6 +1230,7 @@ cd infrastructure/bicep && ./deploy.sh
 ### 12.6 Success Metrics & KPIs (Post-Launch)
 
 **Technical Performance KPIs**:
+
 - **Application Uptime**: 99.9% availability target
 - **API Response Time**: <200ms average response time
 - **Error Rate**: <0.1% application error rate
@@ -1181,6 +1238,7 @@ cd infrastructure/bicep && ./deploy.sh
 - **Mean Time to Recovery**: <15 minutes for critical issues
 
 **Business Metrics**:
+
 - **User Acquisition**: 100 users in first month
 - **User Retention**: 40% retention after 30 days
 - **Feature Adoption**: 70% workout planning usage
@@ -1188,6 +1246,7 @@ cd infrastructure/bicep && ./deploy.sh
 - **Cost per User**: <$2/month infrastructure cost per active user
 
 **Quality Metrics**:
+
 - **User Satisfaction**: 4.5+ star rating target
 - **Support Tickets**: <5% of users requiring support
 - **Performance Scores**: 90+ Lighthouse performance score
@@ -1196,18 +1255,21 @@ cd infrastructure/bicep && ./deploy.sh
 ### 12.7 Risk Management & Mitigation
 
 **Technical Risks**:
+
 - **AI Provider Outages**: Multi-provider fallback system implemented
 - **Database Performance**: Connection pooling and query optimization ready
 - **Security Vulnerabilities**: Automated scanning and patch management
 - **Scalability Limits**: Auto-scaling and performance monitoring configured
 
 **Business Risks**:
+
 - **User Adoption**: Beta testing and feedback integration planned
 - **Cost Overruns**: Real-time cost monitoring and budget alerts configured
 - **Competition**: Unique AI coaching and personalization differentiators
 - **Regulatory Compliance**: GDPR and health data privacy compliance implemented
 
 **Operational Risks**:
+
 - **Team Knowledge**: Comprehensive documentation and runbooks available
 - **Single Points of Failure**: Redundancy and disaster recovery procedures
 - **Change Management**: Automated testing and deployment validation
@@ -1216,12 +1278,14 @@ cd infrastructure/bicep && ./deploy.sh
 ### 12.8 Team & Resource Allocation
 
 **Current Team Capacity**:
+
 - **Infrastructure & DevOps**: Fully automated with minimal maintenance required
 - **Backend Development**: Ready for feature development and optimization
 - **Frontend Development**: Prepared for user experience enhancements
 - **Quality Assurance**: Automated testing and CI/CD validation processes
 
 **Resource Requirements (Next 3 Months)**:
+
 - **Development Focus**: Feature completion and user experience optimization
 - **Infrastructure Monitoring**: Minimal ongoing maintenance with Azure managed services
 - **User Support**: Initial support infrastructure for beta users

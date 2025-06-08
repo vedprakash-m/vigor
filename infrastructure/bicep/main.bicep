@@ -114,12 +114,17 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' =
   location: location
   tags: commonTags
   sku: {
-    name: environment == 'production' ? 'Premium' : 'Standard'
+    name: 'Basic' // Changed to Basic to avoid quota issues
   }
   properties: {
     adminUserEnabled: true
-    publicNetworkAccess: environment == 'production' ? 'Disabled' : 'Enabled'
-    zoneRedundancy: environment == 'production' ? 'Enabled' : 'Disabled'
+    publicNetworkAccess: 'Enabled' // Basic tier doesn't support private endpoints
+    policies: {
+      retentionPolicy: {
+        status: 'enabled'
+        days: 7
+      }
+    }
   }
 }
 
@@ -283,7 +288,7 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
 // Static Web App (Frontend)
 resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
   name: '${appServiceName}-frontend'
-  location: 'East US2' // Static Web Apps limited regions
+  location: 'West US 2' // Collocated with all other resources for minimal latency
   tags: commonTags
   sku: {
     name: environment == 'production' ? 'Standard' : 'Free'
