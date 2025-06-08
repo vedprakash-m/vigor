@@ -114,7 +114,7 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' =
   location: location
   tags: commonTags
   sku: {
-    name: environment == 'production' ? 'Premium' : 'Basic'
+    name: environment == 'production' ? 'Premium' : 'Standard'
   }
   properties: {
     adminUserEnabled: true
@@ -135,7 +135,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     }
     tenantId: tenant().tenantId
     softDeleteRetentionInDays: 30
-    purgeProtectionEnabled: environment == 'production'
+    enablePurgeProtection: environment == 'production'
     publicNetworkAccess: 'Disabled'
     enabledForDeployment: false
     enabledForDiskEncryption: false
