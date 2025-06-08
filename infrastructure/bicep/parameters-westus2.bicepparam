@@ -1,7 +1,5 @@
 using './main.bicep'
 
-using './main.bicep'
-
 // Environment configuration
 param environment = 'prod'
 param location = 'West US 2' // Different region to avoid quota
@@ -19,9 +17,6 @@ param appServiceSku = 'F1' // FREE tier - $0/month!
 // Secrets will be provided via Azure CLI or GitHub Actions
 param postgresAdminPassword = '' // Will be overridden
 param secretKey = '' // Will be overridden
-param openaiApiKey = '' // Will be overridden
-param geminiApiKey = '' // Will be overridden
-param perplexityApiKey = '' // Will be overridden
 param openaiApiKey = '' // Will be overridden
 param geminiApiKey = '' // Will be overridden
 param perplexityApiKey = '' // Will be overridden
