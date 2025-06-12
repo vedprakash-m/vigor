@@ -15,6 +15,7 @@ from api.services.workouts import (
     get_user_workout_plans,
     get_workout_plan,
     log_workout,
+    get_user_workout_days,
 )
 from core.security import get_current_active_user
 from database.connection import get_db
@@ -71,3 +72,12 @@ async def get_logs(
 ):
     """Get user's workout history."""
     return await get_user_workout_logs(db, current_user.id, limit)
+
+
+@router.get("/days", response_model=List[str])
+async def get_workout_days(
+    current_user: UserProfile = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Return list of days with completed workouts for streak calculation."""
+    return await get_user_workout_days(db, current_user.id)

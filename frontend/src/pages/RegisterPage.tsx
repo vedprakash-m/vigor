@@ -1,10 +1,10 @@
 import {
-  Box,
-  Button,
-  Flex,
-  Heading,
-  Input,
-  Text,
+    Box,
+    Button,
+    Flex,
+    Heading,
+    Input,
+    Text,
 } from '@chakra-ui/react'
 import React, { useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
@@ -26,7 +26,7 @@ export const RegisterPage = () => {
 
     try {
       await register(email, username, password)
-      navigate('/')
+      navigate('/onboarding')
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || 'Registration failed')
@@ -41,7 +41,7 @@ export const RegisterPage = () => {
         <Heading mb={6} textAlign="center" color="blue.500">
           Join Vigor
         </Heading>
-        
+
         {error && (
           <Box bg="red.100" border="1px" borderColor="red.300" p={3} rounded="md" mb={4}>
             <Text color="red.600">{error}</Text>

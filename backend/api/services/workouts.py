@@ -109,3 +109,18 @@ async def get_user_workout_logs(
     )
 
     return [WorkoutLog.model_validate(log) for log in logs]
+
+
+async def get_user_workout_days(db: Session, user_id: str) -> List[str]:
+    """Return list of ISO date strings (YYYY-MM-DD) when user completed workouts."""
+    rows = (
+        db.query(WorkoutLogDB.completed_at)
+        .filter(WorkoutLogDB.user_id == user_id)
+        .order_by(WorkoutLogDB.completed_at.desc())
+        .all()
+    )
+    dates = {
+        dt.completed_at.date().isoformat() for dt in rows  # type: ignore
+        if dt.completed_at is not None
+    }
+    return sorted(dates)

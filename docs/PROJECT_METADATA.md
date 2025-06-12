@@ -1291,6 +1291,43 @@ cd infrastructure/bicep && ./deploy.sh
 - **User Support**: Initial support infrastructure for beta users
 - **Business Development**: Marketing and user acquisition strategies
 
+### 12.9 UX Gap Remediation Plan (Approved December 9, 2024)
+
+The following user-experience gaps were identified and **approved for implementation**. Work is allocated across Sprint-0, Sprint-1, and Sprint-2 (two-week iterations). All tasks are tracked in Jira epic `UX-REVAMP-2024Q4`.
+
+| Sprint               | Gap IDs             | Theme                                  | Status         | Owner           |
+| -------------------- | ------------------- | -------------------------------------- | -------------- | --------------- |
+| Sprint-0 (Dec 9–15)  | 6, 8, 9, 14, 18, 20 | Quick wins (≤1 pt)                     | 🔄 In Progress | Frontend / Docs |
+| Sprint-1 (Dec 16–29) | 1–5, 7, 10–12       | Core onboarding & daily-use friction   | ⏳ Not started | FE + BE Growth  |
+| Sprint-2 (Jan 2–15)  | 13, 15–17, 19, 21   | Admin, Support & technical foundations | ⏳ Not started | DevOps / Design |
+
+Key acceptance metrics mirror those listed in `docs/User_Experience.md §10` and will be reported in the weekly product review.
+
+Progress will be reflected here by updating the **Status** column (✅ Done, 🔄 In Progress, ⏳ Not started).
+
+**Sprint-0 Progress Update (Dec 11):**
+• Gap 19 (Dark-mode tokens) – ✅ Done in docs.
+• Gap 20 (Mermaid accessibility) – ✅ Alt-text & CLI flag documented.
+• Gap 21 (SW update strategy) – ✅ Documented. Implementation in codebase slated Sprint-2.
+• Gap 14 (Budget granularity) – 🔄 UI labels added; dynamic values pending backend.
+Next focus: gaps 6, 8, 9, 18.
+
+**Sprint-1 Kickoff (Dec 12):**
+• Gap 4 (AI Coach surfacing) – 🚧 Implemented teaser card on Dashboard (code merged).
+• Gap 1 planning underway (OAuth error handling).
+• Remaining Sprint-0 Gap 14 (Budget dynamic tokens) moved to Sprint-1 backend tasks.
+
+**Sprint-1 Progress (Dec 13):**
+• Gap 1 minimal banner implemented.
+• Gap 2 onboarding scaffold with goal chips created.
+• Gap 3 consent overlay added.
+
+**Sprint-1 Progress (Dec 13):**
+• Gap 13 provider validation button implemented.
+
+• Gap 15 CSV export endpoint & button done.
+• Gap 16 log filters TODO next.
+
 ---
 
 ## Change Proposal Template

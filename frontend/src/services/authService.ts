@@ -86,4 +86,20 @@ export const authService = {
   async logout(): Promise<void> {
     await api.post('/auth/logout')
   },
-} 
+
+  async forgotPassword(email: string) {
+    return fetch('/api/auth/forgot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(email)
+    }).then(r => r.json())
+  },
+
+  async resetPassword(token: string, newPassword: string) {
+    return fetch('/api/auth/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, new_password: newPassword })
+    }).then(r => r.json())
+  }
+}

@@ -7,10 +7,13 @@ import { AuthProvider } from './contexts/AuthContext'
 import AdminPage from './pages/AdminPage'
 import { CoachPage } from './pages/CoachPage'
 import DashboardPage from './pages/DashboardPage'
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import LLMOrchestrationPage from './pages/LLMOrchestrationPage'
 import { LoginPage } from './pages/LoginPage'
+import { OnboardingPage } from './pages/OnboardingPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { RegisterPage } from './pages/RegisterPage'
+import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import TierManagementPage from './pages/TierManagementPage'
 import { WorkoutPage } from './pages/WorkoutPage'
 
@@ -33,6 +36,9 @@ function App() {
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/onboarding" element={<OnboardingPage />} />
 
               {/* Protected routes */}
               <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>

@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from pydantic import BaseModel
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
@@ -377,3 +377,41 @@ async def get_cost_breakdown(
             for item in breakdown
         ],
     }
+
+
+@router.get("/provider-pricing", response_model=dict)
+async def provider_pricing():
+    """Return static USD per 1M tokens pricing."""
+    return {
+        "gemini-flash-2.5": 0.075,
+        "gpt-4o-mini": 0.15,
+        "perplexity-llama": 0.20,
+        "gpt-4o": 2.50,
+    }
+
+
+@router.post("/validate-provider", response_model=dict)
+async def validate_provider(provider_name: str, api_key: str):
+    """Simulate provider credential validation."""
+    # For demo, just return success if key non-empty
+    if api_key:
+        return {"status": "valid"}
+    return {"status": "invalid"}
+
+
+@router.get("/users/{user_id}/workout-logs.csv")
+async def export_logs_csv(user_id: str, db: Session = Depends(get_db)):
+    """Return CSV of workout logs (simple demo)."""
+    from api.services.workouts import get_user_workout_logs
+    logs = await get_user_workout_logs(db, user_id, limit=1000)
+    import csv, io
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(["date", "duration", "exercise_count"])
+    for log in logs:
+        writer.writerow([
+            log.completed_at.strftime('%Y-%m-%d'),
+            log.duration_minutes,
+            len(log.exercises),
+        ])
+    return Response(content=buffer.getvalue(), media_type="text/csv")

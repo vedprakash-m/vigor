@@ -27,8 +27,14 @@ export const LoginPage = () => {
       await login(email, password)
       navigate('/')
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { detail?: string } } };
-      setError(error.response?.data?.detail || 'Login failed')
+      const axiosErr = err as { response?: { data?: { detail?: string } } }
+      const detail = axiosErr.response?.data?.detail || ''
+      if (detail.toLowerCase().includes('oauth')) {
+        console.error('oauth_failed')
+        setError('Third-party login failed. Please try again or sign in with email & password.')
+      } else {
+        setError(detail || 'Login failed')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -40,7 +46,7 @@ export const LoginPage = () => {
         <Heading mb={6} textAlign="center" color="blue.500">
           Welcome to Vigor
         </Heading>
-        
+
         {error && (
           <Box bg="red.100" border="1px" borderColor="red.300" p={3} rounded="md" mb={4}>
             <Text color="red.600">{error}</Text>

@@ -1,10 +1,25 @@
 import { Box, Container, Grid, Heading, Text } from '@chakra-ui/react'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import LLMStatus from '../components/LLMStatus'
 import { useAuth } from '../contexts/useAuth'
+import { workoutService } from '../services/workoutService'
+import { computeStreakUtc } from '../utils/streak'
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth()
+  const [streak, setStreak] = useState<number>(0)
+
+  useEffect(() => {
+    const fetchStreak = async () => {
+      try {
+        const dates: string[] = await workoutService.getWorkoutDays()
+        setStreak(computeStreakUtc(dates))
+      } catch (err) {
+        console.error('Failed to fetch streak', err)
+      }
+    }
+    fetchStreak()
+  }, [])
 
   return (
     <Container maxW="container.xl" py={6}>
@@ -37,7 +52,7 @@ const DashboardPage: React.FC = () => {
 
           <Box p={4} borderWidth={1} borderRadius="md">
             <Text fontSize="sm" color="gray.500">Current Streak</Text>
-            <Heading size="lg">0 days</Heading>
+            <Heading size="lg">{streak} days</Heading>
             <Text fontSize="sm" color="gray.400">Keep it up!</Text>
           </Box>
 
@@ -48,11 +63,17 @@ const DashboardPage: React.FC = () => {
           </Box>
         </Grid>
 
-        <Box p={6} borderWidth={1} borderRadius="md" bg="blue.50">
+        <Box p={6} borderWidth={1} borderRadius="md" bg="blue.50" mb={6}>
           <Heading size="md" mb={2}>Quick Actions</Heading>
           <Text>
             Ready to start your fitness journey? Generate a new workout plan or chat with your AI coach!
           </Text>
+        </Box>
+
+        {/* AI Coach Teaser (Gap 4) */}
+        <Box p={6} borderWidth={1} borderRadius="md" bg="purple.50" cursor="pointer" onClick={() => window.location.href='/coach'}>
+          <Heading size="md" mb={1}>💬 Ask Your Coach</Heading>
+          <Text fontSize="sm" color="purple.800">Tap here to chat with Vigor Coach for tips, motivation, and more.</Text>
         </Box>
       </Box>
     </Container>

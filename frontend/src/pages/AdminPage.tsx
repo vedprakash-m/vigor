@@ -1,23 +1,26 @@
-import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Heading,
-  Spinner,
-  Text,
-  VStack,
-  HStack,
-  Button,
-  SimpleGrid
+    Box,
+    Button,
+    Heading,
+    HStack,
+    SimpleGrid,
+    Spinner,
+    Text,
+    VStack
 } from '@chakra-ui/react';
+import React, { useEffect, useState } from 'react';
+import { adminService } from '../services/adminService';
 import { authService } from '../services/authService';
 
 const AdminPage: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('providers');
+  const [pricing, setPricing] = useState<Record<string, number> | null>(null)
 
   useEffect(() => {
     checkAdminAccess();
+    adminService.getProviderPricing().then(setPricing).catch(() => {})
   }, []);
 
   const checkAdminAccess = async () => {
@@ -26,7 +29,7 @@ const AdminPage: React.FC = () => {
       // Check if user has admin privileges (username contains 'admin')
       const hasAdminAccess = user.username.toLowerCase().includes('admin');
       setIsAdmin(hasAdminAccess);
-      
+
       if (!hasAdminAccess) {
         console.warn('Admin access denied for user:', user.username);
       }
@@ -71,7 +74,7 @@ const AdminPage: React.FC = () => {
       <Heading mb={6} color="purple.600">
         Admin Dashboard
       </Heading>
-      
+
       {/* Tab Navigation */}
       <HStack gap={4} mb={8}>
         {tabOptions.map(tab => (
@@ -102,9 +105,13 @@ const AdminPage: React.FC = () => {
               <Text>• Enable/disable providers</Text>
               <Text>• View real-time provider status</Text>
             </VStack>
+            <Button mt={4} colorScheme="blue" onClick={async ()=>{
+              const res = await adminService.validateProvider('gemini-flash-2.5','demo_key')
+              alert('Validation result: '+res.status)
+            }}>Validate Provider Credentials</Button>
           </Box>
         )}
-        
+
         {activeTab === 'budget' && (
           <Box border="1px" borderColor="gray.200" borderRadius="md" p={6} bg="white">
             <Heading size="md" mb={4}>Budget Settings</Heading>
@@ -112,11 +119,11 @@ const AdminPage: React.FC = () => {
             <SimpleGrid columns={2} gap={6}>
               <Box>
                 <Text fontWeight="bold" mb={2}>Weekly Budget</Text>
-                <Text color="gray.600">Set maximum weekly AI spending limit</Text>
+                <Text color="gray.600">Set maximum weekly AI spending limit {pricing && pricing['gemini-flash-2.5'] ? `(e.g., $10 / ${(10000000/(pricing['gemini-flash-2.5']*1e6)).toFixed(0)} tokens)` : ''}</Text>
               </Box>
               <Box>
                 <Text fontWeight="bold" mb={2}>Monthly Budget</Text>
-                <Text color="gray.600">Set maximum monthly AI spending limit</Text>
+                <Text color="gray.600">Set maximum monthly AI spending limit {pricing && pricing['gemini-flash-2.5'] ? `(e.g., $30 / ${(30000000/(pricing['gemini-flash-2.5']*1e6)).toFixed(0)} tokens)` : ''}</Text>
               </Box>
               <Box>
                 <Text fontWeight="bold" mb={2}>Alert Threshold</Text>
@@ -129,7 +136,7 @@ const AdminPage: React.FC = () => {
             </SimpleGrid>
           </Box>
         )}
-        
+
         {activeTab === 'analytics' && (
           <VStack gap={6}>
             <Box width="100%" border="1px" borderColor="gray.200" borderRadius="md" p={6} bg="white">
@@ -149,7 +156,7 @@ const AdminPage: React.FC = () => {
                 </Box>
               </SimpleGrid>
             </Box>
-            
+
             <Box width="100%" border="1px" borderColor="gray.200" borderRadius="md" p={6} bg="white">
               <Heading size="md" mb={4}>Top Providers</Heading>
               <Text color="gray.600">No usage data available yet. AI usage will appear here once you start using the system.</Text>
@@ -161,4 +168,4 @@ const AdminPage: React.FC = () => {
   );
 };
 
-export default AdminPage; 
+export default AdminPage;
