@@ -14,7 +14,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-RESOURCE_GROUP="vigor-prod-rg"
+RESOURCE_GROUP="vigor-rg"
 DEPLOYMENT_NAME="vigor-deployment-$(date +%Y%m%d-%H%M%S)"
 
 # Deployment strategies (ordered by preference: cost -> quota availability)

@@ -8,7 +8,8 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/setupTests.js'],
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: 'tsconfig.jest.json'
+      tsconfig: 'tsconfig.jest.json',
+      useESM: false,
     }],
     '^.+\\.(js|jsx)$': 'babel-jest',
   },
@@ -21,6 +22,7 @@ module.exports = {
     '!src/**/*.test.{ts,tsx}',
     '!src/**/*.spec.{ts,tsx}',
     '!src/services/authService.ts', // Exclude files with import.meta.env
+    '!src/test-utils.tsx',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
@@ -29,4 +31,14 @@ module.exports = {
     '<rootDir>/src/**/*.{test,spec}.{ts,tsx}',
   ],
   watchAll: false,
+  globals: {
+    'ts-jest': {
+      tsconfig: 'tsconfig.jest.json',
+      useESM: false,
+    },
+  },
+  testEnvironmentOptions: {
+    customExportConditions: [''],
+  },
+  setupFiles: ['<rootDir>/jest.setup.js'],
 };

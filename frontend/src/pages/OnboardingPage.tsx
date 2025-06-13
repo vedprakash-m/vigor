@@ -24,6 +24,11 @@ export const OnboardingPage = () => {
     setSelected(selected.filter(g => g !== goal))
   }
 
+  const handleAcceptConsent = () => {
+    // TODO submit onboarding to backend
+    setShowConsent(false)
+  }
+
   return (
     <Box p={8} maxW="lg" mx="auto">
       <Heading mb={4}>Step 1: Select Your Primary Goal</Heading>
@@ -54,7 +59,7 @@ export const OnboardingPage = () => {
             <Text fontSize="sm" mb={6}>We use your data to personalise your workout plans in accordance with GDPR Article 13. Do you consent?</Text>
             <HStack justifyContent="flex-end">
               <Button variant="ghost" onClick={()=>setShowConsent(false)}>Decline</Button>
-              <Button colorScheme="blue" onClick={()=>{/* TODO submit onboarding to backend */}}>Accept & Continue</Button>
+              <Button colorScheme="blue" onClick={handleAcceptConsent}>Accept & Continue</Button>
             </HStack>
           </Box>
         </Box>

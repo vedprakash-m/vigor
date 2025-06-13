@@ -1,10 +1,8 @@
-import { Box, Button, Heading, Text, VStack, useToast } from '@chakra-ui/react'
+import { Box, Button, Heading, Text, VStack } from '@chakra-ui/react'
 
 export const ProfilePage = () => {
-  const toast = useToast()
-
   const handleDelete = () => {
-    toast({ title: 'Account scheduled for deletion', description: 'You have 14 days to undo via link in email.', status: 'info' })
+    console.log('Account scheduled for deletion - You have 14 days to undo via link in email.')
     // TODO call API to flag deletion
   }
 
@@ -14,7 +12,7 @@ export const ProfilePage = () => {
       <Text>Your profile settings and preferences will appear here.</Text>
 
       <VStack mt={8} align="start">
-        <Heading size="sm" color="red.500">Danger Zone</Heading>
+        <Heading as="h2" size="sm" color="red.500">Danger Zone</Heading>
         <Text fontSize="sm">Deleting your account will permanently remove your data after a 14-day grace period.</Text>
         <Button colorScheme="red" onClick={handleDelete}>Delete Account</Button>
       </VStack>
