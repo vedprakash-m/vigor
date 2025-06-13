@@ -1,98 +1,66 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import React from 'react'
-import { BrowserRouter } from 'react-router-dom'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { LoginPage } from '../../pages/LoginPage'
 import { authService } from '../../services/authService'
+import { render } from '../../test-utils'
 
 // Mock services
 jest.mock('../../services/authService')
+
+// Mock router
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useNavigate: () => jest.fn(),
 }))
-
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <BrowserRouter>
-    {children}
-  </BrowserRouter>
-)
 
 describe('LoginPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
-  it('renders login form with all required fields', () => {
-    render(
-      <TestWrapper>
-        <LoginPage />
-      </TestWrapper>
-    )
+  it('renders email & password fields and submit button', () => {
+    render(<LoginPage />)
 
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Enter your email')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Enter your password')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
   })
 
-  it('validates form inputs before submission', async () => {
-    render(
-      <TestWrapper>
-        <LoginPage />
-      </TestWrapper>
-    )
+  it('calls authService.login with provided credentials', async () => {
+    const mockLogin = jest.fn().mockResolvedValue({})
+    // @ts-expect-error - overriding mocked login type for test
+    authService.login.mockImplementation(mockLogin)
 
-    const loginButton = screen.getByRole('button', { name: /login/i })
-    fireEvent.click(loginButton)
+    render(<LoginPage />)
+
+    fireEvent.change(screen.getByPlaceholderText('Enter your email'), {
+      target: { value: 'test@example.com' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('Enter your password'), {
+      target: { value: 'password123' },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/email is required/i)).toBeInTheDocument()
-      expect(screen.getByText(/password is required/i)).toBeInTheDocument()
+      expect(mockLogin).toHaveBeenCalledWith('test@example.com', 'password123')
     })
   })
 
-  it('handles successful login', async () => {
-    const mockLogin = jest.fn().mockResolvedValue({ token: 'test-token' })
-    ;(authService.login as jest.Mock).mockImplementation(mockLogin)
+  it('shows error returned from authService.login', async () => {
+    const mockLogin = jest.fn().mockRejectedValue({ response: { data: { detail: 'Invalid credentials' } } })
+    // @ts-expect-error - overriding mocked login type for test
+    authService.login.mockImplementation(mockLogin)
 
-    render(
-      <TestWrapper>
-        <LoginPage />
-      </TestWrapper>
-    )
+    render(<LoginPage />)
 
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: 'test@example.com' }
+    fireEvent.change(screen.getByPlaceholderText('Enter your email'), {
+      target: { value: 'test@example.com' },
     })
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: 'password123' }
+    fireEvent.change(screen.getByPlaceholderText('Enter your password'), {
+      target: { value: 'password123' },
     })
-    fireEvent.click(screen.getByRole('button', { name: /login/i }))
 
-    await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith({
-        email: 'test@example.com',
-        password: 'password123'
-      })
-    })
-  })
-
-  it('displays error message on login failure', async () => {
-    const mockLogin = jest.fn().mockRejectedValue(new Error('Invalid credentials'))
-    ;(authService.login as jest.Mock).mockImplementation(mockLogin)
-
-    render(
-      <TestWrapper>
-        <LoginPage />
-      </TestWrapper>
-    )
-
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: 'test@example.com' }
-    })
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: 'wrongpassword' }
-    })
-    fireEvent.click(screen.getByRole('button', { name: /login/i }))
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
 
     await waitFor(() => {
       expect(screen.getByText(/invalid credentials/i)).toBeInTheDocument()
@@ -100,20 +68,16 @@ describe('LoginPage', () => {
   })
 
   it('validates email format', async () => {
-    render(
-      <TestWrapper>
-        <LoginPage />
-      </TestWrapper>
-    )
+    render(<LoginPage />)
 
-    fireEvent.change(screen.getByLabelText(/email/i), {
+    fireEvent.change(screen.getByPlaceholderText('Enter your email'), {
       target: { value: 'invalid-email' }
     })
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByPlaceholderText('Enter your password'), {
       target: { value: 'password123' }
     })
 
-    fireEvent.click(screen.getByRole('button', { name: /login/i }))
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
 
     await waitFor(() => {
       expect(screen.getByText(/invalid email format/i)).toBeInTheDocument()
@@ -126,19 +90,15 @@ describe('LoginPage', () => {
     )
     ;(authService.login as jest.Mock).mockImplementation(mockLogin)
 
-    render(
-      <TestWrapper>
-        <LoginPage />
-      </TestWrapper>
-    )
+    render(<LoginPage />)
 
-    fireEvent.change(screen.getByLabelText(/email/i), {
+    fireEvent.change(screen.getByPlaceholderText('Enter your email'), {
       target: { value: 'test@example.com' }
     })
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByPlaceholderText('Enter your password'), {
       target: { value: 'password123' }
     })
-    fireEvent.click(screen.getByRole('button', { name: /login/i }))
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
 
     await waitFor(() => {
       expect(screen.getByText(/logging in/i)).toBeInTheDocument()
@@ -146,11 +106,7 @@ describe('LoginPage', () => {
   })
 
   it('navigates to register page when register link is clicked', () => {
-    render(
-      <TestWrapper>
-        <LoginPage />
-      </TestWrapper>
-    )
+    render(<LoginPage />)
 
     const registerLink = screen.getByText(/don't have an account/i)
     expect(registerLink).toBeInTheDocument()

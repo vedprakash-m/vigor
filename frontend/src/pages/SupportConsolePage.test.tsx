@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { supportService } from '../services/supportService'
+import { render } from '../test-utils'
 import { SupportConsolePage } from './SupportConsolePage'
 
 // Mock the support service

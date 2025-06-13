@@ -1,7 +1,8 @@
 import axios from 'axios'
 import type { AuthResponse, TokenRefreshResponse, User } from '../types/auth'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL ?? process.env.VITE_API_BASE_URL ?? 'http://localhost:8001'
 
 // Create axios instance
 const api = axios.create({

@@ -9,7 +9,7 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       tsconfig: 'tsconfig.jest.json',
-      useESM: false,
+      useESM: true,
     }],
     '^.+\\.(js|jsx)$': 'babel-jest',
   },
@@ -34,7 +34,7 @@ module.exports = {
   globals: {
     'ts-jest': {
       tsconfig: 'tsconfig.jest.json',
-      useESM: false,
+      useESM: true,
     },
   },
   testEnvironmentOptions: {
