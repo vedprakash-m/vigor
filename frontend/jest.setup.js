@@ -1,22 +1,7 @@
 // Jest setup file that runs before setupTests.ts
 // This ensures polyfills are loaded before any modules
 
-import { ChakraProvider, defaultSystem } from '@chakra-ui/react'
-import React from 'react'
-import { BrowserRouter } from 'react-router-dom'
-import { TextDecoder, TextEncoder } from 'util'
-import { AuthProvider } from './src/contexts/AuthContext'
-
-const AllProviders = ({ children }) =>
-  React.createElement(
-    ChakraProvider,
-    { value: defaultSystem },
-    React.createElement(
-      BrowserRouter,
-      null,
-      React.createElement(AuthProvider, null, children)
-    )
-  )
+import { TextDecoder, TextEncoder } from 'util';
 
 // Override global render with Chakra/Router/AuthProvider wrapper
 jest.mock('@testing-library/react', () => {
