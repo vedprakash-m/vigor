@@ -2,7 +2,6 @@
 // This ensures polyfills are loaded before any modules
 
 import { ChakraProvider, defaultSystem } from '@chakra-ui/react'
-import { render as rtlRender } from '@testing-library/react'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { TextDecoder, TextEncoder } from 'util'
@@ -19,14 +18,30 @@ const AllProviders = ({ children }) =>
     )
   )
 
-// Override global render
+// Override global render with Chakra/Router/AuthProvider wrapper
 jest.mock('@testing-library/react', () => {
-  const actual = jest.requireActual('@testing-library/react')
+  const actual = jest.requireActual('@testing-library/react');
+  const React = require('react');
+  const { ChakraProvider, defaultSystem } = require('@chakra-ui/react');
+  const { BrowserRouter } = require('react-router-dom');
+  const { AuthProvider } = require('./src/contexts/AuthContext');
+
+  const AllProviders = ({ children }) =>
+    React.createElement(
+      ChakraProvider,
+      { value: defaultSystem },
+      React.createElement(
+        BrowserRouter,
+        null,
+        React.createElement(AuthProvider, null, children)
+      )
+    );
+
   return {
     ...actual,
-    render: (ui, options) => rtlRender(ui, { wrapper: AllProviders, ...options }),
-  }
-})
+    render: (ui, options) => actual.render(ui, { wrapper: AllProviders, ...options }),
+  };
+});
 
 // Make TextEncoder and TextDecoder available globally
 global.TextEncoder = TextEncoder
