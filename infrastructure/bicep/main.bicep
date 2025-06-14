@@ -325,7 +325,7 @@ module keyVaultSecretsModule 'keyvault-secrets.bicep' = {
 }
 
 // Add App Service access policy to KeyVault in the database resource group
-module appServiceKeyVaultAccess 'keyvault-access.bicep' = {
+module appServiceKeyVaultAccess 'keyvault-access.bicep' = if (!useDirectDeployment) {
   name: 'appServiceKeyVaultAccess'
   scope: resourceGroup(databaseResourceGroup)
   params: {
@@ -341,7 +341,9 @@ module appServiceKeyVaultAccess 'keyvault-access.bicep' = {
 
 // Outputs
 output resourceGroupName string = resourceGroup().name
-output backendUrl string = 'https://${appService.properties.defaultHostName}'
+output backendUrl string = useDirectDeployment
+  ? 'https://${backendAppService.outputs.hostName}'
+  : 'https://${appService.properties.defaultHostName}'
 output frontendUrl string = 'https://${staticWebApp.properties.defaultHostname}'
 output postgresServerFqdn string = db.outputs.fullyQualifiedDomainName
 output keyVaultName string = keyVault.name

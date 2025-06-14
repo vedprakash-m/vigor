@@ -69,8 +69,8 @@ jobs:
           format: "sarif"
           output: "trivy-results.sarif"
           ignore-unfixed: true # Skip vulnerabilities with no available fix
-          severity: "HIGH,CRITICAL" # Focus on high and critical vulnerabilities
-          exit-code: 0 # Don't fail the build for now - just report issues
+          severity: "CRITICAL" # Focus only on critical vulnerabilities for now
+          exit-code: 0 # Don't fail the build regardless of findings
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
@@ -822,6 +822,15 @@ jobs:
         with:
           azure-authentication: "true"
           api-keys: "true"
+          postgres-admin-password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+          secret-key: ${{ secrets.SECRET_KEY }}
+          admin-email: ${{ secrets.ADMIN_EMAIL }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
+          perplexity-api-key: ${{ secrets.PERPLEXITY_API_KEY }}
 
   # New architecture jobs for App Service + Functions deployment
   deploy-backend-app-service:

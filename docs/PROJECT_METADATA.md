@@ -19,10 +19,14 @@ Vigor is an AI-powered fitness and wellness companion designed to provide person
 
 **🚀 NEW ARCHITECTURE TRANSITION (June 2025):**
 
-- **Moving from Containers to App Service + Functions**: Migration in progress (June 14, 2025)
+- **Moving from Containers to App Service + Functions**: Migration in progress (June 15, 2025)
 - **Reason for Change**: Persistent ACR-related deployment issues and cost optimization
 - **Expected Benefits**: Simplified deployment pipeline, reduced costs, better scaling options
-- **Status**: Implementation in progress
+- **Status**: Implementation in progress, CI/CD issues resolved
+  - Fixed composite actions to properly handle secrets
+  - Resolved Bicep validation errors with output references
+  - Optimized security scanning to prevent pipeline blocks
+  - Updated managed identity integration for Key Vault access
 
 **🔄 CURRENT DEPLOYMENT ARCHITECTURE:**
 

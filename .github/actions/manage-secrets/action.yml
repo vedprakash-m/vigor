@@ -10,6 +10,33 @@ inputs:
     description: "Enable API key extraction"
     required: false
     default: "true"
+  postgres-admin-password:
+    description: "PostgreSQL admin password"
+    required: true
+  secret-key:
+    description: "Secret key for security"
+    required: true
+  admin-email:
+    description: "Admin email address"
+    required: true
+  azure-client-id:
+    description: "Azure client ID for authentication"
+    required: false
+  azure-tenant-id:
+    description: "Azure tenant ID for authentication"
+    required: false
+  azure-subscription-id:
+    description: "Azure subscription ID"
+    required: false
+  openai-api-key:
+    description: "OpenAI API key"
+    required: false
+  gemini-api-key:
+    description: "Gemini API key"
+    required: false
+  perplexity-api-key:
+    description: "Perplexity API key"
+    required: false
 
 outputs:
   openai-api-key:
@@ -38,24 +65,24 @@ runs:
         required_valid=true
 
         # Check required secrets
-        if [ -z "${{ secrets.POSTGRES_ADMIN_PASSWORD }}" ]; then
+        if [ -z "${{ inputs.postgres-admin-password }}" ]; then
           echo "❌ Missing required secret: POSTGRES_ADMIN_PASSWORD"
           required_valid=false
         fi
 
-        if [ -z "${{ secrets.SECRET_KEY }}" ]; then
+        if [ -z "${{ inputs.secret-key }}" ]; then
           echo "❌ Missing required secret: SECRET_KEY"
           required_valid=false
         fi
 
-        if [ -z "${{ secrets.ADMIN_EMAIL }}" ]; then
+        if [ -z "${{ inputs.admin-email }}" ]; then
           echo "❌ Missing required secret: ADMIN_EMAIL"
           required_valid=false
         fi
 
         # Azure specific secrets if enabled
         if [ "${{ inputs.azure-authentication }}" == "true" ]; then
-          if [ -z "${{ secrets.AZURE_CLIENT_ID }}" ] || [ -z "${{ secrets.AZURE_TENANT_ID }}" ] || [ -z "${{ secrets.AZURE_SUBSCRIPTION_ID }}" ]; then
+          if [ -z "${{ inputs.azure-client-id }}" ] || [ -z "${{ inputs.azure-tenant-id }}" ] || [ -z "${{ inputs.azure-subscription-id }}" ]; then
             echo "❌ Missing required Azure authentication secrets"
             required_valid=false
           fi
@@ -97,6 +124,6 @@ runs:
         }
 
         # Process each API key
-        sanitize_api_key "openai-api-key" "${{ secrets.OPENAI_API_KEY }}"
-        sanitize_api_key "gemini-api-key" "${{ secrets.GEMINI_API_KEY }}"
-        sanitize_api_key "perplexity-api-key" "${{ secrets.PERPLEXITY_API_KEY }}"
+        sanitize_api_key "openai-api-key" "${{ inputs.openai-api-key }}"
+        sanitize_api_key "gemini-api-key" "${{ inputs.gemini-api-key }}"
+        sanitize_api_key "perplexity-api-key" "${{ inputs.perplexity-api-key }}"
