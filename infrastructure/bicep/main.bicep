@@ -110,7 +110,7 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' =
   location: location
   tags: commonTags
   sku: {
-    name: 'Basic' // Basic is cheapest and usually has quota in East US
+    name: 'Standard' // Standard is widely supported across regions
   }
   properties: {
     adminUserEnabled: true
