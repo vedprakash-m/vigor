@@ -40,8 +40,12 @@ param appServiceSku string = 'S1'
 @description('Resource group name where database resources (PostgreSQL) will live. Allows you to delete the app RG without losing data.')
 param databaseResourceGroup string = 'vigor-db-rg'
 
+// Note: Container Registry related parameters are being phased out as we move to App Service + Functions
 @description('Deploy Azure Container Registry (set to true only if you need a new ACR).')
 param deployContainerRegistry bool = false
+
+@description('Use direct App Service deployment instead of containers (true for new architecture, false for legacy)')
+param useDirectDeployment bool = true
 
 // Variables
 // Using these variables in resource names to ensure uniqueness
@@ -59,11 +63,14 @@ var commonTags = {
 var appServicePlanName = 'vigor-app-plan'
 var backendWebAppName = 'vigor-backend'
 var frontendAppName = 'vigor-frontend'
+var functionAppName = 'vigor-ai-functions'
+var staticWebAppName = 'vigor-static-webapp'
 var postgresServerName = 'vigor-db-server'
 var storageAccountName = 'vigorsa99'
 var keyVaultName = 'vigor-kv'
 var appInsightsName = 'vigor-ai'
 var logAnalyticsName = 'vigor-la'
+// Marked as deprecated as we're moving away from containers
 var containerRegistryName = 'vigoracr'
 
 // Log Analytics Workspace
@@ -178,8 +185,29 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   }
 }
 
-// App Service (Backend)
-resource appService 'Microsoft.Web/sites@2023-01-01' = {
+// Backend App Service (direct deployment)
+module backendAppService './app-service.bicep' = if (useDirectDeployment) {
+  name: 'backendAppService'
+  params: {
+    name: backendWebAppName
+    location: location
+    tags: commonTags
+    appServicePlanId: appServicePlan.id
+    pythonVersion: '3.11'
+    appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
+    appInsightsConnectionString: appInsights.properties.ConnectionString
+    databaseHost: db.outputs.fullyQualifiedDomainName
+    databaseName: 'vigordb'
+    databaseUser: postgresAdminUsername
+    databasePassword: postgresAdminPassword
+    secretKey: secretKey
+    keyVaultName: keyVaultName
+    keyVaultResourceGroupName: databaseResourceGroup
+  }
+}
+
+// Legacy App Service (container-based) - kept for backward compatibility
+resource appService 'Microsoft.Web/sites@2023-01-01' = if (!useDirectDeployment) {
   name: backendWebAppName
   location: location
   tags: commonTags
@@ -238,8 +266,20 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
   }
 }
 
-// Static Web App (Frontend)
-resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
+// Static Web App (Frontend) - New module for Static Web App
+module frontendStaticWebApp './static-web-app.bicep' = if (useDirectDeployment) {
+  name: 'frontendStaticWebApp'
+  params: {
+    name: staticWebAppName
+    location: location
+    tags: commonTags
+    skuName: 'Standard'
+    skuTier: 'Standard'
+  }
+}
+
+// Legacy Static Web App (to maintain backward compatibility)
+resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = if (!useDirectDeployment) {
   name: frontendAppName
   location: 'Central US' // Use same region as other resources for consistency
   tags: commonTags
@@ -247,6 +287,25 @@ resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
     name: 'Free' // Always use Free tier for cost optimization
   }
   properties: {}
+}
+
+// Function App for AI Processing (new component for serverless architecture)
+module aiFunctionApp './function-app.bicep' = if (useDirectDeployment) {
+  name: 'aiFunctionApp'
+  params: {
+    name: functionAppName
+    location: location
+    tags: commonTags
+    appServicePlanId: appServicePlan.id
+    appInsightsConnectionString: appInsights.properties.ConnectionString
+    appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
+    storageAccountName: storageMod.outputs.storageAccountName
+    storageAccountKey: storageMod.outputs.storageAccountKey
+    keyVaultName: keyVaultName
+    keyVaultResourceGroupName: databaseResourceGroup
+    runtime: 'python'
+    runtimeVersion: '3.11'
+  }
 }
 
 // Deploy KeyVault secrets to the database resource group
