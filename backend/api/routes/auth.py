@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 # Third-party imports
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-# Use python-jose for JWT handling (PyJWT not required)
 from jose import ExpiredSignatureError, JWTError, jwt
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
