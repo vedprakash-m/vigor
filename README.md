@@ -114,12 +114,14 @@
 The easiest way to get started is using VS Code tasks:
 
 1. **Install Dependencies**
+
    ```
    # Install all dependencies (backend and frontend)
    Task: Install All Dependencies
    ```
 
 2. **Start Services**
+
    ```
    # Start backend server
    Task: Start Backend Server
@@ -129,6 +131,7 @@ The easiest way to get started is using VS Code tasks:
    ```
 
 3. **Run Tests**
+
    ```
    # Run backend tests
    Task: Run Backend Tests
