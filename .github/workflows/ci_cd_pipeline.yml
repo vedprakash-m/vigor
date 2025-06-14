@@ -159,7 +159,7 @@ jobs:
 
       - name: Upload coverage reports
         if: matrix.task == 'test'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         continue-on-error: true
         with:
           file: backend/coverage.xml
@@ -204,7 +204,7 @@ jobs:
           npm test -- --coverage --watchAll=false
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         continue-on-error: true
         with:
           file: frontend/coverage/lcov.info

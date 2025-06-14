@@ -180,7 +180,7 @@ jobs:
           pytest --cov=. --cov-report=xml --cov-report=html --disable-warnings
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         if: ${{ success() || failure() }} # Upload even if tests fail
         with:
           file: backend/coverage.xml
@@ -226,7 +226,7 @@ jobs:
           npm test -- --coverage --watchAll=false
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         if: ${{ success() || failure() }} # Upload even if tests fail
         with:
           file: frontend/coverage/lcov.info
