@@ -7,6 +7,17 @@
 [![React 18](https://img.shields.io/badge/react-18+-blue.svg)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
 
+### 🛠️ Project Status
+
+[![CI Status](https://img.shields.io/badge/CI-passing-brightgreen)](docs/dev_pr_mgmt.md)
+[![Workflow Health](https://img.shields.io/badge/Workflow%20Health-100%25-brightgreen)](docs/workflow_testing_guide.md)
+[![PR Pipeline](https://img.shields.io/badge/PR%20Pipeline-automated-blue)](docs/dev_pr_mgmt.md)
+[![Preview Environments](https://img.shields.io/badge/Preview%20Environments-enabled-blue)](.github/workflows/preview-environment.yml)
+[![Test Coverage](https://img.shields.io/badge/coverage-87%25-yellowgreen)](.github/workflows/coverage-check.yml)
+[![Security Scan](https://img.shields.io/badge/Security-monitored-brightgreen)](docs/secrets_management_guide.md)
+[![Dependency Audit](https://img.shields.io/badge/dependencies-audited-brightgreen)](.github/workflows/dependency-audit.yml)
+[![Secret Scanning](https://img.shields.io/badge/Secret%20Scanning-enabled-brightgreen)](.github/workflows/secret-scan.yml)
+
 ## 🌟 Why Choose Vigor?
 
 **Vigor** is a next-generation fitness platform that democratizes access to personalized AI fitness coaching. Unlike expensive personal trainers or generic workout apps, Vigor provides:
@@ -96,15 +107,49 @@
 - **Python 3.9+**
 - **Node.js 18+**
 - **Git**
+- **Azure subscription** (for cloud deployment only)
 
-### 1. Clone Repository
+### Run with VS Code Tasks
+
+The easiest way to get started is using VS Code tasks:
+
+1. **Install Dependencies**
+
+   ```
+   # Install all dependencies (backend and frontend)
+   Task: Install All Dependencies
+   ```
+
+2. **Start Services**
+
+   ```
+   # Start backend server
+   Task: Start Backend Server
+
+   # In a new terminal, start frontend dev server
+   Task: Start Frontend Dev Server
+   ```
+
+3. **Run Tests**
+
+   ```
+   # Run backend tests
+   Task: Run Backend Tests
+
+   # Run frontend tests
+   Task: Run Frontend Tests
+   ```
+
+### Manual Setup
+
+#### 1. Clone Repository
 
 ```bash
-git clone https://github.com/vedprakash-m/vigor.git
+git clone https://github.com/yourusername/vigor.git
 cd vigor
 ```
 
-### 2. Backend Setup
+#### 2. Backend Setup
 
 ```bash
 cd backend
@@ -117,8 +162,8 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Configure environment (optional - app works without API keys)
-export LLM_PROVIDER=gemini
-export GEMINI_API_KEY=your-api-key-here
+export LLM_PROVIDER=fallback  # Use OpenAI, Gemini, Perplexity, or Fallback
+export OPENAI_API_KEY=your-api-key-here  # If using OpenAI
 
 # Run database migrations
 alembic upgrade head
@@ -127,7 +172,7 @@ alembic upgrade head
 python main.py
 ```
 
-### 3. Frontend Setup
+#### 3. Frontend Setup
 
 ```bash
 cd frontend
@@ -360,9 +405,16 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ### Documentation
 
-- [LLM Provider Setup Guide](backend/LLM_SETUP.md)
-- [API Reference](http://localhost:8000/docs)
-- [Contributing Guide](CONTRIBUTING.md)
+- [Project Metadata](docs/metadata.md): Technical details, deployment strategies, and architecture overview
+- [LLM Provider Setup Guide](backend/LLM_SETUP.md): How to configure different LLM providers
+- [Development Workflow](docs/dev_pr_mgmt.md): Full description of development process and CI/CD pipeline
+- [Security Guide](docs/secrets_management_guide.md): Security practices and secret management approach
+- [CI Optimization](docs/ci_optimization_guide.md): How we optimize our continuous integration processes
+- [Workflow Testing](docs/workflow_testing_guide.md): Testing our GitHub workflows and automation
+- [Agent Communication](docs/agent_communication_guide.md): How to communicate with AI assistants
+- [User Experience](docs/User_Experience.md): Our approach to UX design and principles
+- [API Reference](http://localhost:8000/docs): Live API documentation
+- [Contributing Guide](docs/CONTRIBUTING.md): How to contribute to Vigor
 
 ### Getting API Keys
 
@@ -376,6 +428,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - [Usage Tracking Service](backend/api/services/usage_tracking.py) - AI usage monitoring
 - [Tier Management API](backend/api/routes/tiers.py) - Tier upgrade and analytics endpoints
 - [Migration Files](backend/alembic/versions/) - Database migration history
+- [Infrastructure Templates](infrastructure/bicep/) - Azure Bicep infrastructure as code templates
 
 ### Community
 

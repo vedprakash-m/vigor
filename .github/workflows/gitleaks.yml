@@ -1,0 +1,45 @@
+name: Secrets Detection
+
+on:
+  pull_request:
+    branches: ["**"]
+  push:
+    branches: [main, master]
+  schedule:
+    - cron: "0 6 * * 1" # Weekly on Mondays at 6:00 AM UTC
+
+jobs:
+  gitleaks:
+    name: Detect Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Process Findings
+        if: ${{ failure() && github.event_name == 'pull_request' }}
+        run: |
+          echo "::warning::Potential secrets detected in this PR!"
+          echo "::warning::Please review the scan results and remove any sensitive information."
+
+          # Create comment on PR
+          gh pr comment ${{ github.event.pull_request.number }} --body "## 🔒 Secret Detection Alert
+
+          This PR may contain sensitive information such as API keys, tokens, or passwords.
+
+          Please review the Gitleaks scan results and address any findings by:
+
+          1. Removing the sensitive information
+          2. Replacing it with environment variables or secret references
+          3. Using GitHub Secrets for sensitive values
+
+          See our [secrets management guide](docs/secrets_management_guide.md) for guidance."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

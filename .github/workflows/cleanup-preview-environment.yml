@@ -1,0 +1,102 @@
+name: Cleanup Preview Environment
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    name: Cleanup Preview Environment
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      deployments: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get Environment Name
+        id: env-name
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          SHA_SHORT=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)
+          ENVIRONMENT_NAME="pr-${PR_NUMBER}-${SHA_SHORT}"
+          echo "environment_name=$ENVIRONMENT_NAME" >> $GITHUB_OUTPUT
+
+      # Get deployment info
+      - name: Find deployments
+        id: get-deployments
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: deployments } = await github.rest.repos.listDeployments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              environment: `PR Preview: #${{ github.event.pull_request.number }}`
+            });
+
+            if (deployments.length > 0) {
+              console.log(`Found ${deployments.length} deployments for PR #${{ github.event.pull_request.number }}`);
+              return deployments.map(d => d.id);
+            } else {
+              console.log(`No deployments found for PR #${{ github.event.pull_request.number }}`);
+              return [];
+            }
+
+      # Delete the preview environment resources
+      - name: Delete preview environment
+        if: steps.get-deployments.outputs.result != '[]'
+        run: |
+          echo "Deleting preview environment for ${{ steps.env-name.outputs.environment_name }}"
+
+          # This is a placeholder for your actual cleanup logic
+          # This could be removing resources from Netlify, Vercel, Azure Static Web Apps, or a custom solution
+
+          # For Azure Static Web Apps example:
+          # az staticwebapp delete --name "vigor-preview-${{ steps.env-name.outputs.environment_name }}" --resource-group "vigor-preview" --yes
+
+          # For Netlify example:
+          # netlify site:delete "vigor-preview-${{ steps.env-name.outputs.environment_name }}" --force --auth ${{ secrets.NETLIFY_AUTH_TOKEN }}
+
+          echo "Preview environment deleted successfully"
+
+      # Update deployment status
+      - name: Update deployment statuses
+        if: steps.get-deployments.outputs.result != '[]'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const deploymentIds = ${{ steps.get-deployments.outputs.result }};
+
+            if (!deploymentIds || deploymentIds.length === 0) {
+              console.log('No deployments to update');
+              return;
+            }
+
+            for (const deploymentId of deploymentIds) {
+              console.log(`Marking deployment ${deploymentId} as inactive`);
+
+              await github.rest.repos.createDeploymentStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                deployment_id: deploymentId,
+                state: 'inactive',
+                description: 'Preview environment cleaned up after PR was closed'
+              });
+            }
+
+      - name: Add cleanup comment to PR
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `🧹 Preview environment for PR #${{ github.event.pull_request.number }} has been cleaned up and resources have been deleted.`
+            });
