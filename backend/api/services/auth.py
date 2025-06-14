@@ -81,8 +81,14 @@ async def create_user_token(user: UserProfile) -> dict:
     access_token = create_access_token(
         data={"sub": user.id}, expires_delta=expires_delta
     )
+    refresh_token_expires = timedelta(days=7)
+    refresh_token = create_access_token(
+        data={"sub": user.id}, expires_delta=refresh_token_expires
+    )
+
     return {
         "access_token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer",
         "expires_at": datetime.utcnow() + expires_delta,
     }
