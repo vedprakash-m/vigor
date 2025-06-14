@@ -47,7 +47,7 @@ class LoginRequest(BaseModel):
 async def login(
     request: Request,
     db: Session = Depends(get_db),
-    form_data: OAuth2PasswordRequestForm = Depends(None),
+    form_data: OAuth2PasswordRequestForm | None = Depends(lambda: None),
     login_json: LoginRequest | None = Body(None),
 ):
     """Login and get access token.
@@ -61,7 +61,7 @@ async def login(
         username = login_json.email
         password = login_json.password
     elif form_data:
-        username = form_data.username
+        username = form_data.username  # type: ignore[attr-defined]
         password = form_data.password
     else:
         raise HTTPException(status_code=422, detail="Missing credentials")
