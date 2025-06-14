@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
-import jwt
+# Use python-jose for JWT handling (PyJWT not required)
+from jose import jwt, JWTError, ExpiredSignatureError
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
@@ -21,14 +22,16 @@ RESET_SECRET = settings.SECRET_KEY + "_pwreset"
 RESET_EXPIRE_MINUTES = 30
 
 
-@router.post("/register", response_model=dict)
+@router.post("/register", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserRegister, db: Session = Depends(get_db)):
     """Register a new user."""
     user = await register_user(db, user_data.dict())
     token_data = await create_user_token(user)
     return {
-        "message": "User registered successfully",
-        "user": {"id": user.id, "email": user.email, "username": user.username},
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "tier": user.user_tier.value if hasattr(user, "user_tier") else "FREE",
         **token_data,
     }
 
@@ -88,9 +91,9 @@ async def reset_password(req: ResetPasswordRequest, db: Session = Depends(get_db
     try:
         payload = jwt.decode(req.token, RESET_SECRET, algorithms=["HS256"])
         user_id: str = payload.get("sub")
-    except jwt.ExpiredSignatureError:
+    except ExpiredSignatureError:
         raise HTTPException(status_code=400, detail="Token expired")
-    except jwt.PyJWTError:
+    except JWTError:
         raise HTTPException(status_code=400, detail="Invalid token")
 
     user = db.query(UserProfile).filter(UserProfile.id == user_id).first()

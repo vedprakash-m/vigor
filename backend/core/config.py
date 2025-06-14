@@ -1,6 +1,6 @@
 import os
 from functools import lru_cache
-from typing import List, Optional
+from typing import List, Optional, ClassVar
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
@@ -51,10 +51,13 @@ class Settings(BaseSettings):
         "http://localhost:8000",  # Backend development server
     ]
 
-    # Add any additional CORS origins from environment
-    cors_origins_env = os.getenv("CORS_ORIGINS")
-    if cors_origins_env:
-        CORS_ORIGINS.extend(cors_origins_env.split(","))
+    # Add any additional CORS origins from environment.
+    # Use a leading underscore and ClassVar to signal this should not be treated
+    # as a Pydantic model field.
+    _cors_origins_env: ClassVar[Optional[str]] = os.getenv("CORS_ORIGINS")
+
+    if _cors_origins_env:
+        CORS_ORIGINS.extend(_cors_origins_env.split(","))
 
     class Config:
         case_sensitive = True

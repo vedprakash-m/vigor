@@ -1,4 +1,13 @@
 import pytest
+import sys
+from pathlib import Path
+
+# Ensure project root is in PYTHONPATH when tests are executed from within the
+# backend directory (e.g., on CI/CD runners) so that `import database` works
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -44,9 +53,8 @@ def test_user():
         "email": "test@example.com",
         "password": "testpassword123",
         "fitness_level": "beginner",
-        "goals": ["strength", "endurance"],
-        "equipment": ["dumbbells"],
-        "injuries": [],
+        "goals": ["endurance"],
+        "equipment": "minimal",
     }
 
 
@@ -57,9 +65,8 @@ def admin_user():
         "email": "admin@example.com",
         "password": "adminpassword123",
         "fitness_level": "intermediate",
-        "goals": ["strength"],
-        "equipment": ["full_gym"],
-        "injuries": [],
+        "goals": ["muscle_gain"],
+        "equipment": "full",
     }
 
 

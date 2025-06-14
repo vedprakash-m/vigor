@@ -1,8 +1,8 @@
 import pytest
-from app.core.security import create_access_token
-from app.database import get_db
-from app.main import app
-from app.models import UserProfileDB
+from core.security import create_access_token
+from database.connection import get_db
+from main import app
+from database.sql_models import UserProfileDB
 from fastapi.testclient import TestClient
 
 client = TestClient(app)
