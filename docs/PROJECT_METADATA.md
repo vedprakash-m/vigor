@@ -1572,3 +1572,34 @@ _List impacted components_
 ### Suggested Metadata Updates:
 
 _Specific sections requiring updates_
+
+## 2025-06-14 Daily Update
+
+### Key Decisions
+
+- Adopt the custom `docker-container` Buildx builder for all backend Docker builds to enable GitHub Actions cache export (`cache-to: type=gha`).
+
+### Issues Encountered
+
+- `ERROR: Cache export is not supported for the docker driver` during backend image build.
+
+### Resolution / Current Status
+
+- Added `builder: ${{ steps.builder.outputs.name }}` to both backend build steps in `.github/workflows/ci_cd_pipeline.yml`.
+- Change committed in `fix(ci): use custom buildx builder for backend docker build steps` (commit `3b98099`) and pushed to `main`.
+- The pipeline will re-run automatically; results to be reviewed tomorrow.
+
+### Progress
+
+- Workflow file updated and pushed successfully.
+- No further code or infrastructure changes today.
+
+### Plans for Next Session (2025-06-15)
+
+1. Verify that the CI pipeline completes without Buildx cache errors.
+2. Monitor the Docker image push to Azure Container Registry.
+3. Review Bicep validation and ensure no ARM deployment regressions.
+4. Resume work on remaining test-coverage tasks (Chakra UI and AuthContext).
+5. Update `PROJECT_METADATA.md` with pipeline outcomes and new coverage metrics.
+
+---
