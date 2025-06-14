@@ -344,7 +344,9 @@ output resourceGroupName string = resourceGroup().name
 output backendUrl string = useDirectDeployment
   ? 'https://${backendAppService.outputs.hostName}'
   : 'https://${appService.properties.defaultHostName}'
-output frontendUrl string = 'https://${staticWebApp.properties.defaultHostname}'
+output frontendUrl string = useDirectDeployment
+  ? 'https://${frontendStaticWebApp.outputs.staticWebAppUrl}'
+  : 'https://${staticWebApp.properties.defaultHostname}'
 output postgresServerFqdn string = db.outputs.fullyQualifiedDomainName
 output keyVaultName string = keyVault.name
 output containerRegistryLoginServer string = deployContainerRegistry ? containerRegistry.properties.loginServer : ''
