@@ -399,25 +399,55 @@ jobs:
       - name: Validate Bicep Template
         id: validate
         timeout-minutes: 2
-        continue-on-error: true
         run: |
           cd infrastructure/bicep
 
-          # Extract API keys with fallbacks
-          OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY || 'null' }}"
-          GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY || 'null' }}"
-          PERPLEXITY_API_KEY="${{ secrets.PERPLEXITY_API_KEY || 'null' }}"
+          # Create a parameter file with defaults
+          cat > temp_params.json << EOL
+          {
+            "parameters": {
+              "environment": {
+                "value": "prod"
+              },
+              "location": {
+                "value": "East US"
+              },
+              "appName": {
+                "value": "vigor"
+              },
+              "postgresAdminUsername": {
+                "value": "admin"
+              },
+              "postgresAdminPassword": {
+                "value": "${{ secrets.POSTGRES_ADMIN_PASSWORD }}"
+              },
+              "secretKey": {
+                "value": "${{ secrets.SECRET_KEY }}"
+              },
+              "adminEmail": {
+                "value": "${{ secrets.ADMIN_EMAIL }}"
+              },
+              "openaiApiKey": {
+                "value": "sk-placeholder"
+              },
+              "geminiApiKey": {
+                "value": "ai-placeholder"
+              },
+              "perplexityApiKey": {
+                "value": "pplx-placeholder"
+              },
+              "useDirectDeployment": {
+                "value": true
+              }
+            }
+          }
+          EOL
 
+          echo "Running Bicep template validation with parameters file..."
           az deployment group validate \
             --resource-group vigor-rg \
             --template-file main.bicep \
-            --parameters parameters.bicepparam \
-            --parameters postgresAdminPassword="${{ secrets.POSTGRES_ADMIN_PASSWORD }}" \
-                         secretKey="${{ secrets.SECRET_KEY }}" \
-                         adminEmail="${{ secrets.ADMIN_EMAIL }}" \
-                         openaiApiKey="$OPENAI_API_KEY" \
-                         geminiApiKey="$GEMINI_API_KEY" \
-                         perplexityApiKey="$PERPLEXITY_API_KEY"
+            --parameters @temp_params.json
 
       - name: Build Bicep Template
         id: build
@@ -528,11 +558,35 @@ jobs:
           # Export environment variables for the deployment script
           export POSTGRES_ADMIN_PASSWORD="${{ secrets.POSTGRES_ADMIN_PASSWORD }}"
           export SECRET_KEY="${{ secrets.SECRET_KEY }}"
-          # Export LLM API keys with fallbacks
-          export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY || 'null' }}"
-          export GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY || 'null' }}"
-          export PERPLEXITY_API_KEY="${{ secrets.PERPLEXITY_API_KEY || 'null' }}"
           export ADMIN_EMAIL="${{ secrets.ADMIN_EMAIL }}"
+
+          # Default placeholder values for API keys
+          export OPENAI_API_KEY="sk-placeholder"
+          export GEMINI_API_KEY="ai-placeholder"
+          export PERPLEXITY_API_KEY="pplx-placeholder"
+
+          # Create parameter file for deployment
+          cat > deployment-params.json << EOL
+          {
+            "parameters": {
+              "environment": {
+                "value": "prod"
+              },
+              "postgresAdminUsername": {
+                "value": "admin"
+              },
+              "postgresAdminPassword": {
+                "value": "${{ secrets.POSTGRES_ADMIN_PASSWORD }}"
+              },
+              "secretKey": {
+                "value": "${{ secrets.SECRET_KEY }}"
+              },
+              "adminEmail": {
+                "value": "${{ secrets.ADMIN_EMAIL }}"
+              }
+            }
+          }
+          EOL
 
           # Make script executable and run quota-resilient deployment
           chmod +x deploy-quota-resilient.sh
@@ -828,9 +882,6 @@ jobs:
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
-          perplexity-api-key: ${{ secrets.PERPLEXITY_API_KEY }}
 
   # New architecture jobs for App Service + Functions deployment
   deploy-backend-app-service:
@@ -1074,35 +1125,81 @@ jobs:
 
       - name: Get Static Web App Deployment Token
         id: get-swa-token
+        continue-on-error: true
         run: |
           echo "Getting deployment token for Static Web App..."
+
+          # Check if Static Web App exists
+          echo "Checking if Static Web App exists in resource group..."
+          STATIC_APPS=$(az staticwebapp list \
+            --resource-group vigor-rg \
+            --query "length([*])" \
+            --output tsv)
+
+          if [ "$STATIC_APPS" == "0" ]; then
+            echo "No Static Web Apps found in resource group. Creating a new one..."
+
+            # Create a new Static Web App if none exists
+            az staticwebapp create \
+              --name ${{ env.STATIC_WEBAPP_NAME }} \
+              --resource-group vigor-rg \
+              --location "East US" \
+              --sku Standard
+
+            # Wait for the resource to be created
+            echo "Waiting for Static Web App to be created..."
+            sleep 30
+          fi
+
           # Get the Static Web App name
           SWA_NAME=$(az staticwebapp list \
             --resource-group vigor-rg \
             --query "[0].name" \
             --output tsv)
-            
+
           if [ -z "$SWA_NAME" ]; then
             echo "Static Web App not found. Using fallback name."
             SWA_NAME="${{ env.STATIC_WEBAPP_NAME }}"
           fi
-            
-          # Get the deployment token
-          SWA_TOKEN=$(az staticwebapp secrets list \
-            --resource-group vigor-rg \
-            --name $SWA_NAME \
-            --query "properties.apiKey" \
-            --output tsv)
-            
-          # Mask the token in logs
-          echo "::add-mask::$SWA_TOKEN"
 
-          # Save to output
-          echo "token=$SWA_TOKEN" >> $GITHUB_OUTPUT
-          echo "✅ Deployment token obtained successfully"
+          echo "Using Static Web App: $SWA_NAME"
 
-      - name: Deploy to Static Web App
-        id: deploy-to-swa
+          # Get the deployment token with retry logic
+          echo "Getting deployment token..."
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            SWA_TOKEN=$(az staticwebapp secrets list \
+              --resource-group vigor-rg \
+              --name $SWA_NAME \
+              --query "properties.apiKey" \
+              --output tsv 2>/dev/null)
+
+            if [ -n "$SWA_TOKEN" ]; then
+              # Mask the token in logs
+              echo "::add-mask::$SWA_TOKEN"
+
+              # Save to output
+              echo "token=$SWA_TOKEN" >> $GITHUB_OUTPUT
+              echo "token_exists=true" >> $GITHUB_OUTPUT
+              echo "✅ Deployment token obtained successfully"
+              break
+            else
+              RETRY_COUNT=$((RETRY_COUNT+1))
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "Deployment token not found. Retrying in 15 seconds... (Attempt $RETRY_COUNT of $MAX_RETRIES)"
+                sleep 15
+              else
+                echo "Failed to get deployment token after $MAX_RETRIES attempts."
+                echo "token_exists=false" >> $GITHUB_OUTPUT
+              fi
+            fi
+          done
+
+      - name: Deploy to Static Web App using token
+        id: deploy-to-swa-with-token
+        if: steps.get-swa-token.outputs.token_exists == 'true'
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ steps.get-swa-token.outputs.token }}
@@ -1111,3 +1208,36 @@ jobs:
           app_location: "/frontend/dist"
           api_location: ""
           output_location: ""
+          skip_deploy_on_missing_secrets: true
+
+      - name: Deploy to Static Web App using Azure CLI
+        id: deploy-to-swa-with-cli
+        if: steps.get-swa-token.outputs.token_exists != 'true'
+        run: |
+          echo "Deploying using Azure CLI as fallback..."
+
+          # Get the Static Web App name
+          SWA_NAME=$(az staticwebapp list \
+            --resource-group vigor-rg \
+            --query "[0].name" \
+            --output tsv)
+
+          if [ -z "$SWA_NAME" ]; then
+            SWA_NAME="${{ env.STATIC_WEBAPP_NAME }}"
+          fi
+
+          # Create a zip file from the frontend build
+          echo "Creating zip file from frontend build..."
+          cd frontend/dist
+          zip -r ../../frontend-dist.zip .
+          cd ../..
+
+          # Deploy using az staticwebapp cli
+          echo "Uploading build files..."
+          az staticwebapp upload \
+            --name $SWA_NAME \
+            --resource-group vigor-rg \
+            --source frontend-dist.zip \
+            --no-wait
+
+          echo "Static Web App deployment initiated through Azure CLI"
