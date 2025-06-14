@@ -44,8 +44,7 @@ param databaseResourceGroup string = 'vigor-db-rg'
 param deployContainerRegistry bool = false
 
 // Variables
-var uniqueSuffix = uniqueString(resourceGroup().id)
-var shortSuffix = toLower(substring(uniqueString(resourceGroup().id), 0, 8))
+// Using these variables in resource names to ensure uniqueness
 var commonTags = {
   Environment: environment
   Application: appName
