@@ -55,8 +55,9 @@ var commonTags = {
 }
 
 // Resource names
-var appServicePlanName = '${appName}-${environment}-asp'
-var appServiceName = '${appName}-${environment}-app-${uniqueSuffix}'
+var appServicePlanName = '${appName}-${environment}-plan'
+var appServiceName = '${appName}-${environment}-backend'
+var frontendAppName = '${appName}-${environment}-frontend'
 var postgresServerName = '${appName}-${environment}-db-${uniqueSuffix}'
 var storageAccountName = '${appName}sa${shortSuffix}'
 var keyVaultName = toLower('${appName}${shortSuffix}kv')
@@ -243,7 +244,7 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
 
 // Static Web App (Frontend)
 resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
-  name: '${appServiceName}-frontend'
+  name: frontendAppName
   location: 'Central US' // Use same region as other resources for consistency
   tags: commonTags
   sku: {
