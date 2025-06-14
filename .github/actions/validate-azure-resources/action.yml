@@ -1,0 +1,90 @@
+name: "Validate Azure Resources"
+description: "Check if required Azure resources exist in the resource group"
+
+inputs:
+  resource-group:
+    description: "Azure resource group name"
+    required: true
+    default: "vigor-rg"
+
+outputs:
+  app-service-exists:
+    description: "Whether App Service exists"
+    value: ${{ steps.app-service.outputs.exists }}
+  app-service-name:
+    description: "App Service name if exists"
+    value: ${{ steps.app-service.outputs.name }}
+  static-web-app-exists:
+    description: "Whether Static Web App exists"
+    value: ${{ steps.static-web-app.outputs.exists }}
+  static-web-app-name:
+    description: "Static Web App name if exists"
+    value: ${{ steps.static-web-app.outputs.name }}
+  postgres-exists:
+    description: "Whether PostgreSQL server exists"
+    value: ${{ steps.postgres.outputs.exists }}
+  postgres-name:
+    description: "PostgreSQL server name if exists"
+    value: ${{ steps.postgres.outputs.name }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check App Service
+      id: app-service
+      shell: bash
+      run: |
+        echo "Checking for App Service in resource group ${{ inputs.resource-group }}..."
+
+        APP_NAME=$(az webapp list --resource-group ${{ inputs.resource-group }} --query "[?contains(name, 'vigor')].name" --output tsv)
+
+        if [ -z "$APP_NAME" ]; then
+          APP_NAME=$(az webapp list --resource-group ${{ inputs.resource-group }} --query "[0].name" --output tsv)
+        fi
+
+        if [ -z "$APP_NAME" ]; then
+          echo "No App Services found in resource group."
+          echo "exists=false" >> $GITHUB_OUTPUT
+        else
+          echo "Found App Service: $APP_NAME"
+          echo "name=$APP_NAME" >> $GITHUB_OUTPUT
+          echo "exists=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Check Static Web App
+      id: static-web-app
+      shell: bash
+      run: |
+        echo "Checking for Static Web App in resource group ${{ inputs.resource-group }}..."
+
+        SWA_NAME=$(az staticwebapp list --resource-group ${{ inputs.resource-group }} --query "[?contains(name, 'frontend')].name" --output tsv)
+
+        if [ -z "$SWA_NAME" ]; then
+          SWA_NAME=$(az staticwebapp list --resource-group ${{ inputs.resource-group }} --query "[0].name" --output tsv)
+        fi
+
+        if [ -z "$SWA_NAME" ]; then
+          echo "No Static Web Apps found in resource group."
+          echo "exists=false" >> $GITHUB_OUTPUT
+        else
+          echo "Found Static Web App: $SWA_NAME"
+          echo "name=$SWA_NAME" >> $GITHUB_OUTPUT
+          echo "exists=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Check PostgreSQL Server
+      id: postgres
+      shell: bash
+      run: |
+        echo "Checking for PostgreSQL server in resource group ${{ inputs.resource-group }}..."
+
+        PG_SERVER=$(az postgres flexible-server list --resource-group ${{ inputs.resource-group }} --query "[0].name" --output tsv 2>/dev/null)
+
+        if [ -z "$PG_SERVER" ]; then
+          echo "No PostgreSQL server found in resource group."
+          echo "exists=false" >> $GITHUB_OUTPUT
+        else
+          echo "Found PostgreSQL server: $PG_SERVER"
+          echo "name=$PG_SERVER" >> $GITHUB_OUTPUT
+          echo "exists=true" >> $GITHUB_OUTPUT
+        fi

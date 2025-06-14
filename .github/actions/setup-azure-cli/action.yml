@@ -1,0 +1,71 @@
+name: "Setup Azure CLI"
+description: "Setup Azure CLI with proper version and authentication"
+
+inputs:
+  client-id:
+    description: "Azure Client ID"
+    required: true
+  tenant-id:
+    description: "Azure Tenant ID"
+    required: true
+  subscription-id:
+    description: "Azure Subscription ID"
+    required: true
+
+outputs:
+  az-cli-version:
+    description: "Installed Azure CLI version"
+    value: ${{ steps.az-version.outputs.version }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Azure CLI Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ inputs.client-id }}
+        tenant-id: ${{ inputs.tenant-id }}
+        subscription-id: ${{ inputs.subscription-id }}
+
+    - name: Check Azure CLI Version
+      id: check-version
+      shell: bash
+      run: |
+        current_version=$(az --version | head -1 | awk '{print $2}')
+        min_required="2.72.0"
+        needs_downgrade=false
+
+        # Check if version is higher than 2.73.0
+        if [[ $(echo "$current_version 2.73.0" | awk '{if ($1 >= $2) print "true"; else print "false"}') == "true" ]]; then
+          echo "Current version $current_version needs downgrade to avoid ARM deployment bug"
+          needs_downgrade=true
+        else
+          echo "Current version $current_version is compatible"
+        fi
+
+        echo "needs_downgrade=$needs_downgrade" >> $GITHUB_OUTPUT
+
+    - name: Install Compatible Azure CLI Version
+      if: ${{ steps.check-version.outputs.needs_downgrade == 'true' }}
+      shell: bash
+      run: |
+        echo "⏬ Installing Azure CLI 2.72.0 to avoid ARM deployment bug..."
+        sudo apt-get remove --yes azure-cli || true
+        sudo apt-get update -y
+        curl -sL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+        echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+        sudo apt-get update -y
+        sudo apt-get install --yes azure-cli=2.72.0-1~$(lsb_release -cs)
+
+    - name: Get Azure CLI Version
+      id: az-version
+      shell: bash
+      run: |
+        version=$(az --version | head -1 | awk '{print $2}')
+        echo "version=$version" >> $GITHUB_OUTPUT
+        echo "Using Azure CLI version: $version"
+
+    - name: Install Bicep CLI
+      shell: bash
+      run: |
+        az bicep install

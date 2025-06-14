@@ -1,0 +1,78 @@
+name: "Validate Secrets"
+description: "Validate required and optional secrets for deployment"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate Required Secrets
+      id: validate-required
+      shell: bash
+      run: |
+        echo "🔑 Validating required secrets..."
+        missing_secrets=()
+
+        # Check required Azure authentication secrets
+        if [ -z "${{ env.AZURE_CLIENT_ID }}" ]; then
+          missing_secrets+=("AZURE_CLIENT_ID")
+        fi
+
+        if [ -z "${{ env.AZURE_TENANT_ID }}" ]; then
+          missing_secrets+=("AZURE_TENANT_ID")
+        fi
+
+        if [ -z "${{ env.AZURE_SUBSCRIPTION_ID }}" ]; then
+          missing_secrets+=("AZURE_SUBSCRIPTION_ID")
+        fi
+
+        # Check required application secrets
+        if [ -z "${{ env.POSTGRES_ADMIN_PASSWORD }}" ]; then
+          missing_secrets+=("POSTGRES_ADMIN_PASSWORD")
+        fi
+
+        if [ -z "${{ env.SECRET_KEY }}" ]; then
+          missing_secrets+=("SECRET_KEY")
+        fi
+
+        if [ -z "${{ env.ADMIN_EMAIL }}" ]; then
+          missing_secrets+=("ADMIN_EMAIL")
+        fi
+
+        # Report any missing required secrets
+        if [ ${#missing_secrets[@]} -gt 0 ]; then
+          echo "❌ ERROR: Missing required secrets: ${missing_secrets[*]}"
+          echo "has_required_secrets=false" >> $GITHUB_OUTPUT
+          exit 1
+        else
+          echo "✅ All required secrets are present"
+          echo "has_required_secrets=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Validate Optional Secrets
+      id: validate-optional
+      shell: bash
+      run: |
+        echo "🔑 Validating optional secrets..."
+        optional_missing=()
+
+        # Check optional API keys
+        if [ -z "${{ env.OPENAI_API_KEY }}" ]; then
+          optional_missing+=("OPENAI_API_KEY")
+        fi
+
+        if [ -z "${{ env.GEMINI_API_KEY }}" ]; then
+          optional_missing+=("GEMINI_API_KEY")
+        fi
+
+        if [ -z "${{ env.PERPLEXITY_API_KEY }}" ]; then
+          optional_missing+=("PERPLEXITY_API_KEY")
+        fi
+
+        # Report any missing optional secrets
+        if [ ${#optional_missing[@]} -gt 0 ]; then
+          echo "⚠️ WARNING: Missing optional API keys: ${optional_missing[*]}"
+          echo "Using fallback LLM provider mode."
+          echo "has_optional_apis=false" >> $GITHUB_OUTPUT
+        else
+          echo "✅ All optional API keys are configured"
+          echo "has_optional_apis=true" >> $GITHUB_OUTPUT
+        fi
