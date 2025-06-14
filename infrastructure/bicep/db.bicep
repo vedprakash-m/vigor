@@ -20,7 +20,7 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-06-01-pr
   location: location
   tags: commonTags
   sku: {
-    name: 'B_Standard_B1ms'
+    name: 'Standard_B1ms'
     tier: 'Burstable'
   }
   properties: {

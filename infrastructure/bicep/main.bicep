@@ -136,7 +136,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     }
     tenantId: tenant().tenantId
     softDeleteRetentionInDays: 30
-    enablePurgeProtection: environment == 'production'
+    enablePurgeProtection: environment == 'production' || environment == 'prod'
     publicNetworkAccess: 'Disabled'
     enabledForDeployment: false
     enabledForDiskEncryption: false
