@@ -40,6 +40,9 @@ param appServiceSku string = 'S1'
 @description('Resource group name where database resources (PostgreSQL) will live. Allows you to delete the app RG without losing data.')
 param databaseResourceGroup string = 'vigor-db-rg'
 
+@description('Whether to deploy an Azure Container Registry (required only for container-based deployments).')
+param deployContainerRegistry bool = environment == 'production'
+
 // Variables
 var uniqueSuffix = uniqueString(resourceGroup().id)
 var commonTags = {
@@ -104,13 +107,13 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   }
 }
 
-// Container Registry - Use Basic (usually has quota) or fallback to shared registry
-resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
+// Container Registry - Use Standard (widely supported) or skip entirely in non-prod
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' = if (deployContainerRegistry) {
   name: containerRegistryName
   location: location
   tags: commonTags
   sku: {
-    name: 'Standard' // Standard is widely supported across regions
+    name: 'Standard'
   }
   properties: {
     adminUserEnabled: true
