@@ -44,12 +44,13 @@ try_deployment() {
     cat > parameters-temp.bicepparam << EOF
 using './main.bicep'
 
-param environment = 'prod'
+param environment = 'production'
 param location = '$region'
 param appName = 'vigor'
 param postgresAdminUsername = 'vigoradmin'
 param adminEmail = '$ADMIN_EMAIL'
 param appServiceSku = '$sku'
+param deployContainerRegistry = true
 
 // Secrets from environment variables
 param postgresAdminPassword = '$POSTGRES_ADMIN_PASSWORD'

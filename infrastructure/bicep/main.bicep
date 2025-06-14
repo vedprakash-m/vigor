@@ -41,7 +41,7 @@ param appServiceSku string = 'S1'
 param databaseResourceGroup string = 'vigor-db-rg'
 
 @description('Whether to deploy an Azure Container Registry (required only for container-based deployments).')
-param deployContainerRegistry bool = environment == 'production'
+param deployContainerRegistry bool = environment == 'production' || environment == 'prod'
 
 // Variables
 var uniqueSuffix = uniqueString(resourceGroup().id)
@@ -307,5 +307,5 @@ output backendUrl string = 'https://${appService.properties.defaultHostName}'
 output frontendUrl string = 'https://${staticWebApp.properties.defaultHostname}'
 output postgresServerFqdn string = db.outputs.fullyQualifiedDomainName
 output keyVaultName string = keyVault.name
-output containerRegistryLoginServer string = containerRegistry.properties.loginServer
+output containerRegistryLoginServer string = deployContainerRegistry ? containerRegistry.properties.loginServer : ''
 output applicationInsightsConnectionString string = appInsights.properties.ConnectionString
