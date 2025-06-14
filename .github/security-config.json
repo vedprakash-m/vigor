@@ -1,0 +1,38 @@
+{
+  "securityTeam": {
+    "mention": "@security-team",
+    "responseTimeMinutes": 30,
+    "escalationPath": [
+      {"timeMinutes": 30, "action": "slack-notification"},
+      {"timeMinutes": 60, "action": "pager-duty"}
+    ]
+  },
+  "severityLevels": {
+    "critical": {
+      "maxResponseTimeMinutes": 30,
+      "maxFixTimeHours": 24,
+      "requiresPostMortem": true
+    },
+    "high": {
+      "maxResponseTimeMinutes": 120,
+      "maxFixTimeHours": 72,
+      "requiresPostMortem": true
+    },
+    "medium": {
+      "maxResponseTimeMinutes": 480,
+      "maxFixTimeHours": 168,
+      "requiresPostMortem": false
+    },
+    "low": {
+      "maxResponseTimeMinutes": 1440,
+      "maxFixTimeHours": 336,
+      "requiresPostMortem": false
+    }
+  },
+  "requiredApprovers": {
+    "critical": 2,
+    "high": 2,
+    "medium": 1,
+    "low": 1
+  }
+}

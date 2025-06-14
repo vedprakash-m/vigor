@@ -1,0 +1,373 @@
+name: PR Audit Trail
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  audit-trail:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for proper changelog
+
+      - name: Get PR details
+        id: pr-details
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          PR_BODY="${{ github.event.pull_request.body }}"
+          PR_MERGED_BY="${{ github.actor }}"
+          MERGE_SHA="${{ github.sha }}"
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+
+          # Format the PR body to be markdown compatible
+          PR_BODY_FORMATTED=$(echo "$PR_BODY" | sed 's/$/  /')
+
+          # Get affected files
+          AFFECTED_FILES=$(gh pr view $PR_NUMBER --json files -q '.files[].path')
+          AFFECTED_FILE_COUNT=$(echo "$AFFECTED_FILES" | wc -l)
+
+          # Get review information
+          REVIEWS=$(gh pr view $PR_NUMBER --json reviews -q '.reviews')
+          APPROVING_REVIEWERS=$(echo "$REVIEWS" | jq -r '.[] | select(.state == "APPROVED") | .author.login')
+          APPROVER_COUNT=$(echo "$APPROVING_REVIEWERS" | wc -l)
+
+          # Get PR labels
+          LABELS=$(gh pr view $PR_NUMBER --json labels -q '.labels[].name')
+
+          # Get time to merge (from creation to merge)
+          CREATED_AT="${{ github.event.pull_request.created_at }}"
+          MERGED_AT="${{ github.event.pull_request.merged_at }}"
+
+          # Calculate time difference in hours using date command
+          CREATED_TIMESTAMP=$(date -d "$CREATED_AT" +%s)
+          MERGED_TIMESTAMP=$(date -d "$MERGED_AT" +%s)
+          TIME_TO_MERGE_SECS=$((MERGED_TIMESTAMP - CREATED_TIMESTAMP))
+          TIME_TO_MERGE_HOURS=$((TIME_TO_MERGE_SECS / 3600))
+          TIME_TO_MERGE_MINS=$(( (TIME_TO_MERGE_SECS % 3600) / 60 ))
+
+          # Store values for next steps
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
+          echo "pr_author=$PR_AUTHOR" >> $GITHUB_OUTPUT
+          echo "pr_merged_by=$PR_MERGED_BY" >> $GITHUB_OUTPUT
+          echo "merge_sha=$MERGE_SHA" >> $GITHUB_OUTPUT
+          echo "base_sha=$BASE_SHA" >> $GITHUB_OUTPUT
+          echo "affected_file_count=$AFFECTED_FILE_COUNT" >> $GITHUB_OUTPUT
+          echo "approver_count=$APPROVER_COUNT" >> $GITHUB_OUTPUT
+          echo "time_to_merge_hours=$TIME_TO_MERGE_HOURS" >> $GITHUB_OUTPUT
+          echo "time_to_merge_mins=$TIME_TO_MERGE_MINS" >> $GITHUB_OUTPUT
+
+          # Write to temporary files for multi-line content
+          mkdir -p /tmp/audit-trail
+          echo "$AFFECTED_FILES" > /tmp/audit-trail/affected_files.txt
+          echo "$APPROVING_REVIEWERS" > /tmp/audit-trail/approvers.txt
+          echo "$LABELS" > /tmp/audit-trail/labels.txt
+          echo "$PR_BODY_FORMATTED" > /tmp/audit-trail/pr_body.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # New step: Generate diff statistics and summary
+      - name: Generate diff summary
+        id: diff-summary
+        run: |
+          # Generate statistics summary
+          echo "### Diff Statistics" > /tmp/audit-trail/diff_stats.md
+          git diff --stat ${{ steps.pr-details.outputs.base_sha }} ${{ steps.pr-details.outputs.merge_sha }} >> /tmp/audit-trail/diff_stats.md
+
+          # Generate a concise diff summary for key files
+          echo -e "\n### Key Changes Summary" >> /tmp/audit-trail/diff_stats.md
+
+          # Focus on important files like package.json, requirements.txt, etc.
+          IMPORTANT_FILES=$(git diff --name-only ${{ steps.pr-details.outputs.base_sha }} ${{ steps.pr-details.outputs.merge_sha }} | grep -E '(package\.json|requirements\.txt|setup\.py|Dockerfile|\.github|main\.|config\.|settings\.)' | head -5)
+
+          if [ ! -z "$IMPORTANT_FILES" ]; then
+            echo -e "Key file changes:\n" >> /tmp/audit-trail/diff_stats.md
+            for file in $IMPORTANT_FILES; do
+              echo -e "#### $file\n\`\`\`diff" >> /tmp/audit-trail/diff_stats.md
+              git diff -U3 --color=never ${{ steps.pr-details.outputs.base_sha }} ${{ steps.pr-details.outputs.merge_sha }} -- "$file" | head -20 >> /tmp/audit-trail/diff_stats.md
+              echo -e "\`\`\`\n" >> /tmp/audit-trail/diff_stats.md
+            done
+          fi
+
+          # Capture test coverage changes if available
+          if [ -d "coverage" ] || [ -d "frontend/coverage" ] || [ -d "backend/coverage" ]; then
+            echo -e "### Test Coverage Impact\n" >> /tmp/audit-trail/diff_stats.md
+            echo "Coverage reports available in PR artifacts" >> /tmp/audit-trail/diff_stats.md
+          fi
+
+      # New step: Generate PR classification details
+      - name: Generate PR classification
+        id: pr-classification
+        run: |
+          LABELS=$(cat /tmp/audit-trail/labels.txt)
+
+          echo "### PR Classification" > /tmp/audit-trail/classification.md
+          echo -e "\n**Labels:**" >> /tmp/audit-trail/classification.md
+
+          # Format each label with visual styling
+          for label in $LABELS; do
+            case "$label" in
+              "feature")
+                echo "- 🚀 `feature`" >> /tmp/audit-trail/classification.md
+                ;;
+              "bug")
+                echo "- 🐛 `bug`" >> /tmp/audit-trail/classification.md
+                ;;
+              "documentation")
+                echo "- 📚 `documentation`" >> /tmp/audit-trail/classification.md
+                ;;
+              "enhancement")
+                echo "- ✨ `enhancement`" >> /tmp/audit-trail/classification.md
+                ;;
+              "security")
+                echo "- 🔒 `security`" >> /tmp/audit-trail/classification.md
+                ;;
+              "refactor")
+                echo "- ♻️ `refactor`" >> /tmp/audit-trail/classification.md
+                ;;
+              "dependencies")
+                echo "- 📦 `dependencies`" >> /tmp/audit-trail/classification.md
+                ;;
+              "release")
+                echo "- 🏷️ `release`" >> /tmp/audit-trail/classification.md
+                ;;
+              "ci")
+                echo "- 🔄 `ci`" >> /tmp/audit-trail/classification.md
+                ;;
+              "auto-merge")
+                echo "- 🔄 `auto-merge`" >> /tmp/audit-trail/classification.md
+                ;;
+              *)
+                echo "- \`$label\`" >> /tmp/audit-trail/classification.md
+                ;;
+            esac
+          done
+
+          # Note whether any special workflows were triggered by this PR
+          echo -e "\n**Special Conditions:**" >> /tmp/audit-trail/classification.md
+
+          if echo "$LABELS" | grep -q "security"; then
+            echo "- 🚨 Security fix path was used" >> /tmp/audit-trail/classification.md
+          fi
+
+          if echo "$LABELS" | grep -q "release"; then
+            echo "- 🚀 Release override was used" >> /tmp/audit-trail/classification.md
+          fi
+
+          if echo "$LABELS" | grep -q "auto-merge"; then
+            echo "- ⚡ PR was auto-merged" >> /tmp/audit-trail/classification.md
+          fi
+
+          if [ "${{ steps.pr-details.outputs.approver_count }}" -eq "0" ]; then
+            echo "- ⚠️ Merged without review approvals" >> /tmp/audit-trail/classification.md
+          fi
+
+          # Add post-merge verification section
+          echo -e "\n**Post-Merge Verification:**" >> /tmp/audit-trail/classification.md
+          echo "- CI Status: Pending validation" >> /tmp/audit-trail/classification.md
+
+      - name: Update changelog
+        run: |
+          # Ensure directory exists
+          mkdir -p .github/audit-trail
+
+          # Get current month changelog file
+          YEAR_MONTH=$(date +"%Y-%m")
+          CHANGELOG_FILE=".github/audit-trail/changelog-$YEAR_MONTH.md"
+
+          # Create the file if it doesn't exist
+          if [ ! -f $CHANGELOG_FILE ]; then
+            echo "# Changelog for $YEAR_MONTH" > $CHANGELOG_FILE
+            echo "" >> $CHANGELOG_FILE
+          fi
+
+          # Format time to merge
+          if [ "${{ steps.pr-details.outputs.time_to_merge_hours }}" -eq "0" ]; then
+            TIME_TO_MERGE="${{ steps.pr-details.outputs.time_to_merge_mins }} minutes"
+          else
+            TIME_TO_MERGE="${{ steps.pr-details.outputs.time_to_merge_hours }} hours, ${{ steps.pr-details.outputs.time_to_merge_mins }} minutes"
+          fi
+
+          # Get PR type from labels
+          PR_LABELS=$(cat /tmp/audit-trail/labels.txt)
+          PR_TYPE="Other"
+          if echo "$PR_LABELS" | grep -q "feature"; then
+            PR_TYPE="Feature"
+          elif echo "$PR_LABELS" | grep -q "bug"; then
+            PR_TYPE="Bug Fix"
+          elif echo "$PR_LABELS" | grep -q "documentation"; then
+            PR_TYPE="Documentation"
+          elif echo "$PR_LABELS" | grep -q "enhancement"; then
+            PR_TYPE="Enhancement"
+          elif echo "$PR_LABELS" | grep -q "security"; then
+            PR_TYPE="Security"
+          elif echo "$PR_LABELS" | grep -q "refactor"; then
+            PR_TYPE="Refactoring"
+          fi
+
+          # Format affected files (limit to 5 with "and X more" if needed)
+          AFFECTED_FILES=$(cat /tmp/audit-trail/affected_files.txt)
+          AFFECTED_FILES_COUNT=${{ steps.pr-details.outputs.affected_file_count }}
+          AFFECTED_FILES_DISPLAY=""
+
+          if [ $AFFECTED_FILES_COUNT -le 5 ]; then
+            AFFECTED_FILES_DISPLAY=$(echo "$AFFECTED_FILES" | sed 's/^/- /g')
+          else
+            AFFECTED_FILES_DISPLAY=$(echo "$AFFECTED_FILES" | head -5 | sed 's/^/- /g')
+            REMAINING=$(($AFFECTED_FILES_COUNT - 5))
+            AFFECTED_FILES_DISPLAY="${AFFECTED_FILES_DISPLAY}\n- *...and ${REMAINING} more files*"
+          fi
+
+          # Format approvers
+          APPROVERS=$(cat /tmp/audit-trail/approvers.txt)
+          APPROVERS_FORMATTED=$(echo "$APPROVERS" | sed 's/^/@/g' | tr '\n' ', ' | sed 's/,$//' | sed 's/, /, @/g')
+
+          # Get PR body (truncated if too long)
+          PR_BODY=$(cat /tmp/audit-trail/pr_body.txt)
+          PR_BODY_LENGTH=$(echo "$PR_BODY" | wc -c)
+          if [ $PR_BODY_LENGTH -gt 300 ]; then
+            PR_BODY=$(echo "$PR_BODY" | cut -c 1-300)
+            PR_BODY="$PR_BODY...\n*(truncated)*"
+          fi
+
+          # Load diff statistics and classification
+          DIFF_STATS=$(cat /tmp/audit-trail/diff_stats.md)
+          CLASSIFICATION=$(cat /tmp/audit-trail/classification.md)
+
+          # Current date/time
+          CURRENT_DATE=$(date +"%Y-%m-%d %H:%M:%S")
+
+          # Create entry and prepend to changelog
+          TEMP_FILE="/tmp/audit-trail/temp_changelog.md"
+
+          {
+            head -1 $CHANGELOG_FILE  # Keep the title
+            echo ""
+            echo "## PR #${{ steps.pr-details.outputs.pr_number }}: ${{ steps.pr-details.outputs.pr_title }}"
+            echo ""
+            echo "**Merged:** $CURRENT_DATE"
+            echo "**Type:** $PR_TYPE"
+            echo "**Author:** @${{ steps.pr-details.outputs.pr_author }}"
+            echo "**Merged by:** @${{ steps.pr-details.outputs.pr_merged_by }}"
+            echo "**Time to merge:** $TIME_TO_MERGE"
+            echo ""
+            if [ ! -z "$APPROVERS_FORMATTED" ]; then
+              echo "**Approved by:** $APPROVERS_FORMATTED"
+              echo ""
+            fi
+            echo "**Description:**"
+            echo "$PR_BODY"
+            echo ""
+            echo "**Affected files ($AFFECTED_FILES_COUNT):**"
+            echo "$AFFECTED_FILES_DISPLAY"
+            echo ""
+            echo "$CLASSIFICATION"
+            echo ""
+            echo "$DIFF_STATS"
+            echo ""
+            echo "**Commit:** [${{ steps.pr-details.outputs.merge_sha }}](https://github.com/${{ github.repository }}/commit/${{ steps.pr-details.outputs.merge_sha }})"
+            echo ""
+            echo "---"
+            echo ""
+            tail -n +2 $CHANGELOG_FILE | tail -n +2  # Skip the first title line and the blank line after
+          } > $TEMP_FILE
+
+          # Replace the changelog with our updated version
+          mv $TEMP_FILE $CHANGELOG_FILE
+
+          # Commit the updated changelog
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add $CHANGELOG_FILE
+          git commit -m "Update changelog for PR #${{ steps.pr-details.outputs.pr_number }}"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # New job to monitor post-merge build status and update the audit with results
+  update-post-merge-status:
+    needs: audit-trail
+    runs-on: ubuntu-latest
+    # Wait for main CI to complete
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Wait for CI
+        id: wait-for-ci
+        run: |
+          # Wait up to 10 minutes for CI to complete
+          MAX_ATTEMPTS=20
+          ATTEMPT=0
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            STATUS=$(gh run list --branch ${{ github.event.pull_request.base.ref }} --workflow ci.yml --json status --jq '.[0].status')
+            CONCLUSION=$(gh run list --branch ${{ github.event.pull_request.base.ref }} --workflow ci.yml --json conclusion --jq '.[0].conclusion')
+
+            echo "Current CI status: $STATUS, conclusion: $CONCLUSION"
+
+            if [ "$STATUS" == "completed" ]; then
+              echo "ci_status=$CONCLUSION" >> $GITHUB_OUTPUT
+              break
+            fi
+
+            ATTEMPT=$((ATTEMPT+1))
+            echo "Waiting for CI to complete (attempt $ATTEMPT/$MAX_ATTEMPTS)..."
+            sleep 30
+          done
+
+          # If we timed out, mark as unknown
+          if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+            echo "ci_status=unknown" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update audit trail with CI status
+        run: |
+          # Get latest changelog file
+          YEAR_MONTH=$(date +"%Y-%m")
+          CHANGELOG_FILE=".github/audit-trail/changelog-$YEAR_MONTH.md"
+
+          if [ ! -f "$CHANGELOG_FILE" ]; then
+            echo "Changelog file not found. Nothing to update."
+            exit 0
+          fi
+
+          # Get CI status
+          CI_STATUS="${{ steps.wait-for-ci.outputs.ci_status }}"
+
+          # Format status
+          STATUS_EMOJI="❓"
+          STATUS_TEXT="unknown"
+
+          if [ "$CI_STATUS" == "success" ]; then
+            STATUS_EMOJI="✅"
+            STATUS_TEXT="passed"
+          elif [ "$CI_STATUS" == "failure" ]; then
+            STATUS_EMOJI="❌"
+            STATUS_TEXT="failed"
+          elif [ "$CI_STATUS" == "cancelled" ]; then
+            STATUS_EMOJI="⚠️"
+            STATUS_TEXT="cancelled"
+          fi
+
+          # Update the file
+          sed -i "s/- CI Status: Pending validation/- CI Status: $STATUS_EMOJI $STATUS_TEXT/" $CHANGELOG_FILE
+
+          # Commit the updated changelog
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add $CHANGELOG_FILE
+          git commit -m "Update CI status for PR #${{ github.event.pull_request.number }}"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -139,7 +139,7 @@ jobs:
             COMMENT+="🧪 **Testing Warning**: This PR modifies code but doesn't include test updates. Please consider adding tests.\n\n"
           fi
 
-          COMMENT+="\nFor more information, please see our [Branch Enforcement Guide](../blob/main/docs/branch_enforcement_guide.md)."
+          COMMENT+="\nFor more information, please see our [Development & PR Management Guide](../blob/main/docs/dev_pr_mgmt.md)."
 
           gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
         env:

@@ -1,0 +1,126 @@
+name: Auto-Merge Security Check
+
+on:
+  pull_request:
+    types: [labeled]
+
+jobs:
+  validate-auto-merge-eligibility:
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'auto-merge')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check role eligibility
+        id: check-role
+        run: |
+          # Get the author of the PR
+          AUTHOR="${{ github.event.pull_request.user.login }}"
+
+          # Check if user is in the allowed team
+          is_team_member=$(gh api /orgs/${{ github.repository_owner }}/teams/trusted-contributors/memberships/$AUTHOR -q '.state' 2>/dev/null || echo "none")
+
+          # Check if user is repo collaborator with write permission or higher
+          is_collaborator=$(gh api /repos/${{ github.repository }}/collaborators/$AUTHOR/permission -q '.permission' 2>/dev/null || echo "none")
+          can_write=$([ "$is_collaborator" == "admin" ] || [ "$is_collaborator" == "write" ] || [ "$is_collaborator" == "maintain" ] && echo "true" || echo "false")
+
+          if [[ "$is_team_member" == "active" || "$can_write" == "true" ]]; then
+            echo "User $AUTHOR is authorized to use auto-merge label"
+            echo "authorized=true" >> $GITHUB_OUTPUT
+          else
+            echo "User $AUTHOR is not authorized to use auto-merge label"
+            echo "authorized=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check modified paths
+        id: check-paths
+        run: |
+          # Get modified files in PR
+          MODIFIED_FILES=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files -q '.[].filename')
+
+          # Check for sensitive paths
+          SENSITIVE_PATHS=("backend/core/security.py" "backend/core/config.py" ".github/workflows" "infrastructure" "scripts")
+          SENSITIVE_MODIFIED=false
+
+          for file in $MODIFIED_FILES; do
+            for sensitive in "${SENSITIVE_PATHS[@]}"; do
+              if [[ "$file" == $sensitive* ]]; then
+                echo "Sensitive file modified: $file"
+                SENSITIVE_MODIFIED=true
+                break 2
+              fi
+            done
+          done
+
+          echo "sensitive_modified=$SENSITIVE_MODIFIED" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check CI status
+        id: check-ci
+        run: |
+          # Get status of required checks
+          PR_SHA="${{ github.event.pull_request.head.sha }}"
+
+          # Wait for checks to complete (timeout after 2 minutes)
+          timeout=120
+          elapsed=0
+          while [ $elapsed -lt $timeout ]; do
+            pending_count=$(gh pr checks ${{ github.event.pull_request.number }} --json name,conclusion,status | jq '[.[] | select(.conclusion == null and .status == "in_progress")] | length')
+
+            if [ "$pending_count" -eq 0 ]; then
+              break
+            fi
+
+            echo "Waiting for $pending_count checks to complete... ($elapsed/$timeout seconds)"
+            sleep 10
+            elapsed=$((elapsed + 10))
+          done
+
+          # Check if any required checks failed
+          failed_checks=$(gh pr checks ${{ github.event.pull_request.number }} --json name,conclusion | jq '[.[] | select(.conclusion != "success" and .conclusion != "skipped" and .conclusion != null)] | map(.name)')
+
+          if [ "$failed_checks" == "[]" ]; then
+            echo "All checks passed!"
+            echo "checks_passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "Some checks failed: $failed_checks"
+            echo "checks_passed=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate auto-merge eligibility
+        run: |
+          AUTHORIZED="${{ steps.check-role.outputs.authorized }}"
+          SENSITIVE_MODIFIED="${{ steps.check-paths.outputs.sensitive_modified }}"
+          CHECKS_PASSED="${{ steps.check-ci.outputs.checks_passed }}"
+
+          if [[ "$AUTHORIZED" != "true" ]]; then
+            echo "::error::User is not authorized to use auto-merge label"
+            gh pr edit ${{ github.event.pull_request.number }} --remove-label "auto-merge"
+            gh pr comment ${{ github.event.pull_request.number }} --body "❌ **Auto-merge removed**: Only trusted contributors can use this label"
+            exit 1
+          fi
+
+          if [[ "$SENSITIVE_MODIFIED" == "true" ]]; then
+            echo "::error::PR modifies sensitive paths"
+            gh pr edit ${{ github.event.pull_request.number }} --remove-label "auto-merge"
+            gh pr comment ${{ github.event.pull_request.number }} --body "❌ **Auto-merge removed**: This PR modifies sensitive paths that require manual review"
+            exit 1
+          fi
+
+          if [[ "$CHECKS_PASSED" != "true" ]]; then
+            echo "::error::Some CI checks are failing"
+            gh pr edit ${{ github.event.pull_request.number }} --remove-label "auto-merge"
+            gh pr comment ${{ github.event.pull_request.number }} --body "❌ **Auto-merge removed**: All CI checks must pass before auto-merge can be enabled"
+            exit 1
+          fi
+
+          # If we got here, the PR is eligible for auto-merge
+          gh pr comment ${{ github.event.pull_request.number }} --body "✅ **Auto-merge validated**: This PR is eligible for automatic merging"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

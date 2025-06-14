@@ -1,0 +1,278 @@
+name: Emergency Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      commitSha:
+        description: "Commit SHA to roll back to"
+        required: false
+        type: string
+      prNumber:
+        description: "PR number that caused the issue"
+        required: false
+        type: number
+      reason:
+        description: "Reason for rollback"
+        required: true
+        type: string
+      notifyTeam:
+        description: "Notify team about rollback"
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  collect-info:
+    runs-on: ubuntu-latest
+    outputs:
+      target_sha: ${{ steps.get-target.outputs.target_sha }}
+      pr_number: ${{ steps.get-target.outputs.pr_number }}
+      pr_author: ${{ steps.get-target.outputs.pr_author }}
+      commit_message: ${{ steps.get-target.outputs.commit_message }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 100 # Fetch enough history for recent commits
+
+      - name: Get target commit for rollback
+        id: get-target
+        run: |
+          # Check if we have a specific commit SHA to roll back to
+          if [[ -n "${{ github.event.inputs.commitSha }}" ]]; then
+            echo "target_sha=${{ github.event.inputs.commitSha }}" >> $GITHUB_OUTPUT
+          else
+            # If no SHA provided, get the second-most-recent commit on the default branch
+            # (i.e., the commit before the problematic one)
+            TARGET_SHA=$(git log -n 2 --pretty=format:%H | tail -n 1)
+            echo "target_sha=$TARGET_SHA" >> $GITHUB_OUTPUT
+          fi
+
+          # Get PR number if provided
+          if [[ -n "${{ github.event.inputs.prNumber }}" ]]; then
+            echo "pr_number=${{ github.event.inputs.prNumber }}" >> $GITHUB_OUTPUT
+
+            # Get PR author
+            PR_AUTHOR=$(gh pr view ${{ github.event.inputs.prNumber }} --json author -q '.author.login')
+            echo "pr_author=$PR_AUTHOR" >> $GITHUB_OUTPUT
+
+            # Get PR title for commit message
+            PR_TITLE=$(gh pr view ${{ github.event.inputs.prNumber }} --json title -q '.title')
+            echo "commit_message=Revert \"$PR_TITLE\" due to: ${{ github.event.inputs.reason }}" >> $GITHUB_OUTPUT
+          else
+            echo "commit_message=Emergency rollback due to: ${{ github.event.inputs.reason }}" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  create-rollback-branch:
+    needs: collect-info
+    runs-on: ubuntu-latest
+    outputs:
+      pr_url: ${{ steps.create-branch.outputs.pr_url }}
+      rollback_branch: ${{ steps.create-branch.outputs.rollback_branch }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 100
+
+      - name: Create rollback branch
+        id: create-branch
+        run: |
+          # Create a new branch for the rollback
+          ROLLBACK_BRANCH="rollback/$(date +%Y%m%d-%H%M%S)"
+          git checkout -b $ROLLBACK_BRANCH
+
+          # Reset to the target SHA
+          git reset --hard ${{ needs.collect-info.outputs.target_sha }}
+
+          # Push the rollback branch
+          git push -u origin $ROLLBACK_BRANCH
+
+          # Create PR for the rollback
+          PR_BODY="## 🚨 Emergency Rollback
+
+          **Reason:** ${{ github.event.inputs.reason }}
+
+          **Rolling back to:** ${{ needs.collect-info.outputs.target_sha }}
+
+          **Triggered by:** @${{ github.actor }}
+
+          ${{ needs.collect-info.outputs.pr_number && format('**Reverting PR:** #{0}', needs.collect-info.outputs.pr_number) || '' }}
+          ${{ needs.collect-info.outputs.pr_author && format('**PR Author:** @{0}', needs.collect-info.outputs.pr_author) || '' }}
+
+          This is an automated rollback. After merging, please investigate the root cause and implement a proper fix."
+
+          # Create the PR with high priority labels
+          PR_URL=$(gh pr create \
+            --title "${{ needs.collect-info.outputs.commit_message }}" \
+            --body "$PR_BODY" \
+            --label "emergency-rollback,priority-critical" \
+            --base ${{ github.event.repository.default_branch }} \
+            --head $ROLLBACK_BRANCH \
+            --json url -q '.url')
+
+          echo "Created rollback PR: $PR_URL"
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+          echo "rollback_branch=$ROLLBACK_BRANCH" >> $GITHUB_OUTPUT
+
+          # Add auto-merge label if we have the capability
+          if gh pr merge --help | grep -q 'auto'; then
+            gh pr merge $ROLLBACK_BRANCH --auto -s
+            echo "Enabled auto-merge for the rollback PR"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Request immediate review
+        run: |
+          # Get the PR number from URL
+          PR_URL="${{ steps.create-branch.outputs.pr_url }}"
+          PR_NUMBER=$(echo $PR_URL | sed 's/.*\/pull\/\([0-9]*\).*/\1/')
+
+          # Get all code owners
+          CODE_OWNERS=$(grep -o "@[a-zA-Z0-9_-]\+" .github/CODEOWNERS 2>/dev/null | sort -u | tr '\n' ' ' || echo '')
+
+          if [[ -n "$CODE_OWNERS" ]]; then
+            # Request review from code owners
+            gh pr edit $PR_NUMBER --add-reviewer $CODE_OWNERS
+          fi
+
+          # If team notification is enabled
+          if [[ "${{ github.event.inputs.notifyTeam }}" == "true" ]]; then
+            COMMENT="## 🚨 Emergency Rollback - All Hands Required
+
+            This is an **emergency rollback** PR that needs immediate review and approval.
+
+            **Reason:** ${{ github.event.inputs.reason }}
+
+            @team Please review ASAP and approve if the rollback looks good."
+
+            gh pr comment $PR_NUMBER --body "$COMMENT"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-channels:
+    needs: [collect-info, create-rollback-branch]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.notifyTeam == 'true'
+    steps:
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🚨 Emergency Rollback Initiated"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Reason:* ${{ github.event.inputs.reason }}\n*Triggered by:* ${{ github.actor }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ needs.collect-info.outputs.pr_number && format('*Reverting PR:* #{0}', needs.collect-info.outputs.pr_number) || 'Rolling back to previous stable state' }}"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Rollback PR"
+                      },
+                      "url": "${{ needs.create-rollback-branch.outputs.pr_url }}",
+                      "style": "primary"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  create-quarantine-tag:
+    needs: collect-info
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create quarantine tag
+        run: |
+          # Create a quarantine tag to mark the problematic commit
+          QUARANTINE_TAG="quarantine/$(date +%Y%m%d-%H%M%S)"
+
+          # Add an annotation to the tag explaining the issue
+          git tag -a $QUARANTINE_TAG -m "Quarantined commit due to: ${{ github.event.inputs.reason }}"
+
+          # Push the tag
+          git push origin $QUARANTINE_TAG
+
+          echo "Created quarantine tag: $QUARANTINE_TAG"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Document rollback incident
+        run: |
+          mkdir -p .github/rollback-incidents
+
+          # Create incident report
+          cat > .github/rollback-incidents/$(date +%Y%m%d-%H%M%S).md << EOF
+          # Rollback Incident Report
+
+          **Date:** $(date +"%Y-%m-%d %H:%M:%S")
+          **Triggered by:** @${{ github.actor }}
+          **Reason:** ${{ github.event.inputs.reason }}
+
+          ## Technical Details
+
+          **Rolled back from:** \`${{ github.sha }}\`
+          **Rolled back to:** \`${{ needs.collect-info.outputs.target_sha }}\`
+          ${{ needs.collect-info.outputs.pr_number && format('**Original PR:** #{0}', needs.collect-info.outputs.pr_number) || '' }}
+
+          ## Timeline
+
+          - **Incident start:** $(date +"%Y-%m-%d %H:%M:%S")
+          - **Rollback initiated:** $(date +"%Y-%m-%d %H:%M:%S")
+
+          ## Post-Mortem
+
+          *To be filled after investigation*
+
+          - Root cause:
+          - Prevention measures:
+          - Followup actions:
+          EOF
+
+          # Commit the incident report
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add .github/rollback-incidents/$(date +%Y%m%d-%H%M%S).md
+          git commit -m "Add rollback incident report [skip ci]"
+          git push origin HEAD:rollback-documentation
+
+          # Create PR for the incident report
+          gh pr create \
+            --title "Add rollback incident documentation" \
+            --body "This PR adds documentation for the rollback incident on $(date +"%Y-%m-%d"). Please fill in the post-mortem section after investigation." \
+            --label "documentation" \
+            --base ${{ github.event.repository.default_branch }} \
+            --head rollback-documentation
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

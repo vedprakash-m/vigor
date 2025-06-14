@@ -1,0 +1,91 @@
+name: Security Disclosure Reminder
+
+on:
+  workflow_dispatch:
+    inputs:
+      issueNumber:
+        description: "Issue number for the disclosure dashboard"
+        required: true
+        type: number
+      advisoryId:
+        description: "Security advisory ID"
+        required: true
+      disclosureDate:
+        description: "Planned disclosure date (YYYY-MM-DD)"
+        required: true
+      reminderDays:
+        description: "Comma-separated days before disclosure for reminders"
+        required: true
+
+jobs:
+  setup-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse reminder days
+        id: parse-days
+        run: |
+          DISCLOSURE_DATE="${{ github.event.inputs.disclosureDate }}"
+          DISCLOSURE_TIMESTAMP=$(date -d "$DISCLOSURE_DATE" +%s)
+          CURRENT_TIMESTAMP=$(date +%s)
+
+          IFS=',' read -ra DAYS <<< "${{ github.event.inputs.reminderDays }}"
+
+          # Build workflow dispatch schedule
+          for day in "${DAYS[@]}"; do
+            REMINDER_DATE=$(date -d "@$((DISCLOSURE_TIMESTAMP - day * 86400))" +%Y-%m-%d)
+            REMINDER_TIMESTAMP=$((DISCLOSURE_TIMESTAMP - day * 86400))
+
+            # Only schedule future reminders
+            if [ $REMINDER_TIMESTAMP -gt $CURRENT_TIMESTAMP ]; then
+              echo "Scheduling reminder for $REMINDER_DATE (T-$day days)"
+
+              # Schedule the reminder (in a real workflow, you would use GitHub Actions scheduled events)
+              # Here we just add a comment to track it
+              gh issue comment ${{ github.event.inputs.issueNumber }} \
+                --body "📅 Scheduled reminder for T-$day days ($REMINDER_DATE)" \
+                --repo "${{ github.repository_owner }}/security-alerts"
+            fi
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  send-reminder:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - name: Calculate days until disclosure
+        id: calc-days
+        run: |
+          DISCLOSURE_DATE="${{ github.event.inputs.disclosureDate }}"
+          DISCLOSURE_TIMESTAMP=$(date -d "$DISCLOSURE_DATE" +%s)
+          CURRENT_TIMESTAMP=$(date +%s)
+
+          DAYS_UNTIL=$(( (DISCLOSURE_TIMESTAMP - CURRENT_TIMESTAMP) / 86400 ))
+          echo "days_until=$DAYS_UNTIL" >> $GITHUB_OUTPUT
+
+      - name: Send reminder
+        run: |
+          DAYS_UNTIL="${{ steps.calc-days.outputs.days_until }}"
+
+          REMINDER_MESSAGE="## 🚨 Security Disclosure Reminder
+
+          **Advisory:** ${{ github.event.inputs.advisoryId }}
+          **Disclosure Date:** ${{ github.event.inputs.disclosureDate }}
+          **Days Remaining:** $DAYS_UNTIL
+
+          ### Action Required
+
+          Please complete the remaining disclosure preparation tasks:
+
+          - Review the advisory content
+          - Verify all affected versions
+          - Complete communication materials
+          - Coordinate with affected partners (if applicable)
+
+          @security-team please prioritize these tasks."
+
+          gh issue comment ${{ github.event.inputs.issueNumber }} \
+            --body "$REMINDER_MESSAGE" \
+            --repo "${{ github.repository_owner }}/security-alerts"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
