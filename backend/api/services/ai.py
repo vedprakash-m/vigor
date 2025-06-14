@@ -1,4 +1,5 @@
 import uuid
+import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -6,12 +7,19 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from api.services.usage_tracking import UsageTrackingService
-from core.ai import analyze_workout_log, generate_workout_plan, get_ai_coach_response
+# Use direct AI functionality if function client isn't available
+from core.ai import analyze_workout_log, generate_workout_plan as direct_generate_workout_plan, get_ai_coach_response as direct_get_ai_coach_response
 from core.config import get_settings
+# Import the new Functions client
+from core.function_client import FunctionsClient
 from database.models import AICoachMessage, UserProfile
 from database.sql_models import AICoachMessageDB, WorkoutLogDB
 
 settings = get_settings()
+
+# Check if we should use Azure Functions
+USE_FUNCTIONS = os.environ.get("USE_FUNCTIONS", "true").lower() == "true"
+functions_client = FunctionsClient() if USE_FUNCTIONS else None
 
 
 async def chat_with_ai_coach(
@@ -22,10 +30,8 @@ async def chat_with_ai_coach(
 ) -> str:
     """Chat with the AI coach with usage tracking."""
 
-    # Note: Since this function now takes a regular Session instead of AsyncSession,
-    # we'll need to adapt the async operations or use sync alternatives
-
-    if not settings.OPENAI_API_KEY:
+    # Check if AI service is available
+    if not USE_FUNCTIONS and not settings.OPENAI_API_KEY:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="AI service is not available",
@@ -58,22 +64,41 @@ async def chat_with_ai_coach(
         "injuries": str(user.injuries) if user.injuries else "",
     }
 
-    # Get AI response
-    ai_response = await get_ai_coach_response(user, message, conversation_history)
+    # Extract goals for function call
+    goals = [g.value for g in user.goals] if user.goals else ["General fitness"]
 
-    # Save the conversation to database
-    db_message = AICoachMessageDB(
-        id=str(uuid.uuid4()),
-        user_id=user.id,
-        message=message,
-        response=ai_response,
-        context={"user_profile": user_profile},
-    )
+    try:
+        # Get AI response using either Function or direct approach
+        if USE_FUNCTIONS and functions_client:
+            # Use the Azure Function
+            ai_response = await functions_client.coach_chat(
+                message=message,
+                fitness_level=user.fitness_level,
+                goals=goals,
+                conversation_history=conversation_history
+            )
+        else:
+            # Use direct approach as fallback
+            ai_response = await direct_get_ai_coach_response(user, message, conversation_history)
 
-    db.add(db_message)
-    db.commit()
+        # Save the conversation to database
+        db_message = AICoachMessageDB(
+            id=str(uuid.uuid4()),
+            user_id=user.id,
+            message=message,
+            response=ai_response,
+            context={"user_profile": user_profile},
+        )
 
-    return ai_response
+        db.add(db_message)
+        db.commit()
+
+        return ai_response
+    except Exception as e:
+        # Log the error but return a friendly message
+        import logging
+        logging.error(f"Error in chat_with_ai_coach: {str(e)}")
+        return "I'm having trouble connecting right now. Please try again in a moment."
 
 
 async def generate_ai_workout_plan(
@@ -86,7 +111,8 @@ async def generate_ai_workout_plan(
 ) -> Dict[str, Any]:
     """Generate a personalized workout plan using AI."""
 
-    if not settings.OPENAI_API_KEY:
+    # Check if AI service is available
+    if not USE_FUNCTIONS and not settings.OPENAI_API_KEY:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="AI service is not available",
@@ -97,12 +123,23 @@ async def generate_ai_workout_plan(
     equipment = equipment or user.equipment
 
     try:
-        workout_plan = await generate_workout_plan(
-            user_profile=user,
-            goals=goals,
-            equipment=equipment,
-            duration_minutes=duration_minutes,
-        )
+        if USE_FUNCTIONS and functions_client:
+            # Use the Azure Function
+            workout_plan = await functions_client.generate_workout_plan(
+                fitness_level=user.fitness_level,
+                goals=goals or ["General fitness"],
+                equipment=equipment,
+                duration_minutes=duration_minutes,
+                focus_areas=focus_areas,
+            )
+        else:
+            # Use direct approach as fallback
+            workout_plan = await direct_generate_workout_plan(
+                user_profile=user,
+                goals=goals,
+                equipment=equipment,
+                duration_minutes=duration_minutes,
+            )
 
         # Add any focus areas to the context
         if focus_areas:

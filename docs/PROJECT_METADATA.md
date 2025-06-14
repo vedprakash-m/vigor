@@ -793,22 +793,29 @@ The team evaluated options based on:
 
 #### 6.1.4 Current Status & Issues
 
-**Status**: Phase 1 in progress (June 14, 2025)
+**Status**: Phase 2 in progress (June 14, 2025)
 **Completed**:
 
 - Initial infrastructure planning
-- Started Bicep template development for Function App
-- Documentation updates
+- Created Bicep templates for App Service, Function App, and Static Web App
+- Fixed CI/CD pipeline issues:
+  - Resolved composite action secret handling
+  - Fixed Bicep validation errors
+  - Optimized security scanning
+- Migrated AI code to Azure Functions:
+  - Created shared LLM provider code for Functions
+  - Implemented three core AI Functions: GenerateWorkout, AnalyzeWorkout, CoachChat
+  - Added proper authentication between services using managed identities
+  - Implemented cold start mitigation and performance monitoring
 
 **In Progress**:
 
-- Updating CI/CD pipeline for the new deployment model
-- Creating Function App modules in Bicep
-- Planning AI code refactoring for Functions
+- Testing the integration between App Service and Functions
+- Performance tuning and optimization
+- Comprehensive migration validation
 
 **Issues & Risks**:
 
-- Integration between App Service and Functions
-- Auth token sharing between services
-- Cold start latency for Functions
-- Team training on Function Apps development
+- Cold start performance requires monitoring in production
+- Authentication between services requires Azure-specific configuration
+- Security scanning optimization needs validation

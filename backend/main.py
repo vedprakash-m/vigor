@@ -1,4 +1,6 @@
+import asyncio
 from contextlib import asynccontextmanager
+import os
 from typing import Optional
 
 import uvicorn
@@ -16,6 +18,8 @@ from api.routes.tiers import router as tiers_router
 from api.routes.users import router as users_router
 from api.routes.workouts import router as workouts_router
 from core.config import get_settings
+from core.function_client import FunctionsClient
+from core.function_performance import perf_monitor
 from core.llm_orchestration_init import (
     initialize_llm_orchestration,
     shutdown_llm_orchestration,
@@ -36,6 +40,44 @@ async def lifespan(app: FastAPI):
         print("🔧 Initializing enterprise LLM orchestration layer...")
         await initialize_llm_orchestration()
         print("✅ LLM Orchestration Layer initialized successfully")
+
+        # Initialize Azure Functions warmup tasks if enabled
+        if os.environ.get("USE_FUNCTIONS", "true").lower() == "true":
+            print("🔥 Starting Azure Functions warmup tasks...")
+            function_client = FunctionsClient()
+
+            # Create background tasks for keeping functions warm
+            app.warmup_tasks = []
+
+            # Warmup task for GenerateWorkout function
+            warmup_generate = asyncio.create_task(
+                perf_monitor.keep_warm(
+                    warmup_func=lambda: function_client.generate_workout_plan(
+                        fitness_level="beginner",
+                        goals=["General fitness"],
+                        duration_minutes=30
+                    ),
+                    function_name="generate-workout",
+                    interval=4 * 60  # 4 minutes to prevent cold starts
+                )
+            )
+            app.warmup_tasks.append(warmup_generate)
+
+            # Warmup task for CoachChat function
+            warmup_chat = asyncio.create_task(
+                perf_monitor.keep_warm(
+                    warmup_func=lambda: function_client.coach_chat(
+                        message="Hello",
+                        fitness_level="beginner",
+                        goals=["General fitness"]
+                    ),
+                    function_name="coach-chat",
+                    interval=4 * 60  # 4 minutes to prevent cold starts
+                )
+            )
+            app.warmup_tasks.append(warmup_chat)
+
+            print("✅ Azure Functions warmup tasks started")
 
         print(f"🚀 {settings.APP_NAME} v{settings.APP_VERSION} starting up...")
         print(f"📊 Environment: {settings.ENVIRONMENT}")
