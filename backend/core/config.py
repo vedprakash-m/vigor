@@ -1,6 +1,6 @@
 import os
 from functools import lru_cache
-from typing import List, Optional, ClassVar
+from typing import ClassVar, List, Optional
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings

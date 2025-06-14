@@ -1,9 +1,10 @@
+from fastapi.testclient import TestClient
 import pytest
+
 from core.security import create_access_token
 from database.connection import get_db
-from main import app
 from database.sql_models import UserProfileDB
-from fastapi.testclient import TestClient
+from main import app
 
 client = TestClient(app)
 

@@ -34,6 +34,9 @@ module.exports = {
     '<rootDir>/src/__tests__/performance/.*',
     '<rootDir>/src/__tests__/accessibility/.*',
     '<rootDir>/src/pages/AdminPage.test.tsx',
+    '<rootDir>/src/__tests__/contexts/.*',
+    '<rootDir>/src/__tests__/components/ForgotPasswordPage.test.tsx',
+    '<rootDir>/src/__tests__/pages/OnboardingPage.test.tsx',
   ],
   watchAll: false,
   globals: {

@@ -1,6 +1,7 @@
-import pytest
 import sys
 from pathlib import Path
+
+import pytest
 
 # Ensure project root is in PYTHONPATH when tests are executed from within the
 # backend directory (e.g., on CI/CD runners) so that `import database` works
