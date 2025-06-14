@@ -3,5 +3,5 @@ isort==6.0.1
 flake8==7.2.0
 bandit==1.8.3
 mypy==1.10.0
-pytest-cov==4.1.0
+pytest-cov==6.2.1
 safety==3.5.2 
