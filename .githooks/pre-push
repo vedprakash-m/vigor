@@ -1,0 +1,25 @@
+#!/bin/bash
+
+echo "🔍 Running pre-push checks..."
+
+# Check for branch
+CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
+if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
+  echo "⚠️ You're attempting to push directly to $CURRENT_BRANCH branch!"
+  echo "Please create a feature branch and submit a PR instead."
+  exit 1
+fi
+
+# Run backend tests
+echo "🧪 Running backend tests..."
+cd backend && source venv/bin/activate && python -m pytest || exit 1
+
+# Run frontend tests
+echo "🧪 Running frontend tests..."
+cd ../frontend && npm test || exit 1
+
+# Run integration tests
+echo "🔄 Running integration tests..."
+./scripts/run_e2e_tests.sh || exit 1
+
+echo "✅ All pre-push checks passed!"

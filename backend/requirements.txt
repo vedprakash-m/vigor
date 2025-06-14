@@ -18,3 +18,6 @@ email-validator>=2.1.0.post1  # For email validation
 starlette>=0.40.0  # Security update - addresses DoS vulnerability CVE-2024-47874
 anyio>=4.4.0  # Security update - addresses thread race condition vulnerability
 ecdsa>=0.19.1  # Note: All versions vulnerable to Minerva attack - consider alternative
+azure-functions>=1.23.0  # For Azure Functions integration
+azure-identity>=1.23.0  # For Azure authentication
+azure-keyvault-secrets>=4.9.0  # For Azure Key Vault secrets management

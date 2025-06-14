@@ -1,0 +1,137 @@
+name: Unified Deployment
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  validate-infrastructure:
+    name: Validate Infrastructure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Bicep templates
+        run: |
+          az bicep build --file infrastructure/bicep/main.bicep
+
+  deploy-to-staging:
+    name: Deploy to Staging
+    needs: validate-infrastructure
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event.inputs.environment == 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Backend
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+
+      - name: Build Backend
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Setup Frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: "19"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Deploy to Staging Azure
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: vigor-staging
+          package: ./backend
+
+  verify-staging:
+    name: Verify Staging Deployment
+    needs: deploy-to-staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run health checks
+        run: ./scripts/health-check.sh staging
+
+      - name: Run smoke tests
+        run: ./scripts/run-smoke-tests.sh staging
+
+  deploy-to-production:
+    name: Deploy to Production
+    needs: verify-staging
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.environment == 'production' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Backend
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+
+      - name: Build Backend
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Setup Frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: "19"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Deploy to Production Azure
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: vigor-production
+          package: ./backend
+
+  verify-production:
+    name: Verify Production Deployment
+    needs: deploy-to-production
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.environment == 'production' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run health checks
+        run: ./scripts/health-check.sh production
+
+      - name: Run smoke tests
+        run: ./scripts/run-smoke-tests.sh production

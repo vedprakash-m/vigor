@@ -16,35 +16,35 @@ We highly encourage switching to the new `scan` command which is easier to use, 
     "report_meta": {
         "scan_target": "environment",
         "scanned": [
-            "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9",
-            "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages/setuptools/_vendor",
-            "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python39.zip",
-            "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/lib-dynload",
             "/Users/vedprakashmishra/vigor/backend/venv/bin",
-            "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+            "/opt/homebrew/Cellar/python@3.12/3.12.10/Frameworks/Python.framework/Versions/3.12/lib/python312.zip",
+            "/opt/homebrew/Cellar/python@3.12/3.12.10/Frameworks/Python.framework/Versions/3.12/lib/python3.12/lib-dynload",
+            "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages",
+            "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor",
+            "/opt/homebrew/Cellar/python@3.12/3.12.10/Frameworks/Python.framework/Versions/3.12/lib/python3.12"
         ],
         "scanned_full_path": [
             "/Users/vedprakashmishra/vigor/backend/venv/bin",
-            "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python39.zip",
-            "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9",
-            "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/lib-dynload",
-            "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages",
-            "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages/setuptools/_vendor"
+            "/opt/homebrew/Cellar/python@3.12/3.12.10/Frameworks/Python.framework/Versions/3.12/lib/python312.zip",
+            "/opt/homebrew/Cellar/python@3.12/3.12.10/Frameworks/Python.framework/Versions/3.12/lib/python3.12",
+            "/opt/homebrew/Cellar/python@3.12/3.12.10/Frameworks/Python.framework/Versions/3.12/lib/python3.12/lib-dynload",
+            "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages",
+            "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor"
         ],
         "target_languages": [
             "python"
         ],
-        "policy_file": null,
+        "policy_file": ".safety-policy.yml",
         "policy_file_source": "local",
         "audit_and_monitor": false,
         "api_key": false,
         "account": "",
         "local_database_path": null,
-        "safety_version": "3.5.1",
-        "timestamp": "2025-06-07 10:32:42",
-        "packages_found": 116,
-        "vulnerabilities_found": 17,
-        "vulnerabilities_ignored": 0,
+        "safety_version": "3.5.2",
+        "timestamp": "2025-06-14 16:44:17",
+        "packages_found": 118,
+        "vulnerabilities_found": 0,
+        "vulnerabilities_ignored": 4,
         "remediations_recommended": 0,
         "telemetry": {
             "safety_options": {
@@ -52,18 +52,18 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "--output": 1
                 }
             },
-            "safety_version": "3.5.1",
+            "safety_version": "3.5.2",
             "safety_source": "cli",
             "os_type": "Darwin",
             "os_release": "24.5.0",
             "os_description": "macOS-15.5-arm64-arm-64bit",
-            "python_version": "3.9.6",
+            "python_version": "3.12.10",
             "safety_command": "check"
         },
         "git": {
             "branch": "main",
             "tag": "",
-            "commit": "70b0495df70d955fd9b63eb19a88e0d1cfd32687",
+            "commit": "50639f91ae66bfe13265bc34699e5de314af274b",
             "dirty": "True",
             "origin": "https://github.com/vedprakash-m/vigor.git"
         },
@@ -85,7 +85,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "markupsafe",
                     "specifier": "==3.0.2",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pyjwt": {
+            "name": "pyjwt",
+            "version": "2.10.1",
+            "requirements": [
+                {
+                    "raw": "pyjwt==2.10.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyjwt",
+                    "specifier": "==2.10.1",
+                    "url": null,
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -100,37 +115,37 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "pyyaml",
                     "specifier": "==6.0.2",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
-        "sqlalchemy": {
-            "name": "sqlalchemy",
-            "version": "2.0.23",
+        "aiohappyeyeballs": {
+            "name": "aiohappyeyeballs",
+            "version": "2.6.1",
             "requirements": [
                 {
-                    "raw": "sqlalchemy==2.0.23",
+                    "raw": "aiohappyeyeballs==2.6.1",
                     "extras": [],
                     "marker": null,
-                    "name": "sqlalchemy",
-                    "specifier": "==2.0.23",
+                    "name": "aiohappyeyeballs",
+                    "specifier": "==2.6.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "aiohttp": {
             "name": "aiohttp",
-            "version": "3.9.1",
+            "version": "3.12.11",
             "requirements": [
                 {
-                    "raw": "aiohttp==3.9.1",
+                    "raw": "aiohttp==3.12.11",
                     "extras": [],
                     "marker": null,
                     "name": "aiohttp",
-                    "specifier": "==3.9.1",
+                    "specifier": "==3.12.11",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -145,22 +160,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "aiosignal",
                     "specifier": "==1.3.2",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "alembic": {
             "name": "alembic",
-            "version": "1.12.1",
+            "version": "1.16.1",
             "requirements": [
                 {
-                    "raw": "alembic==1.12.1",
+                    "raw": "alembic==1.16.1",
                     "extras": [],
                     "marker": null,
                     "name": "alembic",
-                    "specifier": "==1.12.1",
+                    "specifier": "==1.16.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -175,52 +190,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "annotated-types",
                     "specifier": "==0.7.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "anyio": {
             "name": "anyio",
-            "version": "3.7.1",
+            "version": "4.9.0",
             "requirements": [
                 {
-                    "raw": "anyio==3.7.1",
+                    "raw": "anyio==4.9.0",
                     "extras": [],
                     "marker": null,
                     "name": "anyio",
-                    "specifier": "==3.7.1",
+                    "specifier": "==4.9.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ]
-        },
-        "astroid": {
-            "name": "astroid",
-            "version": "3.3.10",
-            "requirements": [
-                {
-                    "raw": "astroid==3.3.10",
-                    "extras": [],
-                    "marker": null,
-                    "name": "astroid",
-                    "specifier": "==3.3.10",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ]
-        },
-        "async-timeout": {
-            "name": "async-timeout",
-            "version": "4.0.3",
-            "requirements": [
-                {
-                    "raw": "async-timeout==4.0.3",
-                    "extras": [],
-                    "marker": null,
-                    "name": "async-timeout",
-                    "specifier": "==4.0.3",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -235,7 +220,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "attrs",
                     "specifier": "==25.3.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -250,22 +235,67 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "authlib",
                     "specifier": "==1.6.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
-        "backports-datetime-fromisoformat": {
-            "name": "backports-datetime-fromisoformat",
-            "version": "2.0.3",
+        "azure-core": {
+            "name": "azure-core",
+            "version": "1.34.0",
             "requirements": [
                 {
-                    "raw": "backports-datetime-fromisoformat==2.0.3",
+                    "raw": "azure-core==1.34.0",
                     "extras": [],
                     "marker": null,
-                    "name": "backports-datetime-fromisoformat",
-                    "specifier": "==2.0.3",
+                    "name": "azure-core",
+                    "specifier": "==1.34.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "azure-functions": {
+            "name": "azure-functions",
+            "version": "1.23.0",
+            "requirements": [
+                {
+                    "raw": "azure-functions==1.23.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "azure-functions",
+                    "specifier": "==1.23.0",
+                    "url": null,
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "azure-identity": {
+            "name": "azure-identity",
+            "version": "1.23.0",
+            "requirements": [
+                {
+                    "raw": "azure-identity==1.23.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "azure-identity",
+                    "specifier": "==1.23.0",
+                    "url": null,
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "azure-keyvault-secrets": {
+            "name": "azure-keyvault-secrets",
+            "version": "4.9.0",
+            "requirements": [
+                {
+                    "raw": "azure-keyvault-secrets==4.9.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "azure-keyvault-secrets",
+                    "specifier": "==4.9.0",
+                    "url": null,
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -280,7 +310,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "bandit",
                     "specifier": "==1.8.3",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -295,7 +325,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "bcrypt",
                     "specifier": "==4.3.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -310,7 +340,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "black",
                     "specifier": "==25.1.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -325,7 +355,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "certifi",
                     "specifier": "==2025.4.26",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -340,22 +370,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "cffi",
                     "specifier": "==1.17.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ]
-        },
-        "cfgv": {
-            "name": "cfgv",
-            "version": "3.4.0",
-            "requirements": [
-                {
-                    "raw": "cfgv==3.4.0",
-                    "extras": [],
-                    "marker": null,
-                    "name": "cfgv",
-                    "specifier": "==3.4.0",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -370,7 +385,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "charset-normalizer",
                     "specifier": "==3.4.2",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -385,7 +400,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "click",
                     "specifier": "==8.1.8",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "coverage": {
+            "name": "coverage",
+            "version": "7.8.2",
+            "requirements": [
+                {
+                    "raw": "coverage==7.8.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "coverage",
+                    "specifier": "==7.8.2",
+                    "url": null,
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -400,52 +430,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "cryptography",
                     "specifier": "==45.0.3",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ]
-        },
-        "detect-secrets": {
-            "name": "detect-secrets",
-            "version": "1.5.0",
-            "requirements": [
-                {
-                    "raw": "detect-secrets==1.5.0",
-                    "extras": [],
-                    "marker": null,
-                    "name": "detect-secrets",
-                    "specifier": "==1.5.0",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ]
-        },
-        "dill": {
-            "name": "dill",
-            "version": "0.4.0",
-            "requirements": [
-                {
-                    "raw": "dill==0.4.0",
-                    "extras": [],
-                    "marker": null,
-                    "name": "dill",
-                    "specifier": "==0.4.0",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ]
-        },
-        "distlib": {
-            "name": "distlib",
-            "version": "0.3.9",
-            "requirements": [
-                {
-                    "raw": "distlib==0.3.9",
-                    "extras": [],
-                    "marker": null,
-                    "name": "distlib",
-                    "specifier": "==0.3.9",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -460,7 +445,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "distro",
                     "specifier": "==1.9.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -475,7 +460,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "dnspython",
                     "specifier": "==2.7.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -490,7 +475,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "dparse",
                     "specifier": "==0.6.4",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -505,52 +490,37 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "ecdsa",
                     "specifier": "==0.19.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "email-validator": {
             "name": "email-validator",
-            "version": "2.1.0.post1",
+            "version": "2.2.0",
             "requirements": [
                 {
-                    "raw": "email-validator==2.1.0.post1",
+                    "raw": "email-validator==2.2.0",
                     "extras": [],
                     "marker": null,
                     "name": "email-validator",
-                    "specifier": "==2.1.0.post1",
+                    "specifier": "==2.2.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ]
-        },
-        "exceptiongroup": {
-            "name": "exceptiongroup",
-            "version": "1.3.0",
-            "requirements": [
-                {
-                    "raw": "exceptiongroup==1.3.0",
-                    "extras": [],
-                    "marker": null,
-                    "name": "exceptiongroup",
-                    "specifier": "==1.3.0",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "fastapi": {
             "name": "fastapi",
-            "version": "0.104.1",
+            "version": "0.115.12",
             "requirements": [
                 {
-                    "raw": "fastapi==0.104.1",
+                    "raw": "fastapi==0.115.12",
                     "extras": [],
                     "marker": null,
                     "name": "fastapi",
-                    "specifier": "==0.104.1",
+                    "specifier": "==0.115.12",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -565,7 +535,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "filelock",
                     "specifier": "==3.16.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -580,22 +550,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "flake8",
                     "specifier": "==7.2.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "frozenlist": {
             "name": "frozenlist",
-            "version": "1.6.0",
+            "version": "1.6.2",
             "requirements": [
                 {
-                    "raw": "frozenlist==1.6.0",
+                    "raw": "frozenlist==1.6.2",
                     "extras": [],
                     "marker": null,
                     "name": "frozenlist",
-                    "specifier": "==1.6.0",
+                    "specifier": "==1.6.2",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -610,7 +580,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "h11",
                     "specifier": "==0.16.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -625,37 +595,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "httpcore",
                     "specifier": "==1.0.9",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "httpx": {
             "name": "httpx",
-            "version": "0.25.2",
+            "version": "0.28.1",
             "requirements": [
                 {
-                    "raw": "httpx==0.25.2",
+                    "raw": "httpx==0.28.1",
                     "extras": [],
                     "marker": null,
                     "name": "httpx",
-                    "specifier": "==0.25.2",
+                    "specifier": "==0.28.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ]
-        },
-        "identify": {
-            "name": "identify",
-            "version": "2.6.12",
-            "requirements": [
-                {
-                    "raw": "identify==2.6.12",
-                    "extras": [],
-                    "marker": null,
-                    "name": "identify",
-                    "specifier": "==2.6.12",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -670,7 +625,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "idna",
                     "specifier": "==3.10",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -685,7 +640,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "iniconfig",
                     "specifier": "==2.1.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "isodate": {
+            "name": "isodate",
+            "version": "0.7.2",
+            "requirements": [
+                {
+                    "raw": "isodate==0.7.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "isodate",
+                    "specifier": "==0.7.2",
+                    "url": null,
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -700,7 +670,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "isort",
                     "specifier": "==6.0.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -715,7 +685,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "jinja2",
                     "specifier": "==3.1.6",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "jiter": {
+            "name": "jiter",
+            "version": "0.10.0",
+            "requirements": [
+                {
+                    "raw": "jiter==0.10.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jiter",
+                    "specifier": "==0.10.0",
+                    "url": null,
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -730,7 +715,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "joblib",
                     "specifier": "==1.5.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -745,7 +730,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "mako",
                     "specifier": "==1.3.10",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -760,7 +745,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "markdown-it-py",
                     "specifier": "==3.0.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -775,7 +760,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "marshmallow",
                     "specifier": "==4.0.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -790,7 +775,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "mccabe",
                     "specifier": "==0.7.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -805,7 +790,37 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "mdurl",
                     "specifier": "==0.1.2",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "msal": {
+            "name": "msal",
+            "version": "1.32.3",
+            "requirements": [
+                {
+                    "raw": "msal==1.32.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "msal",
+                    "specifier": "==1.32.3",
+                    "url": null,
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "msal-extensions": {
+            "name": "msal-extensions",
+            "version": "1.3.1",
+            "requirements": [
+                {
+                    "raw": "msal-extensions==1.3.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "msal-extensions",
+                    "specifier": "==1.3.1",
+                    "url": null,
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -820,7 +835,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "multidict",
                     "specifier": "==6.4.4",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -835,7 +850,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "mypy",
                     "specifier": "==1.16.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -850,7 +865,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "mypy-extensions",
                     "specifier": "==1.1.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -865,37 +880,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "nltk",
                     "specifier": "==3.9.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ]
-        },
-        "nodeenv": {
-            "name": "nodeenv",
-            "version": "1.9.1",
-            "requirements": [
-                {
-                    "raw": "nodeenv==1.9.1",
-                    "extras": [],
-                    "marker": null,
-                    "name": "nodeenv",
-                    "specifier": "==1.9.1",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "openai": {
             "name": "openai",
-            "version": "1.3.5",
+            "version": "1.84.0",
             "requirements": [
                 {
-                    "raw": "openai==1.3.5",
+                    "raw": "openai==1.84.0",
                     "extras": [],
                     "marker": null,
                     "name": "openai",
-                    "specifier": "==1.3.5",
+                    "specifier": "==1.84.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -910,7 +910,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "packaging",
                     "specifier": "==25.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -925,7 +925,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "passlib",
                     "specifier": "==1.7.4",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -940,7 +940,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "pathspec",
                     "specifier": "==0.12.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -955,22 +955,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "pbr",
                     "specifier": "==6.1.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "pip": {
             "name": "pip",
-            "version": "21.2.4",
+            "version": "25.0.1",
             "requirements": [
                 {
-                    "raw": "pip==21.2.4",
+                    "raw": "pip==25.0.1",
                     "extras": [],
                     "marker": null,
                     "name": "pip",
-                    "specifier": "==21.2.4",
+                    "specifier": "==25.0.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -985,7 +985,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "platformdirs",
                     "specifier": "==4.3.8",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1000,22 +1000,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "pluggy",
                     "specifier": "==1.6.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ]
-        },
-        "pre-commit": {
-            "name": "pre-commit",
-            "version": "4.2.0",
-            "requirements": [
-                {
-                    "raw": "pre-commit==4.2.0",
-                    "extras": [],
-                    "marker": null,
-                    "name": "pre-commit",
-                    "specifier": "==4.2.0",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1030,7 +1015,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "propcache",
                     "specifier": "==0.3.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1045,7 +1030,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "psutil",
                     "specifier": "==6.1.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1060,7 +1045,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "psycopg2-binary",
                     "specifier": "==2.9.9",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1075,7 +1060,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "pyasn1",
                     "specifier": "==0.6.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1090,7 +1075,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "pycodestyle",
                     "specifier": "==2.13.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1105,7 +1090,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "pycparser",
                     "specifier": "==2.22",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1120,7 +1105,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "pydantic",
                     "specifier": "==2.9.2",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1135,22 +1120,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "pydantic-core",
                     "specifier": "==2.23.4",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "pydantic-settings": {
             "name": "pydantic-settings",
-            "version": "2.0.3",
+            "version": "2.9.1",
             "requirements": [
                 {
-                    "raw": "pydantic-settings==2.0.3",
+                    "raw": "pydantic-settings==2.9.1",
                     "extras": [],
                     "marker": null,
                     "name": "pydantic-settings",
-                    "specifier": "==2.0.3",
+                    "specifier": "==2.9.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1165,7 +1150,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "pyflakes",
                     "specifier": "==3.3.2",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1180,52 +1165,52 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "pygments",
                     "specifier": "==2.19.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ]
-        },
-        "pylint": {
-            "name": "pylint",
-            "version": "3.3.7",
-            "requirements": [
-                {
-                    "raw": "pylint==3.3.7",
-                    "extras": [],
-                    "marker": null,
-                    "name": "pylint",
-                    "specifier": "==3.3.7",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "pytest": {
             "name": "pytest",
-            "version": "7.4.3",
+            "version": "8.4.0",
             "requirements": [
                 {
-                    "raw": "pytest==7.4.3",
+                    "raw": "pytest==8.4.0",
                     "extras": [],
                     "marker": null,
                     "name": "pytest",
-                    "specifier": "==7.4.3",
+                    "specifier": "==8.4.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "pytest-cov": {
+            "name": "pytest-cov",
+            "version": "6.1.1",
+            "requirements": [
+                {
+                    "raw": "pytest-cov==6.1.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest-cov",
+                    "specifier": "==6.1.1",
+                    "url": null,
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "python-dotenv": {
             "name": "python-dotenv",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "requirements": [
                 {
-                    "raw": "python-dotenv==1.0.0",
+                    "raw": "python-dotenv==1.1.0",
                     "extras": [],
                     "marker": null,
                     "name": "python-dotenv",
-                    "specifier": "==1.0.0",
+                    "specifier": "==1.1.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1240,37 +1225,37 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "python-jose",
                     "specifier": "==3.3.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "python-multipart": {
             "name": "python-multipart",
-            "version": "0.0.6",
+            "version": "0.0.20",
             "requirements": [
                 {
-                    "raw": "python-multipart==0.0.6",
+                    "raw": "python-multipart==0.0.20",
                     "extras": [],
                     "marker": null,
                     "name": "python-multipart",
-                    "specifier": "==0.0.6",
+                    "specifier": "==0.0.20",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "redis": {
             "name": "redis",
-            "version": "5.0.1",
+            "version": "6.2.0",
             "requirements": [
                 {
-                    "raw": "redis==5.0.1",
+                    "raw": "redis==6.2.0",
                     "extras": [],
                     "marker": null,
                     "name": "redis",
-                    "specifier": "==5.0.1",
+                    "specifier": "==6.2.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1285,7 +1270,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "regex",
                     "specifier": "==2024.11.6",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1300,7 +1285,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "requests",
                     "specifier": "==2.32.3",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1315,7 +1300,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "rich",
                     "specifier": "==14.0.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1330,22 +1315,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "rsa",
                     "specifier": "==4.9.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "ruamel.yaml": {
             "name": "ruamel.yaml",
-            "version": "0.18.12",
+            "version": "0.18.13",
             "requirements": [
                 {
-                    "raw": "ruamel.yaml==0.18.12",
+                    "raw": "ruamel.yaml==0.18.13",
                     "extras": [],
                     "marker": null,
                     "name": "ruamel.yaml",
-                    "specifier": "==0.18.12",
+                    "specifier": "==0.18.13",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1360,22 +1345,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "ruamel.yaml.clib",
                     "specifier": "==0.2.12",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "safety": {
             "name": "safety",
-            "version": "3.5.1",
+            "version": "3.5.2",
             "requirements": [
                 {
-                    "raw": "safety==3.5.1",
+                    "raw": "safety==3.5.2",
                     "extras": [],
                     "marker": null,
                     "name": "safety",
-                    "specifier": "==3.5.1",
+                    "specifier": "==3.5.2",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1390,7 +1375,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "safety-schemas",
                     "specifier": "==0.0.14",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1405,7 +1390,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "setuptools",
                     "specifier": "==80.9.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1420,7 +1405,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "shellingham",
                     "specifier": "==1.5.4",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1435,7 +1420,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "six",
                     "specifier": "==1.17.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1450,22 +1435,37 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "sniffio",
                     "specifier": "==1.3.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "sqlalchemy": {
+            "name": "sqlalchemy",
+            "version": "2.0.41",
+            "requirements": [
+                {
+                    "raw": "sqlalchemy==2.0.41",
+                    "extras": [],
+                    "marker": null,
+                    "name": "sqlalchemy",
+                    "specifier": "==2.0.41",
+                    "url": null,
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "starlette": {
             "name": "starlette",
-            "version": "0.27.0",
+            "version": "0.46.2",
             "requirements": [
                 {
-                    "raw": "starlette==0.27.0",
+                    "raw": "starlette==0.46.2",
                     "extras": [],
                     "marker": null,
                     "name": "starlette",
-                    "specifier": "==0.27.0",
+                    "specifier": "==0.46.2",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1480,7 +1480,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "stevedore",
                     "specifier": "==5.4.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1495,37 +1495,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "tenacity",
                     "specifier": "==9.1.2",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ]
-        },
-        "tomli": {
-            "name": "tomli",
-            "version": "2.2.1",
-            "requirements": [
-                {
-                    "raw": "tomli==2.2.1",
-                    "extras": [],
-                    "marker": null,
-                    "name": "tomli",
-                    "specifier": "==2.2.1",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "tomlkit": {
             "name": "tomlkit",
-            "version": "0.13.2",
+            "version": "0.13.3",
             "requirements": [
                 {
-                    "raw": "tomlkit==0.13.2",
+                    "raw": "tomlkit==0.13.3",
                     "extras": [],
                     "marker": null,
                     "name": "tomlkit",
-                    "specifier": "==0.13.2",
+                    "specifier": "==0.13.3",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1540,7 +1525,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "tqdm",
                     "specifier": "==4.67.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1555,22 +1540,37 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "typer",
                     "specifier": "==0.16.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "typing-extensions": {
             "name": "typing-extensions",
-            "version": "4.13.2",
+            "version": "4.14.0",
             "requirements": [
                 {
-                    "raw": "typing-extensions==4.13.2",
+                    "raw": "typing-extensions==4.14.0",
                     "extras": [],
                     "marker": null,
                     "name": "typing-extensions",
-                    "specifier": "==4.13.2",
+                    "specifier": "==4.14.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "typing-inspection": {
+            "name": "typing-inspection",
+            "version": "0.4.1",
+            "requirements": [
+                {
+                    "raw": "typing-inspection==0.4.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "typing-inspection",
+                    "specifier": "==0.4.1",
+                    "url": null,
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1585,37 +1585,52 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "urllib3",
                     "specifier": "==2.4.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
         "uvicorn": {
             "name": "uvicorn",
-            "version": "0.24.0",
+            "version": "0.34.3",
             "requirements": [
                 {
-                    "raw": "uvicorn==0.24.0",
+                    "raw": "uvicorn==0.34.3",
                     "extras": [],
                     "marker": null,
                     "name": "uvicorn",
-                    "specifier": "==0.24.0",
+                    "specifier": "==0.34.3",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
-        "virtualenv": {
-            "name": "virtualenv",
-            "version": "20.31.2",
+        "werkzeug": {
+            "name": "werkzeug",
+            "version": "3.1.3",
             "requirements": [
                 {
-                    "raw": "virtualenv==20.31.2",
+                    "raw": "werkzeug==3.1.3",
                     "extras": [],
                     "marker": null,
-                    "name": "virtualenv",
-                    "specifier": "==20.31.2",
+                    "name": "werkzeug",
+                    "specifier": "==3.1.3",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
+                }
+            ]
+        },
+        "yamllint": {
+            "name": "yamllint",
+            "version": "1.37.1",
+            "requirements": [
+                {
+                    "raw": "yamllint==1.37.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "yamllint",
+                    "specifier": "==1.37.1",
+                    "url": null,
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1630,7 +1645,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "yarl",
                     "specifier": "==1.20.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ]
         },
@@ -1645,7 +1660,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "autocommand",
                     "specifier": "==2.2.2",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages/setuptools/_vendor"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor"
                 }
             ]
         },
@@ -1660,7 +1675,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "backports.tarfile",
                     "specifier": "==1.2.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages/setuptools/_vendor"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor"
                 }
             ]
         },
@@ -1675,7 +1690,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "importlib-metadata",
                     "specifier": "==8.0.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages/setuptools/_vendor"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor"
                 }
             ]
         },
@@ -1690,7 +1705,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "inflect",
                     "specifier": "==7.3.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages/setuptools/_vendor"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor"
                 }
             ]
         },
@@ -1705,7 +1720,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "jaraco.collections",
                     "specifier": "==5.1.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages/setuptools/_vendor"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor"
                 }
             ]
         },
@@ -1720,7 +1735,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "jaraco.context",
                     "specifier": "==5.3.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages/setuptools/_vendor"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor"
                 }
             ]
         },
@@ -1735,7 +1750,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "jaraco.functools",
                     "specifier": "==4.0.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages/setuptools/_vendor"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor"
                 }
             ]
         },
@@ -1750,7 +1765,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "jaraco.text",
                     "specifier": "==3.12.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages/setuptools/_vendor"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor"
                 }
             ]
         },
@@ -1765,7 +1780,22 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "more-itertools",
                     "specifier": "==10.3.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages/setuptools/_vendor"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor"
+                }
+            ]
+        },
+        "tomli": {
+            "name": "tomli",
+            "version": "2.0.1",
+            "requirements": [
+                {
+                    "raw": "tomli==2.0.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tomli",
+                    "specifier": "==2.0.1",
+                    "url": null,
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor"
                 }
             ]
         },
@@ -1780,7 +1810,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "typeguard",
                     "specifier": "==4.3.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages/setuptools/_vendor"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor"
                 }
             ]
         },
@@ -1795,7 +1825,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "wheel",
                     "specifier": "==0.45.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages/setuptools/_vendor"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor"
                 }
             ]
         },
@@ -1810,254 +1840,12 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "zipp",
                     "specifier": "==3.19.2",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages/setuptools/_vendor"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor"
                 }
             ]
         }
     },
     "affected_packages": {
-        "starlette": {
-            "name": "starlette",
-            "version": "0.27.0",
-            "requirements": [
-                {
-                    "raw": "starlette==0.27.0",
-                    "extras": [],
-                    "marker": null,
-                    "name": "starlette",
-                    "specifier": "==0.27.0",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ],
-            "found": null,
-            "insecure_versions": [
-                "0.1.0",
-                "0.10.0",
-                "0.10.1",
-                "0.10.2",
-                "0.10.3",
-                "0.10.4",
-                "0.10.5",
-                "0.10.6",
-                "0.10.7",
-                "0.1.1",
-                "0.1.10",
-                "0.11.0",
-                "0.1.11",
-                "0.11.1",
-                "0.1.12",
-                "0.11.2",
-                "0.1.13",
-                "0.11.3",
-                "0.1.14",
-                "0.11.4",
-                "0.1.15",
-                "0.1.16",
-                "0.1.17",
-                "0.1.2",
-                "0.12.0",
-                "0.12.0b1",
-                "0.12.0b2",
-                "0.12.0b3",
-                "0.12.1",
-                "0.12.10",
-                "0.12.11",
-                "0.12.12",
-                "0.12.13",
-                "0.12.2",
-                "0.12.3",
-                "0.12.4",
-                "0.12.5",
-                "0.12.6",
-                "0.12.7",
-                "0.12.8",
-                "0.12.9",
-                "0.1.3",
-                "0.13.0",
-                "0.13.1",
-                "0.13.2",
-                "0.13.3",
-                "0.13.4",
-                "0.13.5",
-                "0.13.6",
-                "0.13.7",
-                "0.13.8",
-                "0.1.4",
-                "0.14.0",
-                "0.14.1",
-                "0.14.2",
-                "0.1.5",
-                "0.15.0",
-                "0.1.6",
-                "0.16.0",
-                "0.1.7",
-                "0.17.0",
-                "0.17.1",
-                "0.1.8",
-                "0.18.0",
-                "0.1.9",
-                "0.19.0",
-                "0.19.1",
-                "0.2.0",
-                "0.20.0",
-                "0.20.1",
-                "0.20.2",
-                "0.20.3",
-                "0.20.4",
-                "0.2.1",
-                "0.21.0",
-                "0.2.2",
-                "0.22.0",
-                "0.2.3",
-                "0.23.0",
-                "0.23.1",
-                "0.24.0",
-                "0.25.0",
-                "0.26.0",
-                "0.26.0.post1",
-                "0.26.1",
-                "0.27.0",
-                "0.28.0",
-                "0.29.0",
-                "0.3.0",
-                "0.30.0",
-                "0.3.1",
-                "0.31.0",
-                "0.31.1",
-                "0.3.2",
-                "0.32.0",
-                "0.32.0.post1",
-                "0.3.3",
-                "0.33.0",
-                "0.3.4",
-                "0.34.0",
-                "0.3.5",
-                "0.35.0",
-                "0.35.1",
-                "0.3.6",
-                "0.36.0",
-                "0.36.1",
-                "0.36.2",
-                "0.36.3",
-                "0.3.7",
-                "0.37.0",
-                "0.37.1",
-                "0.37.2",
-                "0.38.0",
-                "0.38.1",
-                "0.38.2",
-                "0.38.3",
-                "0.38.4",
-                "0.38.5",
-                "0.38.6",
-                "0.39.0",
-                "0.39.1",
-                "0.39.2",
-                "0.4.0",
-                "0.4.1",
-                "0.4.2",
-                "0.5.0",
-                "0.5.1",
-                "0.5.2",
-                "0.5.3",
-                "0.5.4",
-                "0.5.5",
-                "0.6.0",
-                "0.6.1",
-                "0.6.2",
-                "0.6.3",
-                "0.7.0",
-                "0.7.1",
-                "0.7.2",
-                "0.7.3",
-                "0.7.4",
-                "0.8.0",
-                "0.8.1",
-                "0.8.2",
-                "0.8.3",
-                "0.8.4",
-                "0.8.5",
-                "0.8.6",
-                "0.8.7",
-                "0.8.8",
-                "0.9.0",
-                "0.9.1",
-                "0.9.10",
-                "0.9.11",
-                "0.9.2",
-                "0.9.3",
-                "0.9.4",
-                "0.9.5",
-                "0.9.6",
-                "0.9.7",
-                "0.9.8",
-                "0.9.9"
-            ],
-            "secure_versions": [
-                "0.46.2",
-                "0.46.1",
-                "0.46.0",
-                "0.45.3",
-                "0.45.2",
-                "0.45.1",
-                "0.45.0",
-                "0.44.0",
-                "0.43.0",
-                "0.42.0",
-                "0.41.3",
-                "0.41.2",
-                "0.41.1",
-                "0.41.0",
-                "0.40.0"
-            ],
-            "latest_version_without_known_vulnerabilities": "0.46.2",
-            "latest_version": "0.46.2",
-            "more_info_url": "https://data.safetycli.com/p/pypi/starlette/97c/"
-        },
-        "python-multipart": {
-            "name": "python-multipart",
-            "version": "0.0.6",
-            "requirements": [
-                {
-                    "raw": "python-multipart==0.0.6",
-                    "extras": [],
-                    "marker": null,
-                    "name": "python-multipart",
-                    "specifier": "==0.0.6",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ],
-            "found": null,
-            "insecure_versions": [
-                "0.0.1",
-                "0.0.10",
-                "0.0.11",
-                "0.0.12",
-                "0.0.13",
-                "0.0.14",
-                "0.0.15",
-                "0.0.16",
-                "0.0.17",
-                "0.0.2",
-                "0.0.3",
-                "0.0.4",
-                "0.0.5",
-                "0.0.6",
-                "0.0.7",
-                "0.0.8",
-                "0.0.9"
-            ],
-            "secure_versions": [
-                "0.0.20",
-                "0.0.19",
-                "0.0.18"
-            ],
-            "latest_version_without_known_vulnerabilities": "0.0.20",
-            "latest_version": "0.0.20",
-            "more_info_url": "https://data.safetycli.com/p/pypi/python-multipart/97c/"
-        },
         "python-jose": {
             "name": "python-jose",
             "version": "3.3.0",
@@ -2069,7 +1857,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "python-jose",
                     "specifier": "==3.3.0",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ],
             "found": null,
@@ -2111,185 +1899,13 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                 "3.1.0",
                 "3.2.0",
                 "3.3.0",
-                "3.4.0"
+                "3.4.0",
+                "3.5.0"
             ],
             "secure_versions": [],
             "latest_version_without_known_vulnerabilities": "",
-            "latest_version": "3.4.0",
+            "latest_version": "3.5.0",
             "more_info_url": "https://data.safetycli.com/p/pypi/python-jose/97c/"
-        },
-        "pip": {
-            "name": "pip",
-            "version": "21.2.4",
-            "requirements": [
-                {
-                    "raw": "pip==21.2.4",
-                    "extras": [],
-                    "marker": null,
-                    "name": "pip",
-                    "specifier": "==21.2.4",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ],
-            "found": null,
-            "insecure_versions": [
-                "0.2",
-                "0.2.1",
-                "0.3",
-                "0.3.1",
-                "0.4",
-                "0.5",
-                "0.5.1",
-                "0.6",
-                "0.6.1",
-                "0.6.2",
-                "0.6.3",
-                "0.7",
-                "0.7.1",
-                "0.7.2",
-                "0.8",
-                "0.8.1",
-                "0.8.2",
-                "0.8.3",
-                "1.0",
-                "10.0.0",
-                "10.0.0b1",
-                "10.0.0b2",
-                "10.0.1",
-                "1.0.1",
-                "1.0.2",
-                "1.1",
-                "1.2",
-                "1.2.1",
-                "1.3",
-                "1.3.1",
-                "1.4",
-                "1.4.1",
-                "1.5",
-                "1.5.1",
-                "1.5.2",
-                "1.5.3",
-                "1.5.4",
-                "1.5.5",
-                "1.5.6",
-                "18.0",
-                "18.1",
-                "19.0",
-                "19.0.1",
-                "19.0.2",
-                "19.0.3",
-                "19.1",
-                "19.1.1",
-                "19.2",
-                "19.2.1",
-                "19.2.2",
-                "19.2.3",
-                "19.3",
-                "19.3.1",
-                "20.0",
-                "20.0.1",
-                "20.0.2",
-                "20.1",
-                "20.1.1",
-                "20.1b1",
-                "20.2",
-                "20.2.1",
-                "20.2.2",
-                "20.2.3",
-                "20.2.4",
-                "20.2b1",
-                "20.3",
-                "20.3.1",
-                "20.3.2",
-                "20.3.3",
-                "20.3.4",
-                "20.3b1",
-                "21.0",
-                "21.0.1",
-                "21.1",
-                "21.1.1",
-                "21.1.2",
-                "21.1.3",
-                "21.2",
-                "21.2.1",
-                "21.2.2",
-                "21.2.3",
-                "21.2.4",
-                "21.3",
-                "21.3.1",
-                "22.0",
-                "22.0.1",
-                "22.0.2",
-                "22.0.3",
-                "22.0.4",
-                "22.1",
-                "22.1.1",
-                "22.1.2",
-                "22.1b1",
-                "22.2",
-                "22.2.1",
-                "22.2.2",
-                "22.3",
-                "22.3.1",
-                "23.0",
-                "23.0.1",
-                "23.1",
-                "23.1.1",
-                "23.1.2",
-                "23.2",
-                "23.2.1",
-                "23.3",
-                "23.3.1",
-                "23.3.2",
-                "24.0",
-                "24.1",
-                "24.1.1",
-                "24.1.2",
-                "24.1b1",
-                "24.1b2",
-                "24.2",
-                "24.3",
-                "24.3.1",
-                "6.0",
-                "6.0.1",
-                "6.0.2",
-                "6.0.3",
-                "6.0.4",
-                "6.0.5",
-                "6.0.6",
-                "6.0.7",
-                "6.0.8",
-                "6.1.0",
-                "6.1.1",
-                "7.0.0",
-                "7.0.1",
-                "7.0.2",
-                "7.0.3",
-                "7.1.0",
-                "7.1.1",
-                "7.1.2",
-                "8.0.0",
-                "8.0.1",
-                "8.0.2",
-                "8.0.3",
-                "8.1.0",
-                "8.1.1",
-                "8.1.2",
-                "9.0.0",
-                "9.0.1",
-                "9.0.2",
-                "9.0.3"
-            ],
-            "secure_versions": [
-                "25.1.1",
-                "25.1",
-                "25.0.1",
-                "25.0"
-            ],
-            "latest_version_without_known_vulnerabilities": "25.1.1",
-            "latest_version": "25.1.1",
-            "more_info_url": "https://data.safetycli.com/p/pypi/pip/97c/"
         },
         "ecdsa": {
             "name": "ecdsa",
@@ -2302,7 +1918,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                     "name": "ecdsa",
                     "specifier": "==0.19.1",
                     "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
                 }
             ],
             "found": null,
@@ -2334,545 +1950,17 @@ We highly encourage switching to the new `scan` command which is easier to use, 
             "latest_version_without_known_vulnerabilities": "",
             "latest_version": "0.19.1",
             "more_info_url": "https://data.safetycli.com/p/pypi/ecdsa/97c/"
-        },
-        "anyio": {
-            "name": "anyio",
-            "version": "3.7.1",
-            "requirements": [
-                {
-                    "raw": "anyio==3.7.1",
-                    "extras": [],
-                    "marker": null,
-                    "name": "anyio",
-                    "specifier": "==3.7.1",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ],
-            "found": null,
-            "insecure_versions": [
-                "1.0.0",
-                "1.0.0a1",
-                "1.0.0a2",
-                "1.0.0b1",
-                "1.0.0b2",
-                "1.0.0rc1",
-                "1.0.0rc2",
-                "1.1.0",
-                "1.2.0",
-                "1.2.1",
-                "1.2.2",
-                "1.2.3",
-                "1.3.0",
-                "1.3.1",
-                "1.4.0",
-                "2.0.0",
-                "2.0.0b1",
-                "2.0.0b2",
-                "2.0.0rc1",
-                "2.0.0rc2",
-                "2.0.1",
-                "2.0.2",
-                "2.1.0",
-                "2.2.0",
-                "3.0.0",
-                "3.0.0rc1",
-                "3.0.0rc2",
-                "3.0.0rc3",
-                "3.0.0rc4",
-                "3.0.1",
-                "3.1.0",
-                "3.2.0",
-                "3.2.1",
-                "3.3.0",
-                "3.3.1",
-                "3.3.2",
-                "3.3.3",
-                "3.3.4",
-                "3.4.0",
-                "3.5.0",
-                "3.6.0",
-                "3.6.1",
-                "3.6.2",
-                "3.7.0",
-                "3.7.0rc1",
-                "3.7.1",
-                "4.0.0",
-                "4.0.0rc1",
-                "4.1.0",
-                "4.2.0",
-                "4.3.0"
-            ],
-            "secure_versions": [
-                "4.9.0",
-                "4.8.0",
-                "4.7.0",
-                "4.6.2.post1",
-                "4.6.2",
-                "4.6.1",
-                "4.6.0",
-                "4.5.2",
-                "4.5.1",
-                "4.5.0",
-                "4.4.0"
-            ],
-            "latest_version_without_known_vulnerabilities": "4.9.0",
-            "latest_version": "4.9.0",
-            "more_info_url": "https://data.safetycli.com/p/pypi/anyio/97c/"
-        },
-        "aiohttp": {
-            "name": "aiohttp",
-            "version": "3.9.1",
-            "requirements": [
-                {
-                    "raw": "aiohttp==3.9.1",
-                    "extras": [],
-                    "marker": null,
-                    "name": "aiohttp",
-                    "specifier": "==3.9.1",
-                    "url": null,
-                    "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                }
-            ],
-            "found": null,
-            "insecure_versions": [
-                "0.1",
-                "0.10.0",
-                "0.10.1",
-                "0.10.2",
-                "0.11.0",
-                "0.12.0",
-                "0.13.0",
-                "0.13.1",
-                "0.14.0",
-                "0.14.1",
-                "0.14.2",
-                "0.14.3",
-                "0.14.4",
-                "0.15.0",
-                "0.15.1",
-                "0.15.2",
-                "0.15.3",
-                "0.16.0",
-                "0.16.1",
-                "0.16.2",
-                "0.16.3",
-                "0.16.4",
-                "0.16.5",
-                "0.16.6",
-                "0.17.0",
-                "0.17.1",
-                "0.17.2",
-                "0.17.3",
-                "0.17.4",
-                "0.18.0",
-                "0.18.1",
-                "0.18.2",
-                "0.18.3",
-                "0.18.4",
-                "0.19.0",
-                "0.2",
-                "0.20.0",
-                "0.20.1",
-                "0.20.2",
-                "0.21.0",
-                "0.21.1",
-                "0.21.2",
-                "0.21.4",
-                "0.21.5",
-                "0.21.6",
-                "0.22.0",
-                "0.22.0a0",
-                "0.22.0b0",
-                "0.22.0b1",
-                "0.22.0b2",
-                "0.22.0b3",
-                "0.22.0b4",
-                "0.22.0b5",
-                "0.22.0b6",
-                "0.22.1",
-                "0.22.2",
-                "0.22.3",
-                "0.22.4",
-                "0.22.5",
-                "0.3",
-                "0.4",
-                "0.4.1",
-                "0.4.2",
-                "0.4.3",
-                "0.4.4",
-                "0.5.0",
-                "0.6.0",
-                "0.6.1",
-                "0.6.2",
-                "0.6.3",
-                "0.6.4",
-                "0.6.5",
-                "0.7.0",
-                "0.7.1",
-                "0.7.2",
-                "0.7.3",
-                "0.8.0",
-                "0.8.1",
-                "0.8.2",
-                "0.8.3",
-                "0.8.4",
-                "0.9.0",
-                "0.9.1",
-                "0.9.2",
-                "0.9.3",
-                "1.0.0",
-                "1.0.1",
-                "1.0.2",
-                "1.0.3",
-                "1.0.5",
-                "1.1.0",
-                "1.1.1",
-                "1.1.2",
-                "1.1.3",
-                "1.1.4",
-                "1.1.5",
-                "1.1.6",
-                "1.2.0",
-                "1.3.0",
-                "1.3.1",
-                "1.3.2",
-                "1.3.3",
-                "1.3.4",
-                "1.3.5",
-                "2.0.0",
-                "2.0.0rc1",
-                "2.0.1",
-                "2.0.2",
-                "2.0.3",
-                "2.0.4",
-                "2.0.5",
-                "2.0.6",
-                "2.0.7",
-                "2.1.0",
-                "2.2.0",
-                "2.2.1",
-                "2.2.2",
-                "2.2.3",
-                "2.2.4",
-                "2.2.5",
-                "2.3.0",
-                "2.3.0a1",
-                "2.3.0a2",
-                "2.3.0a3",
-                "2.3.0a4",
-                "2.3.1",
-                "2.3.10",
-                "2.3.1a1",
-                "2.3.2",
-                "2.3.2b2",
-                "2.3.2b3",
-                "2.3.3",
-                "2.3.4",
-                "2.3.5",
-                "2.3.6",
-                "2.3.7",
-                "2.3.8",
-                "2.3.9",
-                "3.0.0",
-                "3.0.0b0",
-                "3.0.0b1",
-                "3.0.0b2",
-                "3.0.0b3",
-                "3.0.0b4",
-                "3.0.1",
-                "3.0.2",
-                "3.0.3",
-                "3.0.4",
-                "3.0.5",
-                "3.0.6",
-                "3.0.7",
-                "3.0.8",
-                "3.0.9",
-                "3.1.0",
-                "3.10.0",
-                "3.10.0b1",
-                "3.10.0rc0",
-                "3.10.1",
-                "3.10.10",
-                "3.10.11rc0",
-                "3.10.2",
-                "3.10.3",
-                "3.10.4",
-                "3.10.5",
-                "3.10.6",
-                "3.10.6rc0",
-                "3.10.6rc1",
-                "3.10.6rc2",
-                "3.10.7",
-                "3.10.8",
-                "3.10.9",
-                "3.1.1",
-                "3.1.2",
-                "3.1.3",
-                "3.2.0",
-                "3.2.1",
-                "3.3.0",
-                "3.3.0a0",
-                "3.3.1",
-                "3.3.2",
-                "3.3.2a0",
-                "3.4.0",
-                "3.4.0a0",
-                "3.4.0a3",
-                "3.4.0b1",
-                "3.4.0b2",
-                "3.4.1",
-                "3.4.2",
-                "3.4.3",
-                "3.4.4",
-                "3.5.0",
-                "3.5.0a1",
-                "3.5.0b1",
-                "3.5.0b2",
-                "3.5.0b3",
-                "3.5.1",
-                "3.5.2",
-                "3.5.3",
-                "3.5.4",
-                "3.6.0",
-                "3.6.0a0",
-                "3.6.0a1",
-                "3.6.0a11",
-                "3.6.0a12",
-                "3.6.0a2",
-                "3.6.0a3",
-                "3.6.0a4",
-                "3.6.0a5",
-                "3.6.0a6",
-                "3.6.0a7",
-                "3.6.0a8",
-                "3.6.0a9",
-                "3.6.0b0",
-                "3.6.1",
-                "3.6.1b3",
-                "3.6.1b4",
-                "3.6.2",
-                "3.6.2a0",
-                "3.6.2a1",
-                "3.6.2a2",
-                "3.6.3",
-                "3.7.0",
-                "3.7.0b0",
-                "3.7.0b1",
-                "3.7.1",
-                "3.7.2",
-                "3.7.3",
-                "3.7.4",
-                "3.7.4.post0",
-                "3.8.0",
-                "3.8.0a7",
-                "3.8.0b0",
-                "3.8.1",
-                "3.8.2",
-                "3.8.3",
-                "3.8.4",
-                "3.8.5",
-                "3.8.6",
-                "3.9.0",
-                "3.9.0b0",
-                "3.9.0b1",
-                "3.9.0rc0",
-                "3.9.1",
-                "3.9.2",
-                "3.9.3",
-                "3.9.4",
-                "3.9.4rc0",
-                "3.9.5"
-            ],
-            "secure_versions": [
-                "4.0.0a1",
-                "4.0.0a0",
-                "3.12.2",
-                "3.12.1",
-                "3.12.1rc0",
-                "3.12.0",
-                "3.12.0rc1",
-                "3.12.0rc0",
-                "3.12.0b3",
-                "3.12.0b2",
-                "3.12.0b1",
-                "3.12.0b0",
-                "3.11.18",
-                "3.11.17",
-                "3.11.16",
-                "3.11.15",
-                "3.11.14",
-                "3.11.13",
-                "3.11.12",
-                "3.11.11",
-                "3.11.10",
-                "3.11.9",
-                "3.11.8",
-                "3.11.7",
-                "3.11.6",
-                "3.11.5",
-                "3.11.4",
-                "3.11.3",
-                "3.11.2",
-                "3.11.1",
-                "3.11.0",
-                "3.11.0rc2",
-                "3.11.0rc1",
-                "3.11.0rc0",
-                "3.11.0b5",
-                "3.11.0b4",
-                "3.11.0b3",
-                "3.11.0b2",
-                "3.11.0b1",
-                "3.11.0b0",
-                "3.10.11"
-            ],
-            "latest_version_without_known_vulnerabilities": "4.0.0a1",
-            "latest_version": "3.12.2",
-            "more_info_url": "https://data.safetycli.com/p/pypi/aiohttp/97c/"
         }
     },
     "announcements": [],
-    "vulnerabilities": [
-        {
-            "vulnerability_id": "73725",
-            "package_name": "starlette",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
-            "vulnerable_spec": [
-                "<0.40.0"
-            ],
-            "all_vulnerable_specs": [
-                "<0.40.0"
-            ],
-            "analyzed_version": "0.27.0",
-            "analyzed_requirement": {
-                "raw": "starlette==0.27.0",
-                "extras": [],
-                "marker": null,
-                "name": "starlette",
-                "specifier": "==0.27.0",
-                "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-            },
-            "advisory": "Affected versions of the Starlette framework are vulnerable to Denial of Service (DoS) attacks due to the lack of restrictions on multipart part sizes. The vulnerability resides in the MultiPartParser class, which previously did not enforce size limits on incoming data. This issue is mitigated by introducing a max_part_size constraint and raises exceptions when limits are exceeded.",
-            "is_transitive": false,
-            "published_date": null,
-            "fixed_versions": [],
-            "closest_versions_without_known_vulnerabilities": [],
-            "resources": [],
-            "CVE": "CVE-2024-47874",
-            "severity": null,
-            "affected_versions": [],
-            "more_info_url": "https://data.safetycli.com/v/73725/97c"
-        },
-        {
-            "vulnerability_id": "68094",
-            "package_name": "starlette",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
-            "vulnerable_spec": [
-                "<=0.36.1"
-            ],
-            "all_vulnerable_specs": [
-                "<=0.36.1"
-            ],
-            "analyzed_version": "0.27.0",
-            "analyzed_requirement": {
-                "raw": "starlette==0.27.0",
-                "extras": [],
-                "marker": null,
-                "name": "starlette",
-                "specifier": "==0.27.0",
-                "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-            },
-            "advisory": "When using form data, `python-multipart` employs a Regular Expression to parse the HTTP `Content-Type` header. This creates a vulnerability where an attacker can send a specially crafted `Content-Type` option, causing significant CPU resource consumption and indefinitely stalling the server by locking the main event loop, rendering the server unable to process further requests. This issue particularly affects FastAPI servers parsing form data, leading to a Denial of Service (DoS) condition when the number of malicious requests exceeds the number of available server workers. However, this vulnerability does not impact the processing of JSON data through the `/submit_json` endpoint. It is specific to a defined set of versions of FastAPI and `python-multipart` when handling form data.",
-            "is_transitive": false,
-            "published_date": null,
-            "fixed_versions": [],
-            "closest_versions_without_known_vulnerabilities": [],
-            "resources": [],
-            "CVE": null,
-            "severity": null,
-            "affected_versions": [],
-            "more_info_url": "https://data.safetycli.com/v/68094/97c"
-        },
-        {
-            "vulnerability_id": "66706",
-            "package_name": "python-multipart",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
-            "vulnerable_spec": [
-                ">=0,<0.0.7"
-            ],
-            "all_vulnerable_specs": [
-                ">=0,<0.0.7"
-            ],
-            "analyzed_version": "0.0.6",
-            "analyzed_requirement": {
-                "raw": "python-multipart==0.0.6",
-                "extras": [],
-                "marker": null,
-                "name": "python-multipart",
-                "specifier": "==0.0.6",
-                "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-            },
-            "advisory": "A vulnerability in versions of python-multipart before 0.0.7 involves a Regular Expression Denial of Service (ReDoS) triggered by custom Content-Type headers. This issue allows an attacker to cause a significant consumption of system resources while processing such headers, effectively preventing the processing of other requests. This ReDoS vulnerability stems from the way regular expressions evaluate certain input patterns, which can lead to extensive backtracking, thereby causing the application to slow down significantly, consuming a disproportionate amount of CPU time and facilitating a denial of service condition.",
-            "is_transitive": false,
-            "published_date": null,
-            "fixed_versions": [],
-            "closest_versions_without_known_vulnerabilities": [],
-            "resources": [],
-            "CVE": null,
-            "severity": null,
-            "affected_versions": [],
-            "more_info_url": "https://data.safetycli.com/v/66706/97c"
-        },
-        {
-            "vulnerability_id": "74427",
-            "package_name": "python-multipart",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
-            "vulnerable_spec": [
-                "<0.0.18"
-            ],
-            "all_vulnerable_specs": [
-                "<0.0.18"
-            ],
-            "analyzed_version": "0.0.6",
-            "analyzed_requirement": {
-                "raw": "python-multipart==0.0.6",
-                "extras": [],
-                "marker": null,
-                "name": "python-multipart",
-                "specifier": "==0.0.6",
-                "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-            },
-            "advisory": "Affected versions of python-multipart are vulnerable to Allocation of Resources Without Limits or Throttling (CWE-770). An attacker can send specially crafted multipart/form-data requests containing excessive CR (\\r) or LF (\\n) characters before the first boundary or after the last boundary. This can lead to uncontrolled CPU usage and high memory consumption, causing the processing thread or event loop in ASGI applications to stall, resulting in a denial of service (DoS). The vulnerability exists in the MultipartParser's handling of line breaks around boundaries, where it processes each CRLF byte individually and logs warnings for each occurrence. To exploit this, an attacker simply needs to send large amounts of malformed multipart data with numerous CRLF characters. Upgrading to version 0.0.19 resolves this issue by preventing excessive resource allocation and logging when CRLF bytes are present.",
-            "is_transitive": false,
-            "published_date": null,
-            "fixed_versions": [],
-            "closest_versions_without_known_vulnerabilities": [],
-            "resources": [],
-            "CVE": "CVE-2024-53981",
-            "severity": null,
-            "affected_versions": [],
-            "more_info_url": "https://data.safetycli.com/v/74427/97c"
-        },
+    "vulnerabilities": [],
+    "ignored_vulnerabilities": [
         {
             "vulnerability_id": "70716",
             "package_name": "python-jose",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
+            "ignored": true,
+            "ignored_reason": "Legacy dependency - scheduled for replacement with PyJWT in next sprint",
+            "ignored_expires": "2025-12-31 00:00:00",
             "vulnerable_spec": [
                 ">=0"
             ],
@@ -2887,7 +1975,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                 "name": "python-jose",
                 "specifier": "==3.3.0",
                 "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
             },
             "advisory": "Affected versions of Python-jose allow attackers to cause a denial of service (resource consumption) during a decode via a crafted JSON Web Encryption (JWE) token with a high compression ratio, aka a \"JWT bomb.\" This is similar to CVE-2024-21319.",
             "is_transitive": false,
@@ -2903,9 +1991,9 @@ We highly encourage switching to the new `scan` command which is easier to use, 
         {
             "vulnerability_id": "70715",
             "package_name": "python-jose",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
+            "ignored": true,
+            "ignored_reason": "Legacy dependency - scheduled for replacement with PyJWT in next sprint",
+            "ignored_expires": "2025-12-31 00:00:00",
             "vulnerable_spec": [
                 ">=0"
             ],
@@ -2920,7 +2008,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                 "name": "python-jose",
                 "specifier": "==3.3.0",
                 "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
             },
             "advisory": "Affected versions of Python-jose have a algorithm confusion vulnerability with OpenSSH ECDSA keys and other key formats. This is similar to CVE-2022-29217.",
             "is_transitive": false,
@@ -2934,77 +2022,11 @@ We highly encourage switching to the new `scan` command which is easier to use, 
             "more_info_url": "https://data.safetycli.com/v/70715/97c"
         },
         {
-            "vulnerability_id": "62044",
-            "package_name": "pip",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
-            "vulnerable_spec": [
-                "<23.3"
-            ],
-            "all_vulnerable_specs": [
-                "<23.3"
-            ],
-            "analyzed_version": "21.2.4",
-            "analyzed_requirement": {
-                "raw": "pip==21.2.4",
-                "extras": [],
-                "marker": null,
-                "name": "pip",
-                "specifier": "==21.2.4",
-                "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-            },
-            "advisory": "Affected versions of Pip are vulnerable to Command Injection. When installing a package from a Mercurial VCS URL (ie \"pip install hg+...\") with pip prior to v23.3, the specified Mercurial revision could be used to inject arbitrary configuration options to the \"hg clone\" call (ie \"--config\"). Controlling the Mercurial configuration can modify how and which repository is installed. This vulnerability does not affect users who aren't installing from Mercurial.",
-            "is_transitive": false,
-            "published_date": null,
-            "fixed_versions": [],
-            "closest_versions_without_known_vulnerabilities": [],
-            "resources": [],
-            "CVE": "CVE-2023-5752",
-            "severity": null,
-            "affected_versions": [],
-            "more_info_url": "https://data.safetycli.com/v/62044/97c"
-        },
-        {
-            "vulnerability_id": "75180",
-            "package_name": "pip",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
-            "vulnerable_spec": [
-                "<25.0"
-            ],
-            "all_vulnerable_specs": [
-                "<25.0"
-            ],
-            "analyzed_version": "21.2.4",
-            "analyzed_requirement": {
-                "raw": "pip==21.2.4",
-                "extras": [],
-                "marker": null,
-                "name": "pip",
-                "specifier": "==21.2.4",
-                "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-            },
-            "advisory": "Pip solves a security vulnerability that previously allowed maliciously crafted wheel files to execute unauthorized code during installation.",
-            "is_transitive": false,
-            "published_date": null,
-            "fixed_versions": [],
-            "closest_versions_without_known_vulnerabilities": [],
-            "resources": [],
-            "CVE": null,
-            "severity": null,
-            "affected_versions": [],
-            "more_info_url": "https://data.safetycli.com/v/75180/97c"
-        },
-        {
             "vulnerability_id": "64459",
             "package_name": "ecdsa",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
+            "ignored": true,
+            "ignored_reason": "Indirect dependency via python-jose - will be resolved with PyJWT migration",
+            "ignored_expires": "2025-12-31 00:00:00",
             "vulnerable_spec": [
                 ">=0"
             ],
@@ -3019,7 +2041,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                 "name": "ecdsa",
                 "specifier": "==0.19.1",
                 "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
             },
             "advisory": "The python-ecdsa library, which implements ECDSA cryptography in Python, is vulnerable to the Minerva attack (CVE-2024-23342). This vulnerability arises because scalar multiplication is not performed in constant time, affecting ECDSA signatures, key generation, and ECDH operations. ECDSA signature verification remains unaffected. The project maintainers have stated that there is no plan to release a fix for this vulnerability, citing their security policy:\r\n\"As stated in the security policy, side-channel vulnerabilities are outside the scope of the project. This is not due to a lack of interest in side-channel secure implementations but rather because the main goal of the project is to be pure Python. Implementing side-channel-free code in pure Python is impossible. Therefore, we do not plan to release a fix for this vulnerability.\"\r\nNOTE: The specs we include in this advisory differ from the publicly available on other sources. That's because research by Safety CLI Cybersecurity Team confirms that there is no plan to address this vulnerability.",
             "is_transitive": false,
@@ -3035,9 +2057,9 @@ We highly encourage switching to the new `scan` command which is easier to use, 
         {
             "vulnerability_id": "64396",
             "package_name": "ecdsa",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
+            "ignored": true,
+            "ignored_reason": "Indirect dependency via python-jose - will be resolved with PyJWT migration",
+            "ignored_expires": "2025-12-31 00:00:00",
             "vulnerable_spec": [
                 ">=0"
             ],
@@ -3052,7 +2074,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
                 "name": "ecdsa",
                 "specifier": "==0.19.1",
                 "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
+                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
             },
             "advisory": "Ecdsa does not protects against side-channel attacks. This is because Python does not provide side-channel secure primitives (with the exception of hmac.compare_digest()), making side-channel secure programming impossible. For a sophisticated attacker observing just one operation with a private key will be sufficient to completely reconstruct the private key.\r\nhttps://pypi.org/project/ecdsa/#Security",
             "is_transitive": false,
@@ -3064,403 +2086,9 @@ We highly encourage switching to the new `scan` command which is easier to use, 
             "severity": null,
             "affected_versions": [],
             "more_info_url": "https://data.safetycli.com/v/64396/97c"
-        },
-        {
-            "vulnerability_id": "71199",
-            "package_name": "anyio",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
-            "vulnerable_spec": [
-                "<4.4.0"
-            ],
-            "all_vulnerable_specs": [
-                "<4.4.0"
-            ],
-            "analyzed_version": "3.7.1",
-            "analyzed_requirement": {
-                "raw": "anyio==3.7.1",
-                "extras": [],
-                "marker": null,
-                "name": "anyio",
-                "specifier": "==3.7.1",
-                "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-            },
-            "advisory": "Anyio version 4.4.0 addresses a thread race condition in `_eventloop.get_asynclib()` that caused crashes when multiple event loops of the same backend were running in separate threads and simultaneously attempted to use AnyIO for the first time. This fix ensures more stable and reliable performance in multi-threaded environments.",
-            "is_transitive": false,
-            "published_date": null,
-            "fixed_versions": [],
-            "closest_versions_without_known_vulnerabilities": [],
-            "resources": [],
-            "CVE": null,
-            "severity": null,
-            "affected_versions": [],
-            "more_info_url": "https://data.safetycli.com/v/71199/97c"
-        },
-        {
-            "vulnerability_id": "64642",
-            "package_name": "aiohttp",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
-            "vulnerable_spec": [
-                ">1.0.5,<3.9.2"
-            ],
-            "all_vulnerable_specs": [
-                ">1.0.5,<3.9.2"
-            ],
-            "analyzed_version": "3.9.1",
-            "analyzed_requirement": {
-                "raw": "aiohttp==3.9.1",
-                "extras": [],
-                "marker": null,
-                "name": "aiohttp",
-                "specifier": "==3.9.1",
-                "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-            },
-            "advisory": "The vulnerability lies in the improper configuration of static resource resolution when aiohttp is used as a web server. It occurs when the follow_symlinks option is enabled without proper validation, leading to directory traversal vulnerabilities. Unauthorized access to arbitrary files on the system could potentially occur. The affected versions are >1.0.5, and the issue was patched in version 3.9.2. As a workaround, it is advised to disable the follow_symlinks option outside of a restricted local development environment, especially in a server accepting requests from remote users. Using a reverse proxy server to handle static resources is also recommended.\r\nhttps://github.com/aio-libs/aiohttp/commit/1c335944d6a8b1298baf179b7c0b3069f10c514b",
-            "is_transitive": false,
-            "published_date": null,
-            "fixed_versions": [],
-            "closest_versions_without_known_vulnerabilities": [],
-            "resources": [],
-            "CVE": "CVE-2024-23334",
-            "severity": null,
-            "affected_versions": [],
-            "more_info_url": "https://data.safetycli.com/v/64642/97c"
-        },
-        {
-            "vulnerability_id": "74380",
-            "package_name": "aiohttp",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
-            "vulnerable_spec": [
-                "<3.10.2"
-            ],
-            "all_vulnerable_specs": [
-                "<3.10.2"
-            ],
-            "analyzed_version": "3.9.1",
-            "analyzed_requirement": {
-                "raw": "aiohttp==3.9.1",
-                "extras": [],
-                "marker": null,
-                "name": "aiohttp",
-                "specifier": "==3.9.1",
-                "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-            },
-            "advisory": "Affected versions of aiohttp are vulnerable to Directory Traversal (CWE-22). This allows attackers to access sensitive files outside the intended directory by exploiting symbolic links with compressed file extensions. The vulnerability exists in the FileResponse class where stat() is used instead of lstat(), causing the server to follow symlinks when checking for compressed file variants. To mitigate, update aiohttp to include the fix or modify the code to use lstat() and ensure only regular files are served.",
-            "is_transitive": false,
-            "published_date": null,
-            "fixed_versions": [],
-            "closest_versions_without_known_vulnerabilities": [],
-            "resources": [],
-            "CVE": "CVE-2024-42367",
-            "severity": null,
-            "affected_versions": [],
-            "more_info_url": "https://data.safetycli.com/v/74380/97c"
-        },
-        {
-            "vulnerability_id": "70630",
-            "package_name": "aiohttp",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
-            "vulnerable_spec": [
-                "<3.9.4"
-            ],
-            "all_vulnerable_specs": [
-                "<3.9.4"
-            ],
-            "analyzed_version": "3.9.1",
-            "analyzed_requirement": {
-                "raw": "aiohttp==3.9.1",
-                "extras": [],
-                "marker": null,
-                "name": "aiohttp",
-                "specifier": "==3.9.1",
-                "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-            },
-            "advisory": "aiohttp is an asynchronous HTTP client/server framework for asyncio and Python. A XSS vulnerability exists on index pages for static file handling. This vulnerability is fixed in 3.9.4. We have always recommended using a reverse proxy server (e.g. nginx) for serving static files. Users following the recommendation are unaffected. Other users can disable `show_index` if unable to upgrade. See CVE-2024-27306.",
-            "is_transitive": false,
-            "published_date": null,
-            "fixed_versions": [],
-            "closest_versions_without_known_vulnerabilities": [],
-            "resources": [],
-            "CVE": "CVE-2024-27306",
-            "severity": null,
-            "affected_versions": [],
-            "more_info_url": "https://data.safetycli.com/v/70630/97c"
-        },
-        {
-            "vulnerability_id": "71545",
-            "package_name": "aiohttp",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
-            "vulnerable_spec": [
-                "<3.9.4"
-            ],
-            "all_vulnerable_specs": [
-                "<3.9.4"
-            ],
-            "analyzed_version": "3.9.1",
-            "analyzed_requirement": {
-                "raw": "aiohttp==3.9.1",
-                "extras": [],
-                "marker": null,
-                "name": "aiohttp",
-                "specifier": "==3.9.1",
-                "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-            },
-            "advisory": "Affected versions of `aiohttp` are vulnerable to an infinite loop condition. This occurs when an attacker sends a specially crafted POST (multipart/form-data) request. Upon processing, the `aiohttp` server enters an infinite loop, preventing it from processing further requests. This results in a denial-of-service (DoS) attack, allowing an attacker to stop the application from serving requests after a single request. Users are advised to upgrade to version 3.9.4 or manually apply a patch to their systems as per the linked GHSA instructions.",
-            "is_transitive": false,
-            "published_date": null,
-            "fixed_versions": [],
-            "closest_versions_without_known_vulnerabilities": [],
-            "resources": [],
-            "CVE": "CVE-2024-30251",
-            "severity": null,
-            "affected_versions": [],
-            "more_info_url": "https://data.safetycli.com/v/71545/97c"
-        },
-        {
-            "vulnerability_id": "74251",
-            "package_name": "aiohttp",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
-            "vulnerable_spec": [
-                "<3.10.11"
-            ],
-            "all_vulnerable_specs": [
-                "<3.10.11"
-            ],
-            "analyzed_version": "3.9.1",
-            "analyzed_requirement": {
-                "raw": "aiohttp==3.9.1",
-                "extras": [],
-                "marker": null,
-                "name": "aiohttp",
-                "specifier": "==3.9.1",
-                "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-            },
-            "advisory": "Affected versions of aiohttp are vulnerable to HTTP Request Smuggling (CWE-444). This vulnerability allows attackers to inject malicious HTTP messages by including line feeds (LF) in chunk extensions, potentially bypassing security controls and executing unauthorized actions. The attack vector involves sending specially crafted chunked HTTP requests to exploit the improper parsing in the HttpPayloadParser class. To mitigate, upgrade to aiohttp version which validates chunk extensions by rejecting any containing unexpected LFs, thereby preventing request smuggling attacks.",
-            "is_transitive": false,
-            "published_date": null,
-            "fixed_versions": [],
-            "closest_versions_without_known_vulnerabilities": [],
-            "resources": [],
-            "CVE": "CVE-2024-52304",
-            "severity": null,
-            "affected_versions": [],
-            "more_info_url": "https://data.safetycli.com/v/74251/97c"
-        },
-        {
-            "vulnerability_id": "74252",
-            "package_name": "aiohttp",
-            "ignored": {},
-            "ignored_reason": null,
-            "ignored_expires": null,
-            "vulnerable_spec": [
-                "<3.10.11"
-            ],
-            "all_vulnerable_specs": [
-                "<3.10.11"
-            ],
-            "analyzed_version": "3.9.1",
-            "analyzed_requirement": {
-                "raw": "aiohttp==3.9.1",
-                "extras": [],
-                "marker": null,
-                "name": "aiohttp",
-                "specifier": "==3.9.1",
-                "url": null,
-                "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-            },
-            "advisory": "Affected versions of aiohttp are vulnerable to Middleware Cache Pollution. This vulnerability allows attackers to potentially interfere with middleware handling by exploiting cached middleware associated with system routes. The impact includes possible bypassing of security middleware or unintended access to internal routes. The attack vector involves crafting requests that target system routes, causing the middleware cache to store and reuse inappropriate middleware configurations. The vulnerable methods are _build_middlewares and the middleware caching mechanism in web_app.py. To mitigate, upgrade to aiohttp version, which prevents system routes from polluting the middleware cache by excluding SystemRoute instances from caching.",
-            "is_transitive": false,
-            "published_date": null,
-            "fixed_versions": [],
-            "closest_versions_without_known_vulnerabilities": [],
-            "resources": [],
-            "CVE": "CVE-2024-52303",
-            "severity": null,
-            "affected_versions": [],
-            "more_info_url": "https://data.safetycli.com/v/74252/97c"
         }
     ],
-    "ignored_vulnerabilities": [],
-    "remediations": {
-        "starlette": {
-            "requirements": {
-                "==0.27.0": {
-                    "vulnerabilities_found": 2,
-                    "version": "0.27.0",
-                    "requirement": {
-                        "raw": "starlette==0.27.0",
-                        "extras": [],
-                        "marker": null,
-                        "name": "starlette",
-                        "specifier": "==0.27.0",
-                        "url": null,
-                        "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                    },
-                    "more_info_url": "https://data.safetycli.com/p/pypi/starlette/97c/"
-                }
-            },
-            "current_version": null,
-            "vulnerabilities_found": null,
-            "recommended_version": null,
-            "other_recommended_versions": [],
-            "more_info_url": null
-        },
-        "python-multipart": {
-            "requirements": {
-                "==0.0.6": {
-                    "vulnerabilities_found": 2,
-                    "version": "0.0.6",
-                    "requirement": {
-                        "raw": "python-multipart==0.0.6",
-                        "extras": [],
-                        "marker": null,
-                        "name": "python-multipart",
-                        "specifier": "==0.0.6",
-                        "url": null,
-                        "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                    },
-                    "more_info_url": "https://data.safetycli.com/p/pypi/python-multipart/97c/"
-                }
-            },
-            "current_version": null,
-            "vulnerabilities_found": null,
-            "recommended_version": null,
-            "other_recommended_versions": [],
-            "more_info_url": null
-        },
-        "python-jose": {
-            "requirements": {
-                "==3.3.0": {
-                    "vulnerabilities_found": 2,
-                    "version": "3.3.0",
-                    "requirement": {
-                        "raw": "python-jose==3.3.0",
-                        "extras": [],
-                        "marker": null,
-                        "name": "python-jose",
-                        "specifier": "==3.3.0",
-                        "url": null,
-                        "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                    },
-                    "more_info_url": "https://data.safetycli.com/p/pypi/python-jose/97c/"
-                }
-            },
-            "current_version": null,
-            "vulnerabilities_found": null,
-            "recommended_version": null,
-            "other_recommended_versions": [],
-            "more_info_url": null
-        },
-        "pip": {
-            "requirements": {
-                "==21.2.4": {
-                    "vulnerabilities_found": 2,
-                    "version": "21.2.4",
-                    "requirement": {
-                        "raw": "pip==21.2.4",
-                        "extras": [],
-                        "marker": null,
-                        "name": "pip",
-                        "specifier": "==21.2.4",
-                        "url": null,
-                        "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                    },
-                    "more_info_url": "https://data.safetycli.com/p/pypi/pip/97c/"
-                }
-            },
-            "current_version": null,
-            "vulnerabilities_found": null,
-            "recommended_version": null,
-            "other_recommended_versions": [],
-            "more_info_url": null
-        },
-        "ecdsa": {
-            "requirements": {
-                "==0.19.1": {
-                    "vulnerabilities_found": 2,
-                    "version": "0.19.1",
-                    "requirement": {
-                        "raw": "ecdsa==0.19.1",
-                        "extras": [],
-                        "marker": null,
-                        "name": "ecdsa",
-                        "specifier": "==0.19.1",
-                        "url": null,
-                        "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                    },
-                    "more_info_url": "https://data.safetycli.com/p/pypi/ecdsa/97c/"
-                }
-            },
-            "current_version": null,
-            "vulnerabilities_found": null,
-            "recommended_version": null,
-            "other_recommended_versions": [],
-            "more_info_url": null
-        },
-        "anyio": {
-            "requirements": {
-                "==3.7.1": {
-                    "vulnerabilities_found": 1,
-                    "version": "3.7.1",
-                    "requirement": {
-                        "raw": "anyio==3.7.1",
-                        "extras": [],
-                        "marker": null,
-                        "name": "anyio",
-                        "specifier": "==3.7.1",
-                        "url": null,
-                        "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                    },
-                    "more_info_url": "https://data.safetycli.com/p/pypi/anyio/97c/"
-                }
-            },
-            "current_version": null,
-            "vulnerabilities_found": null,
-            "recommended_version": null,
-            "other_recommended_versions": [],
-            "more_info_url": null
-        },
-        "aiohttp": {
-            "requirements": {
-                "==3.9.1": {
-                    "vulnerabilities_found": 6,
-                    "version": "3.9.1",
-                    "requirement": {
-                        "raw": "aiohttp==3.9.1",
-                        "extras": [],
-                        "marker": null,
-                        "name": "aiohttp",
-                        "specifier": "==3.9.1",
-                        "url": null,
-                        "found": "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.9/site-packages"
-                    },
-                    "more_info_url": "https://data.safetycli.com/p/pypi/aiohttp/97c/"
-                }
-            },
-            "current_version": null,
-            "vulnerabilities_found": null,
-            "recommended_version": null,
-            "other_recommended_versions": [],
-            "more_info_url": null
-        }
-    },
+    "remediations": {},
     "remediations_results": {
         "vulnerabilities_fixed": [],
         "remediations_applied": {},

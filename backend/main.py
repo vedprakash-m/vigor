@@ -1,6 +1,6 @@
 import asyncio
-from contextlib import asynccontextmanager
 import os
+from contextlib import asynccontextmanager
 from typing import Optional
 
 import uvicorn
@@ -46,8 +46,9 @@ async def lifespan(app: FastAPI):
             print("🔥 Starting Azure Functions warmup tasks...")
             function_client = FunctionsClient()
 
-            # Create background tasks for keeping functions warm
-            app.warmup_tasks = []
+            # Create background tasks attribute for keeping functions warm
+            if not hasattr(app, "warmup_tasks"):
+                app.warmup_tasks = []  # type: ignore
 
             # Warmup task for GenerateWorkout function
             warmup_generate = asyncio.create_task(
@@ -55,10 +56,10 @@ async def lifespan(app: FastAPI):
                     warmup_func=lambda: function_client.generate_workout_plan(
                         fitness_level="beginner",
                         goals=["General fitness"],
-                        duration_minutes=30
+                        duration_minutes=30,
                     ),
                     function_name="generate-workout",
-                    interval=4 * 60  # 4 minutes to prevent cold starts
+                    interval=4 * 60,  # 4 minutes to prevent cold starts
                 )
             )
             app.warmup_tasks.append(warmup_generate)
@@ -69,10 +70,10 @@ async def lifespan(app: FastAPI):
                     warmup_func=lambda: function_client.coach_chat(
                         message="Hello",
                         fitness_level="beginner",
-                        goals=["General fitness"]
+                        goals=["General fitness"],
                     ),
                     function_name="coach-chat",
-                    interval=4 * 60  # 4 minutes to prevent cold starts
+                    interval=4 * 60,  # 4 minutes to prevent cold starts
                 )
             )
             app.warmup_tasks.append(warmup_chat)

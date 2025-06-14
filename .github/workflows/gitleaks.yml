@@ -1,3 +1,4 @@
+---
 name: Secrets Detection
 
 on:
@@ -7,6 +8,11 @@ on:
     branches: [main, master]
   schedule:
     - cron: "0 6 * * 1" # Weekly on Mondays at 6:00 AM UTC
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
 
 jobs:
   gitleaks:

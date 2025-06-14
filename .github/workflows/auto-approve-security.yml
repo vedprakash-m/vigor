@@ -1,8 +1,15 @@
+---
 name: Auto-Approve Security Enhancements
 
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
+
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
 
 jobs:
   check-approval-eligibility:

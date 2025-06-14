@@ -1,5 +1,5 @@
-import uuid
 import os
+import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -7,9 +7,15 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from api.services.usage_tracking import UsageTrackingService
+
 # Use direct AI functionality if function client isn't available
-from core.ai import analyze_workout_log, generate_workout_plan as direct_generate_workout_plan, get_ai_coach_response as direct_get_ai_coach_response
+from core.ai import (
+    analyze_workout_log,
+)
+from core.ai import generate_workout_plan as direct_generate_workout_plan
+from core.ai import get_ai_coach_response as direct_get_ai_coach_response
 from core.config import get_settings
+
 # Import the new Functions client
 from core.function_client import FunctionsClient
 from database.models import AICoachMessage, UserProfile
@@ -75,11 +81,13 @@ async def chat_with_ai_coach(
                 message=message,
                 fitness_level=user.fitness_level,
                 goals=goals,
-                conversation_history=conversation_history
+                conversation_history=conversation_history,
             )
         else:
             # Use direct approach as fallback
-            ai_response = await direct_get_ai_coach_response(user, message, conversation_history)
+            ai_response = await direct_get_ai_coach_response(
+                user, message, conversation_history
+            )
 
         # Save the conversation to database
         db_message = AICoachMessageDB(
@@ -97,6 +105,7 @@ async def chat_with_ai_coach(
     except Exception as e:
         # Log the error but return a friendly message
         import logging
+
         logging.error(f"Error in chat_with_ai_coach: {str(e)}")
         return "I'm having trouble connecting right now. Please try again in a moment."
 

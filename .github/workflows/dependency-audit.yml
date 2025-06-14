@@ -1,3 +1,4 @@
+---
 name: Dependency Audit
 
 on:
@@ -24,6 +25,11 @@ on:
   schedule:
     - cron: "0 0 * * 1" # Run weekly on Mondays
   workflow_dispatch: {} # Allow manual triggers
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
 
 jobs:
   scan-js-dependencies:

@@ -1,3 +1,4 @@
+---
 name: PR Preview Environment
 
 on:
@@ -7,6 +8,12 @@ on:
       - "frontend/**"
       - "backend/**"
       - ".github/workflows/preview-environment.yml"
+
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
 
 jobs:
   build-preview:

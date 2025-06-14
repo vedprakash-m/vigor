@@ -1,11 +1,12 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "languageVersion": "2.0",
   "contentVersion": "1.0.0.0",
   "metadata": {
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "2836922004271610645"
+      "templateHash": "7244426308634796469"
     }
   },
   "parameters": {
@@ -95,6 +96,13 @@
       "metadata": {
         "description": "Deploy Azure Container Registry (set to true only if you need a new ACR)."
       }
+    },
+    "useDirectDeployment": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Use direct App Service deployment instead of containers (true for new architecture, false for legacy)"
+      }
     }
   },
   "variables": {
@@ -108,6 +116,8 @@
     "appServicePlanName": "vigor-app-plan",
     "backendWebAppName": "vigor-backend",
     "frontendAppName": "vigor-frontend",
+    "functionAppName": "vigor-ai-functions",
+    "staticWebAppName": "vigor-static-webapp",
     "postgresServerName": "vigor-db-server",
     "storageAccountName": "vigorsa99",
     "keyVaultName": "vigor-kv",
@@ -116,8 +126,8 @@
     "containerRegistryName": "vigoracr",
     "databaseName": "vigor_db"
   },
-  "resources": [
-    {
+  "resources": {
+    "logAnalyticsWorkspace": {
       "type": "Microsoft.OperationalInsights/workspaces",
       "apiVersion": "2023-09-01",
       "name": "[variables('logAnalyticsName')]",
@@ -130,7 +140,7 @@
         "retentionInDays": "[if(equals(parameters('environment'), 'production'), 90, 30)]"
       }
     },
-    {
+    "appInsights": {
       "type": "Microsoft.Insights/components",
       "apiVersion": "2020-02-02",
       "name": "[variables('appInsightsName')]",
@@ -142,10 +152,10 @@
         "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]"
+        "logAnalyticsWorkspace"
       ]
     },
-    {
+    "containerRegistry": {
       "condition": "[parameters('deployContainerRegistry')]",
       "type": "Microsoft.ContainerRegistry/registries",
       "apiVersion": "2023-07-01",
@@ -166,7 +176,14 @@
         }
       }
     },
-    {
+    "keyVault": {
+      "existing": true,
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2023-07-01",
+      "resourceGroup": "[parameters('databaseResourceGroup')]",
+      "name": "[variables('keyVaultName')]"
+    },
+    "appServicePlan": {
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2023-01-01",
       "name": "[variables('appServicePlanName')]",
@@ -180,7 +197,8 @@
         "reserved": true
       }
     },
-    {
+    "appService": {
+      "condition": "[not(parameters('useDirectDeployment'))]",
       "type": "Microsoft.Web/sites",
       "apiVersion": "2023-01-01",
       "name": "[variables('backendWebAppName')]",
@@ -210,7 +228,7 @@
             },
             {
               "name": "DATABASE_URL",
-              "value": "[format('postgresql://{0}:{1}@{2}:5432/{3}?sslmode=require', parameters('postgresAdminUsername'), parameters('postgresAdminPassword'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('databaseResourceGroup')), 'Microsoft.Resources/deployments', 'dbModule'), '2022-09-01').outputs.fullyQualifiedDomainName.value, variables('databaseName'))]"
+              "value": "[format('postgresql://{0}:{1}@{2}:5432/{3}?sslmode=require', parameters('postgresAdminUsername'), parameters('postgresAdminPassword'), reference('db').outputs.fullyQualifiedDomainName.value, variables('databaseName'))]"
             },
             {
               "name": "OPENAI_API_KEY",
@@ -230,7 +248,7 @@
             },
             {
               "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
-              "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').ConnectionString]"
+              "value": "[reference('appInsights').ConnectionString]"
             },
             {
               "name": "ADMIN_EMAIL",
@@ -240,12 +258,13 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
-        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
-        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('databaseResourceGroup')), 'Microsoft.Resources/deployments', 'dbModule')]"
+        "appInsights",
+        "appServicePlan",
+        "db"
       ]
     },
-    {
+    "staticWebApp": {
+      "condition": "[not(parameters('useDirectDeployment'))]",
       "type": "Microsoft.Web/staticSites",
       "apiVersion": "2023-01-01",
       "name": "[variables('frontendAppName')]",
@@ -256,7 +275,7 @@
       },
       "properties": {}
     },
-    {
+    "storageMod": {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "storageModule",
@@ -279,12 +298,13 @@
         },
         "template": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "languageVersion": "2.0",
           "contentVersion": "1.0.0.0",
           "metadata": {
             "_generator": {
               "name": "bicep",
               "version": "0.36.1.42791",
-              "templateHash": "10617020757957317046"
+              "templateHash": "10283524075860816410"
             }
           },
           "parameters": {
@@ -298,8 +318,8 @@
               "type": "object"
             }
           },
-          "resources": [
-            {
+          "resources": {
+            "storageAccount": {
               "type": "Microsoft.Storage/storageAccounts",
               "apiVersion": "2023-01-01",
               "name": "[parameters('name')]",
@@ -318,17 +338,21 @@
                 "supportsHttpsTrafficOnly": true
               }
             }
-          ],
+          },
           "outputs": {
             "storageAccountName": {
               "type": "string",
               "value": "[parameters('name')]"
+            },
+            "storageAccountKey": {
+              "type": "securestring",
+              "value": "[listKeys('storageAccount', '2023-01-01').keys[0].value]"
             }
           }
         }
       }
     },
-    {
+    "keyVaultModule": {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "keyVaultDeployment",
@@ -424,7 +448,7 @@
         }
       }
     },
-    {
+    "db": {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "dbModule",
@@ -537,7 +561,662 @@
         }
       }
     },
-    {
+    "backendAppService": {
+      "condition": "[parameters('useDirectDeployment')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "backendAppService",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[variables('backendWebAppName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[variables('commonTags')]"
+          },
+          "appServicePlanId": {
+            "value": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+          },
+          "pythonVersion": {
+            "value": "3.11"
+          },
+          "appInsightsInstrumentationKey": {
+            "value": "[reference('appInsights').InstrumentationKey]"
+          },
+          "appInsightsConnectionString": {
+            "value": "[reference('appInsights').ConnectionString]"
+          },
+          "databaseHost": {
+            "value": "[reference('db').outputs.fullyQualifiedDomainName.value]"
+          },
+          "databaseName": {
+            "value": "vigordb"
+          },
+          "databaseUser": {
+            "value": "[parameters('postgresAdminUsername')]"
+          },
+          "databasePassword": {
+            "value": "[parameters('postgresAdminPassword')]"
+          },
+          "secretKey": {
+            "value": "[parameters('secretKey')]"
+          },
+          "keyVaultName": {
+            "value": "[variables('keyVaultName')]"
+          },
+          "keyVaultResourceGroupName": {
+            "value": "[parameters('databaseResourceGroup')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "5729053713251896791"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            },
+            "appServicePlanId": {
+              "type": "string"
+            },
+            "pythonVersion": {
+              "type": "string",
+              "defaultValue": "3.11"
+            },
+            "appInsightsInstrumentationKey": {
+              "type": "string"
+            },
+            "appInsightsConnectionString": {
+              "type": "string"
+            },
+            "databaseHost": {
+              "type": "string"
+            },
+            "databaseName": {
+              "type": "string"
+            },
+            "databaseUser": {
+              "type": "string"
+            },
+            "databasePassword": {
+              "type": "securestring"
+            },
+            "secretKey": {
+              "type": "securestring"
+            },
+            "keyVaultName": {
+              "type": "string"
+            },
+            "keyVaultResourceGroupName": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2023-01-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "app,linux",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "serverFarmId": "[parameters('appServicePlanId')]",
+                "httpsOnly": true,
+                "siteConfig": {
+                  "linuxFxVersion": "[format('PYTHON|{0}', parameters('pythonVersion'))]",
+                  "alwaysOn": true,
+                  "minTlsVersion": "1.2",
+                  "ftpsState": "Disabled",
+                  "appSettings": [
+                    {
+                      "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+                      "value": "true"
+                    },
+                    {
+                      "name": "DATABASE_HOST",
+                      "value": "[parameters('databaseHost')]"
+                    },
+                    {
+                      "name": "DATABASE_NAME",
+                      "value": "[parameters('databaseName')]"
+                    },
+                    {
+                      "name": "DATABASE_USER",
+                      "value": "[parameters('databaseUser')]"
+                    },
+                    {
+                      "name": "DATABASE_PASSWORD",
+                      "value": "[parameters('databasePassword')]"
+                    },
+                    {
+                      "name": "SECRET_KEY",
+                      "value": "[parameters('secretKey')]"
+                    },
+                    {
+                      "name": "OPENAI_API_KEY",
+                      "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/openai-api-key/)', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('keyVaultResourceGroupName')), 'Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]"
+                    },
+                    {
+                      "name": "GEMINI_API_KEY",
+                      "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/gemini-api-key/)', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('keyVaultResourceGroupName')), 'Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]"
+                    },
+                    {
+                      "name": "PERPLEXITY_API_KEY",
+                      "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/perplexity-api-key/)', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('keyVaultResourceGroupName')), 'Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]"
+                    },
+                    {
+                      "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                      "value": "[parameters('appInsightsInstrumentationKey')]"
+                    },
+                    {
+                      "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                      "value": "[parameters('appInsightsConnectionString')]"
+                    },
+                    {
+                      "name": "FUNCTIONS_API_URL",
+                      "value": "https://vigor-ai-functions.azurewebsites.net"
+                    },
+                    {
+                      "name": "PORT",
+                      "value": "8000"
+                    },
+                    {
+                      "name": "WEBSITE_HTTPSCALEV2_ENABLED",
+                      "value": "1"
+                    },
+                    {
+                      "name": "WEBSITE_RUN_FROM_PACKAGE",
+                      "value": "1"
+                    },
+                    {
+                      "name": "ENABLE_ORYX_BUILD",
+                      "value": "true"
+                    }
+                  ],
+                  "healthCheckPath": "/api/health"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('appServiceKeyVaultAccess-{0}', parameters('name'))]",
+              "resourceGroup": "[parameters('keyVaultResourceGroupName')]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "keyVaultName": {
+                    "value": "[parameters('keyVaultName')]"
+                  },
+                  "principalId": {
+                    "value": "[reference(resourceId('Microsoft.Web/sites', parameters('name')), '2023-01-01', 'full').identity.principalId]"
+                  },
+                  "tenantId": {
+                    "value": "[reference(resourceId('Microsoft.Web/sites', parameters('name')), '2023-01-01', 'full').identity.tenantId]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.36.1.42791",
+                      "templateHash": "741835170902274848"
+                    }
+                  },
+                  "parameters": {
+                    "keyVaultName": {
+                      "type": "string"
+                    },
+                    "principalId": {
+                      "type": "string"
+                    },
+                    "tenantId": {
+                      "type": "string"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.KeyVault/vaults/accessPolicies",
+                      "apiVersion": "2023-07-01",
+                      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'add')]",
+                      "properties": {
+                        "accessPolicies": [
+                          {
+                            "tenantId": "[parameters('tenantId')]",
+                            "objectId": "[parameters('principalId')]",
+                            "permissions": {
+                              "secrets": [
+                                "get",
+                                "list"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "accessPolicyId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.KeyVault/vaults/accessPolicies', parameters('keyVaultName'), 'add')]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('name'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "appServiceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Web/sites', parameters('name'))]"
+            },
+            "appServiceName": {
+              "type": "string",
+              "value": "[parameters('name')]"
+            },
+            "hostName": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Web/sites', parameters('name')), '2023-01-01').defaultHostName]"
+            },
+            "principalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Web/sites', parameters('name')), '2023-01-01', 'full').identity.principalId]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "appInsights",
+        "appServicePlan",
+        "db"
+      ]
+    },
+    "frontendStaticWebApp": {
+      "condition": "[parameters('useDirectDeployment')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "frontendStaticWebApp",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[variables('staticWebAppName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[variables('commonTags')]"
+          },
+          "skuName": {
+            "value": "Standard"
+          },
+          "skuTier": {
+            "value": "Standard"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "14963067401026665503"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            },
+            "skuName": {
+              "type": "string",
+              "defaultValue": "Standard"
+            },
+            "skuTier": {
+              "type": "string",
+              "defaultValue": "Standard"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/staticSites",
+              "apiVersion": "2022-09-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "[parameters('skuName')]",
+                "tier": "[parameters('skuTier')]"
+              },
+              "properties": {
+                "provider": "GitHub",
+                "stagingEnvironmentPolicy": "Enabled",
+                "allowConfigFileUpdates": true,
+                "enterpriseGradeCdnStatus": "Enabled"
+              }
+            }
+          ],
+          "outputs": {
+            "staticWebAppId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Web/staticSites', parameters('name'))]"
+            },
+            "staticWebAppName": {
+              "type": "string",
+              "value": "[parameters('name')]"
+            },
+            "staticWebAppUrl": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Web/staticSites', parameters('name')), '2022-09-01').defaultHostname]"
+            }
+          }
+        }
+      }
+    },
+    "aiFunctionApp": {
+      "condition": "[parameters('useDirectDeployment')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "aiFunctionApp",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[variables('functionAppName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[variables('commonTags')]"
+          },
+          "appServicePlanId": {
+            "value": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+          },
+          "appInsightsConnectionString": {
+            "value": "[reference('appInsights').ConnectionString]"
+          },
+          "appInsightsInstrumentationKey": {
+            "value": "[reference('appInsights').InstrumentationKey]"
+          },
+          "storageAccountName": {
+            "value": "[listOutputsWithSecureValues(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('databaseResourceGroup')), 'Microsoft.Resources/deployments', 'storageModule'), '2022-09-01').storageAccountName]"
+          },
+          "storageAccountKey": {
+            "value": "[listOutputsWithSecureValues(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('databaseResourceGroup')), 'Microsoft.Resources/deployments', 'storageModule'), '2022-09-01').storageAccountKey]"
+          },
+          "keyVaultName": {
+            "value": "[variables('keyVaultName')]"
+          },
+          "keyVaultResourceGroupName": {
+            "value": "[parameters('databaseResourceGroup')]"
+          },
+          "runtime": {
+            "value": "python"
+          },
+          "runtimeVersion": {
+            "value": "3.11"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "13345825971696928714"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            },
+            "appInsightsConnectionString": {
+              "type": "string"
+            },
+            "appInsightsInstrumentationKey": {
+              "type": "string"
+            },
+            "storageAccountName": {
+              "type": "string"
+            },
+            "storageAccountKey": {
+              "type": "securestring"
+            },
+            "keyVaultName": {
+              "type": "string"
+            },
+            "keyVaultResourceGroupName": {
+              "type": "string"
+            },
+            "runtime": {
+              "type": "string",
+              "defaultValue": "python"
+            },
+            "runtimeVersion": {
+              "type": "string",
+              "defaultValue": "3.11"
+            },
+            "appServicePlanId": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2023-01-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "functionapp,linux",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "serverFarmId": "[parameters('appServicePlanId')]",
+                "siteConfig": {
+                  "linuxFxVersion": "[format('Python|{0}', parameters('runtimeVersion'))]",
+                  "appSettings": [
+                    {
+                      "name": "AzureWebJobsStorage",
+                      "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix=core.windows.net', parameters('storageAccountName'), parameters('storageAccountKey'))]"
+                    },
+                    {
+                      "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+                      "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix=core.windows.net', parameters('storageAccountName'), parameters('storageAccountKey'))]"
+                    },
+                    {
+                      "name": "WEBSITE_CONTENTSHARE",
+                      "value": "[toLower(parameters('name'))]"
+                    },
+                    {
+                      "name": "FUNCTIONS_EXTENSION_VERSION",
+                      "value": "~4"
+                    },
+                    {
+                      "name": "FUNCTIONS_WORKER_RUNTIME",
+                      "value": "[parameters('runtime')]"
+                    },
+                    {
+                      "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                      "value": "[parameters('appInsightsInstrumentationKey')]"
+                    },
+                    {
+                      "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                      "value": "[parameters('appInsightsConnectionString')]"
+                    },
+                    {
+                      "name": "OPENAI_API_KEY",
+                      "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/openai-api-key/)', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('keyVaultResourceGroupName')), 'Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]"
+                    },
+                    {
+                      "name": "GEMINI_API_KEY",
+                      "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/gemini-api-key/)', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('keyVaultResourceGroupName')), 'Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]"
+                    },
+                    {
+                      "name": "PERPLEXITY_API_KEY",
+                      "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/perplexity-api-key/)', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('keyVaultResourceGroupName')), 'Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]"
+                    },
+                    {
+                      "name": "BACKEND_API_URL",
+                      "value": "https://vigor-backend.azurewebsites.net"
+                    }
+                  ],
+                  "ftpsState": "Disabled",
+                  "minTlsVersion": "1.2"
+                },
+                "httpsOnly": true
+              }
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "functionKeyVaultAccess",
+              "resourceGroup": "[parameters('keyVaultResourceGroupName')]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "keyVaultName": {
+                    "value": "[parameters('keyVaultName')]"
+                  },
+                  "principalId": {
+                    "value": "[reference(resourceId('Microsoft.Web/sites', parameters('name')), '2023-01-01', 'full').identity.principalId]"
+                  },
+                  "tenantId": {
+                    "value": "[reference(resourceId('Microsoft.Web/sites', parameters('name')), '2023-01-01', 'full').identity.tenantId]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.36.1.42791",
+                      "templateHash": "741835170902274848"
+                    }
+                  },
+                  "parameters": {
+                    "keyVaultName": {
+                      "type": "string"
+                    },
+                    "principalId": {
+                      "type": "string"
+                    },
+                    "tenantId": {
+                      "type": "string"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.KeyVault/vaults/accessPolicies",
+                      "apiVersion": "2023-07-01",
+                      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'add')]",
+                      "properties": {
+                        "accessPolicies": [
+                          {
+                            "tenantId": "[parameters('tenantId')]",
+                            "objectId": "[parameters('principalId')]",
+                            "permissions": {
+                              "secrets": [
+                                "get",
+                                "list"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "accessPolicyId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.KeyVault/vaults/accessPolicies', parameters('keyVaultName'), 'add')]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('name'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "functionAppId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Web/sites', parameters('name'))]"
+            },
+            "functionAppName": {
+              "type": "string",
+              "value": "[parameters('name')]"
+            },
+            "principalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Web/sites', parameters('name')), '2023-01-01', 'full').identity.principalId]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "appInsights",
+        "appServicePlan",
+        "storageMod"
+      ]
+    },
+    "keyVaultSecretsModule": {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "keyVaultSecretsDeployment",
@@ -654,10 +1333,11 @@
         }
       },
       "dependsOn": [
-        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('databaseResourceGroup')), 'Microsoft.Resources/deployments', 'keyVaultDeployment')]"
+        "keyVaultModule"
       ]
     },
-    {
+    "appServiceKeyVaultAccess": {
+      "condition": "[not(parameters('useDirectDeployment'))]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "appServiceKeyVaultAccess",
@@ -672,7 +1352,7 @@
             "value": "[variables('keyVaultName')]"
           },
           "principalId": {
-            "value": "[reference(resourceId('Microsoft.Web/sites', variables('backendWebAppName')), '2023-01-01', 'full').identity.principalId]"
+            "value": "[reference('appService', '2023-01-01', 'full').identity.principalId]"
           },
           "tenantId": {
             "value": "[tenant().tenantId]"
@@ -729,12 +1409,12 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/sites', variables('backendWebAppName'))]",
-        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('databaseResourceGroup')), 'Microsoft.Resources/deployments', 'keyVaultDeployment')]",
-        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('databaseResourceGroup')), 'Microsoft.Resources/deployments', 'keyVaultSecretsDeployment')]"
+        "appService",
+        "keyVaultModule",
+        "keyVaultSecretsModule"
       ]
     }
-  ],
+  },
   "outputs": {
     "resourceGroupName": {
       "type": "string",
@@ -742,15 +1422,15 @@
     },
     "backendUrl": {
       "type": "string",
-      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', variables('backendWebAppName')), '2023-01-01').defaultHostName)]"
+      "value": "[if(parameters('useDirectDeployment'), format('https://{0}', reference('backendAppService').outputs.hostName.value), format('https://{0}', reference('appService').defaultHostName))]"
     },
     "frontendUrl": {
       "type": "string",
-      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', variables('frontendAppName')), '2023-01-01').defaultHostname)]"
+      "value": "[if(parameters('useDirectDeployment'), format('https://{0}', reference('frontendStaticWebApp').outputs.staticWebAppUrl.value), format('https://{0}', reference('staticWebApp').defaultHostname))]"
     },
     "postgresServerFqdn": {
       "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('databaseResourceGroup')), 'Microsoft.Resources/deployments', 'dbModule'), '2022-09-01').outputs.fullyQualifiedDomainName.value]"
+      "value": "[reference('db').outputs.fullyQualifiedDomainName.value]"
     },
     "keyVaultName": {
       "type": "string",
@@ -758,11 +1438,11 @@
     },
     "containerRegistryLoginServer": {
       "type": "string",
-      "value": "[if(parameters('deployContainerRegistry'), reference(resourceId('Microsoft.ContainerRegistry/registries', variables('containerRegistryName')), '2023-07-01').loginServer, '')]"
+      "value": "[if(parameters('deployContainerRegistry'), reference('containerRegistry').loginServer, '')]"
     },
     "applicationInsightsConnectionString": {
       "type": "string",
-      "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').ConnectionString]"
+      "value": "[reference('appInsights').ConnectionString]"
     }
   }
 }

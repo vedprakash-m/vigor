@@ -1,8 +1,15 @@
+---
 name: Cleanup Preview Environment
 
 on:
   pull_request:
     types: [closed]
+
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
 
 jobs:
   cleanup:

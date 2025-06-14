@@ -2,12 +2,14 @@
 Authentication utilities for Azure services
 Handles authentication between the App Service and Function App
 """
+
 import os
 import time
 from typing import Dict, Optional
 
 import httpx
 from azure.identity import DefaultAzureCredential
+
 
 class AzureServiceAuth:
     """Authentication utilities for Azure services."""
@@ -17,7 +19,9 @@ class AzureServiceAuth:
         # Check if running in Azure
         self.is_azure_environment = os.environ.get("WEBSITE_SITE_NAME") is not None
 
-        self.function_app_name = os.environ.get("FUNCTION_APP_NAME", "vigor-ai-functions")
+        self.function_app_name = os.environ.get(
+            "FUNCTION_APP_NAME", "vigor-ai-functions"
+        )
         self.resource_group = os.environ.get("RESOURCE_GROUP", "vigor-rg")
         self.subscription_id = os.environ.get("AZURE_SUBSCRIPTION_ID")
 
@@ -26,7 +30,9 @@ class AzureServiceAuth:
         self._function_key_expiry: Dict[str, float] = {}
         self._cache_duration = 3600  # 1 hour
 
-    async def get_function_key(self, function_name: Optional[str] = None) -> Optional[str]:
+    async def get_function_key(
+        self, function_name: Optional[str] = None
+    ) -> Optional[str]:
         """
         Get function key for a specific function or the default host key.
         Uses Azure managed identity when running in Azure, or falls back to environment variable.
@@ -69,7 +75,7 @@ class AzureServiceAuth:
 
             headers = {
                 "Authorization": f"Bearer {access_token.token}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             }
 
             async with httpx.AsyncClient() as client:
@@ -79,7 +85,9 @@ class AzureServiceAuth:
 
                 # Store in cache
                 self._function_key_cache[cache_key] = data.get("value", data)
-                self._function_key_expiry[cache_key] = current_time + self._cache_duration
+                self._function_key_expiry[cache_key] = (
+                    current_time + self._cache_duration
+                )
 
                 # Return default key
                 if function_name:
@@ -88,5 +96,6 @@ class AzureServiceAuth:
 
         except Exception as e:
             import logging
+
             logging.error(f"Error getting function key: {str(e)}")
             return None

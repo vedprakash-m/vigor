@@ -17,6 +17,7 @@
 [![Security Scan](https://img.shields.io/badge/Security-monitored-brightgreen)](docs/secrets_management_guide.md)
 [![Dependency Audit](https://img.shields.io/badge/dependencies-audited-brightgreen)](.github/workflows/dependency-audit.yml)
 [![Secret Scanning](https://img.shields.io/badge/Secret%20Scanning-enabled-brightgreen)](.github/workflows/secret-scan.yml)
+[![CI/CD Improvements](https://img.shields.io/badge/CI%2FCD-enhanced-brightgreen)](docs/ci_cd_improvements.md)
 
 ## 🌟 Why Choose Vigor?
 

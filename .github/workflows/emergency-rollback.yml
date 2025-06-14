@@ -1,3 +1,4 @@
+---
 name: Emergency Rollback
 
 on:
@@ -20,6 +21,9 @@ on:
         required: false
         type: boolean
         default: true
+
+permissions:
+  contents: read
 
 jobs:
   collect-info:

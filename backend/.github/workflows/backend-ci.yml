@@ -1,3 +1,4 @@
+---
 name: Backend CI/CD
 
 on:
@@ -8,6 +9,10 @@ on:
     branches: [main, develop]
     paths: ["backend/**"]
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   backend-quality-checks:
@@ -40,28 +45,24 @@ jobs:
       - name: Import sorting check (isort)
         run: isort --check-only --diff .
 
-      - name: Linting (flake8) - Allow failures for now
-        run: flake8 . || echo "Flake8 found issues but continuing..."
-        continue-on-error: true
+      - name: Linting (flake8)
+        run: flake8 .
 
       - name: Security scan (bandit)
         run: |
-          bandit -c .bandit -r . -f json -o bandit_report.json || echo "Bandit found security issues"
+          bandit -c .bandit -r . -f json -o bandit_report.json
           # Only fail on high severity issues
           bandit -c .bandit -r . --severity-level high
 
-      - name: Type checking (mypy) - Allow failures for now
-        run: mypy . --config-file=mypy.ini || echo "MyPy found type issues but continuing..."
-        continue-on-error: true
+      - name: Type checking (mypy)
+        run: mypy . --config-file=mypy.ini
 
       - name: Dependency security check (safety)
-        run: safety check --output json > safety_report.json || echo "Safety found dependency issues but continuing..."
-        continue-on-error: true
+        run: safety check --output json > safety_report.json
 
       - name: Run tests
         run: |
-          pytest --cov=. --cov-report=xml --cov-report=html -v || echo "Tests failed but continuing..."
-        continue-on-error: true
+          pytest --cov=. --cov-report=xml --cov-report=html -v
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

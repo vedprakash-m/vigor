@@ -1,3 +1,4 @@
+---
 name: Post-Merge Monitoring
 
 on:
@@ -7,6 +8,11 @@ on:
       - master
       - production
       - release/*
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
 
 jobs:
   verify-build:

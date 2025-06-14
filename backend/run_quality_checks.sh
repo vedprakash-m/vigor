@@ -40,7 +40,8 @@ echo "🔍 Running flake8 linter..."
 if python3 -m flake8 .; then
     echo "✅ Flake8 linting: PASS"
 else
-    echo "⚠️ Flake8 linting: ISSUES FOUND (see above)"
+    echo "❌ Flake8 linting: ISSUES FOUND (see above)"
+    exit 1
 fi
 
 echo ""
@@ -57,7 +58,8 @@ echo "📝 Running mypy type checking..."
 if python3 -m mypy . --config-file=mypy.ini; then
     echo "✅ Type checking: PASS"
 else
-    echo "⚠️ Type checking: ISSUES FOUND (see above)"
+    echo "❌ Type checking: ISSUES FOUND (see above)"
+    exit 1
 fi
 
 echo ""
@@ -65,7 +67,8 @@ echo "🛡️ Running safety dependency check..."
 if python3 -m safety check; then
     echo "✅ Dependency security: PASS"
 else
-    echo "⚠️ Dependency security: VULNERABILITIES FOUND (see above)"
+    echo "❌ Dependency security: VULNERABILITIES FOUND (see above)"
+    exit 1
 fi
 
 echo ""
@@ -73,7 +76,8 @@ echo "🧪 Running tests..."
 if python3 -m pytest --cov=. --cov-report=term-missing -v; then
     echo "✅ Tests: PASS"
 else
-    echo "⚠️ Tests: FAILURES (see above)"
+    echo "❌ Tests: FAILURES (see above)"
+    exit 1
 fi
 
 echo ""

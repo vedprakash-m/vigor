@@ -1,8 +1,15 @@
+---
 name: Auto-Merge Security Check
 
 on:
   pull_request:
     types: [labeled]
+
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
 
 jobs:
   validate-auto-merge-eligibility:

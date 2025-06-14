@@ -1,0 +1,46 @@
+name: Test Coverage Report
+
+on:
+  workflow_run:
+    workflows: ["Backend CI/CD", "Frontend CI"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  aggregate-coverage:
+    name: Aggregate Test Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-test-results
+          path: coverage-reports/backend
+
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: coverage-reports/frontend
+
+      - name: Generate unified coverage report
+        run: |
+          npm install -g nyc
+          mkdir -p combined-coverage
+
+          # Process coverage data
+          nyc report --reporter=html --reporter=text --reporter=lcov \
+            -t coverage-reports > combined-coverage/report.txt
+
+          echo "Total Coverage: $(grep -oP 'All files[^%]+\K[\d.]+' combined-coverage/report.txt)%"
+
+      - name: Upload combined coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: combined-coverage
+          path: combined-coverage/

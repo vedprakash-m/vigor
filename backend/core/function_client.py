@@ -2,6 +2,7 @@
 Azure Function client for the Vigor backend
 This module handles the communication with the Azure Functions
 """
+
 import json
 import logging
 import os
@@ -71,12 +72,16 @@ class FunctionsClient:
             try:
                 error_body = e.response.json()
                 logger.error(f"Error response: {error_body}")
-            except:
+            except Exception:
                 pass
-            raise RuntimeError(f"Function call to {endpoint} failed with status {e.response.status_code}")
+            raise RuntimeError(
+                f"Function call to {endpoint} failed with status {e.response.status_code}"
+            )
         except httpx.TimeoutException:
             logger.error(f"Timeout calling {endpoint}")
-            raise RuntimeError(f"Function call to {endpoint} timed out after {timeout} seconds")
+            raise RuntimeError(
+                f"Function call to {endpoint} timed out after {timeout} seconds"
+            )
         except Exception as e:
             logger.error(f"Error calling {endpoint}: {str(e)}")
             raise RuntimeError(f"Function call to {endpoint} failed: {str(e)}")
@@ -104,7 +109,7 @@ class FunctionsClient:
             self._call_function,
             "generate-workout",
             payload,
-            timeout=30
+            timeout=30,
         )
 
     async def analyze_workout(
@@ -126,7 +131,7 @@ class FunctionsClient:
             self._call_function,
             "analyze-workout",
             payload,
-            timeout=30
+            timeout=30,
         )
 
     async def coach_chat(
@@ -146,10 +151,6 @@ class FunctionsClient:
 
         # Use the performance monitor to track function calls
         response = await perf_monitor.monitor_call(
-            "coach-chat",
-            self._call_function,
-            "coach-chat",
-            payload,
-            timeout=15
+            "coach-chat", self._call_function, "coach-chat", payload, timeout=15
         )
         return response.get("response", "Sorry, I couldn't process your message.")
