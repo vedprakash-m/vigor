@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
-import { BrowserRouter } from 'react-router-dom'
 import { useAuth } from '../../contexts/useAuth'
 import DashboardPage from '../../pages/DashboardPage'
 import { workoutService } from '../../services/workoutService'
@@ -13,11 +12,7 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => jest.fn(),
 }))
 
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <BrowserRouter>
-    {children}
-  </BrowserRouter>
-)
+const TestWrapper = ({ children }: { children: React.ReactNode }) => <>{children}</>
 
 describe('DashboardPage', () => {
   const mockUser = {

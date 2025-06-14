@@ -2,13 +2,17 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+from database.connection import Base, get_db
 from main import app
-from database.connection import get_db, Base
 
 # Test database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 @pytest.fixture
 def db_session():
@@ -20,6 +24,7 @@ def db_session():
         session.close()
         Base.metadata.drop_all(bind=engine)
 
+
 @pytest.fixture
 def client(db_session):
     def override_get_db():
@@ -27,8 +32,10 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = override_get_db
     return TestClient(app)
+
 
 @pytest.fixture
 def test_user():
@@ -39,8 +46,9 @@ def test_user():
         "fitness_level": "beginner",
         "goals": ["strength", "endurance"],
         "equipment": ["dumbbells"],
-        "injuries": []
+        "injuries": [],
     }
+
 
 @pytest.fixture
 def admin_user():
@@ -51,8 +59,9 @@ def admin_user():
         "fitness_level": "intermediate",
         "goals": ["strength"],
         "equipment": ["full_gym"],
-        "injuries": []
+        "injuries": [],
     }
+
 
 @pytest.fixture
 def mock_llm_response():
@@ -60,5 +69,5 @@ def mock_llm_response():
         "response": "Great workout today! Keep up the good work.",
         "provider": "gemini-flash-2.5",
         "cost": 0.001,
-        "tokens_used": 25
+        "tokens_used": 25,
     }

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
-import { BrowserRouter } from 'react-router-dom'
 import DashboardPage from '../../pages/DashboardPage'
 import { LoginPage } from '../../pages/LoginPage'
 import { authService } from '../../services/authService'
@@ -15,11 +14,7 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => jest.fn(),
 }))
 
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <BrowserRouter>
-    {children}
-  </BrowserRouter>
-)
+const TestWrapper = ({ children }: { children: React.ReactNode }) => <>{children}</>
 
 describe('Component Performance Tests', () => {
   beforeEach(() => {

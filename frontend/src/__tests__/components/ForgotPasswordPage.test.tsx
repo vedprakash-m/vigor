@@ -1,6 +1,4 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import React from 'react'
-import { BrowserRouter } from 'react-router-dom'
 import { ForgotPasswordPage } from '../../pages/ForgotPasswordPage'
 import { authService } from '../../services/authService'
 
@@ -15,12 +13,6 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }))
 
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <BrowserRouter>
-    {children}
-  </BrowserRouter>
-)
-
 describe('ForgotPasswordPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -29,11 +21,7 @@ describe('ForgotPasswordPage', () => {
 
   describe('Initial Render', () => {
     it('renders forgot password form', () => {
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       expect(screen.getByText('Forgot Password')).toBeInTheDocument()
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
@@ -42,11 +30,7 @@ describe('ForgotPasswordPage', () => {
     })
 
     it('shows proper form validation messages', () => {
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       const submitButton = screen.getByRole('button', { name: /send reset link/i })
       fireEvent.click(submitButton)
@@ -57,11 +41,7 @@ describe('ForgotPasswordPage', () => {
 
   describe('Form Validation', () => {
     it('validates email format', () => {
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       const emailInput = screen.getByLabelText(/email/i)
       fireEvent.change(emailInput, { target: { value: 'invalid-email' } })
@@ -73,11 +53,7 @@ describe('ForgotPasswordPage', () => {
     })
 
     it('accepts valid email format', () => {
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       const emailInput = screen.getByLabelText(/email/i)
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
@@ -93,11 +69,7 @@ describe('ForgotPasswordPage', () => {
     it('successfully sends reset email', async () => {
       mockedAuthService.forgotPassword.mockResolvedValue({ message: 'Reset email sent' })
 
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       const emailInput = screen.getByLabelText(/email/i)
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
@@ -116,11 +88,7 @@ describe('ForgotPasswordPage', () => {
       const error = new Error('User not found')
       mockedAuthService.forgotPassword.mockRejectedValue(error)
 
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       const emailInput = screen.getByLabelText(/email/i)
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
@@ -141,11 +109,7 @@ describe('ForgotPasswordPage', () => {
         () => new Promise(resolve => setTimeout(() => resolve({ message: 'Success' }), 100))
       )
 
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       const emailInput = screen.getByLabelText(/email/i)
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
@@ -164,11 +128,7 @@ describe('ForgotPasswordPage', () => {
 
   describe('Navigation', () => {
     it('navigates back to login page', () => {
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       const backLink = screen.getByText(/back to login/i)
       fireEvent.click(backLink)
@@ -179,11 +139,7 @@ describe('ForgotPasswordPage', () => {
     it('navigates to login after successful reset', async () => {
       mockedAuthService.forgotPassword.mockResolvedValue({ message: 'Reset email sent' })
 
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       const emailInput = screen.getByLabelText(/email/i)
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
@@ -202,11 +158,7 @@ describe('ForgotPasswordPage', () => {
 
   describe('Accessibility', () => {
     it('has proper form labels and ARIA attributes', () => {
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       const emailInput = screen.getByLabelText(/email/i)
       expect(emailInput).toHaveAttribute('type', 'email')
@@ -217,11 +169,7 @@ describe('ForgotPasswordPage', () => {
     })
 
     it('announces form errors to screen readers', () => {
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       const submitButton = screen.getByRole('button', { name: /send reset link/i })
       fireEvent.click(submitButton)
@@ -236,11 +184,7 @@ describe('ForgotPasswordPage', () => {
       const error = new Error('Network error')
       mockedAuthService.forgotPassword.mockRejectedValue(error)
 
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       const emailInput = screen.getByLabelText(/email/i)
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
@@ -257,11 +201,7 @@ describe('ForgotPasswordPage', () => {
       const error = new Error('Too many requests')
       mockedAuthService.forgotPassword.mockRejectedValue(error)
 
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       const emailInput = screen.getByLabelText(/email/i)
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
@@ -279,11 +219,7 @@ describe('ForgotPasswordPage', () => {
     it('clears form after successful submission', async () => {
       mockedAuthService.forgotPassword.mockResolvedValue({ message: 'Reset email sent' })
 
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       const emailInput = screen.getByLabelText(/email/i)
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
@@ -305,11 +241,7 @@ describe('ForgotPasswordPage', () => {
         () => new Promise(resolve => setTimeout(() => resolve({ message: 'Success' }), 100))
       )
 
-      render(
-        <TestWrapper>
-          <ForgotPasswordPage />
-        </TestWrapper>
-      )
+      render(<ForgotPasswordPage />)
 
       const emailInput = screen.getByLabelText(/email/i)
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })

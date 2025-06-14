@@ -1,16 +1,17 @@
+from datetime import datetime, timedelta
+
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
-import jwt
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from api.schemas.auth import Token, UserRegister
 from api.services.auth import authenticate_user, create_user_token, register_user
+from core.config import get_settings
 from core.security import get_current_active_user
 from database.connection import get_db
 from database.models import UserProfile
-from core.config import get_settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -70,7 +71,10 @@ async def forgot_password(email: str, db: Session = Depends(get_db)):
     token = jwt.encode(token_payload, RESET_SECRET, algorithm="HS256")
     reset_link = f"https://app.vigor.com/reset-password?token={token}"
     print("[PasswordReset]", reset_link)  # Simulate email send
-    return {"message": "Password reset link sent", "expires_in": RESET_EXPIRE_MINUTES*60}
+    return {
+        "message": "Password reset link sent",
+        "expires_in": RESET_EXPIRE_MINUTES * 60,
+    }
 
 
 class ResetPasswordRequest(BaseModel):

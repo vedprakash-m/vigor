@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
@@ -402,16 +402,21 @@ async def validate_provider(provider_name: str, api_key: str):
 @router.get("/users/{user_id}/workout-logs.csv")
 async def export_logs_csv(user_id: str, db: Session = Depends(get_db)):
     """Return CSV of workout logs (simple demo)."""
+    import csv
+    import io
+
     from api.services.workouts import get_user_workout_logs
+
     logs = await get_user_workout_logs(db, user_id, limit=1000)
-    import csv, io
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow(["date", "duration", "exercise_count"])
     for log in logs:
-        writer.writerow([
-            log.completed_at.strftime('%Y-%m-%d'),
-            log.duration_minutes,
-            len(log.exercises),
-        ])
+        writer.writerow(
+            [
+                log.completed_at.strftime("%Y-%m-%d"),
+                log.duration_minutes,
+                len(log.exercises),
+            ]
+        )
     return Response(content=buffer.getvalue(), media_type="text/csv")

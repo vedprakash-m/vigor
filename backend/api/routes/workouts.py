@@ -11,11 +11,11 @@ from api.schemas.workouts import (
 )
 from api.services.workouts import (
     create_workout_plan,
+    get_user_workout_days,
     get_user_workout_logs,
     get_user_workout_plans,
     get_workout_plan,
     log_workout,
-    get_user_workout_days,
 )
 from core.security import get_current_active_user
 from database.connection import get_db

@@ -1,18 +1,15 @@
 import { render, screen } from '@testing-library/react'
 import { axe, toHaveNoViolations } from 'jest-axe'
 import React from 'react'
-import { BrowserRouter } from 'react-router-dom'
 import DashboardPage from '../../pages/DashboardPage'
 import { LoginPage } from '../../pages/LoginPage'
 
 // Extend Jest matchers
 expect.extend(toHaveNoViolations)
 
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <BrowserRouter>
-    {children}
-  </BrowserRouter>
-)
+// Removed BrowserRouter wrapper; jtest.setup provides routing
+
+const TestWrapper = ({ children }: { children: React.ReactNode }) => <>{children}</>
 
 describe('Accessibility Tests', () => {
   describe('LoginPage Accessibility', () => {

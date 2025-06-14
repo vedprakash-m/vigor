@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
-import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from '../../contexts/AuthContext'
 import DashboardPage from '../../pages/DashboardPage'
 import { LoginPage } from '../../pages/LoginPage'
@@ -16,11 +15,9 @@ jest.mock('react-router-dom', () => ({
 }))
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <BrowserRouter>
-    <AuthProvider>
-      {children}
-    </AuthProvider>
-  </BrowserRouter>
+  <AuthProvider>
+    {children}
+  </AuthProvider>
 )
 
 describe('User Workflow Integration', () => {

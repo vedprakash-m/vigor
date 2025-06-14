@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
-import { BrowserRouter } from 'react-router-dom'
 import { AuthContext, AuthProvider } from '../../contexts/AuthContext'
 import { authService } from '../../services/authService'
 import type { AuthResponse, User } from '../../types/auth'
@@ -53,11 +52,9 @@ const TestComponent = () => {
 }
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <BrowserRouter>
-    <AuthProvider>
-      {children}
-    </AuthProvider>
-  </BrowserRouter>
+  <AuthProvider>
+    {children}
+  </AuthProvider>
 )
 
 // Helper function to create mock user

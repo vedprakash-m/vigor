@@ -120,7 +120,8 @@ async def get_user_workout_days(db: Session, user_id: str) -> List[str]:
         .all()
     )
     dates = {
-        dt.completed_at.date().isoformat() for dt in rows  # type: ignore
+        dt.completed_at.date().isoformat()
+        for dt in rows  # type: ignore
         if dt.completed_at is not None
     }
     return sorted(dates)
