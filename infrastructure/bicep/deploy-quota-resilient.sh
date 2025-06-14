@@ -20,11 +20,8 @@ DEPLOYMENT_NAME="vigor-deployment-$(date +%Y%m%d-%H%M%S)"
 
 # Deployment strategies (ordered by preference: cost -> quota availability)
 declare -a STRATEGIES=(
-    "Central US:F1:Free tier in Central US"
     "Central US:B1:Basic tier in Central US"
-    "West US:F1:Free tier in West US"
     "West US:B1:Basic tier in West US"
-    "East US 2:F1:Free tier in East US 2"
     "East US 2:B1:Basic tier in East US 2"
     "West US 2:B1:Basic tier in West US 2"
     "South Central US:B1:Basic tier in South Central US"
@@ -130,10 +127,7 @@ for strategy in "${STRATEGIES[@]}"; do
         echo -e "${GREEN}🎊 DEPLOYMENT COMPLETE!${NC}"
         echo ""
         echo "💰 Cost Estimate:"
-        if [[ "$sku" == "F1" ]]; then
-            echo "   App Service Plan: $0/month (Free tier)"
-            echo "   Total estimated cost: ~$20/month"
-        else
+        if [[ "$sku" == "B1" ]]; then
             echo "   App Service Plan: ~$13/month (Basic B1)"
             echo "   Total estimated cost: ~$33/month"
         fi

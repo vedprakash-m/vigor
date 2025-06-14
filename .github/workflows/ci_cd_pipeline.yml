@@ -272,6 +272,17 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Downgrade Azure CLI (workaround for 2.73+ bug)
+        run: |
+          echo "⏬ Installing Azure CLI 2.72.0 to avoid ARM deployment bug..."
+          sudo apt-get remove --yes azure-cli || true
+          sudo apt-get update -y
+          curl -sL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+          echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+          sudo apt-get update -y
+          sudo apt-get install --yes azure-cli=2.72.0-1~$(lsb_release -cs)
+          az --version
+
       - name: Install Bicep CLI
         run: |
           az bicep install
@@ -318,6 +329,17 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Downgrade Azure CLI (workaround for 2.73+ bug)
+        run: |
+          echo "⏬ Installing Azure CLI 2.72.0 to avoid ARM deployment bug..."
+          sudo apt-get remove --yes azure-cli || true
+          sudo apt-get update -y
+          curl -sL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+          echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+          sudo apt-get update -y
+          sudo apt-get install --yes azure-cli=2.72.0-1~$(lsb_release -cs)
+          az --version
 
       - name: Download frontend build
         uses: actions/download-artifact@v4
