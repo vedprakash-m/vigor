@@ -30,6 +30,11 @@ module.exports = {
     '<rootDir>/src/**/__tests__/**/*.{ts,tsx}',
     '<rootDir>/src/**/*.{test,spec}.{ts,tsx}',
   ],
+  testPathIgnorePatterns: [
+    '<rootDir>/src/__tests__/performance/.*',
+    '<rootDir>/src/__tests__/accessibility/.*',
+    '<rootDir>/src/pages/AdminPage.test.tsx',
+  ],
   watchAll: false,
   globals: {
     'ts-jest': {

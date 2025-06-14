@@ -14,6 +14,7 @@ export const RegisterPage = () => {
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const { register } = useAuth()
@@ -23,6 +24,12 @@ export const RegisterPage = () => {
     e.preventDefault()
     setError('')
     setIsLoading(true)
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      setIsLoading(false)
+      return
+    }
 
     try {
       await register(email, username, password)
@@ -50,8 +57,11 @@ export const RegisterPage = () => {
 
         <form onSubmit={handleSubmit}>
           <Box mb={4}>
-            <Text mb={2} fontWeight="bold">Email</Text>
+            <label htmlFor="email">
+              <Text mb={2} fontWeight="bold">Email</Text>
+            </label>
             <Input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -61,8 +71,11 @@ export const RegisterPage = () => {
           </Box>
 
           <Box mb={4}>
-            <Text mb={2} fontWeight="bold">Username</Text>
+            <label htmlFor="username">
+              <Text mb={2} fontWeight="bold">Username</Text>
+            </label>
             <Input
+              id="username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -71,13 +84,30 @@ export const RegisterPage = () => {
             />
           </Box>
 
-          <Box mb={6}>
-            <Text mb={2} fontWeight="bold">Password</Text>
+          <Box mb={4}>
+            <label htmlFor="password">
+              <Text mb={2} fontWeight="bold">Password</Text>
+            </label>
             <Input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Choose a password"
+              required
+            />
+          </Box>
+
+          <Box mb={6}>
+            <label htmlFor="confirmPassword">
+              <Text mb={2} fontWeight="bold">Confirm Password</Text>
+            </label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
               required
             />
           </Box>
@@ -91,6 +121,7 @@ export const RegisterPage = () => {
             mb={4}
             disabled={isLoading}
             _hover={{ bg: 'blue.600' }}
+            aria-label="Register"
           >
             {isLoading ? 'Creating account...' : 'Sign Up'}
           </Button>

@@ -55,8 +55,13 @@ export const LoginPage = () => {
 
         <form onSubmit={handleSubmit}>
           <Box mb={4}>
-            <Text mb={2} fontWeight="bold">Email</Text>
+            <label htmlFor="email">
+              <Text mb={2} fontWeight="bold">
+                Email
+              </Text>
+            </label>
             <Input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -66,8 +71,13 @@ export const LoginPage = () => {
           </Box>
 
           <Box mb={6}>
-            <Text mb={2} fontWeight="bold">Password</Text>
+            <label htmlFor="password">
+              <Text mb={2} fontWeight="bold">
+                Password
+              </Text>
+            </label>
             <Input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -85,6 +95,7 @@ export const LoginPage = () => {
             mb={4}
             disabled={isLoading}
             _hover={{ bg: 'blue.600' }}
+            aria-label="Login"
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>

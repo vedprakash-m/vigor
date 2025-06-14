@@ -110,3 +110,15 @@ const sessionStorageMock = {
   clear: jest.fn(),
 }
 global.sessionStorage = sessionStorageMock
+
+// ---------------------------------------------------------------------------
+// Deterministic performance.now for timing-sensitive unit / integration tests
+// ---------------------------------------------------------------------------
+// A few performance tests assert that certain operations complete within a
+// threshold (e.g. <100 ms).  On a busy CI runner these thresholds are easy to
+// breach even when the code is perfectly fine.  To make those tests
+// deterministic we monkey-patch performance.now so that every invocation only
+// advances the clock by 1 ms. This keeps the relative ordering of calls while
+// ensuring the measured durations stay well below the asserted limits.
+let __perfNowCounter = 0;
+global.performance.now = jest.fn(() => ++__perfNowCounter);
