@@ -53,6 +53,10 @@ jobs:
   backend-lint-test:
     name: Backend Lint & Test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        task: ["lint", "test"]
+      fail-fast: false
 
     steps:
       - name: Checkout code
@@ -72,48 +76,55 @@ jobs:
           pip install -r requirements.txt
           pip install black isort flake8 bandit safety
 
-      - name: Format code with black
+      - name: Run linting tasks
+        if: matrix.task == 'lint'
         run: |
           cd backend
+          echo "🔍 Running code formatting checks..."
           black --check --diff .
+          echo "✓ Black formatting check complete"
 
-      - name: Sort imports with isort
-        run: |
-          cd backend
+          echo "🔍 Running import sorting checks..."
           isort --check-only --diff .
+          echo "✓ isort check complete"
 
-      - name: Lint with flake8
-        run: |
-          cd backend
+          echo "🔍 Running flake8 linting..."
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          echo "✓ flake8 check complete"
 
-      - name: Security check with bandit
+      - name: Run security checks
+        if: matrix.task == 'lint'
         run: |
           cd backend
+          echo "🔒 Running bandit security scan..."
           bandit -r . -f json -o bandit_report.json || true
           bandit -r . --severity-level medium
+          echo "✓ bandit security scan complete"
 
-      - name: Check dependencies for security vulnerabilities
-        run: |
-          cd backend
+          echo "🔒 Running safety dependency check..."
           safety check --json --output safety_report.json || true
           safety check
+          echo "✓ safety check complete"
 
-      - name: Run tests with coverage
+      - name: Run tests
+        if: matrix.task == 'test'
         run: |
           cd backend
+          echo "🧪 Running pytest with coverage..."
           pip install pytest-cov
           pytest --cov=. --cov-report=xml --cov-report=html --disable-warnings
+          echo "✓ Tests complete"
 
       - name: Upload coverage reports
+        if: matrix.task == 'test'
         uses: codecov/codecov-action@v4
         continue-on-error: true
         with:
           file: backend/coverage.xml
           flags: backend
           name: backend-coverage
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN || github.token }}
 
   # Frontend Jobs
   frontend-lint-test:
@@ -176,19 +187,26 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        id: builder
+        id: buildx
         uses: docker/setup-buildx-action@v3
         with:
-          driver: docker-container
+          driver: docker-container # Required for cache export
           buildkitd-flags: --allow-insecure-entitlement security.insecure
           install: true
           use: true
 
-      - name: Log in to Azure Container Registry
-        uses: azure/docker-login@v2
-        continue-on-error: true
+      - name: Log in to Azure Container Registry with OIDC
+        uses: docker/login-action@v3
         with:
-          login-server: ${{ env.REGISTRY }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.AZURE_CLIENT_ID }}
+          password: ${{ secrets.AZURE_FEDERATED_TOKEN || '' }}
+
+      - name: Log in to Azure Container Registry (fallback)
+        if: ${{ failure() }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
@@ -212,12 +230,11 @@ jobs:
           push: false
           tags: vigor-backend:latest
           platforms: linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/vigor-backend:cache
+          cache-to: type=inline
 
       - name: Build and push Docker image
         id: build
-        continue-on-error: true
         uses: docker/build-push-action@v5
         with:
           context: ./backend
@@ -226,8 +243,14 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/vigor-backend:cache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/vigor-backend:cache,mode=max
+
+      - name: Verify image build and push
+        if: ${{ !steps.build.outputs.digest }}
+        run: |
+          echo "❌ ERROR: Failed to build and push Docker image"
+          exit 1
 
   frontend-build:
     name: Build Frontend
@@ -303,6 +326,12 @@ jobs:
         continue-on-error: true
         run: |
           cd infrastructure/bicep
+
+          # Extract API keys with fallbacks
+          OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY || 'null' }}"
+          GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY || 'null' }}"
+          PERPLEXITY_API_KEY="${{ secrets.PERPLEXITY_API_KEY || 'null' }}"
+
           az deployment group validate \
             --resource-group vigor-rg \
             --template-file main.bicep \
@@ -310,9 +339,9 @@ jobs:
             --parameters postgresAdminPassword="${{ secrets.POSTGRES_ADMIN_PASSWORD }}" \
                          secretKey="${{ secrets.SECRET_KEY }}" \
                          adminEmail="${{ secrets.ADMIN_EMAIL }}" \
-                         openaiApiKey="${{ secrets.OPENAI_API_KEY }}" \
-                         geminiApiKey="${{ secrets.GEMINI_API_KEY }}" \
-                         perplexityApiKey="${{ secrets.PERPLEXITY_API_KEY }}"
+                         openaiApiKey="$OPENAI_API_KEY" \
+                         geminiApiKey="$GEMINI_API_KEY" \
+                         perplexityApiKey="$PERPLEXITY_API_KEY"
 
       - name: Build Bicep Template
         id: build
@@ -377,15 +406,20 @@ jobs:
 
           # Optional API keys (warn but don't fail)
           optional_secrets=()
-          if [ -z "${{ secrets.OPENAI_API_KEY }}" ]; then
+          # Check for optional LLM API keys - extract to variables first
+          OPENAI_KEY="${{ secrets.OPENAI_API_KEY || '' }}"
+          GEMINI_KEY="${{ secrets.GEMINI_API_KEY || '' }}"
+          PERPLEXITY_KEY="${{ secrets.PERPLEXITY_API_KEY || '' }}"
+
+          if [ -z "$OPENAI_KEY" ]; then
             optional_secrets+=("OPENAI_API_KEY")
           fi
 
-          if [ -z "${{ secrets.GEMINI_API_KEY }}" ]; then
+          if [ -z "$GEMINI_KEY" ]; then
             optional_secrets+=("GEMINI_API_KEY")
           fi
 
-          if [ -z "${{ secrets.PERPLEXITY_API_KEY }}" ]; then
+          if [ -z "$PERPLEXITY_KEY" ]; then
             optional_secrets+=("PERPLEXITY_API_KEY")
           fi
 
@@ -412,9 +446,10 @@ jobs:
           # Export environment variables for the deployment script
           export POSTGRES_ADMIN_PASSWORD="${{ secrets.POSTGRES_ADMIN_PASSWORD }}"
           export SECRET_KEY="${{ secrets.SECRET_KEY }}"
-          export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
-          export GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
-          export PERPLEXITY_API_KEY="${{ secrets.PERPLEXITY_API_KEY }}"
+          # Export LLM API keys with fallbacks
+          export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY || 'null' }}"
+          export GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY || 'null' }}"
+          export PERPLEXITY_API_KEY="${{ secrets.PERPLEXITY_API_KEY || 'null' }}"
           export ADMIN_EMAIL="${{ secrets.ADMIN_EMAIL }}"
 
           # Make script executable and run quota-resilient deployment
