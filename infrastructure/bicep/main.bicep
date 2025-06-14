@@ -37,6 +37,9 @@ param perplexityApiKey string = ''
 @description('App Service SKU')
 param appServiceSku string = 'S1'
 
+@description('Resource group name where database resources (PostgreSQL) will live. Allows you to delete the app RG without losing data.')
+param databaseResourceGroup string = 'vigor-db-rg'
+
 // Variables
 var uniqueSuffix = uniqueString(resourceGroup().id)
 var commonTags = {
@@ -142,42 +145,21 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   }
 }
 
-// PostgreSQL Flexible Server - Use smallest possible tier
-resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-06-01-preview' = {
-  name: postgresServerName
-  location: location
-  tags: commonTags
-  sku: {
-    name: 'B_Standard_B1ms' // Burstable B1ms - cheapest option at ~$12/month
-    tier: 'Burstable'
-  }
-  properties: {
-    version: '14'
-    administratorLogin: postgresAdminUsername
-    administratorLoginPassword: postgresAdminPassword
-    storage: {
-      storageSizeGB: 32 // Minimum storage for cost savings
-    }
-    backup: {
-      backupRetentionDays: 7 // Minimum retention for cost savings
-      geoRedundantBackup: 'Disabled'
-    }
-    highAvailability: {
-      mode: environment == 'production' ? 'ZoneRedundant' : 'Disabled'
-    }
-    network: {
-      publicNetworkAccess: 'Disabled'
-    }
-  }
-}
+// ---------------------------------------------------------------------------
+// Database module deployed to separate resource group
+// ---------------------------------------------------------------------------
 
-// PostgreSQL Database
-resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-06-01-preview' = {
-  parent: postgresServer
-  name: 'vigor_db'
-  properties: {
-    charset: 'utf8'
-    collation: 'en_US.utf8'
+var databaseName = 'vigor_db'
+
+module db './db.bicep' = {
+  name: 'dbModule'
+  scope: resourceGroup(databaseResourceGroup)
+  params: {
+    location: location
+    environment: environment
+    postgresServerName: postgresServerName
+    postgresAdminUsername: postgresAdminUsername
+    postgresAdminPassword: postgresAdminPassword
   }
 }
 
@@ -224,7 +206,7 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
         }
         {
           name: 'DATABASE_URL'
-          value: 'postgresql://${postgresAdminUsername}:${postgresAdminPassword}@${postgresServer.properties.fullyQualifiedDomainName}:5432/${postgresDatabase.name}?sslmode=require'
+          value: 'postgresql://${postgresAdminUsername}:${postgresAdminPassword}@${db.outputs.fullyQualifiedDomainName}:5432/${databaseName}?sslmode=require'
         }
         {
           name: 'OPENAI_API_KEY'
@@ -320,7 +302,7 @@ resource perplexityApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' =
 output resourceGroupName string = resourceGroup().name
 output backendUrl string = 'https://${appService.properties.defaultHostName}'
 output frontendUrl string = 'https://${staticWebApp.properties.defaultHostname}'
-output postgresServerFqdn string = postgresServer.properties.fullyQualifiedDomainName
+output postgresServerFqdn string = db.outputs.fullyQualifiedDomainName
 output keyVaultName string = keyVault.name
 output containerRegistryLoginServer string = containerRegistry.properties.loginServer
 output applicationInsightsConnectionString string = appInsights.properties.ConnectionString
