@@ -204,7 +204,6 @@ jobs:
         id: build-local
         uses: docker/build-push-action@v5
         with:
-          builder: ${{ steps.builder.outputs.name }}
           context: ./backend
           file: ./backend/Dockerfile
           push: false
@@ -218,7 +217,6 @@ jobs:
         continue-on-error: true
         uses: docker/build-push-action@v5
         with:
-          builder: ${{ steps.builder.outputs.name }}
           context: ./backend
           file: ./backend/Dockerfile
           push: true
