@@ -14,9 +14,6 @@ var commonTags = {
   Component: 'database'
 }
 
-var kvDeployHash = toLower(substring(uniqueString('${deployment().name}'), 0, 6))
-var keyVaultName = '${appName}${kvDeployHash}kv'
-
 // PostgreSQL Flexible Server
 resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-06-01-preview' = {
   name: postgresServerName
