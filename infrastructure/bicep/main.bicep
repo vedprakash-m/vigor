@@ -91,22 +91,15 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-// Storage Account
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  name: storageAccountName
-  location: location
-  tags: commonTags
-  sku: {
-    name: environment == 'production' ? 'Standard_ZRS' : 'Standard_LRS'
-  }
-  kind: 'StorageV2'
-  properties: {
-    publicNetworkAccess: 'Disabled'
-    allowBlobPublicAccess: false
-    allowSharedKeyAccess: true
-    defaultToOAuthAuthentication: true
-    minimumTlsVersion: 'TLS1_2'
-    supportsHttpsTrafficOnly: true
+// Storage Account in persistent (database) resource group
+module storageMod './storage.bicep' = {
+  name: 'storageModule'
+  scope: resourceGroup(databaseResourceGroup)
+  params: {
+    name: storageAccountName
+    location: location
+    tags: commonTags
+    environment: environment
   }
 }
 
