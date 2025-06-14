@@ -211,6 +211,7 @@ jobs:
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          builder: ${{ steps.builder.outputs.name }}
 
       - name: Build and push Docker image
         id: build
@@ -225,6 +226,7 @@ jobs:
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          builder: ${{ steps.builder.outputs.name }}
 
   frontend-build:
     name: Build Frontend
