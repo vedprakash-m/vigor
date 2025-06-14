@@ -40,8 +40,8 @@ param appServiceSku string = 'S1'
 @description('Resource group name where database resources (PostgreSQL) will live. Allows you to delete the app RG without losing data.')
 param databaseResourceGroup string = 'vigor-db-rg'
 
-@description('Whether to deploy an Azure Container Registry (required only for container-based deployments).')
-param deployContainerRegistry bool = environment == 'production' || environment == 'prod'
+@description('Deploy Azure Container Registry (set to true only if you need a new ACR).')
+param deployContainerRegistry bool = false
 
 // Variables
 var uniqueSuffix = uniqueString(resourceGroup().id)
