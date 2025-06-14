@@ -26,6 +26,10 @@ env:
   PYTHON_VERSION: "3.12"
   NODE_VERSION: "20"
   RESOURCE_GROUP: "vigor-rg"
+  # New architecture configuration
+  USE_DIRECT_DEPLOYMENT: "true" # Set to true for App Service + Functions, false for container-based
+  FUNCTION_APP_NAME: "vigor-ai-functions"
+  STATIC_WEBAPP_NAME: "vigor-static-webapp"
 
 jobs:
   # Security and Quality Gates
@@ -818,3 +822,254 @@ jobs:
         with:
           azure-authentication: "true"
           api-keys: "true"
+
+  # New architecture jobs for App Service + Functions deployment
+  deploy-backend-app-service:
+    name: Deploy Backend to App Service
+    runs-on: ubuntu-latest
+    needs: [backend-build, infrastructure-validate]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+          cache-dependency-path: "./backend/requirements.txt"
+
+      - name: Install dependencies
+        run: |
+          echo "📦 Installing backend dependencies..."
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Prepare deployment package
+        run: |
+          echo "🔧 Preparing deployment package..."
+          cd backend
+
+          # Create a deployment script for Azure App Service
+          cat > startup.sh << EOL
+          #!/bin/bash
+          cd /home/site/wwwroot
+
+          # Ensure proper activation of the environment
+          source /opt/python/latest/env/bin/activate
+
+          # Start Gunicorn with proper worker configuration
+          gunicorn main:app --workers=4 --worker-class=uvicorn.workers.UvicornWorker --bind=0.0.0.0:8000
+          EOL
+
+          chmod +x startup.sh
+
+          # Compress the application for deployment
+          zip -r ../backend-deployment.zip . -x "*.pyc" "__pycache__/*" "*.git*" "tests/*" "venv/*"
+
+          echo "✅ Deployment package created"
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: "vigor-backend"
+          package: "./backend-deployment.zip"
+
+      - name: Run database migrations
+        run: |
+          echo "🔄 Running database migrations..."
+          cd backend
+          python -c "from database.init_db import init_database; init_database()"
+
+  deploy-ai-functions:
+    name: Build and Deploy AI Functions
+    runs-on: ubuntu-latest
+    needs: [backend-build, infrastructure-validate]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+          cache-dependency-path: "./backend/requirements.txt"
+
+      - name: Prepare Functions Code
+        run: |
+          echo "🔧 Preparing AI Functions code..."
+          mkdir -p functions
+          cp -r backend/core/ai.py functions/
+          cp -r backend/core/llm_providers.py functions/
+
+          # Create requirements.txt for Functions
+          cat > functions/requirements.txt << EOL
+          azure-functions
+          openai>=1.3.0
+          google-generativeai>=0.3.0
+          anthropic>=0.7.0
+          langchain>=0.1.0
+          langchain-community>=0.0.10
+          pydantic>=2.4.0
+          python-dotenv>=1.0.0
+          EOL
+
+          # Create a simple function
+          mkdir -p functions/GenerateWorkout
+
+          # Create __init__.py
+          cat > functions/GenerateWorkout/__init__.py << EOL
+          import azure.functions as func
+          import logging
+          import json
+          from ..ai import get_ai_response
+
+          app = func.FunctionApp()
+
+          @app.function_name(name="GenerateWorkout")
+          @app.route(route="generate-workout")
+          def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
+              logging.info('Python HTTP trigger function processed a request for workout generation.')
+
+              try:
+                  req_body = req.get_json()
+              except ValueError:
+                  return func.HttpResponse(
+                      "Please pass user preferences in the request body",
+                      status_code=400
+                  )
+
+              user_preferences = req_body.get('preferences')
+              if not user_preferences:
+                  return func.HttpResponse(
+                      "Please provide user preferences",
+                      status_code=400
+                  )
+
+              prompt = f"Create a personalized workout plan based on these preferences: {json.dumps(user_preferences)}"
+
+              try:
+                  workout_plan = get_ai_response(prompt)
+                  return func.HttpResponse(
+                      json.dumps({"workout": workout_plan}),
+                      mimetype="application/json"
+                  )
+              except Exception as e:
+                  logging.error(f"Error generating workout: {str(e)}")
+                  return func.HttpResponse(
+                      f"Error generating workout: {str(e)}",
+                      status_code=500
+                  )
+          EOL
+
+          # Create function.json
+          cat > functions/GenerateWorkout/function.json << EOL
+          {
+            "bindings": [
+              {
+                "authLevel": "function",
+                "type": "httpTrigger",
+                "direction": "in",
+                "name": "req",
+                "methods": ["post"]
+              },
+              {
+                "type": "http",
+                "direction": "out",
+                "name": "$return"
+              }
+            ]
+          }
+          EOL
+
+          # Create host.json
+          cat > functions/host.json << EOL
+          {
+            "version": "2.0",
+            "logging": {
+              "applicationInsights": {
+                "samplingSettings": {
+                  "isEnabled": true,
+                  "excludedTypes": "Request"
+                }
+              }
+            },
+            "extensionBundle": {
+              "id": "Microsoft.Azure.Functions.ExtensionBundle",
+              "version": "[3.*, 4.0.0)"
+            }
+          }
+          EOL
+
+          echo "✅ Functions code preparation complete"
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.FUNCTION_APP_NAME }}
+          package: ./functions
+          respect-funcignore: true
+
+  deploy-static-web-app:
+    name: Deploy Static Web App
+    runs-on: ubuntu-latest
+    needs: [frontend-build, infrastructure-validate]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: "./frontend/package-lock.json"
+
+      - name: Install dependencies
+        run: |
+          echo "📦 Installing frontend dependencies..."
+          cd frontend
+          npm ci
+
+      - name: Build
+        run: |
+          echo "🔨 Building frontend..."
+          cd frontend
+          npm run build
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Static Web App
+        id: deploy-to-swa
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN || '' }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "/frontend/dist"
+          api_location: ""
+          output_location: ""

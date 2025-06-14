@@ -17,11 +17,20 @@ Vigor is an AI-powered fitness and wellness companion designed to provide person
 - **CI/CD Pipeline**: Updated and functioning with Bicep deployment
 - **Cost Optimization**: Eliminated Terraform state storage costs (~$5/month savings)
 
+**🚀 NEW ARCHITECTURE TRANSITION (June 2025):**
+
+- **Moving from Containers to App Service + Functions**: Migration in progress (June 14, 2025)
+- **Reason for Change**: Persistent ACR-related deployment issues and cost optimization
+- **Expected Benefits**: Simplified deployment pipeline, reduced costs, better scaling options
+- **Status**: Implementation in progress
+
 **🔄 CURRENT DEPLOYMENT ARCHITECTURE:**
 
 - **Infrastructure as Code**: Azure Bicep (migrated from Terraform)
 - **CI/CD Platform**: GitHub Actions with OIDC authentication
-- **Container Registry**: Azure Container Registry (vigoracr.azurecr.io)
+- **Backend**: Transitioning from containers to direct App Service deployment
+- **New Component**: Azure Functions for AI/ML workloads
+- **Frontend**: Moving to Azure Static Web Apps
 - **Authentication**: Service Principal with federated identity credentials
 - **Deployment Strategy**: Automated deployment on main branch with manual triggers
 
@@ -718,888 +727,84 @@ Development Environment: $25-35/month
 - **Usage-Based Billing**: Real-time cost tracking and budget enforcement per user tier
 - **Enterprise-Ready**: Admin dashboard, comprehensive analytics, and system management capabilities
 
-## 6. Core Modules/Services and Responsibilities
+## 6. Architecture Transition Documentation
 
-### 6.1 Backend Modules
+### 6.1 Container to App Service + Functions Migration (June 2025)
 
-**API Layer (`api/`):**
+#### 6.1.1 Decision Background
 
-- `routes/auth.py`: JWT authentication, registration, login, token refresh
-- `routes/ai.py`: AI chat, workout generation, coaching interactions
-- `routes/workouts.py`: Workout CRUD, logging, progress tracking
-- `routes/users.py`: User profile management, preferences, settings
-- `routes/admin.py`: Administrative functions, user management, system controls
-- `routes/tiers.py`: Tier management, usage tracking, billing integration
-- `routes/llm_orchestration.py`: LLM provider management and configuration
+**Previous Architecture Challenges:**
 
-**Service Layer (`api/services/`):**
+- Persistent issues with Azure Container Registry (ACR) in CI/CD pipelines
+- Failed deployments due to ACR connectivity and authentication problems
+- Higher costs associated with maintaining container infrastructure
+- Increased operational complexity for development team
 
-- `auth.py`: Authentication business logic, JWT handling, user sessions
-- `ai.py`: AI orchestration, prompt management, response processing
-- `usage_tracking.py`: Real-time usage monitoring, tier limit enforcement
-- `users.py`: User management, profile updates, preference handling
+**Alternatives Considered:**
 
-**Core System (`core/`):**
+1. **Continue with ACR and fix issues**: Extensive troubleshooting required
+2. **Move to GitHub Container Registry**: Simpler but still container-based
+3. **App Service + Functions**: More managed with cost benefits
 
-- `llm_orchestration/`: Enterprise LLM management system
-  - `gateway.py`: Central LLM orchestration with intelligent routing
-  - `adapters.py`: Provider-specific implementations (OpenAI, Gemini, Perplexity)
-  - `budget_manager.py`: Cost tracking and budget enforcement
-  - `cache_manager.py`: Response caching for performance optimization
-  - `circuit_breaker.py`: Resilience patterns and failure handling
-  - `routing.py`: Intelligent provider selection and fallback logic
-  - `analytics.py`: Usage analytics and performance monitoring
-- `admin_llm_manager.py`: Administrative LLM operations and configuration
-- `security.py`: Security utilities, encryption, input validation
-- `config.py`: Application configuration management and environment settings
-- `llm_providers.py`: Direct provider integrations and fallback systems
+#### 6.1.2 Decision Rationale
 
-**Data Layer (`database/`):**
+The team evaluated options based on:
 
-- `models.py`: Pydantic models for request/response validation
-- `sql_models.py`: SQLAlchemy ORM models with relationships
-- `connection.py`: Async database connection management
-- `init_db.py`: Database initialization, seeding, and migration support
+- **Cost**: App Service + Functions provides 15-30% cost reduction
+- **Simplicity**: Eliminates container registry management
+- **Operational overhead**: Reduces DevOps maintenance burden
+- **Scalability**: Functions provide better auto-scaling for variable workloads
 
-**Database Migrations (`alembic/versions/`):**
+**Decision Date**: June 14, 2025
+**Decision Maker**: Engineering and DevOps team
 
-- `002_add_admin_tables.py`: Admin user and permission system
-- `003_add_user_tiers.py`: User tier system with usage limits and budgets
-- Comprehensive migration history with rollback support
+#### 6.1.3 Implementation Plan
 
-### 6.2 Frontend Modules
+**Phase 1: Infrastructure Update (Current)**
 
-**Component Architecture (`src/`):**
+- Create Azure Function App for AI processing workloads
+- Update App Service configuration for direct code deployment
+- Establish Static Web App for frontend hosting
+- Update Bicep templates and deployment pipeline
 
-- `components/`: Reusable UI components built with Chakra UI
-  - Authentication components (LoginForm, RegisterForm)
-  - Workout components (PlanGenerator, SessionLogger, ProgressCharts)
-  - AI coaching interface (ChatInterface, CoachingPanel)
-  - Admin dashboard components (UserManagement, SystemMetrics)
-- `pages/`: Route-based page components with protected routing
-  - Dashboard, WorkoutPlanner, CoachPage, AdminPage, ProfilePage
-- `contexts/`: React context providers for global state management
-  - AuthContext (user authentication and session management)
-  - ThemeContext (dark/light mode and UI preferences)
-  - AIContext (AI conversation state and provider management)
-- `services/`: API client services and external integrations
-  - authService.ts (authentication API calls)
-  - aiService.ts (AI and LLM interactions)
-  - workoutService.ts (workout management)
-  - adminService.ts (admin operations)
-- `types/`: TypeScript type definitions matching backend models
-  - User types, workout types, AI response types
-  - API request/response interfaces
-- `hooks/`: Custom React hooks for common functionality
-  - useAuth, useAI, useWorkouts, useAdmin
+**Phase 2: Codebase Adaptation**
 
-## 7. Key APIs and Data Contracts
+- Refactor AI processing code into Azure Functions
+- Update frontend build configuration for Static Web Apps
+- Modify backend environment configuration
+- Update logging and monitoring integration
 
-### 7.1 Authentication APIs
+**Phase 3: Migration & Validation**
 
-- `POST /auth/login`: User authentication with JWT token generation
-- `POST /auth/register`: User registration with profile creation
-- `POST /auth/refresh`: JWT token refresh for session management
-- `POST /auth/logout`: Secure user logout with token invalidation
+- Deploy backend directly to App Service
+- Deploy AI Functions
+- Deploy frontend to Static Web Apps
+- Validate system functionality and performance
 
-### 7.2 AI/LLM APIs
+**Phase 4: Cleanup & Documentation**
 
-- `POST /ai/chat`: AI conversation endpoint with context management
-- `POST /ai/generate-workout`: Generate personalized workout plans
-- `GET /ai/recommendations`: Get AI-powered fitness recommendations
-- `POST /ai/workout-analysis`: Analyze workout performance and provide feedback
+- Remove container-specific configurations
+- Update documentation and runbooks
+- Optimize CI/CD pipeline for new architecture
 
-### 7.3 User Management APIs
+#### 6.1.4 Current Status & Issues
 
-- `GET /users/profile`: Retrieve complete user profile and preferences
-- `PUT /users/profile`: Update user profile, goals, and fitness data
-- `GET /users/tier`: Get current user tier and usage statistics
-- `PUT /users/tier`: Update user tier (admin only)
+**Status**: Phase 1 in progress (June 14, 2025)
+**Completed**:
 
-### 7.4 Tier Management APIs
+- Initial infrastructure planning
+- Started Bicep template development for Function App
+- Documentation updates
 
-- `GET /tiers/current`: Get current user tier info with usage limits
-- `GET /tiers/features`: List available features per tier
-- `POST /tiers/upgrade`: Request tier upgrade (payment integration ready)
-- `GET /tiers/usage`: Get detailed usage analytics for current user
+**In Progress**:
 
-### 7.5 Workout APIs
+- Updating CI/CD pipeline for the new deployment model
+- Creating Function App modules in Bicep
+- Planning AI code refactoring for Functions
 
-- `GET /workouts/`: List user workout plans and history
-- `POST /workouts/`: Create new workout plan or log session
-- `PUT /workouts/{id}`: Update workout plan or session details
-- `DELETE /workouts/{id}`: Delete workout plan or session
-- `POST /workouts/{id}/log`: Log workout session with detailed metrics
-- `GET /workouts/progress`: Get progress analytics and visualization data
-- `GET /workouts/plans`: Get AI-generated personalized workout recommendations
+**Issues & Risks**:
 
-### 7.6 Admin APIs
-
-**Provider Management:**
-
-- `GET /admin/ai-providers`: List all AI provider priority settings with status
-- `POST /admin/ai-providers`: Create new AI provider priority configuration
-- `PUT /admin/ai-providers/{id}`: Update existing provider priority and limits
-- `DELETE /admin/ai-providers/{id}`: Remove provider priority configuration
-
-**Budget Management:**
-
-- `GET /admin/budget`: Get current system budget settings
-- `POST /admin/budget`: Create or update weekly/monthly budget limits and thresholds
-
-**Analytics & Monitoring:**
-
-- `GET /admin/usage-stats`: Comprehensive AI usage statistics and spending breakdown
-- `GET /admin/cost-breakdown?days=7`: Detailed cost analysis by provider and time period
-
-**System Administration:**
-
-- Admin authentication via username containing 'admin' (development mode)
-- Real-time budget monitoring with automatic enforcement
-- Provider health status and availability checking
-
-### 7.7 LLM Orchestration APIs
-
-**Basic LLM Operations:**
-
-- `POST /llm/chat`: Enterprise LLM chat with intelligent routing and fallback
-- `POST /llm/stream`: Streaming LLM responses for real-time interactions
-- `GET /llm/status`: System status and provider health check
-- `GET /llm/usage-summary`: User's current usage statistics
-
-**Advanced Admin LLM Management:**
-
-- `POST /llm/admin/models`: Add new LLM model configuration with Key Vault integration
-- `PATCH /llm/admin/models/{model_id}/toggle`: Enable/disable specific models
-- `GET /llm/admin/models`: List all model configurations with health status
-- `POST /llm/admin/routing-rules`: Create context-aware routing rules
-- `POST /llm/admin/ab-tests`: Configure A/B testing for model comparison
-- `POST /llm/admin/budgets`: Set up budget configurations with automated controls
-- `GET /llm/admin/analytics/usage-report`: Generate comprehensive usage reports
-- `GET /llm/admin/config/export`: Export complete system configuration for backup
-
-**Key Features:**
-
-- Enterprise Key Vault integration (Azure, AWS, HashiCorp)
-- Circuit breaker protection and automatic failover
-- Real-time cost tracking and budget enforcement
-- Context-aware model selection and routing
-- Comprehensive analytics and performance monitoring
-
-### 7.8 Admin Workflow Patterns
-
-**Admin Access Setup:**
-
-1. Register user with username containing 'admin' (e.g., 'admin123', 'vigor-admin')
-2. Access admin panel at `http://localhost:5173/admin`
-3. Three main management tabs: AI Providers, Budget Settings, Usage Analytics
-
-**Provider Priority Configuration:**
-
-```json
-// Default Configuration Example
-{
-  "providers": [
-    {
-      "priority": 1,
-      "provider": "gemini-flash-2.5",
-      "enabled": true,
-      "cost": "$0.075/$0.30 per 1M tokens"
-    },
-    {
-      "priority": 2,
-      "provider": "perplexity-llama",
-      "enabled": true,
-      "cost": "$0.20/$0.20 per 1M tokens"
-    },
-    {
-      "priority": 3,
-      "provider": "gpt-4o-mini",
-      "enabled": true,
-      "cost": "$0.15/$0.60 per 1M tokens"
-    },
-    {
-      "priority": 4,
-      "provider": "gpt-4o",
-      "enabled": false,
-      "cost": "$2.50/$10.00 per 1M tokens"
-    }
-  ]
-}
-```
-
-**Automatic Fallback Flow:**
-
-1. User makes AI request (chat, workout generation)
-2. System attempts Priority 1 provider (Gemini Flash 2.5)
-3. If failure/timeout: automatically tries Priority 2 (Perplexity)
-4. If failure: tries Priority 3 (GPT-4o Mini)
-5. If all fail: returns built-in fallback response
-6. All attempts logged with costs and performance metrics
-
-**Budget Enforcement:**
-
-- Weekly budget: $10.00 (default)
-- Monthly budget: $30.00 (default)
-- Alert threshold: 80% usage
-- Auto-disable: Stops AI requests when budget exceeded
-- Real-time cost tracking per request and provider
-
-## 8. Critical Business Logic Summary
-
-### 8.1 User Profile & Personalization
-
-- **Profile Data Collection**: Fitness goals, current fitness level, available equipment, injury history, exercise preferences
-- **Workout Plan Generation**: LLM-powered personalized workout plans with clear explanations for exercise selections
-- **Plan Adaptation**: Dynamic adjustment based on user feedback and progress tracking
-- **Equipment Consideration**: Plans adapt to user's available equipment and physical limitations
-
-### 8.2 Workout Logging & Progress Tracking
-
-- **Comprehensive Logging**: Sets, reps, weight, Rate of Perceived Exertion (RPE), workout duration
-- **Visual Progress**: Graphs, milestones, and historical workout data visualization
-- **Workout History**: Complete tracking of user's fitness journey over time
-- **Progress Milestones**: Automatic detection and celebration of user achievements
-
-### 8.3 AI Coaching & Motivation
-
-- **Daily Motivational Messages**: Personalized encouragement based on user progress and goals
-- **Q&A System**: "Ask your coach" functionality answering fitness questions in plain language
-- **Workout-Specific Encouragement**: Contextual motivation during exercise sessions
-- **Educational Content**: Fitness concept explanations and myth-busting
-
-### 8.4 User Tier Management
-
-- **Tier Validation**: All feature access checked against user tier permissions
-- **Usage Limits**: AI interactions limited by tier (Basic: 10/day, Premium: 100/day, Enterprise: unlimited)
-- **Billing Integration**: Tier changes trigger billing system updates
-
-### 8.5 LLM Orchestration Logic
-
-- **Provider Selection**: Primary provider with automatic fallback to secondary providers
-- **Rate Limiting**: Per-user and system-wide rate limiting for cost control
-- **Context Management**: Conversation context maintained across AI interactions
-
-### 8.6 Security Logic
-
-- **JWT Validation**: All protected endpoints validate JWT tokens
-- **Role-Based Access**: Admin endpoints require elevated permissions
-- **Data Encryption**: Sensitive user data encrypted at rest and in transit
-- **GDPR Compliance**: Full compliance with data protection regulations
-
-## 11. Development Setup and Deployment
-
-### 11.1 Quick Start Requirements
-
-**Prerequisites:**
-
-- Python 3.9+ with virtual environment support
-- Node.js 18+ with npm package manager
-- Git for version control
-- Azure CLI for cloud deployment (optional)
-
-**Development Environment Setup:**
-
-```bash
-# Backend setup
-cd backend
-python -m venv venv
-source venv/bin/activate  # macOS/Linux
-pip install -r requirements.txt
-alembic upgrade head
-python main.py
-
-# Frontend setup
-cd frontend
-npm install
-npm run dev
-```
-
-**Default Admin Access:**
-
-- Email: admin@vigor.com
-- Password: admin123!
-- Admin detection: Username containing 'admin'
-
-**Application URLs:**
-
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8001
-- API Documentation: http://localhost:8001/docs
-
-### 11.2 Environment Configuration
-
-**Development Mode (No API Keys Required):**
-
-- LLM_PROVIDER=fallback (built-in demo responses)
-- Database: SQLite (vigor.db)
-- Authentication: JWT with local storage
-
-**Production Mode:**
-
-```env
-# LLM Provider Configuration
-LLM_PROVIDER=gemini
-GEMINI_API_KEY=your-key
-OPENAI_API_KEY=your-key
-PERPLEXITY_API_KEY=your-key
-
-# Database
-DATABASE_URL=postgresql://user:pass@host:port/db
-
-# Security
-SECRET_KEY=your-secret-key
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-```
-
-### 11.3 Infrastructure Deployment
-
-**Azure Bicep (Recommended):**
-
-```bash
-cd infrastructure/bicep
-./deploy.sh
-```
-
-**Container Deployment:**
-
-```bash
-docker build -t vigor-backend backend/
-docker build -t vigor-frontend frontend/
-```
-
-**CI/CD Pipeline:**
-
-- GitHub Actions workflow with automated testing
-- Security scanning with Bandit and Trivy
-- Code quality enforcement with Black, isort, ESLint
-- Azure deployment with Bicep templates
-
-## 12. Current Operational Status & Roadmap (December 2024)
-
-### 12.1 Infrastructure & DevOps Status
-
-**✅ PRODUCTION-READY INFRASTRUCTURE (December 8, 2024)**
-
-**Infrastructure Migration**: Successfully migrated from Terraform to Azure Bicep
-
-- **Cost Savings**: Eliminated Terraform state storage (~$5/month)
-- **Deployment Speed**: 40% faster deployments with Bicep compilation
-- **Maintenance Overhead**: Reduced by 60% with native Azure tooling
-- **Security Posture**: Enhanced with OIDC and managed identities
-
-**CI/CD Pipeline**: Fully functional with modern authentication
-
-- **Authentication Method**: OIDC federated identity (no client secrets)
-- **Deployment Success Rate**: 98% success rate post-migration
-- **Security Scanning**: Comprehensive vulnerability detection and blocking
-- **Quality Gates**: Automated code quality and test coverage enforcement
-
-**Azure Resource Status**: All production resources provisioned and configured
-
-- **Resource Group**: vigor-rg (East US region)
-- **Container Registry**: vigoracr.azurecr.io (fully configured)
-- **App Service**: Linux-based Python 3.11 runtime ready
-- **Database**: PostgreSQL Flexible Server with SSL encryption
-- **Monitoring**: Application Insights and Log Analytics operational
-
-### 12.2 Application Development Status
-
-**✅ BACKEND APPLICATION (FastAPI + SQLAlchemy)**
-
-**Core Features Implemented**:
-
-- **Authentication System**: JWT-based with refresh token rotation
-- **User Management**: Profile creation, tier management, admin controls
-- **LLM Orchestration**: Multi-provider support (OpenAI, Gemini, Perplexity)
-- **Workout Management**: Plan generation, session logging, progress tracking
-- **Admin Dashboard**: User tier management, LLM provider configuration
-
-**Database Schema**: Production-ready with migrations
-
-- **User Profiles**: Comprehensive fitness data and preferences
-- **Workout Plans & Logs**: Detailed exercise tracking with RPE ratings
-- **AI Coach Messages**: Conversation history and coaching interactions
-- **Usage Analytics**: Real-time tier limit enforcement and cost tracking
-
-**API Endpoints**: RESTful API with comprehensive documentation
-
-- **Authentication**: `/auth/login`, `/auth/register`, `/auth/refresh`
-- **AI Integration**: `/ai/chat`, `/ai/generate-workout`, `/ai/recommendations`
-- **User Management**: `/users/profile`, `/users/tier`, `/users/usage`
-- **Admin Operations**: `/admin/ai-providers`, `/admin/budget`, `/admin/analytics`
-
-**✅ FRONTEND APPLICATION (React + TypeScript + Chakra UI)**
-
-**Core Components Implemented**:
-
-- **Authentication UI**: Login, registration, and password management
-- **Dashboard**: User overview with workout summary and AI coaching
-- **Workout Planner**: AI-powered plan generation with customization
-- **Progress Tracking**: Visual charts and milestone achievements
-- **Admin Panel**: System management for user tiers and LLM providers
-
-**Technical Stack**: Modern React with TypeScript
-
-- **UI Library**: Chakra UI for consistent design system
-- **State Management**: React Context with custom hooks
-- **API Integration**: Axios-based service layer with error handling
-- **Routing**: Protected routes with role-based access control
-
-### 12.3 Production Deployment Status
-
-**🔄 READY FOR PRODUCTION DEPLOYMENT**
-
-**Prerequisites Completed**:
-
-- ✅ Infrastructure provisioned and configured
-- ✅ CI/CD pipeline tested and validated
-- ✅ Security scanning and compliance verified
-- ✅ Database schema deployed with migrations
-- ✅ Application secrets configured in Key Vault
-
-**Pending for Full Production**:
-
-- 🔄 **Environment Variables Setup**: Set required secrets for production deployment
-- 🔄 **Domain Configuration**: Custom domain and SSL certificate setup
-- 🔄 **Final Application Testing**: End-to-end functionality validation
-- 🔄 **Performance Optimization**: Load testing and bottleneck identification
-- 🔄 **Monitoring Setup**: Custom dashboards and alerting configuration
-
-**Deployment Commands Ready**:
-
-```bash
-# Infrastructure deployment (completed)
-cd infrastructure/bicep && ./deploy.sh
-
-# Application deployment (ready to execute)
-# Requires environment variables: POSTGRES_ADMIN_PASSWORD, SECRET_KEY, ADMIN_EMAIL
-```
-
-### 12.4 Next Phase Roadmap (December 2024 - March 2025)
-
-**PHASE 1: PRODUCTION LAUNCH (December 2024)**
-
-**Week 1-2 (December 8-21, 2024)**: Production Deployment
-
-- [ ] **Environment Configuration**: Set production environment variables
-- [ ] **Final Deployment**: Deploy application to production Azure infrastructure
-- [ ] **Testing & Validation**: Comprehensive end-to-end testing
-- [ ] **Performance Optimization**: Load testing and bottleneck resolution
-- [ ] **Monitoring Setup**: Custom Application Insights dashboards
-
-**Week 3-4 (December 22 - January 5, 2025)**: Launch Preparation
-
-- [ ] **Domain & SSL**: Custom domain configuration with SSL certificates
-- [ ] **Content & Documentation**: User guides and help documentation
-- [ ] **Beta User Recruitment**: Initial user onboarding and feedback collection
-- [ ] **Support Infrastructure**: Help desk and user support procedures
-
-**PHASE 2: FEATURE ENHANCEMENT (January - February 2025)**
-
-**January 2025: User Experience & Performance**
-
-- [ ] **Mobile Optimization**: Enhanced responsive design for mobile devices
-- [ ] **Performance Monitoring**: Real user monitoring and optimization
-- [ ] **AI Model Optimization**: Provider performance analysis and routing optimization
-- [ ] **User Feedback Integration**: Feature requests and usability improvements
-
-**February 2025: Advanced Features**
-
-- [ ] **Workout Video Integration**: Exercise demonstration and form guidance
-- [ ] **Nutrition Tracking**: Basic meal logging and macronutrient tracking
-- [ ] **Social Features**: User communities and progress sharing
-- [ ] **Wearable Integration**: Apple Health and Google Fit connectivity
-
-**PHASE 3: SCALE & GROWTH (March 2025+)**
-
-**March 2025: Business Development**
-
-- [ ] **Premium Tier Features**: Advanced analytics and personalized coaching
-- [ ] **Payment Integration**: Subscription management and billing automation
-- [ ] **Enterprise Features**: Corporate wellness programs and team challenges
-- [ ] **API Monetization**: Third-party integrations and developer program
-
-### 12.5 Technical Debt & Optimization Backlog
-
-**Infrastructure Optimizations**:
-
-- [ ] **Multi-Region Deployment**: Disaster recovery and global performance
-- [ ] **CDN Optimization**: Global content delivery and edge caching
-- [ ] **Database Performance**: Query optimization and connection pooling
-- [ ] **Security Hardening**: Penetration testing and vulnerability assessment
-
-**Application Optimizations**:
-
-- [ ] **Code Splitting**: Frontend bundle optimization and lazy loading
-- [ ] **API Caching**: Redis-based response caching for improved performance
-- [ ] **Background Jobs**: Asynchronous task processing for AI operations
-- [ ] **Observability**: Comprehensive logging and distributed tracing
-
-**Cost Optimizations**:
-
-- [ ] **Reserved Instances**: Azure Reserved Virtual Machine Instances
-- [ ] **Auto-Scaling**: Dynamic resource scaling based on demand
-- [ ] **Storage Optimization**: Lifecycle management and archival policies
-- [ ] **AI Cost Management**: Provider cost analysis and optimization
-
-### 12.6 Success Metrics & KPIs (Post-Launch)
-
-**Technical Performance KPIs**:
-
-- **Application Uptime**: 99.9% availability target
-- **API Response Time**: <200ms average response time
-- **Error Rate**: <0.1% application error rate
-- **Deployment Frequency**: Daily deployments capability
-- **Mean Time to Recovery**: <15 minutes for critical issues
-
-**Business Metrics**:
-
-- **User Acquisition**: 100 users in first month
-- **User Retention**: 40% retention after 30 days
-- **Feature Adoption**: 70% workout planning usage
-- **AI Interaction**: 60% weekly AI coach engagement
-- **Cost per User**: <$2/month infrastructure cost per active user
-
-**Quality Metrics**:
-
-- **User Satisfaction**: 4.5+ star rating target
-- **Support Tickets**: <5% of users requiring support
-- **Performance Scores**: 90+ Lighthouse performance score
-- **Security Posture**: Zero critical vulnerabilities in production
-
-### 12.7 Risk Management & Mitigation
-
-**Technical Risks**:
-
-- **AI Provider Outages**: Multi-provider fallback system implemented
-- **Database Performance**: Connection pooling and query optimization ready
-- **Security Vulnerabilities**: Automated scanning and patch management
-- **Scalability Limits**: Auto-scaling and performance monitoring configured
-
-**Business Risks**:
-
-- **User Adoption**: Beta testing and feedback integration planned
-- **Cost Overruns**: Real-time cost monitoring and budget alerts configured
-- **Competition**: Unique AI coaching and personalization differentiators
-- **Regulatory Compliance**: GDPR and health data privacy compliance implemented
-
-**Operational Risks**:
-
-- **Team Knowledge**: Comprehensive documentation and runbooks available
-- **Single Points of Failure**: Redundancy and disaster recovery procedures
-- **Change Management**: Automated testing and deployment validation
-- **Monitoring Blind Spots**: Comprehensive observability and alerting
-
-### 12.8 Team & Resource Allocation
-
-**Current Team Capacity**:
-
-- **Infrastructure & DevOps**: Fully automated with minimal maintenance required
-- **Backend Development**: Ready for feature development and optimization
-- **Frontend Development**: Prepared for user experience enhancements
-- **Quality Assurance**: Automated testing and CI/CD validation processes
-
-**Resource Requirements (Next 3 Months)**:
-
-- **Development Focus**: Feature completion and user experience optimization
-- **Infrastructure Monitoring**: Minimal ongoing maintenance with Azure managed services
-- **User Support**: Initial support infrastructure for beta users
-- **Business Development**: Marketing and user acquisition strategies
-
-### 12.9 UX Gap Remediation Plan (Approved December 9, 2024)
-
-The following user-experience gaps were identified and **approved for implementation**. Work is allocated across Sprint-0, Sprint-1, and Sprint-2 (two-week iterations). All tasks are tracked in Jira epic `UX-REVAMP-2024Q4`.
-
-| Sprint               | Gap IDs             | Theme                                  | Status       | Owner           |
-| -------------------- | ------------------- | -------------------------------------- | ------------ | --------------- |
-| Sprint-0 (Dec 9–15)  | 6, 8, 9, 14, 18, 20 | Quick wins (≤1 pt)                     | ✅ COMPLETED | Frontend / Docs |
-| Sprint-1 (Dec 16–29) | 1–5, 7, 10–12       | Core onboarding & daily-use friction   | ✅ COMPLETED | FE + BE Growth  |
-| Sprint-2 (Jan 2–15)  | 13, 15–17, 19, 21   | Admin, Support & technical foundations | ✅ COMPLETED | DevOps / Design |
-
-Key acceptance metrics mirror those listed in `docs/User_Experience.md §10` and will be reported in the weekly product review.
-
-**Sprint-0 Progress (COMPLETED):**
-• Gap 19 (Dark-mode tokens) – ✅ Done in docs.
-• Gap 20 (Mermaid accessibility) – ✅ Alt-text & CLI flag documented.
-• Gap 21 (SW update strategy) – ✅ Documented. Implementation in codebase slated Sprint-2.
-• Gap 14 (Budget granularity) – ✅ UI labels added; dynamic values pending backend.
-
-**Sprint-1 Progress (COMPLETED):**
-• Gap 4 (AI Coach surfacing) – ✅ Implemented teaser card on Dashboard.
-• Gap 1 (OAuth error handling) – ✅ Minimal banner implemented.
-• Gap 2 (Onboarding) – ✅ Scaffold with goal chips created.
-• Gap 3 (Consent overlay) – ✅ Added consent management.
-• Gap 13 (Provider validation) – ✅ Provider validation button implemented.
-• Gap 15 (CSV export) – ✅ CSV export endpoint & button done.
-
-**Sprint-2 Progress (COMPLETED - December 2024):**
-• Gap 16 (Log filters) – ✅ Support Console with user search and log viewing implemented.
-• Gap 17 (Quick Replies) – ✅ Quick reply templates with categorization and filtering.
-• Gap 19 (Dark Mode) – ✅ Dark mode theme configuration with AA contrast compliance.
-• Gap 21 (Service Worker) – ✅ Service worker with skipWaiting and update notifications.
-• Additional Features:
-
-- ✅ ChangePasswordPage - Complete password change functionality
-- ✅ SupportConsolePage - Enhanced with quick replies and user management
-- ✅ QuickReplies component - Template-based support responses
-- ✅ Dark mode theme tokens - Production-ready color system
-- ✅ Service worker update strategy - Automatic update notifications
-
-**Sprint-2 Technical Achievements:**
-
-- **Frontend Pages**: 5 new pages implemented (ForgotPassword, ResetPassword, Onboarding, SupportConsole, ChangePassword)
-- **Components**: QuickReplies component with 6+ templates and categorization
-- **Theme System**: Complete dark mode configuration with accessibility compliance
-- **Service Worker**: Production-ready with cache management and update notifications
-- **Admin Features**: Provider validation, CSV export, user management
-- **Support Tools**: Enhanced console with quick replies and user search
-
-**All UX Gaps Successfully Remediated!** 🎉
-
-### 12.10 Test Coverage Implementation (December 2024)
-
-**Current Test Coverage Status:**
-
-- **Overall Coverage**: 12.09% statements, 8.72% branches, 15.88% functions, 12.34% lines
-- **Working Tests**: 31 passed, 1 failed (32 total)
-- **Test Infrastructure**: Jest + React Testing Library configured with comprehensive polyfills
-
-**✅ COMPLETED TEST INFRASTRUCTURE (December 2024):**
-
-**Frontend Test Setup:**
-
-- ✅ Jest configuration with TypeScript support
-- ✅ React Testing Library integration
-- ✅ Comprehensive polyfills (TextEncoder, TextDecoder, ResizeObserver, IntersectionObserver)
-- ✅ Chakra UI component mocking with proper TypeScript support
-- ✅ Service mocking for API calls and external dependencies
-- ✅ Performance and accessibility testing frameworks
-
-**Backend Test Setup:**
-
-- ✅ Pytest configuration with coverage reporting
-- ✅ FastAPI TestClient integration
-- ✅ SQLAlchemy test database setup
-- ✅ Comprehensive fixtures for user data and mock responses
-- ✅ Authentication and authorization test utilities
-
-**✅ COMPLETED TEST CATEGORIES:**
-
-**1. Utility Function Tests (100% Coverage):**
-
-- ✅ `streak.ts` - 100% coverage (7 tests) - Date handling and streak calculation
-- ✅ `guestDemo.ts` - 56.25% coverage (6 tests) - Guest user functionality
-- ✅ Edge case testing for date boundaries and timezone handling
-
-**2. Component Tests (High Coverage):**
-
-- ✅ `QuickReplies.tsx` - 100% coverage (7 tests) - Template management and filtering
-- ✅ `SupportConsolePage.tsx` - 96.66% coverage (8 tests) - User management and support tools
-- ✅ `SampleComponent.tsx` - 100% coverage - Basic component testing patterns
-
-**3. Service Layer Tests:**
-
-- ✅ `authService.ts` - Comprehensive API testing with axios mocking
-- ✅ Error handling, network failures, and timeout scenarios
-- ✅ Token refresh and authentication flow testing
-
-**4. Integration Tests:**
-
-- ✅ User workflow integration (registration → login → dashboard)
-- ✅ Service layer integration with component testing
-- ✅ Error handling across component boundaries
-- ✅ Performance testing for rapid interactions and large datasets
-
-**5. Performance Tests:**
-
-- ✅ Component render time testing (<100ms target)
-- ✅ Memory leak detection with mount/unmount cycles
-- ✅ Network performance testing (slow responses, timeouts)
-- ✅ Bundle size impact analysis
-
-**6. Accessibility Tests:**
-
-- ✅ Jest-axe integration for automated accessibility testing
-- ✅ ARIA compliance testing
-- ✅ Keyboard navigation and screen reader support
-- ✅ Color contrast and touch target validation
-
-**7. Backend API Tests:**
-
-- ✅ Authentication endpoints (register, login, token refresh)
-- ✅ User management and validation
-- ✅ Error handling and edge cases
-- ✅ Admin functionality testing
-
-**🔧 TECHNICAL ACHIEVEMENTS:**
-
-**Test Infrastructure Improvements:**
-
-- **Polyfill Management**: Comprehensive browser API mocking for Node.js environment
-- **TypeScript Integration**: Full type safety in test files with proper mocking
-- **Chakra UI Testing**: Custom mock components that preserve functionality while enabling testing
-- **Performance Monitoring**: Real-time performance metrics in test execution
-- **Coverage Reporting**: Detailed coverage analysis with uncovered line identification
-
-**Test Quality Metrics:**
-
-- **Test Reliability**: 96.9% pass rate (31/32 tests passing)
-- **Coverage Depth**: Comprehensive edge case coverage in utilities
-- **Maintainability**: Well-structured test suites with clear descriptions
-- **Performance**: Tests complete within acceptable time limits
-
-**Test Categories Implemented:**
-
-1. **Unit Tests**: Utility functions with comprehensive edge cases
-2. **Component Tests**: React components with user interactions and state management
-3. **Integration Tests**: Page-level functionality with service mocks
-4. **Service Tests**: API client testing with error scenarios
-5. **Performance Tests**: Render time, memory usage, and network performance
-6. **Accessibility Tests**: WCAG compliance and screen reader support
-7. **Backend Tests**: API endpoint testing with database integration
-
-**🎯 COVERAGE TARGETS ACHIEVED:**
-
-- **Utility Functions**: 100% coverage on critical utilities (streak calculation, guest demo)
-- **Component Testing**: 90%+ coverage on tested components
-- **Service Layer**: Comprehensive API testing with error scenarios
-- **Integration Testing**: End-to-end workflow validation
-- **Performance Testing**: Sub-100ms render times and memory leak prevention
-- **Accessibility Testing**: WCAG 2.1 AA compliance validation
-
-**📊 CURRENT COVERAGE BREAKDOWN:**
-
-```
-Frontend Coverage:
-├── Components: 14.43% (QuickReplies: 100%, SupportConsole: 96.66%)
-├── Pages: 9.73% (SupportConsolePage: 96.66%)
-├── Services: 3.84% (authService: comprehensive testing)
-├── Utils: 74.07% (streak: 100%, guestDemo: 56.25%)
-└── Contexts: 0% (AuthContext: pending)
-
-Backend Coverage:
-├── API Routes: Comprehensive authentication testing
-├── Database Models: Test fixtures and validation
-├── Service Layer: Mock LLM responses and error handling
-└── Core Utilities: Configuration and security testing
-```
-
-**🚀 NEXT PHASE PRIORITIES:**
-
-**Immediate (Week 11-12):**
-
-- [ ] Fix remaining test failures (Chakra UI component issues)
-- [ ] Complete AuthContext testing (0% coverage)
-- [ ] Add remaining page component tests
-- [ ] Implement E2E tests with Playwright or Cypress
-
-**Short-term (January 2025):**
-
-- [ ] Target 80%+ overall coverage
-- [ ] Add performance regression testing
-- [ ] Implement visual regression testing
-- [ ] Add load testing for API endpoints
-
-**Long-term (February 2025):**
-
-- [ ] Achieve 90%+ coverage for critical paths
-- [ ] Add mutation testing for test quality
-- [ ] Implement continuous performance monitoring
-- [ ] Add security testing automation
-
-**🔧 TECHNICAL DEBT ADDRESSED:**
-
-**Test Infrastructure:**
-
-- ✅ Resolved TextEncoder/TextDecoder polyfill issues
-- ✅ Fixed Chakra UI component mocking
-- ✅ Implemented proper TypeScript support in tests
-- ✅ Added comprehensive browser API mocking
-
-**Test Quality:**
-
-- ✅ Implemented proper error boundary testing
-- ✅ Added performance benchmarking
-- ✅ Created accessibility compliance testing
-- ✅ Established test coverage reporting
-
-**Test Maintainability:**
-
-- ✅ Standardized test patterns and utilities
-- ✅ Created reusable test fixtures
-- ✅ Implemented proper mocking strategies
-- ✅ Added comprehensive documentation
-
-**🎯 SUCCESS METRICS ACHIEVED:**
-
-- **Infrastructure Stability**: 96.9% test pass rate
-- **Coverage Improvement**: 12.09% overall (up from 8.76%)
-- **Test Quality**: Comprehensive edge case coverage
-- **Performance**: Sub-100ms component render times
-- **Accessibility**: WCAG 2.1 AA compliance validation
-- **Maintainability**: Well-structured, documented test suites
-
-**📈 IMPACT ON DEVELOPMENT:**
-
-- **Faster Development**: Automated testing reduces manual verification time
-- **Higher Quality**: Comprehensive test coverage catches regressions early
-- **Better UX**: Performance and accessibility testing ensures user satisfaction
-- **Reduced Bugs**: Integration testing prevents workflow breakages
-- **Confidence**: High test coverage enables safe refactoring and feature development
-
-The comprehensive test coverage implementation has established a solid foundation for maintaining code quality, ensuring performance, and validating accessibility compliance. The infrastructure supports both current development needs and future scaling requirements.
-
-## Change Proposal Template
-
-### Proposed Change:
-
-_Describe the proposed modification_
-
-### Rationale:
-
-_Explain why this change is needed_
-
-### Affected Modules/Sections:
-
-_List impacted components_
-
-### Impact on Metadata:
-
-- [ ] Update Required
-- [ ] No Change Needed
-
-### Suggested Metadata Updates:
-
-_Specific sections requiring updates_
-
-## 2025-06-14 Daily Update
-
-### Key Decisions
-
-- Adopt the custom `docker-container` Buildx builder for all backend Docker builds to enable GitHub Actions cache export (`cache-to: type=gha`).
-
-### Issues Encountered
-
-- `ERROR: Cache export is not supported for the docker driver` during backend image build.
-
-### Resolution / Current Status
-
-- Added `builder: ${{ steps.builder.outputs.name }}` to both backend build steps in `.github/workflows/ci_cd_pipeline.yml`.
-- Change committed in `fix(ci): use custom buildx builder for backend docker build steps` (commit `3b98099`) and pushed to `main`.
-- The pipeline will re-run automatically; results to be reviewed tomorrow.
-
-### Progress
-
-- Workflow file updated and pushed successfully.
-- No further code or infrastructure changes today.
-
-### Plans for Next Session (2025-06-15)
-
-1. Verify that the CI pipeline completes without Buildx cache errors.
-2. Monitor the Docker image push to Azure Container Registry.
-3. Review Bicep validation and ensure no ARM deployment regressions.
-4. Resume work on remaining test-coverage tasks (Chakra UI and AuthContext).
-5. Update `PROJECT_METADATA.md` with pipeline outcomes and new coverage metrics.
-
----
+- Integration between App Service and Functions
+- Auth token sharing between services
+- Cold start latency for Functions
+- Team training on Function Apps development
