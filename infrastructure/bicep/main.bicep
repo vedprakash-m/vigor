@@ -54,18 +54,18 @@ var commonTags = {
   CostCenter: 'engineering'
 }
 
-// Resource names
-var appServicePlanName = '${appName}-${environment}-plan'
-var appServiceName = '${appName}-${environment}-backend'
-var frontendAppName = '${appName}-${environment}-frontend'
-var postgresServerName = '${appName}-${environment}-db-${uniqueSuffix}'
-var storageSuffix = toLower(substring(uniqueString(databaseResourceGroup), 0, 8))
-var storageAccountName = '${appName}sa${storageSuffix}'
-var kvDeployHash = toLower(substring(uniqueString('${deployment().name}'), 0, 6))
-var keyVaultName = toLower('${appName}${kvDeployHash}kv')
-var appInsightsName = '${appName}-${environment}-ai'
-var logAnalyticsName = '${appName}-${environment}-la'
-var containerRegistryName = '${appName}acr${shortSuffix}'
+// ---------------------------------------------------------------------------
+// Static resource names as per naming standard (no random suffixes)
+// ---------------------------------------------------------------------------
+var appServicePlanName = 'vigor-app-plan'
+var backendWebAppName = 'vigor-backend'
+var frontendAppName = 'vigor-frontend'
+var postgresServerName = 'vigor-db-server'
+var storageAccountName = 'vigorsa99'
+var keyVaultName = 'vigor-kv'
+var appInsightsName = 'vigor-ai'
+var logAnalyticsName = 'vigor-la'
+var containerRegistryName = 'vigoracr'
 
 // Log Analytics Workspace
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
@@ -104,7 +104,7 @@ module storageMod './storage.bicep' = {
   }
 }
 
-// Container Registry - Use Standard (widely supported) or skip entirely in non-prod
+// Container Registry (Standard)
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' = if (deployContainerRegistry) {
   name: containerRegistryName
   location: location
@@ -179,7 +179,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
 
 // App Service (Backend)
 resource appService 'Microsoft.Web/sites@2023-01-01' = {
-  name: '${appServiceName}-backend'
+  name: backendWebAppName
   location: location
   tags: commonTags
   identity: {
