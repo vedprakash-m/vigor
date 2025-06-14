@@ -584,9 +584,9 @@ jobs:
           echo "- ${{ env.Backend }} Backend tests" >> $GITHUB_STEP_SUMMARY
           echo "- ${{ env.Frontend }} Frontend tests" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${{ needs.prerequisites.result }}" == "success" && 
-                "${{ needs.security-scan.result }}" != "failure" && 
-                "${{ needs.backend-lint-test.result }}" != "failure" && 
+          if [[ "${{ needs.prerequisites.result }}" == "success" &&
+                "${{ needs.security-scan.result }}" != "failure" &&
+                "${{ needs.backend-lint-test.result }}" != "failure" &&
                 "${{ needs.frontend-lint-test.result }}" != "failure" ]]; then
             echo "### ✅ CI pipeline completed successfully!" >> $GITHUB_STEP_SUMMARY
           else

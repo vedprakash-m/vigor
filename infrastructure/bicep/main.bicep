@@ -99,7 +99,6 @@ module storageMod './storage.bicep' = {
     name: storageAccountName
     location: location
     tags: commonTags
-    environment: environment
   }
 }
 
@@ -123,25 +122,28 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' =
   }
 }
 
-// Key Vault
-resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
-  name: keyVaultName
-  location: location
-  tags: commonTags
-  properties: {
-    sku: {
-      family: 'A'
-      name: 'standard'
-    }
+// ---------------------------------------------------------------------------
+// Key Vault - Moved to database resource group for persistence
+// ---------------------------------------------------------------------------
+
+// Deploy Key Vault to the database resource group
+module keyVaultModule 'keyvault.bicep' = {
+  name: 'keyVaultDeployment'
+  scope: resourceGroup(databaseResourceGroup) // This deploys to the DB resource group
+  params: {
+    name: keyVaultName
+    location: location
+    tags: commonTags
     tenantId: tenant().tenantId
-    softDeleteRetentionInDays: 30
     enablePurgeProtection: environment == 'production' || environment == 'prod'
-    publicNetworkAccess: 'Disabled'
-    enabledForDeployment: false
-    enabledForDiskEncryption: false
-    enabledForTemplateDeployment: false
-    accessPolicies: []
+    softDeleteRetentionInDays: environment == 'production' ? 90 : 30
   }
+}
+
+// Reference to the Key Vault for access policies and secrets
+resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+  name: keyVaultName
+  scope: resourceGroup(databaseResourceGroup)
 }
 
 // ---------------------------------------------------------------------------
@@ -247,54 +249,35 @@ resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
   properties: {}
 }
 
-// Key Vault Access Policy for App Service
-resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = {
-  parent: keyVault
-  name: 'add'
-  properties: {
-    accessPolicies: [
-      {
-        tenantId: tenant().tenantId
-        objectId: appService.identity.principalId
-        permissions: {
-          secrets: ['Get', 'List']
-        }
-      }
-    ]
+// Deploy KeyVault secrets to the database resource group
+module keyVaultSecretsModule 'keyvault-secrets.bicep' = {
+  name: 'keyVaultSecretsDeployment'
+  scope: resourceGroup(databaseResourceGroup)
+  params: {
+    keyVaultName: keyVaultName
+    secretKeyValue: secretKey
+    openaiApiKeyValue: openaiApiKey
+    geminiApiKeyValue: geminiApiKey
+    perplexityApiKeyValue: perplexityApiKey
   }
+  dependsOn: [
+    keyVaultModule
+  ]
 }
 
-// Key Vault Secrets
-resource secretKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'secret-key'
-  properties: {
-    value: secretKey
+// Add App Service access policy to KeyVault in the database resource group
+module appServiceKeyVaultAccess 'keyvault-access.bicep' = {
+  name: 'appServiceKeyVaultAccess'
+  scope: resourceGroup(databaseResourceGroup)
+  params: {
+    keyVaultName: keyVaultName
+    principalId: appService.identity.principalId
+    tenantId: tenant().tenantId
   }
-}
-
-resource openaiApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'openai-api-key'
-  properties: {
-    value: openaiApiKey
-  }
-}
-
-resource geminiApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'gemini-api-key'
-  properties: {
-    value: geminiApiKey
-  }
-}
-
-resource perplexityApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'perplexity-api-key'
-  properties: {
-    value: perplexityApiKey
-  }
+  dependsOn: [
+    keyVaultModule
+    keyVaultSecretsModule
+  ]
 }
 
 // Outputs

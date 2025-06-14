@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "1708873696524925646"
+      "templateHash": "2836922004271610645"
     }
   },
   "parameters": {
@@ -82,23 +82,22 @@
         "description": "App Service SKU"
       }
     },
-    "redisCapacity": {
-      "type": "int",
-      "defaultValue": 1,
+    "databaseResourceGroup": {
+      "type": "string",
+      "defaultValue": "vigor-db-rg",
       "metadata": {
-        "description": "Redis capacity"
+        "description": "Resource group name where database resources (PostgreSQL) will live. Allows you to delete the app RG without losing data."
       }
     },
-    "postgresStorageMb": {
-      "type": "int",
-      "defaultValue": 10240,
+    "deployContainerRegistry": {
+      "type": "bool",
+      "defaultValue": false,
       "metadata": {
-        "description": "PostgreSQL storage in MB"
+        "description": "Deploy Azure Container Registry (set to true only if you need a new ACR)."
       }
     }
   },
   "variables": {
-    "uniqueSuffix": "[uniqueString(resourceGroup().id)]",
     "commonTags": {
       "Environment": "[parameters('environment')]",
       "Application": "[parameters('appName')]",
@@ -106,15 +105,16 @@
       "Project": "vigor-fitness",
       "CostCenter": "engineering"
     },
-    "appServicePlanName": "[format('{0}-{1}-asp', parameters('appName'), parameters('environment'))]",
-    "appServiceName": "[format('{0}-{1}-app-{2}', parameters('appName'), parameters('environment'), variables('uniqueSuffix'))]",
-    "postgresServerName": "[format('{0}-{1}-db-{2}', parameters('appName'), parameters('environment'), variables('uniqueSuffix'))]",
-    "redisName": "[format('{0}-{1}-redis-{2}', parameters('appName'), parameters('environment'), variables('uniqueSuffix'))]",
-    "storageAccountName": "[format('{0}{1}sa{2}', parameters('appName'), parameters('environment'), variables('uniqueSuffix'))]",
-    "keyVaultName": "[format('{0}-{1}-kv-{2}', parameters('appName'), parameters('environment'), variables('uniqueSuffix'))]",
-    "appInsightsName": "[format('{0}-{1}-ai', parameters('appName'), parameters('environment'))]",
-    "logAnalyticsName": "[format('{0}-{1}-la', parameters('appName'), parameters('environment'))]",
-    "containerRegistryName": "[format('{0}acr', parameters('appName'))]"
+    "appServicePlanName": "vigor-app-plan",
+    "backendWebAppName": "vigor-backend",
+    "frontendAppName": "vigor-frontend",
+    "postgresServerName": "vigor-db-server",
+    "storageAccountName": "vigorsa99",
+    "keyVaultName": "vigor-kv",
+    "appInsightsName": "vigor-ai",
+    "logAnalyticsName": "vigor-la",
+    "containerRegistryName": "vigoracr",
+    "databaseName": "vigor_db"
   },
   "resources": [
     {
@@ -146,117 +146,23 @@
       ]
     },
     {
-      "type": "Microsoft.Storage/storageAccounts",
-      "apiVersion": "2023-01-01",
-      "name": "[variables('storageAccountName')]",
-      "location": "[parameters('location')]",
-      "tags": "[variables('commonTags')]",
-      "sku": {
-        "name": "[if(equals(parameters('environment'), 'production'), 'Standard_ZRS', 'Standard_LRS')]"
-      },
-      "kind": "StorageV2",
-      "properties": {
-        "publicNetworkAccess": "Disabled",
-        "allowBlobPublicAccess": false,
-        "allowSharedKeyAccess": true,
-        "defaultToOAuthAuthentication": true,
-        "minimumTlsVersion": "TLS1_2",
-        "supportsHttpsTrafficOnly": true
-      }
-    },
-    {
+      "condition": "[parameters('deployContainerRegistry')]",
       "type": "Microsoft.ContainerRegistry/registries",
       "apiVersion": "2023-07-01",
       "name": "[variables('containerRegistryName')]",
       "location": "[parameters('location')]",
       "tags": "[variables('commonTags')]",
       "sku": {
-        "name": "[if(equals(parameters('environment'), 'production'), 'Premium', 'Standard')]"
+        "name": "Basic"
       },
       "properties": {
         "adminUserEnabled": true,
-        "publicNetworkAccess": "[if(equals(parameters('environment'), 'production'), 'Disabled', 'Enabled')]",
-        "zoneRedundancy": "[if(equals(parameters('environment'), 'production'), 'Enabled', 'Disabled')]"
-      }
-    },
-    {
-      "type": "Microsoft.KeyVault/vaults",
-      "apiVersion": "2023-07-01",
-      "name": "[variables('keyVaultName')]",
-      "location": "[parameters('location')]",
-      "tags": "[variables('commonTags')]",
-      "properties": {
-        "sku": {
-          "family": "A",
-          "name": "standard"
-        },
-        "tenantId": "[tenant().tenantId]",
-        "softDeleteRetentionInDays": 30,
-        "enablePurgeProtection": "[equals(parameters('environment'), 'production')]",
-        "publicNetworkAccess": "Disabled",
-        "enabledForDeployment": false,
-        "enabledForDiskEncryption": false,
-        "enabledForTemplateDeployment": false,
-        "accessPolicies": []
-      }
-    },
-    {
-      "type": "Microsoft.DBforPostgreSQL/flexibleServers",
-      "apiVersion": "2023-06-01-preview",
-      "name": "[variables('postgresServerName')]",
-      "location": "[parameters('location')]",
-      "tags": "[variables('commonTags')]",
-      "sku": {
-        "name": "[if(equals(parameters('environment'), 'production'), 'GP_Standard_D2s_v3', 'B_Standard_B1ms')]",
-        "tier": "[if(equals(parameters('environment'), 'production'), 'GeneralPurpose', 'Burstable')]"
-      },
-      "properties": {
-        "version": "14",
-        "administratorLogin": "[parameters('postgresAdminUsername')]",
-        "administratorLoginPassword": "[parameters('postgresAdminPassword')]",
-        "storage": {
-          "storageSizeGB": "[div(parameters('postgresStorageMb'), 1024)]"
-        },
-        "backup": {
-          "backupRetentionDays": "[if(equals(parameters('environment'), 'production'), 35, 7)]",
-          "geoRedundantBackup": "[if(equals(parameters('environment'), 'production'), 'Enabled', 'Disabled')]"
-        },
-        "highAvailability": {
-          "mode": "[if(equals(parameters('environment'), 'production'), 'ZoneRedundant', 'Disabled')]"
-        },
-        "network": {
-          "publicNetworkAccess": "Disabled"
-        }
-      }
-    },
-    {
-      "type": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
-      "apiVersion": "2023-06-01-preview",
-      "name": "[format('{0}/{1}', variables('postgresServerName'), 'vigor_db')]",
-      "properties": {
-        "charset": "utf8",
-        "collation": "en_US.utf8"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName'))]"
-      ]
-    },
-    {
-      "type": "Microsoft.Cache/redis",
-      "apiVersion": "2023-08-01",
-      "name": "[variables('redisName')]",
-      "location": "[parameters('location')]",
-      "tags": "[variables('commonTags')]",
-      "properties": {
-        "sku": {
-          "name": "[if(equals(parameters('environment'), 'production'), 'Standard', 'Basic')]",
-          "family": "C",
-          "capacity": "[parameters('redisCapacity')]"
-        },
-        "enableNonSslPort": false,
-        "minimumTlsVersion": "1.2",
-        "redisConfiguration": {
-          "aad-enabled": "true"
+        "publicNetworkAccess": "Enabled",
+        "policies": {
+          "retentionPolicy": {
+            "status": "enabled",
+            "days": 7
+          }
         }
       }
     },
@@ -277,7 +183,7 @@
     {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2023-01-01",
-      "name": "[format('{0}-backend', variables('appServiceName'))]",
+      "name": "[variables('backendWebAppName')]",
       "location": "[parameters('location')]",
       "tags": "[variables('commonTags')]",
       "identity": {
@@ -304,11 +210,7 @@
             },
             {
               "name": "DATABASE_URL",
-              "value": "[format('postgresql://{0}:{1}@{2}:5432/{3}?sslmode=require', parameters('postgresAdminUsername'), parameters('postgresAdminPassword'), reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName')), '2023-06-01-preview').fullyQualifiedDomainName, 'vigor_db')]"
-            },
-            {
-              "name": "REDIS_URL",
-              "value": "[format('rediss://:{0}@{1}:{2}', listKeys(resourceId('Microsoft.Cache/redis', variables('redisName')), '2023-08-01').primaryKey, reference(resourceId('Microsoft.Cache/redis', variables('redisName')), '2023-08-01').hostName, reference(resourceId('Microsoft.Cache/redis', variables('redisName')), '2023-08-01').sslPort)]"
+              "value": "[format('postgresql://{0}:{1}@{2}:5432/{3}?sslmode=require', parameters('postgresAdminUsername'), parameters('postgresAdminPassword'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('databaseResourceGroup')), 'Microsoft.Resources/deployments', 'dbModule'), '2022-09-01').outputs.fullyQualifiedDomainName.value, variables('databaseName'))]"
             },
             {
               "name": "OPENAI_API_KEY",
@@ -340,88 +242,496 @@
       "dependsOn": [
         "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
         "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
-        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
-        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers/databases', variables('postgresServerName'), 'vigor_db')]",
-        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName'))]",
-        "[resourceId('Microsoft.Cache/redis', variables('redisName'))]"
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('databaseResourceGroup')), 'Microsoft.Resources/deployments', 'dbModule')]"
       ]
     },
     {
       "type": "Microsoft.Web/staticSites",
       "apiVersion": "2023-01-01",
-      "name": "[format('{0}-frontend', variables('appServiceName'))]",
-      "location": "East US2",
+      "name": "[variables('frontendAppName')]",
+      "location": "Central US",
       "tags": "[variables('commonTags')]",
       "sku": {
-        "name": "[if(equals(parameters('environment'), 'production'), 'Standard', 'Free')]"
+        "name": "Free"
       },
       "properties": {}
     },
     {
-      "type": "Microsoft.KeyVault/vaults/accessPolicies",
-      "apiVersion": "2023-07-01",
-      "name": "[format('{0}/{1}', variables('keyVaultName'), 'add')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "storageModule",
+      "resourceGroup": "[parameters('databaseResourceGroup')]",
       "properties": {
-        "accessPolicies": [
-          {
-            "tenantId": "[tenant().tenantId]",
-            "objectId": "[reference(resourceId('Microsoft.Web/sites', format('{0}-backend', variables('appServiceName'))), '2023-01-01', 'full').identity.principalId]",
-            "permissions": {
-              "secrets": [
-                "Get",
-                "List"
-              ]
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[variables('storageAccountName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[variables('commonTags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "10617020757957317046"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2023-01-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard_LRS"
+              },
+              "kind": "StorageV2",
+              "properties": {
+                "publicNetworkAccess": "Disabled",
+                "allowBlobPublicAccess": false,
+                "allowSharedKeyAccess": true,
+                "defaultToOAuthAuthentication": true,
+                "minimumTlsVersion": "TLS1_2",
+                "supportsHttpsTrafficOnly": true
+              }
+            }
+          ],
+          "outputs": {
+            "storageAccountName": {
+              "type": "string",
+              "value": "[parameters('name')]"
             }
           }
-        ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "keyVaultDeployment",
+      "resourceGroup": "[parameters('databaseResourceGroup')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[variables('keyVaultName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[variables('commonTags')]"
+          },
+          "tenantId": {
+            "value": "[tenant().tenantId]"
+          },
+          "enablePurgeProtection": {
+            "value": "[or(equals(parameters('environment'), 'production'), equals(parameters('environment'), 'prod'))]"
+          },
+          "softDeleteRetentionInDays": "[if(equals(parameters('environment'), 'production'), createObject('value', 90), createObject('value', 30))]"
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "9542085294831373171"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            },
+            "tenantId": {
+              "type": "string"
+            },
+            "enablePurgeProtection": {
+              "type": "bool",
+              "defaultValue": true
+            },
+            "softDeleteRetentionInDays": {
+              "type": "int",
+              "defaultValue": 90
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults",
+              "apiVersion": "2023-07-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "family": "A",
+                  "name": "standard"
+                },
+                "tenantId": "[parameters('tenantId')]",
+                "softDeleteRetentionInDays": "[parameters('softDeleteRetentionInDays')]",
+                "enablePurgeProtection": "[parameters('enablePurgeProtection')]",
+                "publicNetworkAccess": "Enabled",
+                "enabledForDeployment": false,
+                "enabledForDiskEncryption": false,
+                "enabledForTemplateDeployment": true,
+                "accessPolicies": []
+              }
+            }
+          ],
+          "outputs": {
+            "keyVaultName": {
+              "type": "string",
+              "value": "[parameters('name')]"
+            },
+            "keyVaultId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.KeyVault/vaults', parameters('name'))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "dbModule",
+      "resourceGroup": "[parameters('databaseResourceGroup')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "postgresServerName": {
+            "value": "[variables('postgresServerName')]"
+          },
+          "postgresAdminUsername": {
+            "value": "[parameters('postgresAdminUsername')]"
+          },
+          "postgresAdminPassword": {
+            "value": "[parameters('postgresAdminPassword')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "7734256894918855861"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "environment": {
+              "type": "string"
+            },
+            "postgresServerName": {
+              "type": "string"
+            },
+            "postgresAdminUsername": {
+              "type": "string"
+            },
+            "postgresAdminPassword": {
+              "type": "securestring"
+            }
+          },
+          "variables": {
+            "commonTags": {
+              "Environment": "[parameters('environment')]",
+              "ManagedBy": "bicep",
+              "Component": "database"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+              "apiVersion": "2023-06-01-preview",
+              "name": "[parameters('postgresServerName')]",
+              "location": "[parameters('location')]",
+              "tags": "[variables('commonTags')]",
+              "sku": {
+                "name": "Standard_B1ms",
+                "tier": "Burstable"
+              },
+              "properties": {
+                "version": "14",
+                "administratorLogin": "[parameters('postgresAdminUsername')]",
+                "administratorLoginPassword": "[parameters('postgresAdminPassword')]",
+                "storage": {
+                  "storageSizeGB": 32
+                },
+                "backup": {
+                  "backupRetentionDays": 7,
+                  "geoRedundantBackup": "Disabled"
+                },
+                "highAvailability": {
+                  "mode": "Disabled"
+                },
+                "network": {
+                  "publicNetworkAccess": "Disabled"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
+              "apiVersion": "2023-06-01-preview",
+              "name": "[format('{0}/{1}', parameters('postgresServerName'), 'vigor_db')]",
+              "properties": {
+                "charset": "utf8",
+                "collation": "en_US.utf8"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "fullyQualifiedDomainName": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName')), '2023-06-01-preview').fullyQualifiedDomainName]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "keyVaultSecretsDeployment",
+      "resourceGroup": "[parameters('databaseResourceGroup')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[variables('keyVaultName')]"
+          },
+          "secretKeyValue": {
+            "value": "[parameters('secretKey')]"
+          },
+          "openaiApiKeyValue": {
+            "value": "[parameters('openaiApiKey')]"
+          },
+          "geminiApiKeyValue": {
+            "value": "[parameters('geminiApiKey')]"
+          },
+          "perplexityApiKeyValue": {
+            "value": "[parameters('perplexityApiKey')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "3712403445683667525"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string"
+            },
+            "secretKeyValue": {
+              "type": "securestring"
+            },
+            "openaiApiKeyValue": {
+              "type": "securestring",
+              "defaultValue": ""
+            },
+            "geminiApiKeyValue": {
+              "type": "securestring",
+              "defaultValue": ""
+            },
+            "perplexityApiKeyValue": {
+              "type": "securestring",
+              "defaultValue": ""
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults/accessPolicies",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'add')]",
+              "properties": {
+                "accessPolicies": [
+                  {
+                    "tenantId": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').tenantId]",
+                    "objectId": "00000000-0000-0000-0000-000000000000",
+                    "permissions": {
+                      "secrets": [
+                        "get",
+                        "list",
+                        "set"
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'secret-key')]",
+              "properties": {
+                "value": "[parameters('secretKeyValue')]"
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('openaiApiKeyValue')))]",
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'openai-api-key')]",
+              "properties": {
+                "value": "[parameters('openaiApiKeyValue')]"
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('geminiApiKeyValue')))]",
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'gemini-api-key')]",
+              "properties": {
+                "value": "[parameters('geminiApiKeyValue')]"
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('perplexityApiKeyValue')))]",
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'perplexity-api-key')]",
+              "properties": {
+                "value": "[parameters('perplexityApiKeyValue')]"
+              }
+            }
+          ]
+        }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/sites', format('{0}-backend', variables('appServiceName')))]",
-        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('databaseResourceGroup')), 'Microsoft.Resources/deployments', 'keyVaultDeployment')]"
       ]
     },
     {
-      "type": "Microsoft.KeyVault/vaults/secrets",
-      "apiVersion": "2023-07-01",
-      "name": "[format('{0}/{1}', variables('keyVaultName'), 'secret-key')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "appServiceKeyVaultAccess",
+      "resourceGroup": "[parameters('databaseResourceGroup')]",
       "properties": {
-        "value": "[parameters('secretKey')]"
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[variables('keyVaultName')]"
+          },
+          "principalId": {
+            "value": "[reference(resourceId('Microsoft.Web/sites', variables('backendWebAppName')), '2023-01-01', 'full').identity.principalId]"
+          },
+          "tenantId": {
+            "value": "[tenant().tenantId]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "741835170902274848"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string"
+            },
+            "principalId": {
+              "type": "string"
+            },
+            "tenantId": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults/accessPolicies",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'add')]",
+              "properties": {
+                "accessPolicies": [
+                  {
+                    "tenantId": "[parameters('tenantId')]",
+                    "objectId": "[parameters('principalId')]",
+                    "permissions": {
+                      "secrets": [
+                        "get",
+                        "list"
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "accessPolicyId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.KeyVault/vaults/accessPolicies', parameters('keyVaultName'), 'add')]"
+            }
+          }
+        }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
-      ]
-    },
-    {
-      "type": "Microsoft.KeyVault/vaults/secrets",
-      "apiVersion": "2023-07-01",
-      "name": "[format('{0}/{1}', variables('keyVaultName'), 'openai-api-key')]",
-      "properties": {
-        "value": "[parameters('openaiApiKey')]"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
-      ]
-    },
-    {
-      "type": "Microsoft.KeyVault/vaults/secrets",
-      "apiVersion": "2023-07-01",
-      "name": "[format('{0}/{1}', variables('keyVaultName'), 'gemini-api-key')]",
-      "properties": {
-        "value": "[parameters('geminiApiKey')]"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
-      ]
-    },
-    {
-      "type": "Microsoft.KeyVault/vaults/secrets",
-      "apiVersion": "2023-07-01",
-      "name": "[format('{0}/{1}', variables('keyVaultName'), 'perplexity-api-key')]",
-      "properties": {
-        "value": "[parameters('perplexityApiKey')]"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+        "[resourceId('Microsoft.Web/sites', variables('backendWebAppName'))]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('databaseResourceGroup')), 'Microsoft.Resources/deployments', 'keyVaultDeployment')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('databaseResourceGroup')), 'Microsoft.Resources/deployments', 'keyVaultSecretsDeployment')]"
       ]
     }
   ],
@@ -432,19 +742,15 @@
     },
     "backendUrl": {
       "type": "string",
-      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', format('{0}-backend', variables('appServiceName'))), '2023-01-01').defaultHostName)]"
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', variables('backendWebAppName')), '2023-01-01').defaultHostName)]"
     },
     "frontendUrl": {
       "type": "string",
-      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', format('{0}-frontend', variables('appServiceName'))), '2023-01-01').defaultHostname)]"
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', variables('frontendAppName')), '2023-01-01').defaultHostname)]"
     },
     "postgresServerFqdn": {
       "type": "string",
-      "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName')), '2023-06-01-preview').fullyQualifiedDomainName]"
-    },
-    "redisHostname": {
-      "type": "string",
-      "value": "[reference(resourceId('Microsoft.Cache/redis', variables('redisName')), '2023-08-01').hostName]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('databaseResourceGroup')), 'Microsoft.Resources/deployments', 'dbModule'), '2022-09-01').outputs.fullyQualifiedDomainName.value]"
     },
     "keyVaultName": {
       "type": "string",
@@ -452,7 +758,7 @@
     },
     "containerRegistryLoginServer": {
       "type": "string",
-      "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', variables('containerRegistryName')), '2023-07-01').loginServer]"
+      "value": "[if(parameters('deployContainerRegistry'), reference(resourceId('Microsoft.ContainerRegistry/registries', variables('containerRegistryName')), '2023-07-01').loginServer, '')]"
     },
     "applicationInsightsConnectionString": {
       "type": "string",

@@ -1,0 +1,47 @@
+version: 2
+updates:
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # Python backend dependencies
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+    ignore:
+      # Ignore patch updates for non-critical packages
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
+
+  # Npm frontend dependencies
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "javascript"
+    # Group updates to reduce PR noise
+    groups:
+      dev-dependencies:
+        patterns:
+          - "*eslint*"
+          - "*prettier*"
+          - "*test*"
+          - "*jest*"
+      minor-patch-updates:
+        update-types:
+          - "minor"
+          - "patch"

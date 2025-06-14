@@ -1,0 +1,102 @@
+name: "Manage Secrets"
+description: "Centralized secret management for secure handling of credentials and API keys"
+
+inputs:
+  azure-authentication:
+    description: "Enable Azure authentication"
+    required: false
+    default: "true"
+  api-keys:
+    description: "Enable API key extraction"
+    required: false
+    default: "true"
+
+outputs:
+  openai-api-key:
+    description: "Sanitized OpenAI API Key"
+    value: ${{ steps.extract-api-keys.outputs.openai-api-key }}
+  gemini-api-key:
+    description: "Sanitized Gemini API Key"
+    value: ${{ steps.extract-api-keys.outputs.gemini-api-key }}
+  perplexity-api-key:
+    description: "Sanitized Perplexity API Key"
+    value: ${{ steps.extract-api-keys.outputs.perplexity-api-key }}
+  required-secrets-valid:
+    description: "Whether all required secrets are valid"
+    value: ${{ steps.validate-secrets.outputs.required-secrets-valid }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate required secrets
+      id: validate-secrets
+      shell: bash
+      run: |
+        echo "⚙️ Validating required secrets..."
+
+        # Set initial validation flag
+        required_valid=true
+
+        # Check required secrets
+        if [ -z "${{ secrets.POSTGRES_ADMIN_PASSWORD }}" ]; then
+          echo "❌ Missing required secret: POSTGRES_ADMIN_PASSWORD"
+          required_valid=false
+        fi
+
+        if [ -z "${{ secrets.SECRET_KEY }}" ]; then
+          echo "❌ Missing required secret: SECRET_KEY"
+          required_valid=false
+        fi
+
+        if [ -z "${{ secrets.ADMIN_EMAIL }}" ]; then
+          echo "❌ Missing required secret: ADMIN_EMAIL"
+          required_valid=false
+        fi
+
+        # Azure specific secrets if enabled
+        if [ "${{ inputs.azure-authentication }}" == "true" ]; then
+          if [ -z "${{ secrets.AZURE_CLIENT_ID }}" ] || [ -z "${{ secrets.AZURE_TENANT_ID }}" ] || [ -z "${{ secrets.AZURE_SUBSCRIPTION_ID }}" ]; then
+            echo "❌ Missing required Azure authentication secrets"
+            required_valid=false
+          fi
+        fi
+
+        echo "required-secrets-valid=$required_valid" >> $GITHUB_OUTPUT
+
+        if [ "$required_valid" == "true" ]; then
+          echo "✅ All required secrets are valid"
+        fi
+
+    - name: Extract and sanitize API keys
+      id: extract-api-keys
+      if: inputs.api-keys == 'true'
+      shell: bash
+      run: |
+        echo "🔑 Extracting and sanitizing API keys..."
+
+        # Function to sanitize and export API key with fallback
+        sanitize_api_key() {
+          local name=$1
+          local secret_value=$2
+          local fallback_value=${3:-"null"}
+
+          # Use the provided secret or fallback to null
+          if [ -n "$secret_value" ]; then
+            # If secret exists but is whitespace only, use fallback
+            if [ -z "$(echo "$secret_value" | tr -d '[:space:]')" ]; then
+              echo "$name=$(echo -n "$fallback_value" | base64)" >> $GITHUB_OUTPUT
+              echo "⚠️ $name is empty or whitespace only, using fallback"
+            else
+              echo "$name=$(echo -n "$secret_value" | base64)" >> $GITHUB_OUTPUT
+              echo "✅ $name is valid"
+            fi
+          else
+            echo "$name=$(echo -n "$fallback_value" | base64)" >> $GITHUB_OUTPUT
+            echo "⚠️ $name is not provided, using fallback"
+          fi
+        }
+
+        # Process each API key
+        sanitize_api_key "openai-api-key" "${{ secrets.OPENAI_API_KEY }}"
+        sanitize_api_key "gemini-api-key" "${{ secrets.GEMINI_API_KEY }}"
+        sanitize_api_key "perplexity-api-key" "${{ secrets.PERPLEXITY_API_KEY }}"
