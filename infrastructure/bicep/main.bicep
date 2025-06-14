@@ -45,6 +45,7 @@ param deployContainerRegistry bool = environment == 'production' || environment 
 
 // Variables
 var uniqueSuffix = uniqueString(resourceGroup().id)
+var shortSuffix = toLower(substring(uniqueString(resourceGroup().id), 0, 8))
 var commonTags = {
   Environment: environment
   Application: appName
@@ -57,11 +58,11 @@ var commonTags = {
 var appServicePlanName = '${appName}-${environment}-asp'
 var appServiceName = '${appName}-${environment}-app-${uniqueSuffix}'
 var postgresServerName = '${appName}-${environment}-db-${uniqueSuffix}'
-var storageAccountName = '${appName}${environment}sa${uniqueSuffix}'
-var keyVaultName = toLower('${appName}${substring(uniqueSuffix,0,12)}kv')
+var storageAccountName = '${appName}sa${shortSuffix}'
+var keyVaultName = toLower('${appName}${shortSuffix}kv')
 var appInsightsName = '${appName}-${environment}-ai'
 var logAnalyticsName = '${appName}-${environment}-la'
-var containerRegistryName = '${appName}acr${uniqueSuffix}'
+var containerRegistryName = '${appName}acr${shortSuffix}'
 
 // Log Analytics Workspace
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
