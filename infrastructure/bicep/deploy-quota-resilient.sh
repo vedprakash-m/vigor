@@ -21,10 +21,6 @@ DEPLOYMENT_NAME="vigor-deployment-$(date +%Y%m%d-%H%M%S)"
 # Deployment strategies (ordered by preference: cost -> quota availability)
 declare -a STRATEGIES=(
     "Central US:B1:Basic tier in Central US"
-    "West US:B1:Basic tier in West US"
-    "East US 2:B1:Basic tier in East US 2"
-    "West US 2:B1:Basic tier in West US 2"
-    "South Central US:B1:Basic tier in South Central US"
 )
 
 # Function to try deployment with specific parameters
