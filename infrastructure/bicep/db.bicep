@@ -35,7 +35,7 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-06-01-pr
       geoRedundantBackup: 'Disabled'
     }
     highAvailability: {
-      mode: environment == 'production' ? 'ZoneRedundant' : 'Disabled'
+      mode: 'Disabled'
     }
     network: {
       publicNetworkAccess: 'Disabled'
