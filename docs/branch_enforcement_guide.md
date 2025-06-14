@@ -158,7 +158,105 @@ gh api --method PUT /repos/OWNER/REPO/branches/main/protection \
 
 ---
 
-## 🧠 Summary for Agent
+## � Automated PR Process
+
+We use GitHub Actions to automate the Pull Request approval and merge process while maintaining all necessary guardrails.
+
+### Auto-Merge Setup
+
+**File:** `.github/workflows/auto-merge.yml`
+
+```yaml
+name: Automated PR Processing
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
+  check_suite:
+    types:
+      - completed
+  status: {}
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: |
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      contains(github.event.pull_request.labels.*.name, 'auto-merge') &&
+      github.event.pull_request.draft == false
+    steps:
+      - name: Auto-merge qualifying PRs
+        uses: pascalgn/automerge-action@v0.15.6
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          MERGE_METHOD: "squash"
+          MERGE_LABELS: "auto-merge,!do-not-merge"
+          MERGE_REMOVE_LABELS: "auto-merge"
+          MERGE_COMMIT_MESSAGE: "pull-request-title"
+          MERGE_RETRIES: "6"
+          MERGE_RETRY_SLEEP: "10000"
+          UPDATE_LABELS: "auto-merge"
+          UPDATE_METHOD: "rebase"
+
+  pr-verification:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify PR size
+        id: verify-pr-size
+        run: |
+          PR_FILES=$(gh pr view ${{ github.event.pull_request.number }} --json files -q '.files[].path')
+          PR_ADDITIONS=$(gh pr view ${{ github.event.pull_request.number }} --json additions -q '.additions')
+          PR_DELETIONS=$(gh pr view ${{ github.event.pull_request.number }} --json deletions -q '.deletions')
+          PR_CHANGES=$((PR_ADDITIONS + PR_DELETIONS))
+
+          echo "PR has $PR_CHANGES changes ($PR_ADDITIONS additions, $PR_DELETIONS deletions)"
+
+          if [[ $PR_CHANGES -gt 300 ]]; then
+            echo "::warning::This PR exceeds the recommended 300 lines limit. Please consider breaking it into smaller PRs."
+            echo "size_warning=true" >> $GITHUB_OUTPUT
+          else
+            echo "size_warning=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### How to Use Auto-Merge
+
+1. Create your PR as usual
+2. Ensure all CI checks pass
+3. Get the required review approvals
+4. Apply the `auto-merge` label to eligible PRs
+5. The PR will be automatically merged once all requirements are met:
+   - All CI checks pass
+   - Required number of approvals is met
+   - Has the `auto-merge` label
+   - Is not a draft PR
+   - Doesn't have the `do-not-merge` label
+
+### Guardrails
+
+The auto-merge workflow includes these guardrails:
+
+- **Required CI Passing**: Will not merge if any required checks fail
+- **Required Reviews**: Respects branch protection requiring approved reviews
+- **Size Warning**: Warns if PR exceeds 300 lines of changes
+- **Cancel Option**: Can remove auto-merge by removing the label or adding a `do-not-merge` label
+- **Human Control**: Only merges PRs explicitly labeled for auto-merge
+- **No Drafts**: Does not merge draft PRs
+
+---
+
+## 🧠 Summary
 
 1. Place all code into the correct files as listed above.
 2. Apply the branch protection rule via GitHub CLI.
@@ -167,6 +265,7 @@ gh api --method PUT /repos/OWNER/REPO/branches/main/protection \
    - PR > 300 LOC
    - PR is open > 2 days
    - PR lacks tests or description
-5. Maintain a clean, linear commit history in `main`.
+5. Use auto-merge labels for eligible PRs that should be automatically merged.
+6. Maintain a clean, linear commit history in `main`.
 
 ---

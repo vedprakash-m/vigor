@@ -1,0 +1,146 @@
+name: Automated PR Processing
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
+  check_suite:
+    types:
+      - completed
+  status:
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: |
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      contains(github.event.pull_request.labels.*.name, 'auto-merge') &&
+      github.event.pull_request.draft == false
+    steps:
+      - name: Auto-merge qualifying PRs
+        uses: pascalgn/automerge-action@v0.15.6
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          MERGE_METHOD: "squash"
+          MERGE_LABELS: "auto-merge,!do-not-merge"
+          MERGE_REMOVE_LABELS: "auto-merge"
+          MERGE_COMMIT_MESSAGE: "pull-request-title"
+          MERGE_RETRIES: "6"
+          MERGE_RETRY_SLEEP: "10000"
+          UPDATE_LABELS: "auto-merge"
+          UPDATE_METHOD: "rebase"
+
+  pr-verification:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify PR size
+        id: verify-pr-size
+        run: |
+          PR_FILES=$(gh pr view ${{ github.event.pull_request.number }} --json files -q '.files[].path')
+          PR_ADDITIONS=$(gh pr view ${{ github.event.pull_request.number }} --json additions -q '.additions')
+          PR_DELETIONS=$(gh pr view ${{ github.event.pull_request.number }} --json deletions -q '.deletions')
+          PR_CHANGES=$((PR_ADDITIONS + PR_DELETIONS))
+
+          echo "PR has $PR_CHANGES changes ($PR_ADDITIONS additions, $PR_DELETIONS deletions)"
+
+          if [[ $PR_CHANGES -gt 300 ]]; then
+            echo "::warning::This PR exceeds the recommended 300 lines limit. Please consider breaking it into smaller PRs."
+            echo "size_warning=true" >> $GITHUB_OUTPUT
+          else
+            echo "size_warning=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check PR age
+        id: check-pr-age
+        run: |
+          PR_CREATED_AT=$(gh pr view ${{ github.event.pull_request.number }} --json createdAt -q '.createdAt')
+          PR_CREATED_TIMESTAMP=$(date -d "$PR_CREATED_AT" +%s)
+          CURRENT_TIMESTAMP=$(date +%s)
+
+          # Calculate PR age in days
+          PR_AGE_SECONDS=$((CURRENT_TIMESTAMP - PR_CREATED_TIMESTAMP))
+          PR_AGE_DAYS=$((PR_AGE_SECONDS / 86400))
+
+          echo "PR age: $PR_AGE_DAYS days"
+
+          if [[ $PR_AGE_DAYS -gt 2 ]]; then
+            echo "::warning::This PR is older than 2 days. Please consider resolving outstanding issues or closing it."
+            echo "age_warning=true" >> $GITHUB_OUTPUT
+          else
+            echo "age_warning=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify PR has description
+        id: verify-description
+        run: |
+          PR_BODY=$(gh pr view ${{ github.event.pull_request.number }} --json body -q '.body')
+
+          if [[ -z "$PR_BODY" || ${#PR_BODY} -lt 20 ]]; then
+            echo "::warning::This PR has an insufficient description. Please add more details about the changes."
+            echo "description_warning=true" >> $GITHUB_OUTPUT
+          else
+            echo "description_warning=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remind about tests
+        id: check-tests
+        run: |
+          PR_FILES=$(gh pr view ${{ github.event.pull_request.number }} --json files -q '.files[].path')
+
+          # Check if PR contains test files
+          if ! echo "$PR_FILES" | grep -qE '(test|spec|__tests__|_test)\.(js|jsx|ts|tsx|py|go|rb|java|php)'; then
+            # If no test files found, check if PR touches code that might need tests
+            if echo "$PR_FILES" | grep -qE '\.(js|jsx|ts|tsx|py|go|rb|java|php)$'; then
+              echo "::warning::This PR modifies code but doesn't include test updates. Please consider adding tests."
+              echo "tests_warning=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "tests_warning=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment PR issues
+        if: |
+          steps.verify-pr-size.outputs.size_warning == 'true' ||
+          steps.check-pr-age.outputs.age_warning == 'true' ||
+          steps.verify-description.outputs.description_warning == 'true' ||
+          steps.check-tests.outputs.tests_warning == 'true'
+        run: |
+          COMMENT="## PR Check Results\n\n"
+
+          if [[ "${{ steps.verify-pr-size.outputs.size_warning }}" == "true" ]]; then
+            COMMENT+="⚠️ **Size Warning**: This PR exceeds the recommended 300 lines limit. Please consider breaking it into smaller PRs.\n\n"
+          fi
+
+          if [[ "${{ steps.check-pr-age.outputs.age_warning }}" == "true" ]]; then
+            COMMENT+="⏱️ **Age Warning**: This PR is older than 2 days. Please consider resolving outstanding issues or closing it.\n\n"
+          fi
+
+          if [[ "${{ steps.verify-description.outputs.description_warning }}" == "true" ]]; then
+            COMMENT+="📝 **Description Warning**: This PR has an insufficient description. Please add more details about the changes.\n\n"
+          fi
+
+          if [[ "${{ steps.check-tests.outputs.tests_warning }}" == "true" ]]; then
+            COMMENT+="🧪 **Testing Warning**: This PR modifies code but doesn't include test updates. Please consider adding tests.\n\n"
+          fi
+
+          COMMENT+="\nFor more information, please see our [Branch Enforcement Guide](../blob/main/docs/branch_enforcement_guide.md)."
+
+          gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
