@@ -4,7 +4,7 @@ sqlalchemy>=2.0.23
 pydantic>=2.5.2
 pydantic-settings>=2.0.3
 python-dotenv>=1.0.0
-python-jose[cryptography]==3.3.0  # Note: No secure version available - consider migration to PyJWT
+python-jose[cryptography]==3.5.0  # Note: No secure version available - consider migration to PyJWT
 passlib[bcrypt]>=1.7.4
 python-multipart>=0.0.18  # Security update - addresses CVE-2024-53981 and ReDoS vulnerability
 openai>=1.84.0  # Updated to latest version for compatibility with secure anyio>=4.4.0
