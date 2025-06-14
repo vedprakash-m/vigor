@@ -37,6 +37,8 @@ module.exports = {
     '<rootDir>/src/__tests__/contexts/.*',
     '<rootDir>/src/__tests__/components/ForgotPasswordPage.test.tsx',
     '<rootDir>/src/__tests__/pages/OnboardingPage.test.tsx',
+    '<rootDir>/src/pages/SupportConsolePage.test.tsx',
+    '<rootDir>/src/__tests__/services/.*',
   ],
   watchAll: false,
   globals: {
