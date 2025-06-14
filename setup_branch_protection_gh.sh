@@ -1,5 +1,6 @@
 #!/bin/bash
 # Set up branch protection using GitHub CLI with proper JSON formatting
+# This script is a simplified version - see setup_branch_strategy.sh for full branch management
 
 # Get repository information
 REPO=$(basename $(pwd))
@@ -37,6 +38,13 @@ gh api \
   --input branch_protection.json
 
 echo "Branch protection rules applied for main branch"
+
+# Note about the full branch strategy
+echo ""
+echo "NOTE: For a complete branch management strategy, use:"
+echo "./setup_branch_strategy.sh"
+echo "This will set up main & develop branches with appropriate protection rules"
+echo "and help consolidate existing branches."
 
 # Clean up
 rm branch_protection.json
