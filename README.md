@@ -516,10 +516,10 @@ _This project is licensed under AGPLv3. See [LICENSE](LICENSE) and [NOTICE](NOTI
 
 This repository deploys Vigor using a **two-resource-group layout**:
 
-| Resource Group | Contents                                                                                                                                                                                                      |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `vigor-rg`     | App Service plan & web apps, Static Web App, Key Vault, Container Registry, Application Insights, Storage Account and all non-persistent resources. You can delete this RG to stop cost when the app is idle. |
-| `vigor-db-rg`  | PostgreSQL Flexible Server and `vigor_db` database. This RG remains to preserve data between hibernation cycles.                                                                                              |
+| Resource Group | Contents                                                                                                                                                                                        |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vigor-rg`     | App Service plan & web apps, Static Web App, Key Vault, Container Registry, Application Insights and other non-persistent resources. You can delete this RG to stop cost when the app is idle.  |
+| `vigor-db-rg`  | PostgreSQL Flexible Server, Storage Account (blob/data), and `vigor_db` database. This RG remains to preserve data between hibernation cycles and keeps all persistent data resources together. |
 
 ## Cost-saving workflow
 
