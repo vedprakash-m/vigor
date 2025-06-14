@@ -511,3 +511,26 @@ _This project is licensed under AGPLv3. See [LICENSE](LICENSE) and [NOTICE](NOTI
 [⭐ Star us on GitHub](https://github.com/vedprakash-m/vigor) • [🐛 Report Bug](https://github.com/vedprakash-m/vigor/issues) • [💡 Request Feature](https://github.com/vedprakash-m/vigor/issues)
 
 </div>
+
+# Vigor Fitness Platform
+
+This repository deploys Vigor using a **two-resource-group layout**:
+
+| Resource Group | Contents                                                                                                                                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vigor-rg`     | App Service plan & web apps, Static Web App, Key Vault, Container Registry, Application Insights, Storage Account and all non-persistent resources. You can delete this RG to stop cost when the app is idle. |
+| `vigor-db-rg`  | PostgreSQL Flexible Server and `vigor_db` database. This RG remains to preserve data between hibernation cycles.                                                                                              |
+
+## Cost-saving workflow
+
+1. When you don't need the app running, delete the runtime RG:
+
+   ```bash
+   az group delete --name vigor-rg --yes --no-wait
+   ```
+
+   Database RG stays intact; Azure only bills the database (~$12/mo on B1ms) while everything else is de-allocated.
+
+2. To bring Vigor back online, re-run the GitHub Actions **Deploy** workflow (or execute `infrastructure/bicep/deploy-quota-resilient.sh`). The script recreates `vigor-rg`, while re-using the database in `vigor-db-rg`.
+
+See `infrastructure/bicep/README.md` for full deployment details.

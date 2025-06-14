@@ -15,6 +15,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 RESOURCE_GROUP="vigor-rg"
+DB_RESOURCE_GROUP="vigor-db-rg"
 DEPLOYMENT_NAME="vigor-deployment-$(date +%Y%m%d-%H%M%S)"
 
 # Deployment strategies (ordered by preference: cost -> quota availability)
@@ -63,6 +64,7 @@ EOF
         --resource-group "$RESOURCE_GROUP" \
         --template-file main.bicep \
         --parameters parameters-temp.bicepparam \
+        --parameters databaseResourceGroup="$DB_RESOURCE_GROUP" \
         --name "$DEPLOYMENT_NAME-$(echo $region | tr ' ' '-' | tr '[:upper:]' '[:lower:]')" \
         --only-show-errors; then
 
@@ -101,10 +103,16 @@ az account show --query '{name:name, id:id}' --output table
 echo ""
 echo "🎯 Resource Group: $RESOURCE_GROUP"
 
-# Ensure resource group exists
+# Ensure resource groups exist
 if ! az group show --name "$RESOURCE_GROUP" >/dev/null 2>&1; then
     echo "📦 Creating resource group..."
     az group create --name "$RESOURCE_GROUP" --location "Central US"
+fi
+
+# Ensure DB resource group exists (same location)
+if ! az group show --name "$DB_RESOURCE_GROUP" >/dev/null 2>&1; then
+    echo "📦 Creating database resource group..."
+    az group create --name "$DB_RESOURCE_GROUP" --location "Central US"
 fi
 
 echo ""
