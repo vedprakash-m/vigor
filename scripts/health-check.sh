@@ -43,11 +43,17 @@ check_endpoint() {
 # Check API health endpoint
 check_endpoint "${ENDPOINT_URL}/health" 200 "API Health endpoint" 5 10
 
-# Check database connectivity (through API)
-check_endpoint "${ENDPOINT_URL}/api/v1/health/database" 200 "Database connectivity" 3 5
+# Check database connectivity health
+check_endpoint "${ENDPOINT_URL}/health/database" 200 "Database connectivity" 3 5
 
-# Check authentication service
-check_endpoint "${ENDPOINT_URL}/api/v1/health/auth" 200 "Authentication service" 3 5
+# Check LLM orchestration health
+check_endpoint "${ENDPOINT_URL}/health/llm" 200 "LLM orchestration service" 3 5
+
+# Check main API endpoints are accessible
+check_endpoint "${ENDPOINT_URL}/docs" 200 "API Documentation" 3 5
+
+# Check auth endpoints are accessible (should return unauthorized for GET without token)
+check_endpoint "${ENDPOINT_URL}/auth/me" 401 "Authentication service" 3 5
 
 echo "✅ All health checks passed!"
 exit 0

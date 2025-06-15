@@ -118,7 +118,70 @@ validate_secret_scanning() {
     return 0
 }
 
-# 4. Validate Backend Code Quality
+# 4. Validate Health Check Endpoints
+validate_health_endpoints() {
+    echo "🏥 Validating health check endpoints..."
+
+    if [ ! -f "scripts/health-check.sh" ]; then
+        report_error "Health check script missing"
+        return 1
+    fi
+
+    # Extract endpoints being checked from health-check.sh
+    health_endpoints=$(grep -o '\${ENDPOINT_URL}[^"]*' scripts/health-check.sh | sed 's/\${ENDPOINT_URL}//' || true)
+
+    if [ -z "$health_endpoints" ]; then
+        report_error "No health check endpoints found in script"
+        return 1
+    fi
+
+    # Check if backend actually has these endpoints
+    backend_routes=""
+    if [ -f "backend/main.py" ]; then
+        # Extract actual routes from main.py and route files
+        backend_routes=$(grep -r "@.*\.get\|@.*\.post" backend/main.py backend/api/routes/ 2>/dev/null | grep -o '"/[^"]*"' | tr -d '"' || true)
+        # Also check for router-prefixed routes
+        auth_routes=$(grep -A 1 -B 1 "@router\.get\|@router\.post" backend/api/routes/auth.py 2>/dev/null | grep -o '"/[^"]*"' | tr -d '"' | sed 's|^|/auth|' || true)
+        user_routes=$(grep -A 1 -B 1 "@router\.get\|@router\.post" backend/api/routes/users.py 2>/dev/null | grep -o '"/[^"]*"' | tr -d '"' | sed 's|^|/users|' || true)
+        all_routes="$backend_routes $auth_routes $user_routes"
+    fi
+
+    # Validate each health check endpoint
+    for endpoint in $health_endpoints; do
+        # Clean up endpoint (remove query params, etc.)
+        clean_endpoint=$(echo "$endpoint" | cut -d'?' -f1)
+
+        # Special cases for expected endpoints
+        case "$clean_endpoint" in
+            "/health")
+                if ! echo "$all_routes" | grep -q "/health"; then
+                    report_error "Health check script expects /health but backend doesn't provide it"
+                    return 1
+                fi
+                ;;
+            "/docs")
+                # FastAPI automatically provides /docs, so this is fine
+                ;;
+            "/auth/me")
+                # This should exist in auth routes
+                if ! echo "$all_routes" | grep -q "/auth/me"; then
+                    report_warning "Health check expects /auth/me endpoint - verify this exists"
+                fi
+                ;;
+            *)
+                # Check if any backend route matches
+                if [ -n "$all_routes" ] && ! echo "$all_routes" | grep -q "^$clean_endpoint$"; then
+                    report_warning "Health check expects endpoint $clean_endpoint - verify this exists in backend"
+                fi
+                ;;
+        esac
+    done
+
+    report_success "Health check endpoints validation completed"
+    return 0
+}
+
+# 5. Validate Backend Code Quality
 validate_backend() {
     echo "🐍 Running comprehensive backend validation..."
 
@@ -216,7 +279,7 @@ validate_backend() {
     return 0
 }
 
-# 5. Validate Frontend Code Quality
+# 6. Validate Frontend Code Quality
 validate_frontend() {
     echo "🌐 Running comprehensive frontend validation..."
 
@@ -268,7 +331,7 @@ validate_frontend() {
     return 0
 }
 
-# 6. Validate npm Dependencies
+# 7. Validate npm Dependencies
 validate_npm_dependencies() {
     echo "📦 Checking npm dependencies for vulnerabilities..."
 
@@ -293,7 +356,7 @@ validate_npm_dependencies() {
     return 0
 }
 
-# 7. Validate Infrastructure
+# 8. Validate Infrastructure
 validate_infrastructure() {
     echo "🏗️ Validating infrastructure configuration..."
 
@@ -317,7 +380,7 @@ validate_infrastructure() {
     return 0
 }
 
-# 8. Validate Docker Configuration
+# 9. Validate Docker Configuration
 validate_docker() {
     echo "🐳 Validating Docker configuration..."
 
@@ -347,7 +410,7 @@ validate_docker() {
     return 0
 }
 
-# 9. Validate All Workflow Files
+# 10. Validate All Workflow Files
 validate_all_workflows() {
     echo "⚙️ Validating all GitHub Actions workflows..."
 
@@ -381,7 +444,7 @@ validate_all_workflows() {
     return 0
 }
 
-# 10. Generate Summary Report
+# 11. Generate Summary Report
 generate_summary_report() {
     echo "📊 Generating validation summary report..."
 
@@ -430,6 +493,7 @@ main() {
     validate_gitleaks_config
     validate_azure_deployment
     validate_secret_scanning
+    validate_health_endpoints
     validate_backend
     validate_frontend
     validate_npm_dependencies

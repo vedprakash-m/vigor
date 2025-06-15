@@ -1,6 +1,7 @@
 import asyncio
 import os
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Optional
 
 import uvicorn
@@ -134,6 +135,54 @@ async def health_check():
         "version": settings.APP_VERSION,
         "environment": settings.ENVIRONMENT,
     }
+
+
+@app.get("/health/database")
+async def health_check_database():
+    """Check database connectivity"""
+    try:
+        from database.connection import get_db
+
+        db = next(get_db())
+        # Simple query to test database connection
+        db.execute("SELECT 1")
+        return {
+            "status": "healthy",
+            "service": "database",
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "service": "database",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
+
+@app.get("/health/llm")
+async def health_check_llm():
+    """Check LLM orchestration system health"""
+    try:
+        from core.llm_orchestration_init import get_llm_gateway
+
+        gateway = get_llm_gateway()
+        provider_status = await gateway.get_provider_status()
+        return {
+            "status": (
+                "healthy" if provider_status.get("is_healthy", False) else "degraded"
+            ),
+            "service": "llm",
+            "providers": provider_status,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "service": "llm",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
 
 
 # Models
