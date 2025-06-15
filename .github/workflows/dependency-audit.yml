@@ -23,8 +23,8 @@ on:
       - "backend/requirements*.txt"
       - "frontend/package*.json"
   schedule:
-    - cron: "0 0 * * 1" # Run weekly on Mondays
-  workflow_dispatch: {} # Allow manual triggers
+    - cron: "0 0 * * 1"  # Run weekly on Mondays
+  workflow_dispatch: {}  # Allow manual triggers
 
 permissions:
   pull-requests: write
@@ -60,11 +60,16 @@ jobs:
           npm audit --json > npm-audit-report.json || true
 
           # Get critical and high severity issues
-          CRITICAL_COUNT=$(jq '[.vulnerabilities[] | select(.severity == "critical")] | length' npm-audit-report.json || echo 0)
-          HIGH_COUNT=$(jq '[.vulnerabilities[] | select(.severity == "high")] | length' npm-audit-report.json || echo 0)
+          CRITICAL_COUNT=$(jq '[.vulnerabilities[] |
+            select(.severity == "critical")] | length' \
+            npm-audit-report.json || echo 0)
+          HIGH_COUNT=$(jq '[.vulnerabilities[] |
+            select(.severity == "high")] | length' \
+            npm-audit-report.json || echo 0)
           TOTAL_COUNT=$((CRITICAL_COUNT + HIGH_COUNT))
 
-          echo "Found $CRITICAL_COUNT critical and $HIGH_COUNT high severity vulnerabilities"
+          echo "Found $CRITICAL_COUNT critical and $HIGH_COUNT high" \
+               "severity vulnerabilities"
           echo "critical_count=$CRITICAL_COUNT" >> $GITHUB_OUTPUT
           echo "high_count=$HIGH_COUNT" >> $GITHUB_OUTPUT
           echo "total_count=$TOTAL_COUNT" >> $GITHUB_OUTPUT
@@ -74,46 +79,64 @@ jobs:
       - name: Process audit results
         if: steps.npm-audit.outputs.total_count > 0
         run: |
-          echo "::warning::Found ${{ steps.npm-audit.outputs.critical_count }} critical and ${{ steps.npm-audit.outputs.high_count }} high severity vulnerabilities in npm packages"
+          echo "::warning::Found" \
+               "${{ steps.npm-audit.outputs.critical_count }} critical and" \
+               "${{ steps.npm-audit.outputs.high_count }} high severity" \
+               "vulnerabilities in npm packages"
 
           # Format the vulnerabilities for GitHub comment
           cd frontend
 
           echo "## 🚨 NPM Security Vulnerabilities" > /tmp/audit-summary.md
           echo "" >> /tmp/audit-summary.md
-          echo "| Package | Severity | Vulnerable Versions | Fix Available |" >> /tmp/audit-summary.md
-          echo "|---------|----------|---------------------|--------------|" >> /tmp/audit-summary.md
+          echo "| Package | Severity | Vulnerable Versions |" \
+               "Fix Available |" >> /tmp/audit-summary.md
+          echo "|---------|----------|---------------------|" \
+               "--------------|" >> /tmp/audit-summary.md
 
           jq -r '.vulnerabilities | to_entries | .[].value |
-            "| \(.name) | \(.severity) | \(.range) | \(if .fixAvailable then "✅" else "❌" end) |"' npm-audit-report.json >> /tmp/audit-summary.md
+            "| \(.name) | \(.severity) | \(.range) |" +
+            " \(if .fixAvailable then "✅" else "❌" end) |"' \
+            npm-audit-report.json >> /tmp/audit-summary.md
 
           echo "" >> /tmp/audit-summary.md
           echo "### Recommendations" >> /tmp/audit-summary.md
           echo "" >> /tmp/audit-summary.md
-          echo "- Run \`npm audit fix\` to automatically fix issues when available" >> /tmp/audit-summary.md
-          echo "- Review the full audit report for details on each vulnerability" >> /tmp/audit-summary.md
-          echo "- For vulnerabilities without automatic fixes, consider updating affected packages manually" >> /tmp/audit-summary.md
+          echo "- Run \`npm audit fix\` to automatically fix issues when" \
+               "available" >> /tmp/audit-summary.md
+          echo "- Review the full audit report for details on each" \
+               "vulnerability" >> /tmp/audit-summary.md
+          echo "- For vulnerabilities without automatic fixes, consider" \
+               "updating affected packages manually" >> /tmp/audit-summary.md
 
       - name: Post audit results on PR
-        if: github.event_name == 'pull_request' && steps.npm-audit.outputs.total_count > 0
+        if: github.event_name == 'pull_request' &&
+          steps.npm-audit.outputs.total_count > 0
         run: |
-          gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/audit-summary.md
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body-file /tmp/audit-summary.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create or update vulnerability issue for main branch
-        if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && steps.npm-audit.outputs.total_count > 0
+        if: (github.event_name == 'push' ||
+          github.event_name == 'schedule' ||
+          github.event_name == 'workflow_dispatch') &&
+          steps.npm-audit.outputs.total_count > 0
         run: |
           # Check if issue already exists
           ISSUE_TITLE="🚨 NPM Security Vulnerabilities Detected"
-          ISSUE_NUMBER=$(gh issue list --search "$ISSUE_TITLE in:title" --json number -q '.[0].number' || echo "")
+          ISSUE_NUMBER=$(gh issue list --search "$ISSUE_TITLE in:title" \
+            --json number -q '.[0].number' || echo "")
 
           if [ -n "$ISSUE_NUMBER" ]; then
             echo "Updating existing issue #$ISSUE_NUMBER"
             gh issue comment $ISSUE_NUMBER --body-file /tmp/audit-summary.md
           else
             echo "Creating new issue"
-            gh issue create --title "$ISSUE_TITLE" --body-file /tmp/audit-summary.md --label "security,needs-fix"
+            gh issue create --title "$ISSUE_TITLE" \
+              --body-file /tmp/audit-summary.md \
+              --label "security,needs-fix"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -131,7 +154,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
@@ -151,7 +174,8 @@ jobs:
           pip-audit --format json > pip-audit-report.json || true
 
           # Get critical and high severity issues
-          CRITICAL_COUNT=$(jq '[.[] | select(.vulnerability_id)] | length' pip-audit-report.json || echo 0)
+          CRITICAL_COUNT=$(jq '[.[] | select(.vulnerability_id)] | length' \
+            pip-audit-report.json || echo 0)
           echo "Found $CRITICAL_COUNT vulnerability issues"
           echo "critical_count=$CRITICAL_COUNT" >> $GITHUB_OUTPUT
           echo "::endgroup::"
@@ -160,7 +184,8 @@ jobs:
           safety check --json > safety-report.json || true
 
           # Count vulnerabilities
-          SAFETY_COUNT=$(jq '.vulnerabilities | length' safety-report.json || echo 0)
+          SAFETY_COUNT=$(jq '.vulnerabilities | length' \
+            safety-report.json || echo 0)
           echo "Found $SAFETY_COUNT vulnerabilities via safety check"
           echo "safety_count=$SAFETY_COUNT" >> $GITHUB_OUTPUT
           echo "::endgroup::"
@@ -172,54 +197,74 @@ jobs:
       - name: Process audit results
         if: steps.pip-audit.outputs.total_count > 0
         run: |
-          echo "::warning::Found ${{ steps.pip-audit.outputs.total_count }} vulnerabilities in Python packages"
+          echo "::warning::Found" \
+               "${{ steps.pip-audit.outputs.total_count }}" \
+               "vulnerabilities in Python packages"
 
           # Format the vulnerabilities for GitHub comment
           cd backend
 
-          echo "## 🚨 Python Security Vulnerabilities" > /tmp/audit-summary.md
+          echo "## 🚨 Python Security Vulnerabilities" \
+            > /tmp/audit-summary.md
           echo "" >> /tmp/audit-summary.md
-          echo "| Package | Vulnerability | Affected Versions | Fixed Version |" >> /tmp/audit-summary.md
-          echo "|---------|---------------|-------------------|---------------|" >> /tmp/audit-summary.md
+          echo "| Package | Vulnerability | Affected Versions |" \
+               "Fixed Version |" >> /tmp/audit-summary.md
+          echo "|---------|---------------|-------------------|" \
+               "---------------|" >> /tmp/audit-summary.md
 
           # Process safety report
           jq -r '.vulnerabilities[] |
-            "| \(.package_name) | \(.vulnerability_id) | \(.vulnerable_spec) | \(.fixed_version // "Unknown") |"' safety-report.json >> /tmp/audit-summary.md || true
+            "| \(.package_name) | \(.vulnerability_id) |" +
+            " \(.vulnerable_spec) | \(.fixed_version // "Unknown") |"' \
+            safety-report.json >> /tmp/audit-summary.md || true
 
           echo "" >> /tmp/audit-summary.md
           echo "### Recommendations" >> /tmp/audit-summary.md
           echo "" >> /tmp/audit-summary.md
-          echo "- Update vulnerable packages to their fixed versions" >> /tmp/audit-summary.md
-          echo "- Run \`pip install --upgrade [package]\` for each affected package" >> /tmp/audit-summary.md
-          echo "- For transitive dependencies, update the parent package" >> /tmp/audit-summary.md
+          echo "- Update vulnerable packages to their fixed versions" \
+            >> /tmp/audit-summary.md
+          echo "- Run \`pip install --upgrade [package]\` for each" \
+               "affected package" >> /tmp/audit-summary.md
+          echo "- For transitive dependencies, update the parent" \
+               "package" >> /tmp/audit-summary.md
 
       - name: Post audit results on PR
-        if: github.event_name == 'pull_request' && steps.pip-audit.outputs.total_count > 0
+        if: github.event_name == 'pull_request' &&
+          steps.pip-audit.outputs.total_count > 0
         run: |
-          gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/audit-summary.md
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body-file /tmp/audit-summary.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create or update vulnerability issue for main branch
-        if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && steps.pip-audit.outputs.total_count > 0
+        if: (github.event_name == 'push' ||
+          github.event_name == 'schedule' ||
+          github.event_name == 'workflow_dispatch') &&
+          steps.pip-audit.outputs.total_count > 0
         run: |
           # Check if issue already exists
           ISSUE_TITLE="🚨 Python Security Vulnerabilities Detected"
-          ISSUE_NUMBER=$(gh issue list --search "$ISSUE_TITLE in:title" --json number -q '.[0].number' || echo "")
+          ISSUE_NUMBER=$(gh issue list --search "$ISSUE_TITLE in:title" \
+            --json number -q '.[0].number' || echo "")
 
           if [ -n "$ISSUE_NUMBER" ]; then
             echo "Updating existing issue #$ISSUE_NUMBER"
             gh issue comment $ISSUE_NUMBER --body-file /tmp/audit-summary.md
           else
             echo "Creating new issue"
-            gh issue create --title "$ISSUE_TITLE" --body-file /tmp/audit-summary.md --label "security,needs-fix"
+            gh issue create --title "$ISSUE_TITLE" \
+              --body-file /tmp/audit-summary.md \
+              --label "security,needs-fix"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   dependency-report:
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch'
     needs: [scan-js-dependencies, scan-python-dependencies]
     steps:
       - name: Checkout
@@ -237,19 +282,28 @@ jobs:
 
           **Generated:** $(date +"%Y-%m-%d %H:%M:%S")
 
+          JS_COUNT="${{ needs.scan-js-dependencies.outputs.total_count ||
+            '0' }}"
+          JS_CRIT="${{ needs.scan-js-dependencies.outputs.critical_count ||
+            '0' }}"
+          JS_HIGH="${{ needs.scan-js-dependencies.outputs.high_count || '0' }}"
+          PY_COUNT="${{ needs.scan-python-dependencies.outputs.total_count ||
+            '0' }}"
+
           ## Summary
 
           | Language | Vulnerabilities |
           |----------|----------------|
-          | JavaScript | ${{ needs.scan-js-dependencies.outputs.total_count || '0' }} (${{ needs.scan-js-dependencies.outputs.critical_count || '0' }} critical, ${{ needs.scan-js-dependencies.outputs.high_count || '0' }} high) |
-          | Python | ${{ needs.scan-python-dependencies.outputs.total_count || '0' }} |
+          | JavaScript | ${JS_COUNT} (${JS_CRIT} crit, ${JS_HIGH} high) |
+          | Python | ${PY_COUNT} |
 
           ## Actions Needed
 
           ${NEEDS_ACTION}
 
           - Review and address security issues flagged in GitHub Issues
-          - Run \`npm audit fix\` to automatically fix JavaScript vulnerabilities
+          - Run \`npm audit fix\` to automatically fix JavaScript \
+            vulnerabilities
           - Update Python dependencies with vulnerable versions
 
           ## Scan Details
@@ -269,15 +323,18 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Add dependency security report for $(date +%Y-%m-%d)"
+            git commit -m \
+              "Add dependency security report for $(date +%Y-%m-%d)"
             git push origin HEAD:dependency-reports
 
             # Create a PR if one doesn't already exist
-            PR_EXISTS=$(gh pr list --head dependency-reports --json number -q 'length')
+            PR_EXISTS=$(gh pr list --head dependency-reports \
+              --json number -q 'length')
             if [ "$PR_EXISTS" -eq "0" ]; then
               gh pr create \
                 --title "Dependency Security Report $(date +%Y-%m-%d)" \
-                --body "This PR adds the latest dependency security scan report." \
+                --body "This PR adds the latest dependency security \
+                  scan report." \
                 --label "documentation" \
                 --base ${{ github.event.repository.default_branch }} \
                 --head dependency-reports

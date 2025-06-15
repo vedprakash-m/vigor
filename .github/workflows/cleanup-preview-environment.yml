@@ -5,7 +5,6 @@ on:
   pull_request:
     types: [closed]
 
-
 permissions:
   pull-requests: write
   contents: read
@@ -28,7 +27,8 @@ jobs:
         id: env-name
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          SHA_SHORT=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)
+          SHA_SHORT=$(echo ${{ github.event.pull_request.head.sha }} | \
+            cut -c1-7)
           ENVIRONMENT_NAME="pr-${PR_NUMBER}-${SHA_SHORT}"
           echo "environment_name=$ENVIRONMENT_NAME" >> $GITHUB_OUTPUT
 
@@ -39,17 +39,21 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { data: deployments } = await github.rest.repos.listDeployments({
+            const { data: deployments } =
+              await github.rest.repos.listDeployments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              environment: `PR Preview: #${{ github.event.pull_request.number }}`
+              environment:
+                `PR Preview: #${{ github.event.pull_request.number }}`
             });
 
             if (deployments.length > 0) {
-              console.log(`Found ${deployments.length} deployments for PR #${{ github.event.pull_request.number }}`);
+              console.log(`Found ${deployments.length} deployments ` +
+                `for PR #${{ github.event.pull_request.number }}`);
               return deployments.map(d => d.id);
             } else {
-              console.log(`No deployments found for PR #${{ github.event.pull_request.number }}`);
+              console.log(`No deployments found ` +
+                `for PR #${{ github.event.pull_request.number }}`);
               return [];
             }
 
@@ -57,16 +61,22 @@ jobs:
       - name: Delete preview environment
         if: steps.get-deployments.outputs.result != '[]'
         run: |
-          echo "Deleting preview environment for ${{ steps.env-name.outputs.environment_name }}"
+          echo "Deleting preview environment for " \
+            "${{ steps.env-name.outputs.environment_name }}"
 
           # This is a placeholder for your actual cleanup logic
-          # This could be removing resources from Netlify, Vercel, Azure Static Web Apps, or a custom solution
+          # This could be removing resources from Netlify, Vercel,
+          # Azure Static Web Apps, or a custom solution
 
           # For Azure Static Web Apps example:
-          # az staticwebapp delete --name "vigor-preview-${{ steps.env-name.outputs.environment_name }}" --resource-group "vigor-preview" --yes
+          # az staticwebapp delete --name \
+          #   "vigor-preview-${{ steps.env-name.outputs.environment_name }}" \
+          #   --resource-group "vigor-preview" --yes
 
           # For Netlify example:
-          # netlify site:delete "vigor-preview-${{ steps.env-name.outputs.environment_name }}" --force --auth ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          # netlify site:delete \
+          #   "vigor-preview-${{ steps.env-name.outputs.environment_name }}" \
+          #   --force --auth ${{ secrets.NETLIFY_AUTH_TOKEN }}
 
           echo "Preview environment deleted successfully"
 
@@ -92,7 +102,8 @@ jobs:
                 repo: context.repo.repo,
                 deployment_id: deploymentId,
                 state: 'inactive',
-                description: 'Preview environment cleaned up after PR was closed'
+                description: 'Preview environment cleaned up ' +
+                  'after PR was closed'
               });
             }
 
@@ -105,5 +116,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `🧹 Preview environment for PR #${{ github.event.pull_request.number }} has been cleaned up and resources have been deleted.`
+              body: `🧹 Preview environment for ` +
+                `PR #${{ github.event.pull_request.number }} has been ` +
+                `cleaned up and resources have been deleted.`
             });

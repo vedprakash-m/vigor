@@ -1,10 +1,9 @@
 ---
 name: Auto-Approve Security Enhancements
 
-on:
+"on":
   pull_request:
     types: [opened, synchronize, reopened, labeled]
-
 
 permissions:
   pull-requests: write
@@ -16,7 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       contains(github.event.pull_request.labels.*.name, 'auto-approve') ||
-      (github.event.action == 'labeled' && github.event.label.name == 'auto-approve')
+      (github.event.action == 'labeled' &&
+       github.event.label.name == 'auto-approve')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,7 +28,10 @@ jobs:
           AUTHOR="${{ github.event.pull_request.user.login }}"
 
           # Check if author is in trusted contributors team
-          TRUSTED_CONTRIBUTOR=$(gh api /orgs/${{ github.repository_owner }}/teams/trusted-contributors/memberships/$AUTHOR -q '.state' 2>/dev/null || echo "none")
+          REPO_OWNER="${{ github.repository_owner }}"
+          TRUSTED_CONTRIBUTOR=$(gh api \
+            /orgs/$REPO_OWNER/teams/trusted-contributors/memberships/$AUTHOR \
+            -q '.state' 2>/dev/null || echo "none")
 
           echo "author=$AUTHOR" >> $GITHUB_OUTPUT
           echo "trusted_contributor=$TRUSTED_CONTRIBUTOR" >> $GITHUB_OUTPUT
@@ -41,8 +44,10 @@ jobs:
           AUTHOR="${{ steps.pr-details.outputs.author }}"
 
           # Get contribution history
-          AUTHORED_PRS=$(gh pr list --author $AUTHOR --state all --repo ${{ github.repository }} --json number | jq length)
-          MERGED_PRS=$(gh pr list --author $AUTHOR --state merged --repo ${{ github.repository }} --json number | jq length)
+          AUTHORED_PRS=$(gh pr list --author $AUTHOR --state all \
+            --repo ${{ github.repository }} --json number | jq length)
+          MERGED_PRS=$(gh pr list --author $AUTHOR --state merged \
+            --repo ${{ github.repository }} --json number | jq length)
 
           # Calculate metrics
           echo "authored_prs=$AUTHORED_PRS" >> $GITHUB_OUTPUT
@@ -61,7 +66,11 @@ jobs:
         id: check-paths
         run: |
           # Get modified files in PR
-          MODIFIED_FILES=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files -q '.[].filename')
+          REPO="${{ github.repository }}"
+          PR_NUM="${{ github.event.pull_request.number }}"
+          MODIFIED_FILES=$(gh api \
+            /repos/$REPO/pulls/$PR_NUM/files \
+            -q '.[].filename')
 
           # Define sensitive path patterns
           SENSITIVE_PATHS=(
@@ -127,7 +136,10 @@ jobs:
         id: check-size
         run: |
           # Count lines changed
-          PR_DIFF=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} \
+          REPO="${{ github.repository }}"
+          PR_NUM="${{ github.event.pull_request.number }}"
+          PR_DIFF=$(gh api \
+            /repos/$REPO/pulls/$PR_NUM \
             -H "Accept: application/vnd.github.v3.diff" | wc -l)
 
           echo "lines_changed=$PR_DIFF" >> $GITHUB_OUTPUT
@@ -143,21 +155,32 @@ jobs:
       - name: Make approval decision
         id: approval-decision
         run: |
-          IS_TRUSTED="${{ steps.pr-details.outputs.trusted_contributor == 'active' || steps.contributor-history.outputs.trusted_by_history == 'true' }}"
+          A="${{ steps.pr-details.outputs.trusted_contributor == 'active' }}"
+          H="${{ steps.contributor-history.outputs.trusted_by_history }}"
+          H_TRUE="true"
+          if [[ $A == 'true' || $H == $H_TRUE ]]; then
+            IS_TRUSTED='true'
+          else
+            IS_TRUSTED='false'
+          fi
           HAS_SENSITIVE="${{ steps.check-paths.outputs.has_sensitive }}"
           HAS_ONLY_SAFE="${{ steps.check-paths.outputs.has_only_safe }}"
           SMALL_PR="${{ steps.check-size.outputs.small_pr }}"
 
-          if [ "$IS_TRUSTED" = "true" ] && [ "$HAS_SENSITIVE" = "false" ] && [ "$SMALL_PR" = "true" ]; then
+          if [ "$IS_TRUSTED" = "true" ] && [ "$HAS_SENSITIVE" = "false" ] &&
+             [ "$SMALL_PR" = "true" ]; then
             echo "auto_approve=true" >> $GITHUB_OUTPUT
-            echo "reason=Trusted contributor with safe changes under 100 lines" >> $GITHUB_OUTPUT
+            REASON="Trusted contributor with safe changes under 100 lines"
+            echo "reason=$REASON" >> $GITHUB_OUTPUT
           elif [ "$HAS_ONLY_SAFE" = "true" ] && [ "$SMALL_PR" = "true" ]; then
             echo "auto_approve=true" >> $GITHUB_OUTPUT
-            echo "reason=Only modifies safe paths and is under 100 lines" >> $GITHUB_OUTPUT
+            REASON="Only modifies safe paths and is under 100 lines"
+            echo "reason=$REASON" >> $GITHUB_OUTPUT
           else
             echo "auto_approve=false" >> $GITHUB_OUTPUT
             if [ "$IS_TRUSTED" = "false" ]; then
-              echo "reason=Contributor does not meet trust requirements" >> $GITHUB_OUTPUT
+              echo "reason=Contributor does not meet trust requirements" >> \
+                $GITHUB_OUTPUT
             elif [ "$HAS_SENSITIVE" = "true" ]; then
               echo "reason=PR modifies sensitive paths" >> $GITHUB_OUTPUT
             elif [ "$SMALL_PR" = "false" ]; then
@@ -169,21 +192,25 @@ jobs:
 
       - name: Process auto-approval
         run: |
-          if [[ "${{ steps.approval-decision.outputs.auto_approve }}" == "true" ]]; then
-            echo "✅ PR is eligible for auto-approval: ${{ steps.approval-decision.outputs.reason }}"
+          AUTO_APPROVE="${{ steps.approval-decision.outputs.auto_approve }}"
+          REASON="${{ steps.approval-decision.outputs.reason }}"
+          PR_NUM="${{ github.event.pull_request.number }}"
+          if [[ "$AUTO_APPROVE" == "true" ]]; then
+            echo "✅ PR is eligible for auto-approval: $REASON"
 
             # Add approval comment
-            gh pr review ${{ github.event.pull_request.number }} --approve \
-              --body "✅ **Auto-approved:** ${{ steps.approval-decision.outputs.reason }}"
+            gh pr review $PR_NUM --approve \
+              --body "✅ **Auto-approved:** $REASON"
           else
-            echo "❌ PR is not eligible for auto-approval: ${{ steps.approval-decision.outputs.reason }}"
+            echo "❌ PR is not eligible for auto-approval: $REASON"
 
             # Remove auto-approve label
-            gh pr edit ${{ github.event.pull_request.number }} --remove-label "auto-approve"
+            gh pr edit $PR_NUM --remove-label "auto-approve"
 
             # Add comment explaining why
-            gh pr comment ${{ github.event.pull_request.number }} \
-              --body "❌ **Auto-approval rejected:** ${{ steps.approval-decision.outputs.reason }}\n\nThis PR requires manual review."
+            COMMENT_BODY="❌ **Auto-approval rejected:** $REASON"
+            COMMENT_BODY="$COMMENT_BODY\n\nThis PR requires manual review."
+            gh pr comment $PR_NUM --body "$COMMENT_BODY"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

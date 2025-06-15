@@ -18,10 +18,10 @@ We highly encourage switching to the new `scan` command which is easier to use, 
         "scanned": [
             "/opt/homebrew/Cellar/python@3.12/3.12.10/Frameworks/Python.framework/Versions/3.12/lib/python312.zip",
             "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages/setuptools/_vendor",
-            "/opt/homebrew/Cellar/python@3.12/3.12.10/Frameworks/Python.framework/Versions/3.12/lib/python3.12",
+            "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages",
             "/opt/homebrew/Cellar/python@3.12/3.12.10/Frameworks/Python.framework/Versions/3.12/lib/python3.12/lib-dynload",
             "/Users/vedprakashmishra/vigor/backend/venv/bin",
-            "/Users/vedprakashmishra/vigor/backend/venv/lib/python3.12/site-packages"
+            "/opt/homebrew/Cellar/python@3.12/3.12.10/Frameworks/Python.framework/Versions/3.12/lib/python3.12"
         ],
         "scanned_full_path": [
             "/Users/vedprakashmishra/vigor/backend/venv/bin",
@@ -41,7 +41,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
         "account": "",
         "local_database_path": null,
         "safety_version": "3.5.2",
-        "timestamp": "2025-06-14 17:14:25",
+        "timestamp": "2025-06-14 18:35:44",
         "packages_found": 118,
         "vulnerabilities_found": 0,
         "vulnerabilities_ignored": 4,
@@ -63,7 +63,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
         "git": {
             "branch": "main",
             "tag": "",
-            "commit": "a729eef9ec13567054515f4cb444e682b40b65e4",
+            "commit": "6c566f7ceef608960fe12cd8adb5c9e8375e1a01",
             "dirty": "True",
             "origin": "https://github.com/vedprakash-m/vigor.git"
         },

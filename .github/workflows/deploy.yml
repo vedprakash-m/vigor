@@ -38,7 +38,9 @@ jobs:
     name: Deploy to Staging
     needs: validate-infrastructure
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || github.event.inputs.environment == 'staging' }}
+    if: >-
+      ${{ github.event_name == 'push' ||
+          github.event.inputs.environment == 'staging' }}
     steps:
       - uses: actions/checkout@v4
 

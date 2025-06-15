@@ -14,7 +14,6 @@ on:
       - completed
   status:
 
-
 permissions:
   pull-requests: write
   contents: read
@@ -51,15 +50,17 @@ jobs:
       - name: Verify PR size
         id: verify-pr-size
         run: |
-          PR_FILES=$(gh pr view ${{ github.event.pull_request.number }} --json files -q '.files[].path')
-          PR_ADDITIONS=$(gh pr view ${{ github.event.pull_request.number }} --json additions -q '.additions')
-          PR_DELETIONS=$(gh pr view ${{ github.event.pull_request.number }} --json deletions -q '.deletions')
+          PR_NUM="${{ github.event.pull_request.number }}"
+          PR_FILES=$(gh pr view $PR_NUM --json files -q '.files[].path')
+          PR_ADDITIONS=$(gh pr view $PR_NUM --json additions -q '.additions')
+          PR_DELETIONS=$(gh pr view $PR_NUM --json deletions -q '.deletions')
           PR_CHANGES=$((PR_ADDITIONS + PR_DELETIONS))
 
-          echo "PR has $PR_CHANGES changes ($PR_ADDITIONS additions, $PR_DELETIONS deletions)"
+          echo "PR has $PR_CHANGES changes ($PR_ADDITIONS+ $PR_DELETIONS-)"
 
           if [[ $PR_CHANGES -gt 300 ]]; then
-            echo "::warning::This PR exceeds the recommended 300 lines limit. Please consider breaking it into smaller PRs."
+            echo "::warning::This PR exceeds the recommended 300 lines limit."
+            echo "::warning::Please consider breaking it into smaller PRs."
             echo "size_warning=true" >> $GITHUB_OUTPUT
           else
             echo "size_warning=false" >> $GITHUB_OUTPUT
@@ -70,7 +71,8 @@ jobs:
       - name: Check PR age
         id: check-pr-age
         run: |
-          PR_CREATED_AT=$(gh pr view ${{ github.event.pull_request.number }} --json createdAt -q '.createdAt')
+          PR_NUM="${{ github.event.pull_request.number }}"
+          PR_CREATED_AT=$(gh pr view $PR_NUM --json createdAt -q '.createdAt')
           PR_CREATED_TIMESTAMP=$(date -d "$PR_CREATED_AT" +%s)
           CURRENT_TIMESTAMP=$(date +%s)
 
@@ -81,7 +83,8 @@ jobs:
           echo "PR age: $PR_AGE_DAYS days"
 
           if [[ $PR_AGE_DAYS -gt 2 ]]; then
-            echo "::warning::This PR is older than 2 days. Please consider resolving outstanding issues or closing it."
+            echo "::warning::This PR is older than 2 days."
+            echo "::warning::Please consider resolving outstanding issues."
             echo "age_warning=true" >> $GITHUB_OUTPUT
           else
             echo "age_warning=false" >> $GITHUB_OUTPUT
@@ -92,10 +95,12 @@ jobs:
       - name: Verify PR has description
         id: verify-description
         run: |
-          PR_BODY=$(gh pr view ${{ github.event.pull_request.number }} --json body -q '.body')
+          PR_NUM="${{ github.event.pull_request.number }}"
+          PR_BODY=$(gh pr view $PR_NUM --json body -q '.body')
 
           if [[ -z "$PR_BODY" || ${#PR_BODY} -lt 20 ]]; then
-            echo "::warning::This PR has an insufficient description. Please add more details about the changes."
+            echo "::warning::This PR has an insufficient description."
+            echo "::warning::Please add more details about the changes."
             echo "description_warning=true" >> $GITHUB_OUTPUT
           else
             echo "description_warning=false" >> $GITHUB_OUTPUT
@@ -106,13 +111,17 @@ jobs:
       - name: Remind about tests
         id: check-tests
         run: |
-          PR_FILES=$(gh pr view ${{ github.event.pull_request.number }} --json files -q '.files[].path')
+          PR_NUM="${{ github.event.pull_request.number }}"
+          PR_FILES=$(gh pr view $PR_NUM --json files -q '.files[].path')
 
           # Check if PR contains test files
-          if ! echo "$PR_FILES" | grep -qE '(test|spec|__tests__|_test)\.(js|jsx|ts|tsx|py|go|rb|java|php)'; then
-            # If no test files found, check if PR touches code that might need tests
-            if echo "$PR_FILES" | grep -qE '\.(js|jsx|ts|tsx|py|go|rb|java|php)$'; then
-              echo "::warning::This PR modifies code but doesn't include test updates. Please consider adding tests."
+          TEST_PATTERN='(test|spec|__tests__|_test)\.(js|jsx|ts|tsx|py|go|rb|java|php)'
+          if ! echo "$PR_FILES" | grep -qE "$TEST_PATTERN"; then
+            # If no test files found, check if PR touches code that needs tests
+            CODE_PATTERN='\.(js|jsx|ts|tsx|py|go|rb|java|php)$'
+            if echo "$PR_FILES" | grep -qE "$CODE_PATTERN"; then
+              echo "::warning::This PR modifies code without test updates."
+              echo "::warning::Please consider adding tests."
               echo "tests_warning=true" >> $GITHUB_OUTPUT
             fi
           else
@@ -130,24 +139,34 @@ jobs:
         run: |
           COMMENT="## PR Check Results\n\n"
 
-          if [[ "${{ steps.verify-pr-size.outputs.size_warning }}" == "true" ]]; then
-            COMMENT+="⚠️ **Size Warning**: This PR exceeds the recommended 300 lines limit. Please consider breaking it into smaller PRs.\n\n"
+          SIZE_OUT="${{ steps.verify-pr-size.outputs.size_warning }}"
+          if [[ "$SIZE_OUT" == "true" ]]; then
+            COMMENT+="⚠️ **Size Warning**: This PR exceeds 300 lines limit.\n"
+            COMMENT+="Please consider breaking it into smaller PRs.\n\n"
           fi
 
-          if [[ "${{ steps.check-pr-age.outputs.age_warning }}" == "true" ]]; then
-            COMMENT+="⏱️ **Age Warning**: This PR is older than 2 days. Please consider resolving outstanding issues or closing it.\n\n"
+          AGE_OUT="${{ steps.check-pr-age.outputs.age_warning }}"
+          if [[ "$AGE_OUT" == "true" ]]; then
+            COMMENT+="⏱️ **Age Warning**: This PR is older than 2 days.\n"
+            COMMENT+="Please consider resolving outstanding issues.\n\n"
           fi
 
-          if [[ "${{ steps.verify-description.outputs.description_warning }}" == "true" ]]; then
-            COMMENT+="📝 **Description Warning**: This PR has an insufficient description. Please add more details about the changes.\n\n"
+          DESC_OUT="${{ steps.verify-description.outputs.description_warning }}"
+          if [[ "$DESC_OUT" == "true" ]]; then
+            COMMENT+="📝 **Description Warning**: Insufficient description.\n"
+            COMMENT+="Please add more details about the changes.\n\n"
           fi
 
-          if [[ "${{ steps.check-tests.outputs.tests_warning }}" == "true" ]]; then
-            COMMENT+="🧪 **Testing Warning**: This PR modifies code but doesn't include test updates. Please consider adding tests.\n\n"
+          TEST_OUT="${{ steps.check-tests.outputs.tests_warning }}"
+          if [[ "$TEST_OUT" == "true" ]]; then
+            COMMENT+="🧪 **Testing Warning**: Code changes without tests.\n"
+            COMMENT+="Please consider adding tests.\n\n"
           fi
 
-          COMMENT+="\nFor more information, please see our [Development & PR Management Guide](../blob/main/docs/dev_pr_mgmt.md)."
+          COMMENT+="\nFor more information, see our "
+          COMMENT+="[Development Guide](../blob/main/docs/dev_pr_mgmt.md)."
 
-          gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
+          PR_NUM="${{ github.event.pull_request.number }}"
+          gh pr comment $PR_NUM --body "$COMMENT"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
