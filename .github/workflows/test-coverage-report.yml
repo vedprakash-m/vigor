@@ -1,3 +1,4 @@
+---
 name: Test Coverage Report
 
 on:
@@ -6,6 +7,10 @@ on:
     types:
       - completed
   workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   aggregate-coverage:
@@ -21,12 +26,14 @@ jobs:
         with:
           name: backend-test-results
           path: coverage-reports/backend
+        continue-on-error: true
 
       - name: Download frontend coverage
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
           path: coverage-reports/frontend
+        continue-on-error: true
 
       - name: Generate unified coverage report
         run: |

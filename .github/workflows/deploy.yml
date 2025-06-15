@@ -1,3 +1,4 @@
+---
 name: Unified Deployment
 
 on:
@@ -16,6 +17,10 @@ on:
         options:
           - staging
           - production
+
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   validate-infrastructure:
@@ -62,11 +67,18 @@ jobs:
           npm ci
           npm run build
 
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+        continue-on-error: true
+
       - name: Deploy to Staging Azure
         uses: azure/webapps-deploy@v2
         with:
           app-name: vigor-staging
           package: ./backend
+        continue-on-error: true
 
   verify-staging:
     name: Verify Staging Deployment

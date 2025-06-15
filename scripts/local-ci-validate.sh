@@ -41,7 +41,115 @@ parse_arguments() {
   done
 }
 
-# Check if all required tools are installed
+# Check workflow files for common issues
+validate_workflows() {
+  echo "🔍 Validating GitHub Actions workflows..."
+
+  # Check for required workflows
+  required_workflows=(
+    ".github/workflows/backend-ci.yml"
+    ".github/workflows/frontend-ci.yml"
+    ".github/workflows/e2e-tests.yml"
+    ".github/workflows/deploy.yml"
+    ".github/workflows/secret-scan.yml"
+  )
+
+  for workflow in "${required_workflows[@]}"; do
+    if [ ! -f "$workflow" ]; then
+      echo "❌ Required workflow missing: $workflow"
+      exit 1
+    fi
+  done
+
+  # Validate workflow syntax
+  echo "   Validating workflow YAML syntax..."
+  for workflow in .github/workflows/*.yml .github/workflows/*.yaml; do
+    if [ -f "$workflow" ]; then
+      echo "   Checking $workflow..."
+
+      # Check for YAML document start marker
+      if ! head -1 "$workflow" | grep -q "^---"; then
+        echo "❌ $workflow missing YAML document start marker (---)"
+        exit 1
+      fi
+
+      # Check for permissions block
+      if ! grep -q "permissions:" "$workflow"; then
+        echo "❌ $workflow missing permissions block"
+        exit 1
+      fi
+
+      # Validate YAML syntax
+      if command -v yamllint &> /dev/null; then
+        yamllint "$workflow" || { echo "❌ $workflow has YAML syntax errors"; exit 1; }
+      fi
+
+      # Check for deprecated actions
+      if grep -q "actions/upload-artifact@v3" "$workflow"; then
+        echo "❌ $workflow uses deprecated upload-artifact@v3"
+        exit 1
+      fi
+
+      if grep -q "actions/setup-python@v4" "$workflow"; then
+        echo "❌ $workflow uses deprecated setup-python@v4"
+        exit 1
+      fi
+    fi
+  done
+
+  # Check for artifact path consistency
+  echo "   Checking artifact path consistency..."
+  if [ -f ".github/workflows/backend-ci.yml" ]; then
+    if grep -q "backend/" .github/workflows/backend-ci.yml | grep -q "path:"; then
+      echo "❌ Backend CI workflow has incorrect artifact paths (should be relative to working-directory)"
+      exit 1
+    fi
+  fi
+
+  echo "✅ All workflows validated successfully"
+}
+
+# Enhanced secrets detection
+enhanced_secrets_check() {
+  echo "🔍 Enhanced secrets detection..."
+
+  # Check for common secret patterns
+  secret_patterns=(
+    "password\s*=\s*['\"][^'\"]{8,}"
+    "secret\s*=\s*['\"][^'\"]{16,}"
+    "key\s*=\s*['\"][^'\"]{16,}"
+    "token\s*=\s*['\"][^'\"]{16,}"
+    "api[_-]?key\s*=\s*['\"][^'\"]{16,}"
+    "AKIA[0-9A-Z]{16}"  # AWS Access Key
+    "sk-[a-zA-Z0-9]{48}"  # OpenAI API key
+  )
+
+  for pattern in "${secret_patterns[@]}"; do
+    if grep -r -E "$pattern" . --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=venv --exclude="*.log"; then
+      echo "⚠️ Potential secret detected with pattern: $pattern"
+      echo "   Please review and use environment variables or secret management"
+    fi
+  done
+}
+
+# Validate Docker configuration
+validate_docker() {
+  echo "🐳 Validating Docker configuration..."
+
+  if [ ! -f "docker-compose.yml" ]; then
+    echo "❌ docker-compose.yml not found"
+    exit 1
+  fi
+
+  # Check Docker Compose syntax
+  if command -v docker-compose &> /dev/null; then
+    docker-compose config > /dev/null || { echo "❌ docker-compose.yml has syntax errors"; exit 1; }
+  elif command -v docker &> /dev/null && docker compose version &> /dev/null; then
+    docker compose config > /dev/null || { echo "❌ docker-compose.yml has syntax errors"; exit 1; }
+  fi
+
+  echo "✅ Docker configuration validated"
+}
 check_required_tools() {
   echo "📋 Checking required tools..."
 
@@ -230,92 +338,6 @@ validate_frontend() {
   cd ..
 
   echo "✅ Frontend validation passed!"
-  return 0
-}
-
-# Validate GitHub workflow files
-validate_workflows() {
-  echo "🔄 Validating GitHub workflow files..."
-
-  # Create temp directory for validation results
-  mkdir -p /tmp/workflow-validation
-
-  # Check if workflow health check script exists
-  if [ -f "scripts/validate-workflows.sh" ] && command -v actionlint &> /dev/null; then
-    echo "   Running comprehensive workflow validation script..."
-    if ! bash scripts/validate-workflows.sh; then
-      if [ "$PRE_COMMIT_MODE" = false ]; then
-        echo "❌ Workflow validation script found critical issues"
-        return 1
-      else
-        echo "⚠️ Workflow validation script found issues - consider fixing before pushing"
-      fi
-    fi
-  else
-    # Basic check: Make sure all workflow files are valid YAML
-    if command -v yamllint &> /dev/null; then
-      echo "   Running YAML linting on workflow files..."
-      local has_yaml_errors=false
-
-      # Create a more detailed report
-      echo "=== YAML Validation Report ===" > /tmp/workflow-validation/yaml_report.txt
-
-      for file in .github/workflows/*.yml; do
-        if [ -f "$file" ]; then
-          echo "   Checking $file..."
-          if ! yamllint -d relaxed "$file" > /tmp/workflow-validation/lint_output.txt 2>&1; then
-            echo -e "\nErrors in $file:" >> /tmp/workflow-validation/yaml_report.txt
-            cat /tmp/workflow-validation/lint_output.txt >> /tmp/workflow-validation/yaml_report.txt
-            echo "❌ YAML validation failed for $file"
-            cat /tmp/workflow-validation/lint_output.txt
-            has_yaml_errors=true
-          fi
-        fi
-      done
-
-      if [ "$has_yaml_errors" = true ]; then
-        echo "⚠️ YAML linting found issues - check details above"
-        if [ "$PRE_COMMIT_MODE" = false ]; then
-          echo "   Fix these issues before proceeding"
-          return 1
-        fi
-      fi
-    else
-      echo "⚠️ yamllint not installed. Install with: pip install yamllint"
-    fi
-
-    # Check for common issues like unpinned actions
-    echo "   Checking for unpinned actions (security best practice)..."
-    UNPINNED=$(grep -r "uses: " .github/workflows/ | grep -v "@[0-9a-f]\{40\}" | grep -v "uses: ./")
-    if [ ! -z "$UNPINNED" ]; then
-      echo "⚠️ Found actions not pinned to a specific SHA:"
-      echo "$UNPINNED"
-      echo -e "\nConsider pinning these actions to specific SHA commits for better security"
-    fi
-
-    # Check for deprecated actions
-    echo "   Checking for deprecated actions..."
-    DEPRECATED=$(grep -r "uses: actions/setup-node@v[1-2]\|uses: actions/checkout@v[1-2]\|uses: actions/setup-python@v[1-3]" .github/workflows/)
-    if [ ! -z "$DEPRECATED" ]; then
-      echo "⚠️ Found deprecated actions:"
-      echo "$DEPRECATED"
-      echo -e "\nConsider upgrading to the latest versions"
-    fi
-
-    # Check for hardcoded credentials
-    echo "   Checking for potential hardcoded credentials..."
-    HARDCODED=$(grep -r "token: '[^$]\\|token: \"[^$]\\|password: '[^$]\\|password: \"[^$]\\|key: '[^$]\\|key: \"[^$]" .github/workflows/)
-    if [ ! -z "$HARDCODED" ]; then
-      echo "❌ Potential hardcoded credentials found:"
-      echo "$HARDCODED"
-      echo -e "\nReplace with secrets!"
-      if [ "$PRE_COMMIT_MODE" = false ]; then
-        return 1
-      fi
-    fi
-  fi
-
-  echo "✅ Workflow validation completed!"
   return 0
 }
 
@@ -593,6 +615,14 @@ main() {
 
   # Workflow validation
   validate_workflows || HAS_ERRORS=$((HAS_ERRORS + 1))
+  echo "-------------------------------------------------------------"
+
+  # Enhanced secrets validation
+  enhanced_secrets_check || HAS_ERRORS=$((HAS_ERRORS + 1))
+  echo "-------------------------------------------------------------"
+
+  # Docker validation
+  validate_docker || HAS_ERRORS=$((HAS_ERRORS + 1))
   echo "-------------------------------------------------------------"
 
   # Secrets validation

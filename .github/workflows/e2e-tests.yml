@@ -1,9 +1,14 @@
+---
 name: End-to-End Tests
 
 on:
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   e2e-tests:
