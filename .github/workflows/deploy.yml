@@ -72,7 +72,9 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         continue-on-error: true
 
       - name: Deploy to Staging Azure
@@ -91,9 +93,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run health checks
+        env:
+          ENDPOINT_URL: https://vigor-staging.azurewebsites.net
         run: ./scripts/health-check.sh staging
 
       - name: Run smoke tests
+        env:
+          ENDPOINT_URL: https://vigor-staging.azurewebsites.net
         run: ./scripts/run-smoke-tests.sh staging
 
   deploy-to-production:
@@ -135,6 +141,13 @@ jobs:
           app-name: vigor-production
           package: ./backend
 
+      - name: Azure Login for Production
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
   verify-production:
     name: Verify Production Deployment
     needs: deploy-to-production
@@ -145,7 +158,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run health checks
+        env:
+          ENDPOINT_URL: https://vigor-production.azurewebsites.net
         run: ./scripts/health-check.sh production
 
       - name: Run smoke tests
+        env:
+          ENDPOINT_URL: https://vigor-production.azurewebsites.net
         run: ./scripts/run-smoke-tests.sh production

@@ -81,29 +81,22 @@ tags = ["password"]
 severity = "HIGH"
 
 # Allow rules override detection of specific false positives
-[[allowlist]]
-description = "Example password placeholders"
-regex = '''(?i)(?:password|passwd|pwd)[\s]*[=:]\s*['"](?:placeholder|example|changeme|yourpassword)['"]'''
-
-[[allowlist]]
-description = "Test API keys"
-regex = '''(?i)['"]?(?:api[_-]?key|api[_-]?token)['"]\s*[:=]\s*['"]?(?:test|dummy|example|placeholder|sample)[a-z0-9_-]*['"]?'''
-
-# Additional allowlist for your specific project
-[[allowlist]]
-description = "Skip test directories"
+[allowlist]
+description = "Allow test and example files"
 paths = [
-    "**/*test*/**",
-    "**/*mock*/**",
-    "**/*fixture*/**",
+    ".*/test/.*",
+    ".*/tests/.*",
+    ".*/mock/.*",
+    ".*/mocks/.*",
+    ".*/fixture/.*",
+    ".*/fixtures/.*",
+    ".*\\.md$",
+    ".*\\.mdx$",
+    ".*\\.example$"
 ]
-
-[[allowlist]]
-description = "Skip specific files"
-files = [
-    "**/*.md",
-    "**/*.mdx",
-    "**/*.example"
+regexes = [
+    '''(?i)(?:password|passwd|pwd)[\s]*[=:]\s*['"](?:placeholder|example|changeme|yourpassword)['"]''',
+    '''(?i)['"]?(?:api[_-]?key|api[_-]?token)['"]\s*[:=]\s*['"]?(?:test|dummy|example|placeholder|sample)[a-z0-9_-]*['"]?'''
 ]
 
 # Optional: Enable commit depth scan to only scan new commits
