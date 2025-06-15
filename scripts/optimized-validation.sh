@@ -135,6 +135,54 @@ run_parallel_validations() {
         echo "WORKFLOW:$WORKFLOW_RESULT:$WORKFLOW_WARNINGS" > "$TEMP_DIR/workflow_result"
     } &
 
+    # 6. Azure and documentation validation (instant)
+    {
+        echo "   🔍 Validating Azure authentication and documentation..."
+
+        # Check Azure OIDC permissions
+        oidc_issues=0
+        if [ -f ".github/workflows/deploy.yml" ]; then
+            if grep -q "azure/login@" ".github/workflows/deploy.yml" && ! grep -q "id-token: write" ".github/workflows/deploy.yml"; then
+                echo "   ❌ deploy.yml uses Azure login but missing 'id-token: write' permission"
+                oidc_issues=$((oidc_issues + 1))
+            fi
+        fi
+
+        # Check documentation links
+        doc_link_issues=0
+        readme_doc_links=(
+            "docs/getting-started.md"
+            "docs/deployment.md"
+            "docs/architecture.md"
+            "docs/CONTRIBUTING.md"
+        )
+
+        for link in "${readme_doc_links[@]}"; do
+            if [ -f "README.md" ] && grep -q "$link" README.md && [ ! -f "$link" ]; then
+                echo "   ❌ README.md links to missing file: $link"
+                doc_link_issues=$((doc_link_issues + 1))
+            fi
+        done
+
+        # Check for staging references
+        staging_issues=0
+        key_files=(".github/workflows/deploy.yml" "infrastructure/bicep/main.bicep")
+        for file in "${key_files[@]}"; do
+            if [ -f "$file" ] && grep -q "staging" "$file" 2>/dev/null; then
+                echo "   ⚠️ $file still contains staging references"
+                staging_issues=$((staging_issues + 1))
+            fi
+        done
+
+        total_config_issues=$((oidc_issues + doc_link_issues + staging_issues))
+        if [ $total_config_issues -eq 0 ]; then
+            echo "   ✅ Azure authentication and documentation validation passed"
+        else
+            echo "   ❌ Azure/documentation validation failed with $total_config_issues issue(s)"
+        fi
+        echo "$total_config_issues" > "$TEMP_DIR/config_validation_result"
+    } &
+
     # Wait for all background jobs
     wait
 }
@@ -234,6 +282,16 @@ if [ -f "$TEMP_DIR/workflow_result" ]; then
 
     if echo "$WORKFLOW_WARNINGS" | grep -q "STAGING_REFS"; then
         report_warning "GitHub Actions workflows still reference staging environment"
+    fi
+fi
+
+# 6. Azure and documentation results
+if [ -f "$TEMP_DIR/config_validation_result" ]; then
+    CONFIG_ISSUES=$(cat "$TEMP_DIR/config_validation_result")
+    if [ "$CONFIG_ISSUES" -eq 0 ]; then
+        report_success "Azure authentication and documentation validation passed"
+    else
+        report_warning "Azure/documentation validation found $CONFIG_ISSUES issue(s)"
     fi
 fi
 

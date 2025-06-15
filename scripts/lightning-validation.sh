@@ -121,6 +121,43 @@ if [ $staging_issues -eq 0 ]; then
     report_success "No staging environment references found"
 fi
 
+# Check Azure OIDC permissions in workflows
+oidc_issues=0
+azure_workflows=(".github/workflows/deploy.yml")
+
+for file in "${azure_workflows[@]}"; do
+    if [ -f "$file" ]; then
+        if grep -q "azure/login@" "$file" && ! grep -q "id-token: write" "$file"; then
+            report_error "$file uses Azure login but missing 'id-token: write' permission"
+            oidc_issues=$((oidc_issues + 1))
+        fi
+    fi
+done
+
+if [ $oidc_issues -eq 0 ] && [ -f ".github/workflows/deploy.yml" ]; then
+    report_success "Azure OIDC authentication properly configured"
+fi
+
+# Check documentation links in README
+doc_link_issues=0
+readme_doc_links=(
+    "docs/getting-started.md"
+    "docs/deployment.md"
+    "docs/architecture.md"
+    "docs/CONTRIBUTING.md"
+)
+
+for link in "${readme_doc_links[@]}"; do
+    if [ -f "README.md" ] && grep -q "$link" README.md && [ ! -f "$link" ]; then
+        report_error "README.md links to missing file: $link"
+        doc_link_issues=$((doc_link_issues + 1))
+    fi
+done
+
+if [ $doc_link_issues -eq 0 ]; then
+    report_success "Documentation links verified"
+fi
+
 # 5. Health check script validation (instant)
 echo "🏥 Checking health check script..."
 if [ -f "scripts/health-check.sh" ]; then

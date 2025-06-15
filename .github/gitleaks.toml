@@ -82,7 +82,7 @@ severity = "HIGH"
 
 # Allow rules override detection of specific false positives
 [allowlist]
-description = "Allow test and example files"
+description = "Allow test, example, and dependency files"
 paths = [
     ".*/test/.*",
     ".*/tests/.*",
@@ -92,7 +92,22 @@ paths = [
     ".*/fixtures/.*",
     ".*\\.md$",
     ".*\\.mdx$",
-    ".*\\.example$"
+    ".*\\.example$",
+    ".*/\\.venv/.*",
+    ".*/venv/.*",
+    ".*/env/.*",
+    ".*/node_modules/.*",
+    ".*/coverage/.*",
+    ".*/htmlcov/.*",
+    ".*/__pycache__/.*",
+    ".*/\\.pytest_cache/.*",
+    ".*/\\.cache/.*",
+    ".*/build/.*",
+    ".*/dist/.*",
+    ".*/\\.next/.*",
+    ".*/e2e-results/.*",
+    ".*/playwright-report/.*",
+    ".*/test-results/.*"
 ]
 regexes = [
     '''(?i)(?:password|passwd|pwd)[\s]*[=:]\s*['"](?:placeholder|example|changeme|yourpassword)['"]''',
