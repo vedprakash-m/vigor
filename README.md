@@ -1,103 +1,223 @@
 # 🏋️‍♂️ Vigor - AI-Powered Fitness Coaching Platform
 
-> **Transform your fitness journey with personalized AI coaching, smart workout generation, and cost-optimized LLM integration.**
+> **Transform your fitness journey with personalized AI coaching, smart workout generation, and intelligent progress tracking.**
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![React 18](https://img.shields.io/badge/react-18+-blue.svg)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
 
-### 🛠️ Project Status
+---
 
-[![CI Status](https://img.shields.io/badge/CI-passing-brightgreen)](docs/dev_pr_mgmt.md)
-[![Workflow Health](https://img.shields.io/badge/Workflow%20Health-100%25-brightgreen)](docs/workflow_testing_guide.md)
-[![PR Pipeline](https://img.shields.io/badge/PR%20Pipeline-automated-blue)](docs/dev_pr_mgmt.md)
-[![Preview Environments](https://img.shields.io/badge/Preview%20Environments-enabled-blue)](.github/workflows/preview-environment.yml)
-[![Test Coverage](https://img.shields.io/badge/coverage-87%25-yellowgreen)](.github/workflows/coverage-check.yml)
-[![Security Scan](https://img.shields.io/badge/Security-monitored-brightgreen)](docs/secrets_management_guide.md)
-[![Dependency Audit](https://img.shields.io/badge/dependencies-audited-brightgreen)](.github/workflows/dependency-audit.yml)
-[![Secret Scanning](https://img.shields.io/badge/Secret%20Scanning-enabled-brightgreen)](.github/workflows/secret-scan.yml)
-[![CI/CD Improvements](https://img.shields.io/badge/CI%2FCD-enhanced-brightgreen)](docs/ci_cd_improvements.md)
+## ✨ What is Vigor?
 
-## 🌟 Why Choose Vigor?
+Vigor is a modern fitness platform that brings the power of AI coaching to everyone. Whether you're a beginner starting your fitness journey or an experienced athlete looking to optimize your training, Vigor adapts to your needs, equipment, and goals.
 
-**Vigor** is a next-generation fitness platform that democratizes access to personalized AI fitness coaching. Unlike expensive personal trainers or generic workout apps, Vigor provides:
+### 🎯 For Fitness Enthusiasts
 
-- **💰 Cost-Effective AI Coaching**: 70-90% cheaper than traditional personal training
-- **🤖 Multi-LLM Support**: Choose from OpenAI, Google Gemini, or Perplexity based on your budget
-- **📱 Mobile-First Design**: Responsive, PWA-ready interface for seamless mobile experience
-- **🎯 Personalized Workouts**: AI-generated plans tailored to your goals, equipment, and fitness level
-- **📊 Progress Tracking**: Smart analytics to monitor your fitness journey
-- **🔒 Privacy-First**: Your data stays secure with enterprise-grade authentication
+- **🤖 Personal AI Coach**: Get real-time advice, motivation, and guidance tailored to your fitness level
+- **📋 Smart Workout Plans**: Automatically generated workouts based on your goals, available equipment, and time
+- **📊 Progress Tracking**: Monitor your journey with intelligent analytics and insights
+- **💬 Interactive Chat**: Ask questions, get form tips, and receive encouragement whenever you need it
+- **📱 Mobile-First**: Train anywhere with a responsive, PWA-ready experience
+
+### 🛠️ For Developers
+
+- **� Modern Tech Stack**: FastAPI + React + TypeScript with full type safety
+- **🤖 Multi-LLM Support**: Flexible AI provider integration (OpenAI, Gemini, Perplexity)
+- **☁️ Cloud-Ready**: Production-ready Azure deployment with Infrastructure as Code
+- **� Enterprise Security**: JWT authentication, Azure Key Vault, and managed identities
+- **📈 Scalable Architecture**: Modular design with clean separation of concerns
 
 ---
 
-## 🚀 Key Features
+## 🚀 Quick Start
+
+### Option 1: Try the Demo (No Setup Required)
+
+Visit our live demo at [vigor-demo.com](https://vigor-demo.com) and start chatting with your AI fitness coach immediately.
+
+### Option 2: Run Locally
+
+**Prerequisites**: Python 3.9+, Node.js 18+, Git
+
+```bash
+# Clone the repository
+git clone https://github.com/vedprakash-m/vigor.git
+cd vigor
+
+# Start backend (Terminal 1)
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+
+# Start frontend (Terminal 2)
+cd frontend
+npm install
+npm run dev
+```
+
+**Access the app**: http://localhost:5173
+**API docs**: http://localhost:8001/docs
+**Default login**: admin@vigor.com / admin123!
+
+### Option 3: VS Code Development
+
+1. Open the project in VS Code
+2. Use Command Palette → "Tasks: Run Task"
+3. Select "Install All Dependencies" then "Start Backend Server" and "Start Frontend Dev Server"
+
+---
+
+## 🌟 Key Features
 
 ### 🤖 AI-Powered Coaching
 
-- **Interactive Chat**: Real-time conversations with your AI fitness coach
-- **Smart Workout Generation**: Personalized workout plans based on your profile
-- **Form Analysis**: Get feedback on your exercise technique (coming soon)
-- **Progress Insights**: AI-driven analysis of your fitness journey
+- **Smart Conversations**: Natural chat interface with context-aware responses
+- **Personalized Workouts**: AI-generated plans based on your profile and goals
+- **Real-time Guidance**: Get instant answers to form, nutrition, and training questions
+- **Progress Analysis**: AI-driven insights on your fitness journey
 
-### 💰 User Tier System
+### 💰 Flexible Pricing Tiers
 
-- **Free Tier**: 100 AI requests/month with basic features
-- **Premium Tier**: 1,000 AI requests/month + advanced coaching
-- **Unlimited Tier**: Unlimited AI access + priority support
-- **Usage Tracking**: Real-time monitoring of your AI usage and budget
-- **Smart Upgrades**: Seamless tier upgrades when you need more capacity
+- **Free Tier**: 100 AI requests/month - perfect for getting started
+- **Premium**: 1,000 requests/month + advanced features
+- **Unlimited**: No limits + priority support
+- **Usage Tracking**: Real-time monitoring of your AI usage
 
-### 💡 Flexible LLM Integration
+### � Smart AI Integration
 
-- **Multi-Provider Support**: OpenAI, Google Gemini, Perplexity
-- **Cost Optimization**: Switch providers to optimize for budget vs. performance
-- **Graceful Fallback**: Works even without AI providers configured
-- **Real-time Provider Status**: Monitor which AI service is active
+- **Multi-Provider Support**: Choose between OpenAI, Google Gemini, or Perplexity
+- **Automatic Fallback**: Always works, even without API keys configured
+- **Provider Health Monitoring**: Real-time status of AI services
+- **Cost Optimization**: Smart provider switching based on budget and needs
 
-### 📱 Modern User Experience
+### 📱 Modern Experience
 
-- **Responsive Design**: Optimized for mobile, tablet, and desktop
+- **Responsive Design**: Perfect on mobile, tablet, and desktop
 - **Progressive Web App**: Install directly on your device
-- **Dark/Light Mode**: Comfortable viewing in any environment
-- **Offline Support**: Core features work without internet (coming soon)
-
-### 🔧 Developer-Friendly
-
-- **Clean Architecture**: Modular, scalable codebase
-- **Comprehensive API**: RESTful endpoints with OpenAPI documentation
-- **Type Safety**: Full TypeScript support
-- **Testing Ready**: Structure prepared for unit and integration tests
+- **Dark/Light Mode**: Comfortable viewing anytime
+- **Fast & Reliable**: Optimized for performance
 
 ---
 
 ## 🏗️ Technology Stack
 
-### Backend
+| Component          | Technology                 | Purpose                                  |
+| ------------------ | -------------------------- | ---------------------------------------- |
+| **Backend**        | FastAPI + Python 3.9+      | RESTful API with automatic documentation |
+| **Frontend**       | React 18 + TypeScript      | Modern, type-safe user interface         |
+| **Database**       | PostgreSQL + SQLAlchemy    | Reliable data storage with ORM           |
+| **AI Integration** | Multi-provider abstraction | Flexible LLM support                     |
+| **Authentication** | JWT + refresh tokens       | Secure user sessions                     |
+| **Infrastructure** | Azure + Bicep              | Cloud deployment with IaC                |
+| **UI Framework**   | Chakra UI v3               | Beautiful, accessible components         |
+| **Build Tools**    | Vite + TypeScript          | Fast development and builds              |
 
-- **Framework**: FastAPI (Python 3.9+)
-- **Database**: SQLite (dev) / PostgreSQL (prod)
-- **Authentication**: JWT with refresh tokens
-- **AI Integration**: Multi-provider LLM abstraction
-- **ORM**: SQLAlchemy with Alembic migrations
-- **Validation**: Pydantic models
+---
 
-### Frontend
+## 🚀 Deployment
 
-- **Framework**: React 18 + TypeScript
-- **UI Library**: Chakra UI v3
-- **State Management**: React Context + Hooks
-- **Build Tool**: Vite
-- **Styling**: Emotion (CSS-in-JS)
-- **PWA**: Service Worker ready
+### Cloud Deployment (Azure)
 
-### AI Providers
+Deploy to Azure with one command:
 
-- **OpenAI**: GPT-3.5-turbo, GPT-4
-- **Google Gemini**: Gemini-2.5-flash, Gemini-2.5-pro
-- **Perplexity**: Llama-3.1-sonar models
-- **Fallback**: Built-in responses for demo mode
+```bash
+# Set up secrets and deploy infrastructure
+./scripts/setup-production-secrets.sh
+cd infrastructure/bicep && ./deploy.sh
+git push origin main  # Triggers automatic deployment
+```
+
+**What gets deployed:**
+
+- FastAPI backend on Azure App Service
+- React frontend on Azure Static Web Apps
+- PostgreSQL database with automatic backups
+- Redis cache for session management
+- Application monitoring and logging
+
+### Self-Hosting
+
+Vigor can be deployed on any cloud provider or on-premises server. See [docs/deployment.md](docs/deployment.md) for detailed instructions.
+
+---
+
+## 📚 Documentation
+
+- **[Getting Started Guide](docs/getting-started.md)** - Complete setup and configuration
+- **[API Documentation](http://localhost:8001/docs)** - Interactive API reference (when running locally)
+- **[Deployment Guide](docs/deployment.md)** - Production deployment instructions
+- **[LLM Setup](backend/LLM_SETUP.md)** - Configure AI providers
+- **[Contributing](docs/CONTRIBUTING.md)** - How to contribute to the project
+- **[Architecture Overview](docs/architecture.md)** - Technical deep dive
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions from developers of all skill levels! Whether you want to:
+
+- 🐛 **Report bugs** or suggest features
+- 💻 **Submit code improvements**
+- 📝 **Improve documentation**
+- 🧪 **Add tests** or enhance quality
+
+Please read our [Contributing Guide](docs/CONTRIBUTING.md) to get started.
+
+### Quick Development Setup
+
+```bash
+# Install dependencies
+./scripts/lightning-validation.sh  # Fast validation
+Task: Install All Dependencies     # VS Code task
+
+# Run tests
+Task: Run Backend Tests
+Task: Run Frontend Tests
+
+# Format code
+Task: Format Backend Code
+Task: Format Frontend Code
+```
+
+---
+
+## 🔗 Links
+
+- **Live Demo**: [vigor-demo.com](https://vigor-demo.com)
+- **GitHub**: [github.com/vedprakash-m/vigor](https://github.com/vedprakash-m/vigor)
+- **Issues**: [Report bugs or request features](https://github.com/vedprakash-m/vigor/issues)
+- **Discussions**: [Community discussions](https://github.com/vedprakash-m/vigor/discussions)
+
+---
+
+## 📄 License
+
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**.
+
+**Key points:**
+
+- ✅ Free to use, modify, and distribute
+- ✅ Commercial use allowed
+- ⚠️ Source code must be disclosed when distributed
+- ⚠️ Network use requires source disclosure
+
+See the [LICENSE](LICENSE) file for full details.
+
+---
+
+<div align="center">
+
+**Built with ❤️ for the fitness community**
+
+[⭐ Star us on GitHub](https://github.com/vedprakash-m/vigor) • [🐛 Report Bug](https://github.com/vedprakash-m/vigor/issues) • [💡 Request Feature](https://github.com/vedprakash-m/vigor/issues)
+
+**Transform your fitness journey today!**
+
+</div>
 
 ---
 
@@ -302,8 +422,8 @@ cd vigor
 # 2. Set up GitHub secrets for CI/CD
 ./scripts/setup-production-secrets.sh
 
-# 3. Deploy infrastructure to Azure (West US 2 optimized)
-cd infrastructure/bicep && ./deploy-west-us-2.sh
+# 3. Deploy infrastructure to Azure (single region deployment)
+cd infrastructure/bicep && ./deploy.sh
 
 # 4. Push to trigger application deployment
 git push origin main
@@ -313,8 +433,8 @@ git push origin main
 
 - **🏗️ Azure Bicep**: Modern Infrastructure as Code (migrated from Terraform)
 - **🔐 OIDC Authentication**: Secure GitHub Actions deployment without client secrets
-- **🌍 West US 2 Optimized**: <20ms latency for West Coast users
-- **💰 Cost Optimized**: ~$150-180/month for production workload
+- **🌍 Central US Deployment**: Single region for simplicity and cost efficiency
+- **💰 Cost Optimized**: FREE tier App Service + minimal database costs
 - **📊 Full Monitoring**: Application Insights + Log Analytics
 - **🔒 Enterprise Security**: Azure Key Vault + managed identities
 
@@ -507,8 +627,8 @@ _This project is licensed under AGPLv3. See [LICENSE](LICENSE) and [NOTICE](NOTI
 
 - **✅ Azure Bicep Migration**: Replaced Terraform with modern Azure-native IaC
 - **✅ OIDC Authentication**: Secure GitHub Actions deployment without client secrets
-- **✅ West US 2 Optimization**: <20ms latency for West Coast users
-- **✅ Cost Optimization**: Eliminated Terraform state storage (~$5/month savings)
+- **✅ Single Region Deployment**: Central US for simplicity and cost efficiency
+- **✅ Cost Optimization**: FREE tier hosting + minimal database costs
 - **✅ CI/CD Pipeline**: Fully automated deployment with enhanced error handling
 
 **Application Features (Completed)**
@@ -549,10 +669,10 @@ _This project is licensed under AGPLv3. See [LICENSE](LICENSE) and [NOTICE](NOTI
 | **Security**    | ✅ Hardened   | Key Vault + RBAC   | $3-5       |
 | **Total**       | ✅ Production | High Performance   | **$44-83** |
 
-### Deployment Regions 🌍
+### Deployment Region 🌍
 
-- **Primary**: West US 2 (optimized for West Coast users)
-- **Latency**: <20ms CA/WA/OR, <80ms US-wide
+- **Primary**: Central US (single region for cost efficiency)
+- **Latency**: Optimized for US-wide access
 - **Availability**: 99.9% SLA with Azure managed services
 - **Scaling**: Auto-scale enabled for production workloads
 

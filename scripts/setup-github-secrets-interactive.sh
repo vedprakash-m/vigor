@@ -77,7 +77,6 @@ set_secret "ACR_PASSWORD" "Azure Container Registry Password" true
 # Database Configuration
 set_secret "POSTGRES_ADMIN_PASSWORD" "PostgreSQL Admin Password" true
 set_secret "DATABASE_URL_DEV" "Development Database Connection String" false
-set_secret "DATABASE_URL_STAGING" "Staging Database Connection String" false
 set_secret "DATABASE_URL_PRODUCTION" "Production Database Connection String" false
 
 # Application Security
@@ -93,7 +92,6 @@ set_secret "PERPLEXITY_API_KEY" "Perplexity API Key" false
 
 # Azure Static Web Apps (Optional - for frontend deployment)
 set_secret "AZURE_STATIC_WEB_APPS_API_TOKEN_DEV" "Azure Static Web Apps API Token (Dev)" false
-set_secret "AZURE_STATIC_WEB_APPS_API_TOKEN_STAGING" "Azure Static Web Apps API Token (Staging)" false
 set_secret "AZURE_STATIC_WEB_APPS_API_TOKEN_PRODUCTION" "Azure Static Web Apps API Token (Production)" false
 
 # Coverage and Monitoring (Optional)

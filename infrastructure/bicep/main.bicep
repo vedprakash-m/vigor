@@ -3,7 +3,7 @@
 param environment string = 'prod'
 
 @description('Azure region for resources')
-param location string = 'East US'
+param location string = 'Central US'
 
 @description('Application name')
 param appName string = 'vigor'
@@ -35,7 +35,7 @@ param geminiApiKey string = ''
 param perplexityApiKey string = ''
 
 @description('App Service SKU')
-param appServiceSku string = 'S1'
+param appServiceSku string = 'F1'
 
 @description('Resource group name where database resources (PostgreSQL) will live. Allows you to delete the app RG without losing data.')
 param databaseResourceGroup string = 'vigor-db-rg'

@@ -184,11 +184,9 @@ setup_database_urls() {
 
     # These are placeholder values that will be updated after infrastructure deployment
     DEV_DB_URL="postgresql://vigoradmin:password@vigor-dev-db.postgres.database.azure.com:5432/vigor?sslmode=require"
-    STAGING_DB_URL="postgresql://vigoradmin:password@vigor-staging-db.postgres.database.azure.com:5432/vigor?sslmode=require"
     PROD_DB_URL="postgresql://vigoradmin:password@vigor-production-db.postgres.database.azure.com:5432/vigor?sslmode=require"
 
     echo "$DEV_DB_URL" | gh secret set DATABASE_URL_DEV -R "$REPO_OWNER/$REPO_NAME"
-    echo "$STAGING_DB_URL" | gh secret set DATABASE_URL_STAGING -R "$REPO_OWNER/$REPO_NAME"
     echo "$PROD_DB_URL" | gh secret set DATABASE_URL_PRODUCTION -R "$REPO_OWNER/$REPO_NAME"
 
     print_success "Database URLs configured (placeholder values)."
@@ -201,11 +199,9 @@ setup_static_web_app_tokens() {
 
     # These are placeholder values that will be updated after Static Web App creation
     DEV_TOKEN="placeholder-token-dev"
-    STAGING_TOKEN="placeholder-token-staging"
     PROD_TOKEN="placeholder-token-production"
 
     echo "$DEV_TOKEN" | gh secret set AZURE_STATIC_WEB_APPS_API_TOKEN_DEV -R "$REPO_OWNER/$REPO_NAME"
-    echo "$STAGING_TOKEN" | gh secret set AZURE_STATIC_WEB_APPS_API_TOKEN_STAGING -R "$REPO_OWNER/$REPO_NAME"
     echo "$PROD_TOKEN" | gh secret set AZURE_STATIC_WEB_APPS_API_TOKEN_PRODUCTION -R "$REPO_OWNER/$REPO_NAME"
 
     print_success "Static Web App tokens configured (placeholder values)."
@@ -219,7 +215,7 @@ create_github_environments() {
     # Note: GitHub CLI doesn't have direct environment creation, so we'll provide instructions
     print_warning "Please manually create the following environments in GitHub:"
     echo "1. Go to https://github.com/$REPO_OWNER/$REPO_NAME/settings/environments"
-    echo "2. Create environments: development, staging, production"
+    echo "2. Create environments: development, production"
     echo "3. Configure protection rules as described in the setup guide"
 }
 
@@ -242,7 +238,7 @@ display_summary() {
     echo "✓ AZURE_STATIC_WEB_APPS_API_TOKEN_* (placeholder values)"
     echo
     print_warning "Next steps:"
-    echo "1. Create GitHub environments (development, staging, production)"
+    echo "1. Create GitHub environments (development, production)"
     echo "2. Deploy infrastructure using Terraform"
     echo "3. Update database URLs with actual values"
     echo "4. Update Static Web App tokens with actual values"

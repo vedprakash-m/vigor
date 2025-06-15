@@ -31,7 +31,7 @@ print_error() {
 
 # Configuration
 RESOURCE_GROUP="vigor-rg"
-LOCATION="West US 2"
+LOCATION="Central US"  # Single region for simplicity and cost
 TEMPLATE_FILE="main.bicep"
 PARAMETERS_FILE="parameters.bicepparam"
 

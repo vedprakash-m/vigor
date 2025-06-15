@@ -177,6 +177,41 @@ validate_health_endpoints() {
         esac
     done
 
+    # Test health check script endpoints statically (avoid backend startup complexity)
+    echo "   Validating health check endpoints statically..."
+
+    # Check that health check script only references endpoints that exist
+    if [ -f "./scripts/health-check.sh" ]; then
+        # Extract endpoints from health check script
+        HEALTH_ENDPOINTS=$(grep -E "curl.*\\\$\{?BASE_URL\}?" ./scripts/health-check.sh | sed -E 's/.*\$\{?BASE_URL\}?([^"'\'' ]+).*/\1/' | grep "^/" | sort -u)
+
+        # Check backend routes
+        BACKEND_ROUTES=""
+        if [ -f "./backend/main.py" ]; then
+            # Extract FastAPI routes from main.py and route files
+            BACKEND_ROUTES=$(find ./backend -name "*.py" -exec grep -E "(app\.get|app\.post|router\.get|router\.post|@.*\.(get|post))" {} \; 2>/dev/null | \
+                            sed -E 's/.*[(@].*\.(get|post)\("([^"]+)".*/\3/' | \
+                            grep "^/" | sort -u)
+        fi
+
+        # Cross-check endpoints
+        MISSING_ENDPOINTS=""
+        for endpoint in $HEALTH_ENDPOINTS; do
+            if [ -n "$endpoint" ] && ! echo "$BACKEND_ROUTES" | grep -q "^$endpoint$"; then
+                MISSING_ENDPOINTS="$MISSING_ENDPOINTS $endpoint"
+            fi
+        done
+
+        if [ -n "$MISSING_ENDPOINTS" ]; then
+            echo "   ⚠️  Warning: Health check script references non-existent endpoints:$MISSING_ENDPOINTS"
+            echo "      Consider updating health-check.sh or adding these endpoints to the backend"
+        else
+            echo "   ✅ All health check endpoints exist in the backend"
+        fi
+    else
+        echo "   ⚠️  Health check script not found at ./scripts/health-check.sh"
+    fi
+
     report_success "Health check endpoints validation completed"
     return 0
 }

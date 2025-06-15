@@ -930,7 +930,7 @@
               },
               "properties": {
                 "provider": "GitHub",
-                "stagingEnvironmentPolicy": "Enabled",
+                "stagingEnvironmentPolicy": "Disabled",
                 "allowConfigFileUpdates": true,
                 "enterpriseGradeCdnStatus": "Enabled"
               }

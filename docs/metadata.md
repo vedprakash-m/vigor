@@ -17,7 +17,7 @@ This document consolidates key project metadata and information from various sou
 Current deployment status information for Vigor services:
 
 - **Production**: Running on Azure infrastructure with bicep templates
-- **Staging**: Automated deployment through GitHub Actions
+- **Production**: Production deployment via CI/CD
 - **Preview**: Available for PRs through preview-environment.yml workflow
 
 ### Service Architecture
@@ -32,7 +32,7 @@ Current deployment status information for Vigor services:
 
 Vigor follows a multi-region deployment approach for high availability and regional compliance:
 
-- **Primary region**: West US 2
+- **Primary region**: Central US
 - **Secondary regions**: East US, Europe West
 - **Failover strategy**: Active-passive with automated health checks
 

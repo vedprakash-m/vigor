@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Union
 
 # Third-party imports
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
@@ -47,8 +48,8 @@ class LoginRequest(BaseModel):
 async def login(
     request: Request,
     db: Session = Depends(get_db),
-    form_data: OAuth2PasswordRequestForm | None = Depends(lambda: None),
-    login_json: LoginRequest | None = Body(None),
+    form_data: Union[OAuth2PasswordRequestForm, None] = Depends(lambda: None),
+    login_json: Union[LoginRequest, None] = Body(None),
 ):
     """Login and get access token.
 
@@ -78,13 +79,13 @@ async def login(
 
 
 class RefreshRequest(BaseModel):
-    refresh_token: str | None = None
+    refresh_token: Union[str, None] = None
 
 
 @router.post("/refresh", response_model=Token)
 async def refresh(
-    refresh_req: RefreshRequest | None = None,
-    current_user: UserProfile | None = Depends(get_current_active_user),
+    refresh_req: Union[RefreshRequest, None] = None,
+    current_user: Union[UserProfile, None] = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     """Refresh access token.

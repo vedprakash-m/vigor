@@ -6,7 +6,7 @@ ENVIRONMENT=$1
 
 if [ -z "$ENVIRONMENT" ]; then
   echo "❌ Error: Environment not specified"
-  echo "Usage: $0 [staging|production]"
+  echo "Usage: $0 [production]"
   exit 1
 fi
 
@@ -15,11 +15,8 @@ echo "🔥 Running smoke tests for $ENVIRONMENT environment..."
 if [ "$ENVIRONMENT" == "production" ]; then
   BASE_URL="https://api.vigor.production.com"
   FRONTEND_URL="https://vigor.production.com"
-elif [ "$ENVIRONMENT" == "staging" ]; then
-  BASE_URL="https://api.vigor.staging.com"
-  FRONTEND_URL="https://vigor.staging.com"
 else
-  echo "❌ Error: Unknown environment: $ENVIRONMENT"
+  echo "❌ Error: Unknown environment: $ENVIRONMENT (only 'production' is supported)"
   exit 1
 fi
 

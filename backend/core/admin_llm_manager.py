@@ -3,7 +3,7 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -358,7 +358,7 @@ class AdminLLMManager:
         )
 
 
-def get_admin_llm_manager(db: Session | None = None) -> AdminLLMManager:
+def get_admin_llm_manager(db: Union[Session, None] = None) -> AdminLLMManager:
     """Get admin LLM manager instance."""
     if db is None:
         db = next(get_db())

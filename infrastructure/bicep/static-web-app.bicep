@@ -17,7 +17,7 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
   properties: {
     // Provider is GitHub as we're using GitHub Actions
     provider: 'GitHub'
-    stagingEnvironmentPolicy: 'Enabled'
+    stagingEnvironmentPolicy: 'Disabled'
     allowConfigFileUpdates: true
     enterpriseGradeCdnStatus: 'Enabled'
   }
