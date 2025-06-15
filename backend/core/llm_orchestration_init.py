@@ -7,12 +7,14 @@ import logging
 import os
 from typing import Optional
 
-from core.llm_orchestration import (
-    AdminConfigManager,
-    KeyVaultClientService,
-    LLMGateway,
-    initialize_gateway,
-)
+from core.llm_orchestration import AdminConfigManager, KeyVaultClientService
+
+# Legacy gateway fallback
+from core.llm_orchestration import LLMGateway  # type: ignore
+
+# New facade
+from application.llm.facade import LLMGatewayFacade
+
 from core.llm_orchestration.config_manager import ModelConfiguration, ModelPriority
 from core.llm_orchestration.key_vault import (
     KeyVaultProvider,
@@ -59,11 +61,27 @@ async def initialize_llm_orchestration():
 
         # 4. Initialize gateway with all components
         db_session = SessionLocal()
-        _gateway = await initialize_gateway(
-            config_manager=config_manager,
-            key_vault_service=key_vault_service,
-            db_session=db_session,
-        )
+
+        # Prefer new facade; fall back to legacy if instantiation fails
+        try:
+            facade = LLMGatewayFacade(
+                config_manager=config_manager,
+                key_vault_service=key_vault_service,
+                db_session=db_session,
+            )
+            await facade.initialize()
+            _gateway = facade  # type: ignore
+        except Exception as e:
+            logger.warning(
+                f"Failed to initialize new LLMGatewayFacade, falling back to legacy. Reason: {e}"
+            )
+            from core.llm_orchestration import initialize_gateway  # local import to avoid cycle
+
+            _gateway = await initialize_gateway(
+                config_manager=config_manager,
+                key_vault_service=key_vault_service,
+                db_session=db_session,
+            )
 
         logger.info("✅ LLM Orchestration Layer initialized successfully")
         return _gateway

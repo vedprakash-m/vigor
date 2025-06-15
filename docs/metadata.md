@@ -1,102 +1,81 @@
-# Vigor Project Metadata
+# Vigor Modernization & Refactor Plan
 
-This document consolidates key project metadata and information from various source files. It serves as a single source of truth for project configuration, deployment strategies, and development plans.
+_Last updated: 2025-06-15_
 
-## Table of Contents
+---
 
-1. [Deployment Status](#deployment-status)
-2. [Regional Strategy](#regional-strategy)
-3. [Branch Strategy](#branch-strategy)
-4. [Auto Merge Process](#auto-merge-process)
-5. [Development Roadmap](#development-roadmap)
-6. [Security Information](#security-information)
-7. [Technical Debt](#technical-debt)
+## 0. Overview
 
-## Deployment Status
+This document is the **single source of truth** for architectural decisions, phased roadmap, and task tracking for the Vigor modernization effort. It will be updated continuously as work progresses.
 
-Current deployment status information for Vigor services:
+## 1. Architectural Vision
 
-- **Production**: Running on Azure infrastructure with bicep templates
-- **Production**: Production deployment via CI/CD
-- **Preview**: Available for PRs through preview-environment.yml workflow
+Adopt _Clean / Hexagonal Architecture_ principles to achieve: testability, scalability, clear domain boundaries, and future service extraction.
 
-### Service Architecture
+## 2. Decision Log
 
-- **Frontend**: React with Chakra UI, deployed to Azure Static Web Apps
-- **Backend**: FastAPI on Python 3.9+, deployed to Azure App Service
-- **Functions**: Azure Functions for workout generation and analysis
-- **Database**: PostgreSQL managed database in Azure
-- **Storage**: Azure Storage for user data and workout media
+| ID       | Date       | Decision                                                                           | Rationale                                         |
+| -------- | ---------- | ---------------------------------------------------------------------------------- | ------------------------------------------------- |
+| ADR-0001 | 2025-06-15 | Adopt Clean Architecture with Domain, Application, Adapters, Infrastructure layers | Aligns with SOLID, DDD, enables modular growth    |
+| ADR-0002 | 2025-06-15 | Track modernization via `docs/metadata.md` + ADRs                                  | Single, auditable trail of progress and decisions |
 
-## Regional Strategy
+_(Add new rows at the top as decisions are made.)_
 
-Vigor follows a multi-region deployment approach for high availability and regional compliance:
+## 3. Phased Roadmap & Task Board
 
-- **Primary region**: Central US
-- **Secondary regions**: East US, Europe West
-- **Failover strategy**: Active-passive with automated health checks
+The board uses GitHub-style checkboxes so progress can be tracked directly in code reviews.
 
-Azure services are deployed with multi-region support using Bicep templates defined in the infrastructure folder.
+### Phase 0 – Governance & Quality Gates (Week 1)
 
-## Branch Strategy
+- [x] **Create ADR framework** (`docs/adr/README.md`, template, ADR-0001 & ADR-0002)
+- [x] **Enforce quality gates in CI** (lint, mypy, tests, coverage ≥ 80 %)
+- [x] **Introduce pre-commit hooks** (black, ruff, isort, commitlint)
 
-The project follows a trunk-based development model with the following branches:
+### Phase 1 – Core Extraction (Weeks 1-2)
 
-- `main`: Protected production branch, requires PR approval
-- `feature/*`: Short-lived feature branches
-- `hotfix/*`: Emergency production fixes
-- `release/*`: Release preparation branches
+- [x] `request_validator.py`
+- [x] `routing_engine.py`
+- [x] `budget_enforcer.py`
+- [x] `response_recorder.py`
+- [x] Provide thin façade `LLMGatewayFacade` that composes the above.
+- [x] Add unit tests (≥ 90 % coverage) for each extracted component.
 
-Branch protection rules are enforced through GitHub settings and CI/CD workflows.
+### Phase 2 – Data Layer Consolidation (Weeks 3-4)
 
-## Auto Merge Process
+- [x] Introduce `repositories/` package encapsulating SQLAlchemy.
+- [x] Generate/aligned Pydantic schemas via `pydantic-sqlalchemy` or custom mappers.
+- [x] Remove direct ORM access from FastAPI routes.
 
-PRs can be automatically merged when they meet the following criteria:
+### Phase 3 – Observability & Resilience (Weeks 4-5)
 
-1. Pass all required CI tests
-2. Receive required approvals
-3. Have the "auto-merge" label
-4. No merge conflicts
+- [x] Add OpenTelemetry tracing + structured logging middleware.
+- [x] Extract health-check & analytics jobs into background-worker (Celery/RQ).
+- [x] Integrate distributed cache (e.g., Redis) via adapter pattern.
 
-The PR audit trail workflow logs all merge activities and maintains a comprehensive history.
+### Phase 4 – Frontend Restructure (Weeks 5-6)
 
-## Development Roadmap
+- [x] Reorganize `frontend/src` into feature-sliced folders.
+- [x] Introduce Zustand (state) + Storybook (UI inventory).
+- [ ] Increase component/unit test coverage to 80 %.
 
-Key upcoming development priorities:
+### Phase 5 – DevOps & Delivery (Weeks 6-7)
 
-1. Enhanced user experience with responsive mobile design
-2. Integration of additional LLM providers
-3. Optimized workout recommendation algorithms
-4. Expanded analytics dashboard
-5. Multi-language support
+- [ ] Optimise Dockerfiles with multi-stage builds.
+- [ ] Enable Dependabot + licence scanning.
 
-### LLM Integration
+---
 
-Vigor currently supports multiple LLM providers to optimize cost and performance:
+## 4. Risks & Mitigations
 
-- **OpenAI**: Primary provider for high-quality workout planning
-- **Google Gemini**: Alternative provider with lower cost structure
-- **Perplexity**: Specialized for research and knowledge-intensive tasks
-- **Fallback**: Automatic failover system to maintain availability
+| Risk                                     | Impact | Mitigation                           |
+| ---------------------------------------- | ------ | ------------------------------------ |
+| Large-scale refactor may break prod APIs | High   | Phase-wise releases + contract tests |
+| Schema changes cause data loss           | High   | Write migration scripts + backups    |
+| Incomplete test coverage                 | Medium | Enforce coverage gate in CI          |
 
-The platform includes an LLM orchestration system that can route requests based on cost, performance, or specific capabilities required for different workout-related tasks.
+---
 
-## Security Information
+## 5. Glossary
 
-Security measures implemented:
-
-- Secret scanning with gitleaks.yml
-- Dependency auditing with dependency-audit.yml
-- Azure authentication for backend services
-- Regular security reviews
-- Data encryption at rest and in transit
-
-## Technical Debt
-
-Areas identified for improvement:
-
-1. Test coverage for frontend components
-2. Migration to newer dependency versions
-3. Performance optimization for workout generation
-4. More comprehensive error handling
-5. Infrastructure as code improvements
+_ADR_ – Architecture Decision Record.
+_Domain Layer_ – Core business rules independent of frameworks.

@@ -19,7 +19,8 @@ from core.config import get_settings
 # Import the new Functions client
 from core.function_client import FunctionsClient
 from database.models import AICoachMessage, UserProfile
-from database.sql_models import AICoachMessageDB, WorkoutLogDB
+from infrastructure.repositories.sqlalchemy_aicoach_repository import SQLAlchemyAICoachMessageRepository
+from infrastructure.repositories.sqlalchemy_workoutlog_repository import SQLAlchemyWorkoutLogRepository
 
 settings = get_settings()
 
@@ -45,16 +46,11 @@ async def chat_with_ai_coach(
 
     # Get recent conversation history if not provided
     if conversation_history is None:
-        recent_messages = (
-            db.query(AICoachMessageDB)
-            .filter(AICoachMessageDB.user_id == user.id)
-            .order_by(AICoachMessageDB.created_at.desc())
-            .limit(5)
-            .all()
-        )
+        repo = SQLAlchemyAICoachMessageRepository(db)
+        recent_messages = await repo.list(user_id=user.id, limit=5)
 
         conversation_history = []
-        for msg in reversed(recent_messages):  # Reverse to get chronological order
+        for msg in reversed(recent_messages):
             conversation_history.extend(
                 [
                     {"role": "user", "content": str(msg.message)},
@@ -90,16 +86,17 @@ async def chat_with_ai_coach(
             )
 
         # Save the conversation to database
-        db_message = AICoachMessageDB(
-            id=str(uuid.uuid4()),
-            user_id=user.id,
-            message=message,
-            response=ai_response,
-            context={"user_profile": user_profile},
+        repo = SQLAlchemyAICoachMessageRepository(db)
+        await repo.add(
+            AICoachMessage(
+                id=str(uuid.uuid4()),
+                user_id=user.id,
+                message=message,
+                response=ai_response,
+                context={"user_profile": user_profile},
+                created_at=datetime.utcnow(),
+            )
         )
-
-        db.add(db_message)
-        db.commit()
 
         return ai_response
     except Exception as e:
@@ -174,17 +171,10 @@ async def analyze_user_workout(
             detail="AI service is not available",
         )
 
-    # Get the workout log
-    workout_log = (
-        db.query(WorkoutLogDB)
-        .filter(WorkoutLogDB.id == workout_log_id, WorkoutLogDB.user_id == user.id)
-        .first()
-    )
-
-    if not workout_log:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Workout log not found"
-        )
+    log_repo = SQLAlchemyWorkoutLogRepository(db)
+    workout_log = await log_repo.get(workout_log_id)
+    if workout_log is None or workout_log.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workout log not found")
 
     # Prepare data for analysis
     workout_data = {
@@ -210,12 +200,5 @@ async def get_conversation_history(
     db: Session, user_id: str, limit: int = 20
 ) -> List[AICoachMessage]:
     """Get user's conversation history with AI coach."""
-    messages = (
-        db.query(AICoachMessageDB)
-        .filter(AICoachMessageDB.user_id == user_id)
-        .order_by(AICoachMessageDB.created_at.desc())
-        .limit(limit)
-        .all()
-    )
-
-    return [AICoachMessage.model_validate(msg) for msg in messages]
+    repo = SQLAlchemyAICoachMessageRepository(db)
+    return await repo.list(user_id=user_id, limit=limit)

@@ -46,6 +46,61 @@ cd ../frontend && npm install && npm run dev
 2. Run Task: "Install All Dependencies"
 3. Run Task: "Start Backend Server" + "Start Frontend Dev Server"
 
+## 🏗️ Architecture Overview
+
+```mermaid
+flowchart TD
+  subgraph Frontend
+    A[React 18 + Vite] --> B[Zustand Store]
+    B --> C[REST API]
+  end
+
+  subgraph Backend (FastAPI)
+    C --> D[LLM Gateway Facade]
+    D --> E[Redis Cache]
+    D --> F[Celery Worker]
+    D --> G[PostgreSQL]
+  end
+
+  F -->|Health-checks| D
+  D -->|Traces| H(OpenTelemetry Collector)
+```
+
+_Clean / Hexagonal_ architecture with repository and adapter layers ensures testability and maintainability.
+
+## ⚡ One-Command Local Dev
+
+```bash
+# Dev containers recommended
+make dev-up  # spins postgres, redis, backend & frontend via docker-compose
+```
+
+Services:
+
+- http://localhost:8001 – FastAPI docs
+- http://localhost:5173 – React app
+- http://localhost:6006 – Storybook
+
+## 📦 Production Build (Single Slot)
+
+```bash
+make build-images   # multi-stage Dockerfiles
+az webapp up --name vigor-prod --resource-group vigor-rg --sku B1 --runtime "PYTHON|3.11"
+```
+
+CI/CD via GitHub Actions runs lint, tests, security scan, builds images and deploys to the single production slot.
+
+## 🛡️ Quality Gates
+
+- Ruff, Black, ESLint, Prettier
+- MyPy strict + TypeScript strict
+- Pytest/Jest coverage ≥ 80 % enforced in CI
+- Bandit, Safety, licence scanning (FOSSA)
+
+## 🌐 Live Demo
+
+_Coming soon – follow progress in `docs/metadata.md`_
+
 ## 🏗️ Technology Stack
 
 - **Backend:** FastAPI + Python + PostgreSQL

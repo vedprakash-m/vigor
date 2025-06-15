@@ -21,3 +21,9 @@ ecdsa>=0.19.1  # Note: All versions vulnerable to Minerva attack - consider alte
 azure-functions>=1.23.0  # For Azure Functions integration
 azure-identity>=1.23.0  # For Azure authentication
 azure-keyvault-secrets>=4.9.0  # For Azure Key Vault secrets management
+pydantic_sqlalchemy==0.1.20
+opentelemetry-api==1.23.0
+opentelemetry-sdk==1.23.0
+opentelemetry-exporter-otlp==1.23.0
+opentelemetry-instrumentation-fastapi==0.43b0
+celery==5.3.4

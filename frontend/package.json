@@ -10,7 +10,9 @@
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "test": "jest --config jest.config.cjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.2.4",
@@ -27,7 +29,9 @@
     "react-hook-form": "^7.56.4",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.6.1",
-    "zod": "^3.25.45"
+    "zod": "^3.25.45",
+    "uuid": "^9.0.0",
+    "zustand": "^4.5.1"
   },
   "devDependencies": {
     "@babel/core": "^7.27.4",

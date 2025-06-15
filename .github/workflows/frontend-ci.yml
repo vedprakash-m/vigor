@@ -44,6 +44,16 @@ jobs:
         run: npm test -- --coverage
         # No continue-on-error to enforce passing tests
 
+      - name: Enforce coverage ≥ 80%
+        run: |
+          COVER_FILE=coverage/coverage-summary.json
+          if [ ! -f "$COVER_FILE" ]; then
+            echo "Coverage summary not found!" && exit 1
+          fi
+          total=$(jq '.total.lines.pct' $COVER_FILE)
+          echo "Overall line coverage: ${total}%"
+          awk -v cov=$total 'BEGIN{exit (cov>=80)?0:1}'
+
       - name: Build
         run: npm run build
         # Ensure the build process works

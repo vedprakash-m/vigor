@@ -36,3 +36,18 @@ repos:
         language: node
         pass_filenames: false
         types: [tsx, ts]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.4
+    hooks:
+      - id: ruff
+        args: ["--line-length", "88"]
+
+  - repo: https://github.com/conventional-changelog/commitlint
+    rev: v17.8.1
+    hooks:
+      - id: commitlint
+        name: commitlint (conventional commits)
+        entry: npx --yes commitlint --edit $1
+        language: node
+        stages: [commit-msg]

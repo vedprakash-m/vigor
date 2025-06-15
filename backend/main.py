@@ -26,6 +26,7 @@ from core.llm_orchestration_init import (
     shutdown_llm_orchestration,
 )
 from database.connection import init_db
+from infrastructure.observability.otel_middleware import OTelMiddleware
 
 settings = get_settings()
 
@@ -116,6 +117,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(OTelMiddleware)
 
 # Error handling
 @app.exception_handler(RequestValidationError)

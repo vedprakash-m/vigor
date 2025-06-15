@@ -6,47 +6,36 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from database.models import ProgressMetrics, UserProfile
-from database.sql_models import ProgressMetricsDB, UserProfileDB
+from infrastructure.repositories.sqlalchemy_user_repository import SQLAlchemyUserRepository
+from infrastructure.repositories.sqlalchemy_progress_repository import SQLAlchemyProgressRepository
 
 
 async def get_user_profile(db: Session, user_id: str) -> UserProfile:
     """Get user profile by ID."""
-    user = db.query(UserProfileDB).filter(UserProfileDB.id == user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
-
-    return UserProfile.model_validate(user)
+    repo = SQLAlchemyUserRepository(db)
+    user = await repo.get(user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return user
 
 
 async def update_user_profile(
     db: Session, user_id: str, update_data: dict
 ) -> UserProfile:
     """Update user profile."""
-    user = db.query(UserProfileDB).filter(UserProfileDB.id == user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
-
-    # Update only provided fields
-    for field, value in update_data.items():
-        if value is not None:
-            setattr(user, field, value)
-
-    user.updated_at = datetime.utcnow()  # type: ignore[assignment]
-    db.commit()
-    db.refresh(user)
-
-    return UserProfile.model_validate(user)
+    repo = SQLAlchemyUserRepository(db)
+    try:
+        return await repo.update(user_id, update_data)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
 
 async def create_progress_metric(
     db: Session, user_id: str, metric_data: dict
 ) -> ProgressMetrics:
     """Create a new progress metric entry."""
-    db_metric = ProgressMetricsDB(
+    repo = SQLAlchemyProgressRepository(db)
+    metric = ProgressMetrics(
         id=str(uuid.uuid4()),
         user_id=user_id,
         date=datetime.utcnow(),
@@ -54,25 +43,14 @@ async def create_progress_metric(
         body_fat=metric_data.get("body_fat"),
         measurements=metric_data.get("measurements"),
         notes=metric_data.get("notes"),
+        created_at=datetime.utcnow(),
     )
-
-    db.add(db_metric)
-    db.commit()
-    db.refresh(db_metric)
-
-    return ProgressMetrics.model_validate(db_metric)
+    return await repo.add(metric)
 
 
 async def get_user_progress(
     db: Session, user_id: str, limit: int = 50
 ) -> List[ProgressMetrics]:
     """Get user progress metrics."""
-    metrics = (
-        db.query(ProgressMetricsDB)
-        .filter(ProgressMetricsDB.user_id == user_id)
-        .order_by(ProgressMetricsDB.date.desc())
-        .limit(limit)
-        .all()
-    )
-
-    return [ProgressMetrics.model_validate(metric) for metric in metrics]
+    repo = SQLAlchemyProgressRepository(db)
+    return await repo.list(user_id=user_id, limit=limit)
