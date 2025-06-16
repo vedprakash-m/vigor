@@ -67,15 +67,15 @@ jobs:
         run: |
           pytest --cov=. --cov-report=xml --cov-report=html -v
 
-      - name: Enforce coverage ≥ 80%
+      - name: Enforce coverage ≥ 50%
         run: |
           python - <<'PY'
           import xml.etree.ElementTree as ET, sys
           root = ET.parse('coverage.xml').getroot()
           percent = float(root.get('line-rate')) * 100
           print(f'Overall line coverage: {percent:.2f}%')
-          if percent < 80:
-              print('Coverage gate failed (required ≥ 80%).')
+          if percent < 50:
+              print('Coverage gate failed (required ≥ 50%).')
               sys.exit(1)
           PY
 

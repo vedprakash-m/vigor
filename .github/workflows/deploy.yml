@@ -66,6 +66,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy to Production Azure
+        if: false # Temporarily disabled - Azure app doesn't exist yet
         uses: azure/webapps-deploy@v2
         with:
           app-name: vigor-production
@@ -74,6 +75,7 @@ jobs:
   verify-deployment:
     name: Verify Production Deployment
     needs: deploy-to-production
+    if: false # Temporarily disabled - deployment is disabled
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
