@@ -26,11 +26,13 @@ class RedisCacheAdapter:
 
     async def get(self, request: LLMRequest) -> LLMResponse | None:  # noqa: D401
         await self.initialize()
-        data = await self._client.get(await self._key(request))  # type: ignore[index]
+        assert self._client is not None  # Initialized in initialize()
+        data = await self._client.get(await self._key(request))
         if data:
             return LLMResponse(**json.loads(data))
         return None
 
     async def set(self, request: LLMRequest, response: LLMResponse, ttl: int = 300):
         await self.initialize()
-        await self._client.set(await self._key(request), json.dumps(response.__dict__), ex=ttl)  # type: ignore[index]
+        assert self._client is not None  # Initialized in initialize()
+        await self._client.set(await self._key(request), json.dumps(response.__dict__), ex=ttl)
