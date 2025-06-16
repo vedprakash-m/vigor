@@ -65,17 +65,71 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Configure App Settings
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: vigor-backend
+          app-settings-json: |
+            [
+              {
+                "name": "DATABASE_URL",
+                "value": "${{ secrets.DATABASE_URL }}",
+                "slotSetting": false
+              },
+              {
+                "name": "SECRET_KEY",
+                "value": "${{ secrets.SECRET_KEY }}",
+                "slotSetting": false
+              },
+              {
+                "name": "OPENAI_API_KEY",
+                "value": "${{ secrets.OPENAI_API_KEY }}",
+                "slotSetting": false
+              },
+              {
+                "name": "ENVIRONMENT",
+                "value": "production",
+                "slotSetting": false
+              },
+              {
+                "name": "DEBUG",
+                "value": "false",
+                "slotSetting": false
+              },
+              {
+                "name": "LLM_PROVIDER",
+                "value": "${{ secrets.LLM_PROVIDER || 'fallback' }}",
+                "slotSetting": false
+              },
+              {
+                "name": "KEY_VAULT_PROVIDER",
+                "value": "azure",
+                "slotSetting": false
+              },
+              {
+                "name": "AZURE_KEY_VAULT_URL",
+                "value": "${{ secrets.AZURE_KEY_VAULT_URL }}",
+                "slotSetting": false
+              }
+            ]
+
       - name: Deploy to Production Azure
-        if: false # Temporarily disabled - Azure app doesn't exist yet
         uses: azure/webapps-deploy@v2
         with:
-          app-name: vigor-production
+          app-name: vigor-backend
           package: ./backend
+          slot-name: production
+
+      - name: Run Database Migrations
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          export DATABASE_URL="${{ secrets.DATABASE_URL }}"
+          alembic upgrade head
 
   verify-deployment:
     name: Verify Production Deployment
     needs: deploy-to-production
-    if: false # Temporarily disabled - deployment is disabled
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -83,10 +137,10 @@ jobs:
 
       - name: Run health checks
         env:
-          ENDPOINT_URL: https://vigor-production.azurewebsites.net
+          ENDPOINT_URL: https://vigor-backend.azurewebsites.net
         run: ./scripts/health-check.sh production
 
       - name: Run smoke tests
         env:
-          ENDPOINT_URL: https://vigor-production.azurewebsites.net
+          ENDPOINT_URL: https://vigor-backend.azurewebsites.net
         run: ./scripts/run-smoke-tests.sh production
