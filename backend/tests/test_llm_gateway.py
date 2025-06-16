@@ -237,7 +237,8 @@ class TestLLMGateway:
         # For now, we test that the adapter is called correctly
         response = await gateway.process_request(stream_request)
 
-        # Verify the adapter was called with streaming enabled
+        # Verify response is returned and adapter was called with streaming enabled
+        assert response is not None
         mock_llm_adapter.generate_response.assert_called_once()
         call_args = mock_llm_adapter.generate_response.call_args[0][0]
         assert call_args.stream is True
