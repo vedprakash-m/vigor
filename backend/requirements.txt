@@ -34,7 +34,7 @@ dparse==0.6.4
 ecdsa==0.19.1
 email_validator==2.2.0
 fastapi==0.115.12
-filelock==3.16.1
+filelock==3.18.0
 flake8==7.2.0
 frozenlist==1.6.2
 googleapis-common-protos==1.70.0
