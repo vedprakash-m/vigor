@@ -14,13 +14,14 @@ Adopt _Clean / Hexagonal Architecture_ principles to achieve: testability, scala
 
 ## 2. Decision Log
 
-| ID       | Date       | Decision                                                                                                         | Rationale                                         |
-| -------- | ---------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| ADR-0001 | 2025-06-15 | Adopt Clean Architecture with Domain, Application, Adapters, Infrastructure layers                               | Aligns with SOLID, DDD, enables modular growth    |
-| ADR-0002 | 2025-06-15 | Track modernization via `docs/metadata.md` + ADRs                                                                | Single, auditable trail of progress and decisions |
-| ADR-0003 | 2025-06-15 | **Infrastructure**: Use 2 Azure Resource Groups: `vigor-db-rg` (persistent) + `vigor-rg` (compute)               | Cost control, separation of concerns, idempotency |
-| ADR-0004 | 2025-06-15 | **Deployment**: Single environment, single slot, static naming for cost optimization                             | Keep monthly cost under $100, simplify operations |
-| ADR-0005 | 2025-06-15 | **Resources**: vigor-backend (App Service), vigor-db (PostgreSQL), vigor-kv (Key Vault), vigor-storage (Storage) | Simple, static names for idempotency and clarity  |
+| ID       | Date       | Decision                                                                                                         | Rationale                                                  |
+| -------- | ---------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| ADR-0001 | 2025-06-15 | Adopt Clean Architecture with Domain, Application, Adapters, Infrastructure layers                               | Aligns with SOLID, DDD, enables modular growth             |
+| ADR-0002 | 2025-06-15 | Track modernization via `docs/metadata.md` + ADRs                                                                | Single, auditable trail of progress and decisions          |
+| ADR-0003 | 2025-06-15 | **Infrastructure**: Use 2 Azure Resource Groups: `vigor-db-rg` (persistent) + `vigor-rg` (compute)               | Cost control, separation of concerns, idempotency          |
+| ADR-0004 | 2025-06-15 | **Deployment**: Single environment, single slot, static naming for cost optimization                             | Keep monthly cost under $100, simplify operations          |
+| ADR-0005 | 2025-06-15 | **Resources**: vigor-backend (App Service), vigor-db (PostgreSQL), vigor-kv (Key Vault), vigor-storage (Storage) | Simple, static names for idempotency and clarity           |
+| ADR-0006 | 2025-06-15 | **CI/CD**: Unified DAG-based pipeline replacing separate workflows                                               | Proper orchestration, staging validation, failure handling |
 
 _(Add new rows at the top as decisions are made.)_
 

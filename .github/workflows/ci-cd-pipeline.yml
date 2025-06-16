@@ -1,0 +1,468 @@
+---
+name: Unified CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  id-token: write # Required for OIDC authentication with Azure
+
+env:
+  NODE_VERSION: "20"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # STAGE 1: VALIDATION & QUALITY CHECKS (Parallel)
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend-changed: ${{ steps.changes.outputs.backend }}
+      frontend-changed: ${{ steps.changes.outputs.frontend }}
+      infrastructure-changed: ${{ steps.changes.outputs.infrastructure }}
+      docs-only: ${{ steps.changes.outputs.docs-only }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            infrastructure:
+              - 'infrastructure/**'
+              - '.github/workflows/**'
+            docs-only:
+              - '**.md'
+              - 'docs/**'
+
+  backend-quality:
+    name: Backend Quality Checks
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend-changed == 'true'
+    defaults:
+      run:
+        working-directory: backend
+    outputs:
+      tests-passed: ${{ steps.tests.outcome == 'success' }}
+      coverage-report: ${{ steps.coverage.outputs.coverage }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Code formatting check
+        run: |
+          black --check --diff .
+          isort --check-only --diff .
+
+      - name: Linting
+        run: |
+          flake8 .
+          mypy .
+
+      - name: Security scan
+        run: |
+          bandit -r . -f json -o bandit_report.json || true
+          safety check --json --output safety_report.json || true
+
+      - name: Run tests
+        id: tests
+        run: |
+          pytest -v --cov=. --cov-report=xml --cov-report=term-missing --cov-fail-under=50
+
+      - name: Generate coverage report
+        id: coverage
+        run: |
+          COVERAGE=$(python -c "import xml.etree.ElementTree as ET; print(ET.parse('coverage.xml').getroot().get('line-rate'))")
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+
+  frontend-quality:
+    name: Frontend Quality Checks
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend-changed == 'true'
+    defaults:
+      run:
+        working-directory: frontend
+    outputs:
+      tests-passed: ${{ steps.tests.outcome == 'success' }}
+      build-success: ${{ steps.build.outcome == 'success' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Linting
+        run: npm run lint
+
+      - name: Type checking
+        run: npm run type-check
+
+      - name: Run tests
+        id: tests
+        run: npm test -- --coverage --watchAll=false
+
+      - name: Build application
+        id: build
+        run: npm run build
+
+  infrastructure-validation:
+    name: Infrastructure Validation
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.infrastructure-changed == 'true'
+    outputs:
+      validation-passed: ${{ steps.validate.outcome == 'success' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure CLI Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Validate Bicep templates
+        id: validate
+        run: |
+          az bicep build --file infrastructure/bicep/main.bicep
+          az deployment group validate \
+            --resource-group vigor-rg \
+            --template-file infrastructure/bicep/main.bicep
+
+  # STAGE 2: INTEGRATION TESTS (Requires Stage 1 to pass)
+  integration-tests:
+    name: Integration & E2E Tests
+    runs-on: ubuntu-latest
+    needs: [backend-quality, frontend-quality]
+    if: |
+      always() &&
+      (needs.backend-quality.result == 'success' || needs.backend-quality.result == 'skipped') &&
+      (needs.frontend-quality.result == 'success' || needs.frontend-quality.result == 'skipped')
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    outputs:
+      e2e-passed: ${{ steps.e2e.outcome == 'success' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build frontend for testing
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Start backend server
+        run: |
+          cd backend
+          export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/test_db"
+          python main.py &
+          sleep 10
+
+      - name: Run E2E tests
+        id: e2e
+        run: |
+          cd frontend
+          npm run test:e2e
+
+  # STAGE 3: DEPLOYMENT (Only on main branch, requires all previous stages)
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [integration-tests, infrastructure-validation]
+    if: |
+      github.ref == 'refs/heads/main' &&
+      needs.integration-tests.result == 'success' &&
+      (needs.infrastructure-validation.result == 'success' || needs.infrastructure-validation.result == 'skipped')
+    environment: staging
+    outputs:
+      deployment-url: ${{ steps.deploy.outputs.app-url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to staging slot
+        id: deploy
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: vigor-backend
+          package: ./backend
+          slot-name: staging
+
+      - name: Configure staging environment
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: vigor-backend
+          slot-name: staging
+          app-settings-json: |
+            [
+              {
+                "name": "ENVIRONMENT",
+                "value": "staging",
+                "slotSetting": false
+              },
+              {
+                "name": "DEBUG",
+                "value": "true",
+                "slotSetting": false
+              }
+            ]
+
+  staging-verification:
+    name: Verify Staging Deployment
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    outputs:
+      health-check-passed: ${{ steps.health.outcome == 'success' }}
+      smoke-tests-passed: ${{ steps.smoke.outcome == 'success' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Health check
+        id: health
+        env:
+          ENDPOINT_URL: https://vigor-backend-staging.azurewebsites.net
+        run: ./scripts/health-check.sh staging
+
+      - name: Smoke tests
+        id: smoke
+        env:
+          ENDPOINT_URL: https://vigor-backend-staging.azurewebsites.net
+        run: ./scripts/run-smoke-tests.sh staging
+
+      - name: Performance baseline
+        run: |
+          curl -w "@curl-format.txt" -o /dev/null -s "https://vigor-backend-staging.azurewebsites.net/health"
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: staging-verification
+    if: needs.staging-verification.outputs.health-check-passed == 'true' && needs.staging-verification.outputs.smoke-tests-passed == 'true'
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+
+      - name: Build Backend
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Configure Production App Settings
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: vigor-backend
+          app-settings-json: |
+            [
+              {
+                "name": "DATABASE_URL",
+                "value": "${{ secrets.DATABASE_URL }}",
+                "slotSetting": false
+              },
+              {
+                "name": "SECRET_KEY",
+                "value": "${{ secrets.SECRET_KEY }}",
+                "slotSetting": false
+              },
+              {
+                "name": "OPENAI_API_KEY",
+                "value": "${{ secrets.OPENAI_API_KEY }}",
+                "slotSetting": false
+              },
+              {
+                "name": "ENVIRONMENT",
+                "value": "production",
+                "slotSetting": false
+              },
+              {
+                "name": "DEBUG",
+                "value": "false",
+                "slotSetting": false
+              },
+              {
+                "name": "LLM_PROVIDER",
+                "value": "${{ secrets.LLM_PROVIDER || 'fallback' }}",
+                "slotSetting": false
+              },
+              {
+                "name": "KEY_VAULT_PROVIDER",
+                "value": "azure",
+                "slotSetting": false
+              },
+              {
+                "name": "AZURE_KEY_VAULT_URL",
+                "value": "${{ secrets.AZURE_KEY_VAULT_URL }}",
+                "slotSetting": false
+              }
+            ]
+
+      - name: Deploy to Production
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: vigor-backend
+          package: ./backend
+          slot-name: production
+
+  # STAGE 4: POST-DEPLOYMENT VERIFICATION
+  production-verification:
+    name: Verify Production Deployment
+    runs-on: ubuntu-latest
+    needs: deploy-production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Production Health Check
+        env:
+          ENDPOINT_URL: https://vigor-backend.azurewebsites.net
+        run: ./scripts/health-check.sh production
+
+      - name: Production Smoke Tests
+        env:
+          ENDPOINT_URL: https://vigor-backend.azurewebsites.net
+        run: ./scripts/run-smoke-tests.sh production
+
+      - name: Performance verification
+        run: |
+          # Run performance tests to ensure production is performing well
+          curl -w "@curl-format.txt" -o /dev/null -s "https://vigor-backend.azurewebsites.net/health"
+
+  # FAILURE HANDLING
+  deployment-failure-notification:
+    name: Handle Deployment Failure
+    runs-on: ubuntu-latest
+    needs: [deploy-production, production-verification]
+    if: failure()
+
+    steps:
+      - name: Create failure issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Production deployment failed',
+              body: `
+                **Deployment failed on:** ${context.sha}
+                **Workflow:** ${context.workflow}
+                **Run:** ${context.runNumber}
+
+                [View logs](${context.payload.repository.html_url}/actions/runs/${context.runId})
+              `,
+              labels: ['deployment-failure', 'priority-high']
+            })
