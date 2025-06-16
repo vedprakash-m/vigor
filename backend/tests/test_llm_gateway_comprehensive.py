@@ -13,6 +13,8 @@ from core.llm_orchestration.gateway import (
     GatewayRequest,
     GatewayResponse,
     LLMGateway,
+)
+from core.llm_orchestration.config_manager import (
     ModelConfiguration,
     ModelPriority,
 )

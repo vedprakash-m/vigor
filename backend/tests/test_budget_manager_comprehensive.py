@@ -10,9 +10,9 @@ import pytest
 
 from core.llm_orchestration.budget_manager import (
     BudgetManager,
-    BudgetExceededException,
-    UserBudget,
-    UsageRecord,
+    BudgetStatus,
+    BudgetUsage,
+    BudgetAlert,
 )
 
 
@@ -30,30 +30,32 @@ class TestBudgetManager:
             return budget_manager, mock_session
 
     @pytest.fixture
-    def sample_user_budget(self):
-        """Sample user budget configuration"""
-        return UserBudget(
+    def sample_budget_usage(self):
+        """Sample budget usage configuration"""
+        return BudgetUsage(
+            budget_id="test-budget-123",
             user_id="test-user-123",
-            monthly_limit=Decimal("50.00"),
-            weekly_limit=Decimal("15.00"),
-            daily_limit=Decimal("5.00"),
-            current_month_usage=Decimal("25.00"),
-            current_week_usage=Decimal("8.00"),
-            current_day_usage=Decimal("2.50"),
-            last_reset_date=datetime.utcnow().date()
+            user_groups=["free_tier"],
+            cost=Decimal("25.00"),
+            tokens_used=12500,
+            model_used="gpt-3.5-turbo",
+            timestamp=datetime.utcnow(),
+            request_metadata={"type": "chat_completion"}
         )
 
     @pytest.fixture
-    def sample_usage_record(self):
-        """Sample usage record"""
-        return UsageRecord(
+    def sample_budget_alert(self):
+        """Sample budget alert"""
+        return BudgetAlert(
+            alert_id="alert-123",
+            budget_id="budget-123",
             user_id="test-user-123",
-            cost=Decimal("0.15"),
-            tokens_used=75,
-            model_used="gpt-3.5-turbo",
-            provider="openai",
+            alert_type="threshold_exceeded",
+            threshold=0.8,
+            current_usage=Decimal("40.00"),
+            budget_limit=Decimal("50.00"),
             timestamp=datetime.utcnow(),
-            request_type="chat_completion"
+            message="Budget threshold exceeded"
         )
 
     def test_check_budget_within_limits(self, mock_budget_manager, sample_user_budget):
