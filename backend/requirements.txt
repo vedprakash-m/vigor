@@ -36,7 +36,7 @@ email_validator==2.2.0
 fastapi==0.115.12
 filelock==3.16.1
 flake8==7.2.0
-frozenlist==1.6.2
+frozenlist==1.7.0
 googleapis-common-protos==1.70.0
 grpcio==1.73.0
 h11==0.16.0
