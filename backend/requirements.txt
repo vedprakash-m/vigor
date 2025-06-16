@@ -101,7 +101,7 @@ pytest-asyncio==1.0.0
 pytest-cov==6.1.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
-python-jose==3.3.0
+python-jose==3.5.0
 python-multipart==0.0.20
 PyYAML==6.0.2
 # redis==6.2.0  # Removed - no Redis usage
