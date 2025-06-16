@@ -120,12 +120,8 @@ jobs:
           package: ./backend
           slot-name: production
 
-      - name: Run Database Migrations
-        run: |
-          cd backend
-          pip install -r requirements.txt
-          export DATABASE_URL="${{ secrets.DATABASE_URL }}"
-          alembic upgrade head
+      # Note: Database migrations should be handled by the application startup
+      # The app will automatically create tables on first run
 
   verify-deployment:
     name: Verify Production Deployment
