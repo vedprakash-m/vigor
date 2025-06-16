@@ -307,7 +307,7 @@ validate_backend() {
 
   # Run linting
   echo "   Running flake8 linting..."
-  flake8 . || { echo "⚠️ flake8 found issues. Consider fixing them."; }
+  flake8 . || { echo "❌ flake8 found issues that must be fixed before pushing"; exit 1; }
 
   # Run security checks
   echo "   Running security scan with bandit..."
@@ -368,17 +368,21 @@ validate_frontend() {
 
   cd frontend
 
+  # Check for package-lock sync issues first
+  echo "   Checking package-lock.json sync..."
+  if ! npm ci --dry-run >/dev/null 2>&1; then
+    echo "❌ package-lock.json is out of sync with package.json"
+    echo "   Run: cd frontend && npm install && git add package-lock.json"
+    cd ..
+    return 1
+  fi
+
   # Install dependencies
   echo "   Installing dependencies..."
   npm ci || {
-    echo "⚠️ npm ci had issues. This might be due to package-lock.json sync issues."
-    echo "   Consider running: npm install && git add package-lock.json"
-
-    if [ "$PRE_COMMIT_MODE" = false ]; then
-      echo "❌ Frontend dependency installation failed, fix before proceeding"
-      cd ..
-      return 1
-    fi
+    echo "❌ Frontend dependency installation failed"
+    cd ..
+    return 1
   }
 
   # Run linting with detailed output

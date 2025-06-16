@@ -6,6 +6,7 @@ from core.llm_orchestration.adapters import LLMRequest, LLMResponse
 from core.llm_orchestration.analytics import AnalyticsCollector
 from core.llm_orchestration.budget_manager import BudgetManager
 from core.llm_orchestration.cache_manager import CacheManager
+from core.llm_orchestration.gateway import GatewayRequest
 from core.llm_orchestration.usage_logger import UsageLogger
 
 
@@ -25,7 +26,7 @@ class ResponseRecorder:
     async def record(
         self,
         gateway_request_id: str,
-        original_request: "GatewayRequest",
+        original_request: GatewayRequest,
         llm_request: LLMRequest,
         llm_response: LLMResponse,
     ) -> None:
