@@ -187,6 +187,7 @@ If production verification fails:
 ## 🔄 **Unified DAG Consolidation**
 
 ### **Previously Disparate Workflows** ❌
+
 - `backend-ci.yml` - Backend quality checks
 - `frontend-ci.yml` - Frontend quality checks
 - `e2e-tests.yml` - End-to-end testing
@@ -200,9 +201,11 @@ If production verification fails:
 - `workflow-health-check.yml` - Pipeline health monitoring
 
 ### **Now: Single Unified Pipeline** ✅
+
 All above functionality consolidated into `ci-cd-pipeline.yml` with proper DAG orchestration.
 
 **Remaining Independent Workflows** (Non-CI/CD):
+
 - Security automation workflows (auto-merge, auto-approve)
 - Emergency rollback procedures
 - Preview environment management

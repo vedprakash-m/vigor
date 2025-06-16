@@ -36,13 +36,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Trufflehog OSS
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          base: main
-          head: HEAD
-          extra_args: --debug --only-verified
+      - name: Secret Scanning with TruffleHog
+        run: |
+          # Install TruffleHog
+          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+
+          # Scan filesystem instead of git history to avoid base/head comparison issues
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # For PRs, scan the diff
+            trufflehog git file://. --since-commit=${{ github.event.pull_request.base.sha }} --branch=${{ github.head_ref }} --only-verified
+          else
+            # For main branch, scan current filesystem
+            trufflehog filesystem . --only-verified --exclude-paths=.git
+          fi
 
   dependency-audit:
     name: Dependency Security Audit
