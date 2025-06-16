@@ -9,7 +9,16 @@ from sqlalchemy.orm import sessionmaker
 load_dotenv()
 
 # Get database URL from environment variable
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./vigor.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+# Fallback to a default if not set (for development/debugging)
+if not DATABASE_URL:
+    print("⚠️ Warning: DATABASE_URL not set, using SQLite fallback")
+    DATABASE_URL = "sqlite:///./vigor.db"
+else:
+    print(
+        f"✅ Using DATABASE_URL: {DATABASE_URL[:20]}..."
+    )  # Only show first 20 chars for security
 
 # Create SQLAlchemy engine
 engine = create_engine(
