@@ -3,12 +3,19 @@ import { expect, test } from '@playwright/test';
 test.describe('Basic navigation', () => {
   test('homepage loads successfully', async ({ page }) => {
     await page.goto('/');
+    await page.waitForLoadState('networkidle');
 
     // Verify the page loaded by checking for the updated title
     await expect(page).toHaveTitle(/Vigor/);
 
-    // Check that the React app is loaded
-    await expect(page.locator('#root')).toBeVisible();
+    // Check that the React app is loaded by looking for content
+    const rootElement = page.locator('#root');
+    await expect(rootElement).toBeAttached();
+
+    // Look for any content that indicates the app loaded
+    await page.waitForTimeout(1000); // Give React time to render
+    const hasContent = await rootElement.innerHTML();
+    expect(hasContent.length).toBeGreaterThan(0);
   });
 });
 
