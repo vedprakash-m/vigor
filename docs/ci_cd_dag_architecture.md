@@ -16,34 +16,62 @@ The previous CI/CD setup had workflows running independently without proper orch
 
 ```mermaid
 graph TD
-    A[Detect Changes] --> B[Quality Checks]
-    B --> C[Integration Tests]
-    C --> D[Deploy Staging]
-    D --> E[Verify Staging]
-    E --> F[Deploy Production]
-    F --> G[Verify Production]
+    A[Secret Scan] --> D[Detect Changes]
+    B[Dependency Audit] --> D
+    D --> E[Quality Checks]
+    E --> F[Integration Tests]
+    F --> G[Deploy Staging]
+    G --> H[Verify Staging]
+    H --> I[Deploy Production]
+    I --> J[Verify Production]
+    J --> K[Post-Merge Monitor]
 
-    subgraph "Stage 1: Quality Checks (Parallel)"
-        B1[Backend Quality]
-        B2[Frontend Quality]
-        B3[Infrastructure Validation]
+    %% Parallel execution within stages
+    subgraph "Stage 0: Security & Compliance (Parallel)"
+        A1[Secret Scanning<br/>Gitleaks + Trufflehog]
+        A2[Dependency Audit<br/>Safety + NPM Audit]
     end
 
-    subgraph "Stage 2: Integration"
-        C1[E2E Tests]
-        C2[API Integration Tests]
+    subgraph "Stage 1: Change Detection"
+        D1[Smart Path Detection<br/>Backend/Frontend/Infra/Docs]
     end
 
-    subgraph "Stage 3: Staging"
-        D1[Deploy to Staging Slot]
-        E1[Health Checks]
-        E2[Smoke Tests]
+    subgraph "Stage 2: Quality Checks (Parallel)"
+        E1[Backend Quality<br/>Black, MyPy, Tests, Coverage]
+        E2[Frontend Quality<br/>ESLint, TypeScript, Jest, Build]
+        E3[Infrastructure Validation<br/>Bicep Validation, ARM Templates]
     end
 
-    subgraph "Stage 4: Production"
-        F1[Deploy to Production]
-        G1[Production Health Checks]
-        G2[Performance Verification]
+    subgraph "Stage 3: Integration"
+        F1[E2E Tests<br/>Full Application Testing]
+        F2[API Integration<br/>Service Communication]
+    end
+
+    subgraph "Stage 4: Staging Deployment"
+        G1[Deploy to Staging Slot]
+        H1[Health Checks<br/>API Endpoints, Database]
+        H2[Smoke Tests<br/>Critical User Flows]
+        H3[Performance Baseline<br/>Response Time Validation]
+    end
+
+    subgraph "Stage 5: Production Deployment"
+        I1[Deploy to Production]
+        J1[Production Health Checks]
+        J2[Production Smoke Tests]
+        J3[Performance Verification]
+    end
+
+    subgraph "Stage 6: Post-Deployment Monitoring"
+        K1[10-Minute Health Window]
+        K2[Performance Baseline Check]
+        K3[Error Rate Monitoring]
+    end
+
+    subgraph "Stage 7: Reporting & Audit (Always Run)"
+        L1[Test Coverage Report]
+        L2[PR Audit Trail]
+        L3[Workflow Health Check]
+        L4[Failure Notifications]
     end
 ```
 
@@ -155,5 +183,29 @@ If production verification fails:
 3. **Test with feature branch**
 4. **Monitor first production deployment**
 5. **Remove legacy workflows** after validation
+
+## 🔄 **Unified DAG Consolidation**
+
+### **Previously Disparate Workflows** ❌
+- `backend-ci.yml` - Backend quality checks
+- `frontend-ci.yml` - Frontend quality checks
+- `e2e-tests.yml` - End-to-end testing
+- `deploy.yml` - Production deployment
+- `test-coverage-report.yml` - Coverage aggregation
+- `dependency-audit.yml` - Security auditing
+- `secret-scan.yml` - Secret scanning
+- `gitleaks.yml` - Git secret detection
+- `post-merge-monitor.yml` - Post-deployment monitoring
+- `pr-audit-trail.yml` - Pull request auditing
+- `workflow-health-check.yml` - Pipeline health monitoring
+
+### **Now: Single Unified Pipeline** ✅
+All above functionality consolidated into `ci-cd-pipeline.yml` with proper DAG orchestration.
+
+**Remaining Independent Workflows** (Non-CI/CD):
+- Security automation workflows (auto-merge, auto-approve)
+- Emergency rollback procedures
+- Preview environment management
+- Security disclosure workflows
 
 This DAG-based approach ensures proper orchestration, safety, and efficiency in the CI/CD pipeline while maintaining fast feedback loops for developers.
