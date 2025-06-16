@@ -164,7 +164,7 @@ jobs:
     if: github.event.inputs.notifyTeam == 'true'
     steps:
       - name: Send Slack notification
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@v2.1.0
         with:
           payload: |
             {
