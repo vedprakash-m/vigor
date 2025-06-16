@@ -7,14 +7,12 @@ import logging
 import os
 from typing import Optional
 
-from core.llm_orchestration import AdminConfigManager, KeyVaultClientService
-
-# Legacy gateway fallback
-from core.llm_orchestration import LLMGateway  # type: ignore
-
 # New facade
 from application.llm.facade import LLMGatewayFacade
 
+# Legacy gateway fallback
+from core.llm_orchestration import LLMGateway  # type: ignore
+from core.llm_orchestration import AdminConfigManager, KeyVaultClientService
 from core.llm_orchestration.config_manager import ModelConfiguration, ModelPriority
 from core.llm_orchestration.key_vault import (
     KeyVaultProvider,
@@ -75,7 +73,9 @@ async def initialize_llm_orchestration():
             logger.warning(
                 f"Failed to initialize new LLMGatewayFacade, falling back to legacy. Reason: {e}"
             )
-            from core.llm_orchestration import initialize_gateway  # local import to avoid cycle
+            from core.llm_orchestration import (  # local import to avoid cycle
+                initialize_gateway,
+            )
 
             _gateway = await initialize_gateway(
                 config_manager=config_manager,

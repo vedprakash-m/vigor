@@ -119,6 +119,7 @@ app.add_middleware(
 
 app.add_middleware(OTelMiddleware)
 
+
 # Error handling
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):

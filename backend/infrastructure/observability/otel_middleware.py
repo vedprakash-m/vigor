@@ -5,12 +5,13 @@ from __future__ import annotations
 from typing import Callable
 
 from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
 from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, OTLPSpanExporter
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class OTelMiddleware(BaseHTTPMiddleware):
@@ -27,7 +28,9 @@ class OTelMiddleware(BaseHTTPMiddleware):
             OTelMiddleware._initialized = True
         super().__init__(app)
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Response]):  # noqa: D401
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Response]
+    ):  # noqa: D401
         tracer = trace.get_tracer("vigor.middleware")
         with tracer.start_as_current_span(request.url.path):
             response = await call_next(request)

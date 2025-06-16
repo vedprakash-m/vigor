@@ -4,12 +4,12 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy.orm import Session
 from sqlalchemy import desc
+from sqlalchemy.orm import Session
 
-from domain.repositories.base import Repository
+from database.models import FitnessLevel, WorkoutPlan
 from database.sql_models import WorkoutPlanDB
-from database.models import WorkoutPlan, FitnessLevel
+from domain.repositories.base import Repository
 
 
 class SQLAlchemyWorkoutPlanRepository(Repository[WorkoutPlan]):
@@ -17,7 +17,11 @@ class SQLAlchemyWorkoutPlanRepository(Repository[WorkoutPlan]):
         self._session = session
 
     async def get(self, entity_id: str) -> Optional[WorkoutPlan]:
-        record = self._session.query(WorkoutPlanDB).filter(WorkoutPlanDB.id == entity_id).first()
+        record = (
+            self._session.query(WorkoutPlanDB)
+            .filter(WorkoutPlanDB.id == entity_id)
+            .first()
+        )
         return None if record is None else WorkoutPlan.model_validate(record)
 
     async def add(self, entity: WorkoutPlan) -> WorkoutPlan:
@@ -28,7 +32,11 @@ class SQLAlchemyWorkoutPlanRepository(Repository[WorkoutPlan]):
         return WorkoutPlan.model_validate(db_obj)
 
     async def update(self, entity_id: str, update_data: dict) -> WorkoutPlan:
-        rec = self._session.query(WorkoutPlanDB).filter(WorkoutPlanDB.id == entity_id).first()
+        rec = (
+            self._session.query(WorkoutPlanDB)
+            .filter(WorkoutPlanDB.id == entity_id)
+            .first()
+        )
         if rec is None:
             raise ValueError("Workout plan not found")
         for k, v in update_data.items():

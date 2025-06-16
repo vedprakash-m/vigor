@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import aioredis
 import json
 from typing import Any
+
+import aioredis
 
 from core.llm_orchestration.adapters import LLMRequest, LLMResponse
 
@@ -16,7 +17,9 @@ class RedisCacheAdapter:
 
     async def initialize(self):
         if self._client is None:
-            self._client = await aioredis.from_url(self._redis_url, encoding="utf-8", decode_responses=True)
+            self._client = await aioredis.from_url(
+                self._redis_url, encoding="utf-8", decode_responses=True
+            )
 
     async def _key(self, request: LLMRequest) -> str:  # noqa: D401
         return f"llm:{hash((request.prompt, request.user_id, request.task_type))}"

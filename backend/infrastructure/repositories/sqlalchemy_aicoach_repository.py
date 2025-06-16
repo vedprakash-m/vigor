@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import List, Optional
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import List, Optional
 
-from sqlalchemy.orm import Session
 from sqlalchemy import desc
+from sqlalchemy.orm import Session
 
-from domain.repositories.base import Repository
-from database.sql_models import AICoachMessageDB
 from database.models import AICoachMessage
+from database.sql_models import AICoachMessageDB
+from domain.repositories.base import Repository
 
 
 class SQLAlchemyAICoachMessageRepository(Repository[AICoachMessage]):
@@ -17,7 +17,11 @@ class SQLAlchemyAICoachMessageRepository(Repository[AICoachMessage]):
         self._session = session
 
     async def get(self, entity_id: str) -> Optional[AICoachMessage]:
-        rec = self._session.query(AICoachMessageDB).filter(AICoachMessageDB.id == entity_id).first()
+        rec = (
+            self._session.query(AICoachMessageDB)
+            .filter(AICoachMessageDB.id == entity_id)
+            .first()
+        )
         return None if rec is None else AICoachMessage.model_validate(rec)
 
     async def add(self, entity: AICoachMessage) -> AICoachMessage:
@@ -28,7 +32,11 @@ class SQLAlchemyAICoachMessageRepository(Repository[AICoachMessage]):
         return AICoachMessage.model_validate(db_obj)
 
     async def update(self, entity_id: str, update_data: dict) -> AICoachMessage:
-        rec = self._session.query(AICoachMessageDB).filter(AICoachMessageDB.id == entity_id).first()
+        rec = (
+            self._session.query(AICoachMessageDB)
+            .filter(AICoachMessageDB.id == entity_id)
+            .first()
+        )
         if rec is None:
             raise ValueError("Coach message not found")
         for k, v in update_data.items():

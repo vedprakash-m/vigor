@@ -6,12 +6,12 @@ This removes duplication between `database.models` and ORM entities.
 Increments will gradually replace legacy manual Pydantic classes.
 """
 
-from typing import Type, Any
+from typing import Any, Type
 
-from pydantic_sqlalchemy import sqlalchemy_to_pydantic
 from database.connection import Base  # Ensure models registered
 
 
 def pydantic_model(sqlalchemy_model: Type[Any], **kwargs):  # noqa: D401
-    """Return a dynamic Pydantic model generated for *sqlalchemy_model*."""
-    return sqlalchemy_to_pydantic(sqlalchemy_model, **kwargs)
+    """Return a Pydantic model for *sqlalchemy_model* (placeholder implementation)."""
+    # TODO: Implement once pydantic-sqlalchemy compatibility is resolved
+    raise NotImplementedError("pydantic-sqlalchemy integration temporarily disabled")

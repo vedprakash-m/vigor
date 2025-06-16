@@ -7,16 +7,21 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from database.connection import Base
-from database.sql_models import UserProfileDB, ProgressMetricsDB
-
-from infrastructure.repositories.sqlalchemy_user_repository import SQLAlchemyUserRepository
-from infrastructure.repositories.sqlalchemy_progress_repository import SQLAlchemyProgressRepository
+from database.sql_models import ProgressMetricsDB, UserProfileDB
 from domain.repositories.base import Repository
+from infrastructure.repositories.sqlalchemy_progress_repository import (
+    SQLAlchemyProgressRepository,
+)
+from infrastructure.repositories.sqlalchemy_user_repository import (
+    SQLAlchemyUserRepository,
+)
 
 
 @pytest.fixture(scope="function")
 def session():
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    engine = create_engine(
+        "sqlite:///:memory:", connect_args={"check_same_thread": False}
+    )
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     # create tables
     Base.metadata.create_all(bind=engine)
@@ -41,6 +46,11 @@ async def test_user_repository_crud(session):
         goals=[],
         fitness_level="beginner",
         equipment="none",
+        injuries=[],
+        preferences={},
+        user_tier="free",
+        monthly_budget=0.0,
+        current_month_usage=0.0,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
@@ -75,6 +85,11 @@ async def test_progress_repository(session):
             goals=[],
             fitness_level="beginner",
             equipment="none",
+            injuries=[],
+            preferences={},
+            user_tier="free",
+            monthly_budget=0.0,
+            current_month_usage=0.0,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
         )

@@ -10,17 +10,22 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, Optional
 
+from core.llm_orchestration.adapters import LLMRequest  # noqa: E402 – same rationale
+
 # NOTE: We deliberately import only *interfaces* from the legacy core until we can
 # fully migrate them into the application layer.
-from core.llm_orchestration.gateway import GatewayRequest  # noqa: E402 – cyclic edge acceptable short-term
-from core.llm_orchestration.adapters import LLMRequest  # noqa: E402 – same rationale
+from core.llm_orchestration.gateway import (  # noqa: E402 – cyclic edge acceptable short-term
+    GatewayRequest,
+)
 
 
 @dataclass
 class RequestValidator:
     """Validate user-supplied GatewayRequest and enrich with contextual metadata."""
 
-    def __call__(self, request: GatewayRequest, request_id: str) -> LLMRequest:  # noqa: D401
+    def __call__(
+        self, request: GatewayRequest, request_id: str
+    ) -> LLMRequest:  # noqa: D401
         """Return an enriched :class:`LLMRequest` ready for downstream processing."""
 
         if not request.prompt:

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
 
-from sqlalchemy.orm import Session
 from sqlalchemy import desc
+from sqlalchemy.orm import Session
 
-from domain.repositories.base import Repository
-from database.sql_models import WorkoutLogDB
 from database.models import WorkoutLog
+from database.sql_models import WorkoutLogDB
+from domain.repositories.base import Repository
 
 
 class SQLAlchemyWorkoutLogRepository(Repository[WorkoutLog]):
@@ -16,7 +16,11 @@ class SQLAlchemyWorkoutLogRepository(Repository[WorkoutLog]):
         self._session = session
 
     async def get(self, entity_id: str) -> Optional[WorkoutLog]:  # noqa: D401
-        rec = self._session.query(WorkoutLogDB).filter(WorkoutLogDB.id == entity_id).first()
+        rec = (
+            self._session.query(WorkoutLogDB)
+            .filter(WorkoutLogDB.id == entity_id)
+            .first()
+        )
         return None if rec is None else WorkoutLog.model_validate(rec)
 
     async def add(self, entity: WorkoutLog) -> WorkoutLog:
@@ -27,7 +31,11 @@ class SQLAlchemyWorkoutLogRepository(Repository[WorkoutLog]):
         return WorkoutLog.model_validate(db_obj)
 
     async def update(self, entity_id: str, update_data: dict) -> WorkoutLog:
-        rec = self._session.query(WorkoutLogDB).filter(WorkoutLogDB.id == entity_id).first()
+        rec = (
+            self._session.query(WorkoutLogDB)
+            .filter(WorkoutLogDB.id == entity_id)
+            .first()
+        )
         if rec is None:
             raise ValueError("Workout log not found")
         for k, v in update_data.items():
@@ -54,4 +62,6 @@ class SQLAlchemyWorkoutLogRepository(Repository[WorkoutLog]):
             .order_by(desc(WorkoutLogDB.completed_at))
             .all()
         )
-        return sorted({dt.completed_at.date().isoformat() for dt in rows if dt.completed_at})
+        return sorted(
+            {dt.completed_at.date().isoformat() for dt in rows if dt.completed_at}
+        )

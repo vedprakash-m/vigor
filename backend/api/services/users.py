@@ -6,8 +6,12 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from database.models import ProgressMetrics, UserProfile
-from infrastructure.repositories.sqlalchemy_user_repository import SQLAlchemyUserRepository
-from infrastructure.repositories.sqlalchemy_progress_repository import SQLAlchemyProgressRepository
+from infrastructure.repositories.sqlalchemy_progress_repository import (
+    SQLAlchemyProgressRepository,
+)
+from infrastructure.repositories.sqlalchemy_user_repository import (
+    SQLAlchemyUserRepository,
+)
 
 
 async def get_user_profile(db: Session, user_id: str) -> UserProfile:
@@ -15,7 +19,9 @@ async def get_user_profile(db: Session, user_id: str) -> UserProfile:
     repo = SQLAlchemyUserRepository(db)
     user = await repo.get(user_id)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
     return user
 
 
@@ -27,7 +33,9 @@ async def update_user_profile(
     try:
         return await repo.update(user_id, update_data)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
 
 async def create_progress_metric(

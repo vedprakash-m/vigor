@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import List
 
-from sqlalchemy.orm import Session
 from sqlalchemy import desc
+from sqlalchemy.orm import Session
 
-from domain.repositories.base import Repository
-from database.sql_models import ProgressMetricsDB
 from database.models import ProgressMetrics
+from database.sql_models import ProgressMetricsDB
+from domain.repositories.base import Repository
 
 
 class SQLAlchemyProgressRepository(Repository[ProgressMetrics]):
@@ -17,7 +17,11 @@ class SQLAlchemyProgressRepository(Repository[ProgressMetrics]):
         self._session = session
 
     async def get(self, entity_id: str):  # noqa: D401
-        record = self._session.query(ProgressMetricsDB).filter(ProgressMetricsDB.id == entity_id).first()
+        record = (
+            self._session.query(ProgressMetricsDB)
+            .filter(ProgressMetricsDB.id == entity_id)
+            .first()
+        )
         return None if record is None else ProgressMetrics.model_validate(record)
 
     async def add(self, entity: ProgressMetrics):
@@ -28,7 +32,11 @@ class SQLAlchemyProgressRepository(Repository[ProgressMetrics]):
         return ProgressMetrics.model_validate(db_obj)
 
     async def update(self, entity_id: str, update_data: dict):
-        record = self._session.query(ProgressMetricsDB).filter(ProgressMetricsDB.id == entity_id).first()
+        record = (
+            self._session.query(ProgressMetricsDB)
+            .filter(ProgressMetricsDB.id == entity_id)
+            .first()
+        )
         if record is None:
             raise ValueError("Progress metric not found")
         for k, v in update_data.items():

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from infrastructure.tasks.celery_app import celery_app
 from core.llm_orchestration_init import get_llm_gateway
+from infrastructure.tasks.celery_app import celery_app
 
 
 @celery_app.on_after_configure.connect

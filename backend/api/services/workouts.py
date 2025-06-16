@@ -6,9 +6,12 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from database.models import FitnessLevel, WorkoutLog, WorkoutPlan
-
-from infrastructure.repositories.sqlalchemy_workoutplan_repository import SQLAlchemyWorkoutPlanRepository
-from infrastructure.repositories.sqlalchemy_workoutlog_repository import SQLAlchemyWorkoutLogRepository
+from infrastructure.repositories.sqlalchemy_workoutlog_repository import (
+    SQLAlchemyWorkoutLogRepository,
+)
+from infrastructure.repositories.sqlalchemy_workoutplan_repository import (
+    SQLAlchemyWorkoutPlanRepository,
+)
 
 
 async def create_workout_plan(
@@ -44,7 +47,9 @@ async def get_workout_plan(db: Session, plan_id: str, user_id: str) -> WorkoutPl
     repo = SQLAlchemyWorkoutPlanRepository(db)
     plan = await repo.get(plan_id)
     if plan is None or plan.user_id != user_id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workout plan not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Workout plan not found"
+        )
     return plan
 
 
@@ -54,7 +59,9 @@ async def log_workout(db: Session, user_id: str, log_data: dict) -> WorkoutLog:
     plan_repo = SQLAlchemyWorkoutPlanRepository(db)
     plan = await plan_repo.get(log_data["plan_id"])
     if plan is None or plan.user_id != user_id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workout plan not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Workout plan not found"
+        )
 
     log_repo = SQLAlchemyWorkoutLogRepository(db)
     log = WorkoutLog(

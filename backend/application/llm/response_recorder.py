@@ -2,11 +2,11 @@ from __future__ import annotations
 
 """Responsible for persisting analytics, usage logs, and caching after a request."""
 
-from core.llm_orchestration.usage_logger import UsageLogger
-from core.llm_orchestration.budget_manager import BudgetManager
-from core.llm_orchestration.analytics import AnalyticsCollector
-from core.llm_orchestration.cache_manager import CacheManager
 from core.llm_orchestration.adapters import LLMRequest, LLMResponse
+from core.llm_orchestration.analytics import AnalyticsCollector
+from core.llm_orchestration.budget_manager import BudgetManager
+from core.llm_orchestration.cache_manager import CacheManager
+from core.llm_orchestration.usage_logger import UsageLogger
 
 
 class ResponseRecorder:
@@ -57,4 +57,6 @@ class ResponseRecorder:
         )
 
         # Analytics
-        await self._analytics.record_request(original_request, llm_response, gateway_request_id)
+        await self._analytics.record_request(
+            original_request, llm_response, gateway_request_id
+        )

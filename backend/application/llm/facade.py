@@ -8,20 +8,24 @@ import time
 import uuid
 from typing import Optional
 
-from core.llm_orchestration.gateway import GatewayRequest, GatewayResponse
+from core.llm_orchestration.adapters import (
+    AdapterFactory,
+    LLMResponse,
+    LLMServiceAdapter,
+)
+from core.llm_orchestration.analytics import AnalyticsCollector
 from core.llm_orchestration.budget_manager import BudgetManager
 from core.llm_orchestration.cache_manager import CacheManager
-from core.llm_orchestration.analytics import AnalyticsCollector
-from core.llm_orchestration.usage_logger import UsageLogger
 from core.llm_orchestration.circuit_breaker import CircuitBreakerManager
-from core.llm_orchestration.adapters import LLMServiceAdapter, AdapterFactory, LLMResponse
 from core.llm_orchestration.config_manager import AdminConfigManager, ModelConfiguration
+from core.llm_orchestration.gateway import GatewayRequest, GatewayResponse
 from core.llm_orchestration.key_vault import KeyVaultClientService
+from core.llm_orchestration.usage_logger import UsageLogger
 
-from .request_validator import RequestValidator
-from .routing_engine import RoutingEngine
 from .budget_enforcer import BudgetEnforcer
+from .request_validator import RequestValidator
 from .response_recorder import ResponseRecorder
+from .routing_engine import RoutingEngine
 
 
 class LLMGatewayFacade:
@@ -97,10 +101,14 @@ class LLMGatewayFacade:
         # Cache hit fast-path
         cached_resp = await self._cache_manager.get(enriched)
         if cached_resp:
-            return self._to_gateway_response(cached_resp, request, request_id, start, cached=True)
+            return self._to_gateway_response(
+                cached_resp, request, request_id, start, cached=True
+            )
 
         # Budget enforcement
-        await self._budget_enforcer.ensure_within_budget(request.user_id, [request.user_tier] if request.user_tier else [])
+        await self._budget_enforcer.ensure_within_budget(
+            request.user_id, [request.user_tier] if request.user_tier else []
+        )
 
         # Routing
         adapter = await self._select_adapter(enriched)
@@ -121,10 +129,16 @@ class LLMGatewayFacade:
         context = {
             "user_id": llm_request.user_id,
             "task_type": llm_request.task_type,
-            "user_tier": llm_request.context.get("user_tier") if llm_request.context else None,
-            "priority": llm_request.context.get("priority") if llm_request.context else None,
+            "user_tier": (
+                llm_request.context.get("user_tier") if llm_request.context else None
+            ),
+            "priority": (
+                llm_request.context.get("priority") if llm_request.context else None
+            ),
         }
-        selected_id = await self._routing_engine.select_model(context, list(self._adapters.keys()))
+        selected_id = await self._routing_engine.select_model(
+            context, list(self._adapters.keys())
+        )
         adapter = self._adapters.get(selected_id)
         if not adapter:
             raise Exception(f"Selected model {selected_id} not available")

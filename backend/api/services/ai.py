@@ -19,8 +19,12 @@ from core.config import get_settings
 # Import the new Functions client
 from core.function_client import FunctionsClient
 from database.models import AICoachMessage, UserProfile
-from infrastructure.repositories.sqlalchemy_aicoach_repository import SQLAlchemyAICoachMessageRepository
-from infrastructure.repositories.sqlalchemy_workoutlog_repository import SQLAlchemyWorkoutLogRepository
+from infrastructure.repositories.sqlalchemy_aicoach_repository import (
+    SQLAlchemyAICoachMessageRepository,
+)
+from infrastructure.repositories.sqlalchemy_workoutlog_repository import (
+    SQLAlchemyWorkoutLogRepository,
+)
 
 settings = get_settings()
 
@@ -174,7 +178,9 @@ async def analyze_user_workout(
     log_repo = SQLAlchemyWorkoutLogRepository(db)
     workout_log = await log_repo.get(workout_log_id)
     if workout_log is None or workout_log.user_id != user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workout log not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Workout log not found"
+        )
 
     # Prepare data for analysis
     workout_data = {

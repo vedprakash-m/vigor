@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
-from domain.repositories.base import Repository
-from database.sql_models import UserProfileDB
 from database.models import UserProfile
+from database.sql_models import UserProfileDB
+from domain.repositories.base import Repository
 
 
 class SQLAlchemyUserRepository(Repository[UserProfile]):
@@ -17,7 +17,11 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
         self._session = session
 
     async def get(self, entity_id: str) -> Optional[UserProfile]:
-        record = self._session.query(UserProfileDB).filter(UserProfileDB.id == entity_id).first()
+        record = (
+            self._session.query(UserProfileDB)
+            .filter(UserProfileDB.id == entity_id)
+            .first()
+        )
         return None if record is None else UserProfile.model_validate(record)
 
     async def add(self, entity: UserProfile) -> UserProfile:
@@ -28,7 +32,11 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
         return UserProfile.model_validate(db_obj)
 
     async def update(self, entity_id: str, update_data: dict) -> UserProfile:
-        record = self._session.query(UserProfileDB).filter(UserProfileDB.id == entity_id).first()
+        record = (
+            self._session.query(UserProfileDB)
+            .filter(UserProfileDB.id == entity_id)
+            .first()
+        )
         if record is None:
             raise ValueError("User not found")
 
