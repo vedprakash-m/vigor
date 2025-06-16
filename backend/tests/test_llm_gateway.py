@@ -2,15 +2,16 @@
 Comprehensive test suite for LLM Gateway functionality
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime
 import json
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from core.llm_orchestration.gateway import LLMGateway, GatewayRequest, GatewayResponse
-from core.llm_orchestration.adapters import LLMRequest, LLMResponse, LLMProvider
+import pytest
+
+from core.llm_orchestration.adapters import LLMProvider, LLMRequest, LLMResponse
 from core.llm_orchestration.config_manager import ModelConfiguration
-from core.llm_orchestration.key_vault import SecretReference, KeyVaultProvider
+from core.llm_orchestration.gateway import GatewayRequest, GatewayResponse, LLMGateway
+from core.llm_orchestration.key_vault import KeyVaultProvider, SecretReference
 
 
 class TestLLMGateway:
@@ -20,8 +21,7 @@ class TestLLMGateway:
     def gateway(self, mock_config_manager, mock_key_vault_service):
         """Create LLM Gateway instance with mocked dependencies"""
         gateway = LLMGateway(
-            config_manager=mock_config_manager,
-            key_vault_service=mock_key_vault_service
+            config_manager=mock_config_manager, key_vault_service=mock_key_vault_service
         )
         return gateway
 
@@ -36,18 +36,20 @@ class TestLLMGateway:
             max_tokens=100,
             temperature=0.7,
             stream=False,
-            metadata={"test": True}
+            metadata={"test": True},
         )
 
     @pytest.mark.asyncio
     async def test_gateway_initialization(self, gateway):
         """Test gateway initializes properly"""
         assert gateway is not None
-        assert hasattr(gateway, '_config_manager')
-        assert hasattr(gateway, '_key_vault_service')
+        assert hasattr(gateway, "_config_manager")
+        assert hasattr(gateway, "_key_vault_service")
 
     @pytest.mark.asyncio
-    async def test_gateway_initialization_with_adapters(self, gateway, mock_config_manager):
+    async def test_gateway_initialization_with_adapters(
+        self, gateway, mock_config_manager
+    ):
         """Test gateway initialization loads adapters"""
         # Setup mock configuration
         model_config = ModelConfiguration(
@@ -55,11 +57,10 @@ class TestLLMGateway:
             provider="openai",
             model_name="gpt-3.5-turbo",
             api_key_secret_ref=SecretReference(
-                provider=KeyVaultProvider.LOCAL_ENV,
-                secret_identifier="OPENAI_API_KEY"
+                provider=KeyVaultProvider.LOCAL_ENV, secret_identifier="OPENAI_API_KEY"
             ),
             priority=1,
-            is_active=True
+            is_active=True,
         )
         mock_config_manager.get_active_models.return_value = [model_config]
 
@@ -70,7 +71,9 @@ class TestLLMGateway:
         assert gateway._is_initialized
 
     @pytest.mark.asyncio
-    async def test_process_request_success(self, gateway, sample_request, mock_llm_adapter):
+    async def test_process_request_success(
+        self, gateway, sample_request, mock_llm_adapter
+    ):
         """Test successful request processing"""
         # Setup gateway with adapter
         gateway._adapters = {"gpt-3.5-turbo": mock_llm_adapter}
@@ -91,7 +94,7 @@ class TestLLMGateway:
             tokens_used=12,
             cost_estimate=0.00024,
             latency_ms=150,
-            request_id="req-123"
+            request_id="req-123",
         )
         mock_llm_adapter.generate_response.return_value = expected_response
 
@@ -158,7 +161,7 @@ class TestLLMGateway:
         """Test provider status retrieval"""
         gateway._adapters = {
             "gpt-3.5-turbo": mock_llm_adapter,
-            "gpt-4": mock_llm_adapter
+            "gpt-4": mock_llm_adapter,
         }
         mock_llm_adapter.is_healthy.return_value = True
         gateway._is_initialized = True
@@ -208,7 +211,7 @@ class TestLLMGateway:
             max_tokens=500,
             temperature=0.8,
             stream=True,
-            metadata={"stream": True}
+            metadata={"stream": True},
         )
 
         # Setup gateway
@@ -240,7 +243,9 @@ class TestLLMGateway:
         assert call_args.stream is True
 
     @pytest.mark.asyncio
-    async def test_error_handling_and_recovery(self, gateway, sample_request, mock_llm_adapter):
+    async def test_error_handling_and_recovery(
+        self, gateway, sample_request, mock_llm_adapter
+    ):
         """Test error handling and recovery mechanisms"""
         # Setup gateway
         gateway._adapters = {"gpt-3.5-turbo": mock_llm_adapter}
@@ -275,8 +280,8 @@ class TestLLMGateway:
             metadata={
                 "session_id": "sess-456",
                 "custom_field": "custom_value",
-                "timestamp": datetime.utcnow().isoformat()
-            }
+                "timestamp": datetime.utcnow().isoformat(),
+            },
         )
 
         # Setup gateway
@@ -298,7 +303,7 @@ class TestLLMGateway:
             tokens_used=5,
             cost_estimate=0.0001,
             latency_ms=100,
-            request_id="req-789"
+            request_id="req-789",
         )
 
         response = await gateway.process_request(request_with_metadata)

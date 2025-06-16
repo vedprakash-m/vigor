@@ -1,15 +1,16 @@
+from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import bcrypt
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime, timedelta
-import bcrypt
 
+from api.schemas.auth import PasswordReset, TokenResponse, UserLogin, UserRegistration
+from api.services.auth import AuthService, PasswordService, TokenService
 from core.security import create_access_token
 from database.connection import get_db
 from database.sql_models import UserProfileDB
 from main import app
-from api.services.auth import AuthService, TokenService, PasswordService
-from api.schemas.auth import UserRegistration, UserLogin, TokenResponse, PasswordReset
 
 client = TestClient(app)
 
@@ -262,17 +263,21 @@ class TestAuthService:
     @pytest.mark.asyncio
     async def test_authenticate_user_success(self, auth_service):
         """Test successful user authentication"""
-        with patch('api.services.auth.user_repository') as mock_repo:
-            hashed_password = bcrypt.hashpw("SecurePassword123!".encode(), bcrypt.gensalt())
+        with patch("api.services.auth.user_repository") as mock_repo:
+            hashed_password = bcrypt.hashpw(
+                "SecurePassword123!".encode(), bcrypt.gensalt()
+            )
             user = UserProfileDB(
                 id=1,
                 email="test@example.com",
                 password_hash=hashed_password.decode(),
-                is_active=True
+                is_active=True,
             )
             mock_repo.get_by_email = AsyncMock(return_value=user)
 
-            result = await auth_service.authenticate_user("test@example.com", "SecurePassword123!")
+            result = await auth_service.authenticate_user(
+                "test@example.com", "SecurePassword123!"
+            )
 
             assert result is not None
             assert result.email == "test@example.com"
@@ -280,29 +285,33 @@ class TestAuthService:
     @pytest.mark.asyncio
     async def test_authenticate_user_wrong_password(self, auth_service):
         """Test authentication with wrong password"""
-        with patch('api.services.auth.user_repository') as mock_repo:
-            hashed_password = bcrypt.hashpw("CorrectPassword".encode(), bcrypt.gensalt())
+        with patch("api.services.auth.user_repository") as mock_repo:
+            hashed_password = bcrypt.hashpw(
+                "CorrectPassword".encode(), bcrypt.gensalt()
+            )
             user = UserProfileDB(
                 id=1,
                 email="test@example.com",
                 password_hash=hashed_password.decode(),
-                is_active=True
+                is_active=True,
             )
             mock_repo.get_by_email = AsyncMock(return_value=user)
 
-            result = await auth_service.authenticate_user("test@example.com", "WrongPassword")
+            result = await auth_service.authenticate_user(
+                "test@example.com", "WrongPassword"
+            )
 
             assert result is None
 
     @pytest.mark.asyncio
     async def test_authenticate_user_inactive_account(self, auth_service):
         """Test authentication with inactive account"""
-        with patch('api.services.auth.user_repository') as mock_repo:
+        with patch("api.services.auth.user_repository") as mock_repo:
             user = UserProfileDB(
                 id=1,
                 email="test@example.com",
                 password_hash="hashed_password",
-                is_active=False
+                is_active=False,
             )
             mock_repo.get_by_email = AsyncMock(return_value=user)
 
@@ -351,11 +360,11 @@ class TestAuthService:
     @pytest.mark.asyncio
     async def test_initiate_password_reset(self, auth_service):
         """Test password reset initiation"""
-        with patch('api.services.auth.user_repository') as mock_repo:
+        with patch("api.services.auth.user_repository") as mock_repo:
             user = UserProfileDB(id=1, email="test@example.com")
             mock_repo.get_by_email = AsyncMock(return_value=user)
 
-            with patch('api.services.auth.email_service') as mock_email:
+            with patch("api.services.auth.email_service") as mock_email:
                 mock_email.send_password_reset = AsyncMock(return_value=True)
 
                 result = await auth_service.initiate_password_reset("test@example.com")
@@ -366,14 +375,16 @@ class TestAuthService:
     @pytest.mark.asyncio
     async def test_reset_password_success(self, auth_service):
         """Test successful password reset"""
-        with patch('api.services.auth.user_repository') as mock_repo:
-            with patch('api.services.auth.token_service') as mock_token_service:
+        with patch("api.services.auth.user_repository") as mock_repo:
+            with patch("api.services.auth.token_service") as mock_token_service:
                 mock_token_service.verify_reset_token.return_value = {"user_id": 1}
                 user = UserProfileDB(id=1, email="test@example.com")
                 mock_repo.get_by_id = AsyncMock(return_value=user)
                 mock_repo.update = AsyncMock(return_value=user)
 
-                result = await auth_service.reset_password("valid_token", "NewPassword123!")
+                result = await auth_service.reset_password(
+                    "valid_token", "NewPassword123!"
+                )
 
                 assert result is True
                 mock_repo.update.assert_called_once()
@@ -382,7 +393,7 @@ class TestAuthService:
 class TestAuthenticationRouteEdgeCases:
     """Test edge cases and error scenarios for auth routes"""
 
-    @patch('api.routes.auth.auth_service')
+    @patch("api.routes.auth.auth_service")
     def test_login_rate_limiting(self, mock_auth_service, client):
         """Test login rate limiting"""
         mock_auth_service.authenticate_user = AsyncMock(return_value=None)
@@ -395,18 +406,20 @@ class TestAuthenticationRouteEdgeCases:
             # First few should be 401, eventually might be 429 (rate limited)
             assert response.status_code in [401, 429]
 
-    @patch('api.routes.auth.auth_service')
+    @patch("api.routes.auth.auth_service")
     def test_concurrent_registration(self, mock_auth_service, client):
         """Test handling of concurrent registrations"""
         registration_data = {
             "username": "concurrentuser",
             "email": "concurrent@example.com",
             "password": "SecurePassword123!",
-            "confirm_password": "SecurePassword123!"
+            "confirm_password": "SecurePassword123!",
         }
 
         # Simulate race condition
-        mock_auth_service.register_user = AsyncMock(side_effect=ValueError("Email already exists"))
+        mock_auth_service.register_user = AsyncMock(
+            side_effect=ValueError("Email already exists")
+        )
 
         response = client.post("/api/auth/register", json=registration_data)
         assert response.status_code == 400
@@ -414,8 +427,7 @@ class TestAuthenticationRouteEdgeCases:
     def test_malformed_jwt_token(self, client):
         """Test handling of malformed JWT tokens"""
         response = client.get(
-            "/api/auth/me",
-            headers={"Authorization": "Bearer malformed.jwt.token"}
+            "/api/auth/me", headers={"Authorization": "Bearer malformed.jwt.token"}
         )
 
         assert response.status_code == 401
@@ -425,12 +437,11 @@ class TestAuthenticationRouteEdgeCases:
         # Create an expired token
         expired_token = create_access_token(
             data={"sub": "test@example.com"},
-            expires_delta=timedelta(seconds=-1)  # Already expired
+            expires_delta=timedelta(seconds=-1),  # Already expired
         )
 
         response = client.get(
-            "/api/auth/me",
-            headers={"Authorization": f"Bearer {expired_token}"}
+            "/api/auth/me", headers={"Authorization": f"Bearer {expired_token}"}
         )
 
         assert response.status_code == 401
@@ -443,7 +454,6 @@ class TestAuthenticationRouteEdgeCases:
     def test_invalid_authorization_format(self, client):
         """Test invalid authorization header format"""
         response = client.get(
-            "/api/auth/me",
-            headers={"Authorization": "InvalidFormat token"}
+            "/api/auth/me", headers={"Authorization": "InvalidFormat token"}
         )
         assert response.status_code == 401
