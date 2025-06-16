@@ -20,7 +20,11 @@ from core.llm_orchestration.cache_manager import CacheManager
 from core.llm_orchestration.circuit_breaker import CircuitBreakerManager
 from core.llm_orchestration.config_manager import AdminConfigManager, ModelConfiguration
 from core.llm_orchestration.gateway import GatewayRequest, GatewayResponse
-from core.llm_orchestration.key_vault import KeyVaultClientService, KeyVaultProvider, SecretReference
+from core.llm_orchestration.key_vault import (
+    KeyVaultClientService,
+    KeyVaultProvider,
+    SecretReference,
+)
 from core.llm_orchestration.usage_logger import UsageLogger
 
 from .budget_enforcer import BudgetEnforcer
@@ -70,8 +74,7 @@ class LLMGatewayFacade:
         if not active_models:
             # Build fallback configuration (reuse legacy helper)
             fallback_secret = SecretReference(
-                provider=KeyVaultProvider.LOCAL_ENV,
-                secret_identifier="fallback-secret"
+                provider=KeyVaultProvider.LOCAL_ENV, secret_identifier="fallback-secret"
             )
             fallback_config = ModelConfiguration(
                 model_id="fallback",

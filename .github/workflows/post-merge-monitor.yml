@@ -84,7 +84,7 @@ jobs:
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Notify on Slack
-        if: steps.check-status.outputs.status == 'failed'
+        if: steps.check-status.outputs.status == 'failed' && env.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1.24.0
         with:
           payload: |
