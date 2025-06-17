@@ -14,15 +14,16 @@ Adopt _Clean / Hexagonal Architecture_ principles to achieve: testability, scala
 
 ## 2. Decision Log
 
-| ID       | Date       | Decision                                                                                                         | Rationale                                                  |
-| -------- | ---------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| ADR-0007 | 2025-06-16 | **Local Validation**: Enhanced E2E validation to match CI/CD pipeline requirements                               | Fix gap where local validation skipped E2E tests           |
-| ADR-0001 | 2025-06-15 | Adopt Clean Architecture with Domain, Application, Adapters, Infrastructure layers                               | Aligns with SOLID, DDD, enables modular growth             |
-| ADR-0002 | 2025-06-15 | Track modernization via `docs/metadata.md` + ADRs                                                                | Single, auditable trail of progress and decisions          |
-| ADR-0003 | 2025-06-15 | **Infrastructure**: Use 2 Azure Resource Groups: `vigor-db-rg` (persistent) + `vigor-rg` (compute)               | Cost control, separation of concerns, idempotency          |
-| ADR-0004 | 2025-06-15 | **Deployment**: Single environment, single slot, static naming for cost optimization                             | Keep monthly cost under $100, simplify operations          |
-| ADR-0005 | 2025-06-15 | **Resources**: vigor-backend (App Service), vigor-db (PostgreSQL), vigor-kv (Key Vault), vigor-storage (Storage) | Simple, static names for idempotency and clarity           |
-| ADR-0006 | 2025-06-15 | **CI/CD**: Unified DAG-based pipeline replacing separate workflows                                               | Proper orchestration, staging validation, failure handling |
+| ID       | Date       | Decision                                                                                                         | Rationale                                                     |
+| -------- | ---------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| ADR-0008 | 2025-06-16 | **CI/CD Simplification**: Replace complex staging pipeline with single-slot cost-optimized deployment            | Reduce monthly costs from $96 to $43, align with requirements |
+| ADR-0007 | 2025-06-16 | **Local Validation**: Enhanced E2E validation to match CI/CD pipeline requirements                               | Fix gap where local validation skipped E2E tests              |
+| ADR-0001 | 2025-06-15 | Adopt Clean Architecture with Domain, Application, Adapters, Infrastructure layers                               | Aligns with SOLID, DDD, enables modular growth                |
+| ADR-0002 | 2025-06-15 | Track modernization via `docs/metadata.md` + ADRs                                                                | Single, auditable trail of progress and decisions             |
+| ADR-0003 | 2025-06-15 | **Infrastructure**: Use 2 Azure Resource Groups: `vigor-db-rg` (persistent) + `vigor-rg` (compute)               | Cost control, separation of concerns, idempotency             |
+| ADR-0004 | 2025-06-15 | **Deployment**: Single environment, single slot, static naming for cost optimization                             | Keep monthly cost under $100, simplify operations             |
+| ADR-0005 | 2025-06-15 | **Resources**: vigor-backend (App Service), vigor-db (PostgreSQL), vigor-kv (Key Vault), vigor-storage (Storage) | Simple, static names for idempotency and clarity              |
+| ADR-0006 | 2025-06-15 | **CI/CD**: Unified DAG-based pipeline replacing separate workflows                                               | Proper orchestration, staging validation, failure handling    |
 
 _(Add new rows at the top as decisions are made.)_
 
@@ -119,11 +120,13 @@ Internet → Static Web App (Free) → App Service (Basic B1) → PostgreSQL (Ba
 - **Static Naming**: All resources use static names for idempotency
 - **Blue-Green**: Not used (cost optimization)
 
-### **Current Status** ✅
+### **Current Status** ⚠️ **CRITICAL CHANGE REQUIRED**
 
 - Resource groups exist and deployed
 - Backend returning 503 (needs deployment fix)
-- Infrastructure ready, CI/CD gaps need fixing
+- **MAJOR ISSUE**: CI/CD pipeline misaligned with cost requirements
+- **Complex staging pipeline** causing $53/month unnecessary costs
+- **Remediation in progress**: Implementing single-slot deployment strategy
 
 ---
 

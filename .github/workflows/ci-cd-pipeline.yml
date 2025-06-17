@@ -1,12 +1,15 @@
 ---
 name: Unified CI/CD Pipeline
 
+# DISABLED - Using simple-deploy.yml for cost-optimized single-slot deployment
+# This complex pipeline is designed for enterprise multi-environment deployments
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
   workflow_dispatch:
+    inputs:
+      force_enable:
+        description: "Force enable this complex pipeline"
+        required: false
+        default: "false"
 
 permissions:
   contents: read

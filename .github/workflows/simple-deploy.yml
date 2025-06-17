@@ -1,0 +1,183 @@
+name: Simple Single-Slot Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  NODE_VERSION: "20"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # Combined quality checks - no change detection complexity
+  quality-checks:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      # Backend checks
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Backend linting & formatting
+        run: |
+          cd backend
+          black --check .
+          isort --check-only .
+
+      - name: Backend tests
+        run: |
+          cd backend
+          pytest -v --cov=. --cov-fail-under=50
+
+      # Frontend checks
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Frontend linting
+        run: |
+          cd frontend
+          npm run lint
+
+      - name: Frontend tests
+        run: |
+          cd frontend
+          npm test -- --coverage --watchAll=false
+
+      - name: Frontend build
+        run: |
+          cd frontend
+          npm run build
+
+  # Simple direct deployment - no staging
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: quality-checks
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Build backend
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Production (Single Slot)
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: vigor-backend
+          package: ./backend
+          # No slot-name = deploys to production slot directly
+
+      - name: Configure production settings
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: vigor-backend
+          app-settings-json: |
+            [
+              {
+                "name": "DATABASE_URL",
+                "value": "${{ secrets.DATABASE_URL }}"
+              },
+              {
+                "name": "SECRET_KEY",
+                "value": "${{ secrets.SECRET_KEY }}"
+              },
+              {
+                "name": "OPENAI_API_KEY",
+                "value": "${{ secrets.OPENAI_API_KEY }}"
+              },
+              {
+                "name": "ENVIRONMENT",
+                "value": "production"
+              },
+              {
+                "name": "DEBUG",
+                "value": "false"
+              }
+            ]
+
+  # Simple health check - no complex monitoring
+  verify-deployment:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: deploy-production
+
+    steps:
+      - name: Simple health check
+        run: |
+          # Wait 30 seconds for deployment to settle
+          sleep 30
+
+          # Single health check
+          if curl -f -s "https://vigor-backend.azurewebsites.net/health" > /dev/null; then
+            echo "✅ Deployment successful"
+          else
+            echo "❌ Deployment failed health check"
+            exit 1
+          fi
+
+      - name: Create deployment notification
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Production deployment failed',
+              body: `Deployment failed at ${new Date().toISOString()}\nCommit: ${context.sha}`,
+              labels: ['deployment-failure']
+            })
