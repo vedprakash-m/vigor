@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 from core.llm_orchestration_init import get_llm_gateway
 from infrastructure.tasks.celery_app import celery_app
 

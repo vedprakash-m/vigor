@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-
 # Use direct AI functionality if function client isn't available
 from core.ai import (
     analyze_workout_log,

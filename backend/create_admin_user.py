@@ -4,7 +4,6 @@ Script to create an admin user for the LLM orchestration system
 """
 import asyncio
 
-
 from api.services.auth import register_user
 from database.connection import SessionLocal
 

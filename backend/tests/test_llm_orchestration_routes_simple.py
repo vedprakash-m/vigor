@@ -2,8 +2,6 @@
 Simplified test suite for LLM Orchestration Routes - Coverage improvement
 """
 
-
-
 from api.schemas.admin import AdminSettingsUpdate, BudgetSettingsUpdate
 
 

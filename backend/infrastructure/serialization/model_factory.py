@@ -9,7 +9,6 @@ Increments will gradually replace legacy manual Pydantic classes.
 from typing import Any, Type
 
 
-
 def pydantic_model(sqlalchemy_model: Type[Any], **kwargs):  # noqa: D401
     """Return a Pydantic model for *sqlalchemy_model* (placeholder implementation)."""
     # TODO: Implement once pydantic-sqlalchemy compatibility is resolved
