@@ -46,7 +46,7 @@ print_step "Running enhanced local validation"
 bash scripts/enhanced-local-validation.sh --check-only --skip-e2e
 check_error "Code quality checks passed"
 
-# 2. Build Validation
+# 3. Build Validation
 print_step "Validating production builds"
 
 # Backend build validation
@@ -66,7 +66,36 @@ npm run build > /dev/null 2>&1
 check_error "Frontend builds successfully for production"
 cd ..
 
-# 3. Azure Authentication Check
+# 2.5. CI/CD Environment Validation (NEW)
+print_step "Validating CI/CD environment parity"
+
+# Ensure backend tools match CI/CD expectations
+cd backend
+if [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+fi
+
+# Check that all CI/CD tools are available
+CI_TOOLS=("black" "isort" "ruff" "mypy" "bandit" "safety" "pytest")
+for tool in "${CI_TOOLS[@]}"; do
+    if ! command -v "$tool" &> /dev/null; then
+        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+        print_error "CI/CD tool '$tool' not available"
+    fi
+done
+
+# Validate requirements-dev.txt has all tools
+REQUIRED_IN_DEV_DEPS=("black" "isort" "ruff" "mypy" "bandit" "safety")
+for tool in "${REQUIRED_IN_DEV_DEPS[@]}"; do
+    if ! grep -q "^$tool==" requirements-dev.txt; then
+        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+        print_error "Tool '$tool' missing from requirements-dev.txt"
+    fi
+done
+
+cd ..
+
+# 4. Azure Authentication Check
 print_step "Validating Azure authentication"
 
 if command -v az &> /dev/null; then
@@ -81,7 +110,7 @@ else
     print_error "Azure CLI not installed"
 fi
 
-# 4. GitHub Authentication Check
+# 5. GitHub Authentication Check
 print_step "Validating GitHub authentication"
 
 if command -v gh &> /dev/null; then
@@ -96,7 +125,7 @@ else
     print_error "GitHub CLI not installed"
 fi
 
-# 5. GitHub Secrets Validation
+# 6. GitHub Secrets Validation
 print_step "Validating GitHub repository secrets"
 
 if command -v gh &> /dev/null && gh auth status &> /dev/null; then
@@ -114,7 +143,7 @@ else
     print_warning "Skipping secret validation (GitHub CLI not available)"
 fi
 
-# 6. Azure Resources Check
+# 7. Azure Resources Check
 print_step "Validating Azure resources"
 
 if command -v az &> /dev/null && az account show &> /dev/null; then
@@ -139,7 +168,7 @@ else
     print_warning "Skipping Azure resource validation (Azure CLI not available)"
 fi
 
-# 7. Git Status Check
+# 8. Git Status Check
 print_step "Checking Git status"
 
 if [ -n "$(git status --porcelain)" ]; then
@@ -150,7 +179,7 @@ else
     print_success "Working directory clean"
 fi
 
-# 8. Branch Check
+# 9. Branch Check
 print_step "Checking current branch"
 
 CURRENT_BRANCH=$(git branch --show-current)
@@ -161,7 +190,7 @@ else
     print_warning "CI/CD only runs on main branch"
 fi
 
-# 9. CI/CD Workflow Validation
+# 10. CI/CD Workflow Validation
 print_step "Validating CI/CD workflow"
 
 if [ -f ".github/workflows/simple-deploy.yml" ]; then

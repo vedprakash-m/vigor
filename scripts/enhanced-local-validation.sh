@@ -73,9 +73,10 @@ else
     exit 1
 fi
 
-# Install/update formatting tools
-print_step "Ensuring formatting tools are available"
-pip install --quiet black isort ruff mypy bandit
+# Install dependencies (exactly like CI/CD)
+print_step "Installing backend dependencies (matching CI/CD)"
+pip install --quiet -r requirements.txt
+pip install --quiet -r requirements-dev.txt
 
 # Apply formatting fixes
 if [ "$FIX_MODE" = true ]; then
