@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-"""Responsible for persisting analytics, usage logs, and caching after a request."""
-
 from core.llm_orchestration.adapters import LLMRequest, LLMResponse
 from core.llm_orchestration.analytics import AnalyticsCollector
 from core.llm_orchestration.budget_manager import BudgetManager
 from core.llm_orchestration.cache_manager import CacheManager
 from core.llm_orchestration.gateway import GatewayRequest
 from core.llm_orchestration.usage_logger import UsageLogger
+
+"""Responsible for persisting analytics, usage logs, and caching after a request."""
 
 
 class ResponseRecorder:

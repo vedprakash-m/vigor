@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-"""Budget enforcement logic extracted from legacy gateway."""
-
 from core.llm_orchestration.budget_manager import BudgetManager
+
+"""Budget enforcement logic extracted from legacy gateway."""
 
 
 class BudgetEnforcer:

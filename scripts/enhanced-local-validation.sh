@@ -243,7 +243,7 @@ if [ "$SKIP_E2E" = false ]; then
     cd ..
 fi
 
-# Step 5: Check Git Status
+# Step 7: Check Git Status
 print_step "Checking Git Status"
 if [ -n "$(git status --porcelain)" ]; then
     print_warning "Files were modified during validation:"
@@ -254,7 +254,116 @@ else
     print_success "No files were modified"
 fi
 
-# Step 6: Final Summary
+# Step 6: Azure & Deployment Validation (NEW)
+print_step "Azure Authentication & Deployment Validation"
+
+# Check if Azure CLI is installed
+if ! command -v az &> /dev/null; then
+    print_warning "Azure CLI not installed - skipping Azure validation"
+    print_warning "Install with: curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash"
+else
+    print_step "Checking Azure CLI login status"
+    if az account show &> /dev/null; then
+        AZURE_ACCOUNT=$(az account show --query name --output tsv)
+        print_success "Azure CLI logged in to: $AZURE_ACCOUNT"
+
+        # Validate subscription access
+        SUBSCRIPTION_ID=$(az account show --query id --output tsv)
+        print_success "Azure Subscription ID: $SUBSCRIPTION_ID"
+
+        # Check if required resources exist
+        print_step "Checking Azure resource group"
+        if az group show --name vigor-rg &> /dev/null; then
+            print_success "Resource group 'vigor-rg' exists"
+        else
+            print_warning "Resource group 'vigor-rg' not found"
+            print_warning "Run: az group create --name vigor-rg --location 'Central US'"
+        fi
+
+        # Check App Service
+        print_step "Checking Azure App Service"
+        if az webapp show --name vigor-backend --resource-group vigor-rg &> /dev/null; then
+            print_success "App Service 'vigor-backend' exists"
+        else
+            print_warning "App Service 'vigor-backend' not found"
+            print_warning "Deploy infrastructure first: cd infrastructure/bicep && ./deploy.sh"
+        fi
+
+    else
+        print_warning "Azure CLI not logged in"
+        print_warning "Run: az login"
+    fi
+fi
+
+# Check GitHub CLI and repository secrets
+print_step "Checking GitHub repository configuration"
+if ! command -v gh &> /dev/null; then
+    print_warning "GitHub CLI not installed - skipping GitHub validation"
+    print_warning "Install with: brew install gh"
+else
+    if gh auth status &> /dev/null; then
+        print_success "GitHub CLI authenticated"
+
+        # Check if we're in a GitHub repository
+        if gh repo view &> /dev/null; then
+            REPO_NAME=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
+            print_success "GitHub repository: $REPO_NAME"
+
+            # Check required secrets
+            print_step "Validating GitHub repository secrets"
+            REQUIRED_SECRETS=("AZURE_CLIENT_ID" "AZURE_TENANT_ID" "AZURE_SUBSCRIPTION_ID" "DATABASE_URL" "SECRET_KEY" "OPENAI_API_KEY")
+
+            for secret in "${REQUIRED_SECRETS[@]}"; do
+                if gh secret list | grep -q "^$secret"; then
+                    print_success "Secret '$secret' exists"
+                else
+                    print_error "Missing required secret: $secret"
+                    print_warning "Set with: gh secret set $secret"
+                fi
+            done
+
+            # Check if environment exists
+            if gh api repos/:owner/:repo/environments/production &> /dev/null; then
+                print_success "GitHub environment 'production' exists"
+            else
+                print_warning "GitHub environment 'production' not configured"
+                print_warning "This may be needed for federated identity"
+            fi
+
+        else
+            print_warning "Not in a GitHub repository or repository not accessible"
+        fi
+    else
+        print_warning "GitHub CLI not authenticated"
+        print_warning "Run: gh auth login"
+    fi
+fi
+
+# Validate CI/CD workflow syntax
+print_step "Validating CI/CD workflow syntax"
+if command -v actionlint &> /dev/null; then
+    if actionlint .github/workflows/simple-deploy.yml; then
+        print_success "GitHub Actions workflow syntax valid"
+    else
+        print_error "GitHub Actions workflow has syntax errors"
+    fi
+else
+    print_warning "actionlint not installed - skipping workflow validation"
+    print_warning "Install with: go install github.com/rhymond/actionlint/cmd/actionlint@latest"
+fi
+
+# Step 7: Check Git Status
+print_step "Checking Git Status"
+if [ -n "$(git status --porcelain)" ]; then
+    print_warning "Files were modified during validation:"
+    git status --porcelain
+    echo ""
+    echo -e "${YELLOW}You may want to review and commit these changes.${NC}"
+else
+    print_success "No files were modified"
+fi
+
+# Step 8: Final Summary
 echo ""
 echo -e "${GREEN}🎉 Local E2E Validation Complete!${NC}"
 echo "=================================="

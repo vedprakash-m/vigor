@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+from typing import Dict, List
+
+from core.llm_orchestration.config_manager import AdminConfigManager
+from core.llm_orchestration.routing import RoutingStrategyEngine  # Bridge import
+
 """Application-level wrapper around legacy RoutingStrategyEngine.
 
 Goal: Decouple high-level orchestration use-cases from the concrete implementation
 living in `core.llm_orchestration.routing` until the latter is ported.
 """
-
-from typing import Dict, List
-
-from core.llm_orchestration.config_manager import AdminConfigManager
-from core.llm_orchestration.routing import RoutingStrategyEngine  # Bridge import
 
 
 class RoutingEngine:

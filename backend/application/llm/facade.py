@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-"""Facade that orchestrates the new application-layer components while delegating
-legacy operations to the existing infrastructure until full migration is complete.
-"""
-
 import time
 import uuid
 
@@ -29,6 +25,10 @@ from .budget_enforcer import BudgetEnforcer
 from .request_validator import RequestValidator
 from .response_recorder import ResponseRecorder
 from .routing_engine import RoutingEngine
+
+"""Facade that orchestrates the new application-layer components while delegating
+legacy operations to the existing infrastructure until full migration is complete.
+"""
 
 
 class LLMGatewayFacade:

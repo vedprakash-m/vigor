@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-"""FastAPI middleware that sets up OpenTelemetry tracing & logging."""
-
 from typing import Callable
 
 from fastapi import Request, Response
@@ -11,6 +9,8 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from starlette.middleware.base import BaseHTTPMiddleware
+
+"""FastAPI middleware that sets up OpenTelemetry tracing & logging."""
 
 
 class OTelMiddleware(BaseHTTPMiddleware):

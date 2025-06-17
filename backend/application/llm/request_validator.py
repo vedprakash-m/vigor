@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from datetime import datetime
+
+from core.llm_orchestration.adapters import LLMRequest  # noqa: E402 – same rationale
+
 """Request validation and enrichment for LLM gateway logic.
 
 This module belongs to the *Application* layer. It should avoid
 references to concrete infrastructure (DB, key-vault, HTTP frameworks).
 """
-
-from dataclasses import dataclass
-from datetime import datetime
-
-from core.llm_orchestration.adapters import LLMRequest  # noqa: E402 – same rationale
 
 # NOTE: We deliberately import only *interfaces* from the legacy core until we can
 # fully migrate them into the application layer.

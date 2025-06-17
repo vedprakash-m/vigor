@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from typing import Any, Type
+
 """Utility to generate Pydantic models directly from SQLAlchemy models.
 
 This removes duplication between `database.models` and ORM entities.
 Increments will gradually replace legacy manual Pydantic classes.
 """
-
-from typing import Any, Type
 
 
 def pydantic_model(sqlalchemy_model: Type[Any], **kwargs):  # noqa: D401
