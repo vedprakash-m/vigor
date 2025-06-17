@@ -35,7 +35,7 @@ jobs:
       # Get deployment info
       - name: Find deployments
         id: get-deployments
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -83,7 +83,7 @@ jobs:
       # Update deployment status
       - name: Update deployment statuses
         if: steps.get-deployments.outputs.result != '[]'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -108,7 +108,7 @@ jobs:
             }
 
       - name: Add cleanup comment to PR
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
