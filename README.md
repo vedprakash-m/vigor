@@ -4,7 +4,7 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![React 18](https://img.shields.io/badge/react-18+-blue.svg)](https://reactjs.org/)
+[![React 19](https://img.shields.io/badge/react-19+-blue.svg)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
 [![Azure](https://img.shields.io/badge/Azure-Ready-blue.svg)](https://azure.microsoft.com/)
 
@@ -20,15 +20,15 @@
 - **📋 Smart Workout Generation** - Personalized plans based on your goals, equipment, and fitness level
 - **📊 Progress Tracking** - Comprehensive analytics and streak monitoring
 - **💬 Interactive Coaching** - Real-time chat with AI fitness experts
-- **📱 Mobile-Optimized** - PWA support for app-like experience on any device
+- **📱 Mobile-Optimized** - Responsive design with service worker caching
 
 ### 🛠️ For Developers
 
 - **🏗️ Clean Architecture** - Domain-driven design with clear separation of concerns
 - **🚀 Modern Stack** - FastAPI + React + TypeScript + PostgreSQL
 - **☁️ Cloud-Native** - Azure deployment with Infrastructure as Code
-- **🔐 Enterprise Security** - JWT authentication, Key Vault integration, OIDC
-- **📊 Observability** - OpenTelemetry tracing, Application Insights monitoring
+- **🔐 Enterprise Security** - JWT authentication, Key Vault integration
+- **📊 Observability** - Comprehensive monitoring and health checks
 
 ---
 
@@ -36,26 +36,33 @@
 
 ### 🏃‍♂️ Local Development
 
-#### Method 1: VS Code Tasks (Recommended)
+1. **Clone the repository**
 
-1. Open project in VS Code
-2. **Task: Install All Dependencies**
-3. **Task: Start Backend Server** → http://localhost:8000
-4. **Task: Start Frontend Dev Server** → http://localhost:5173
+   ```bash
+   git clone <your-repository-url>
+   cd vigor
+   ```
 
-#### Method 2: Manual Setup
+2. **Using VS Code Tasks (Recommended)**
 
-```bash
-# Backend
-cd backend
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt && python main.py
+   - Open project in VS Code
+   - **Ctrl+Shift+P** → "Tasks: Run Task"
+   - **Install All Dependencies** → **Start Backend Server** → **Start Frontend Dev Server**
 
-# Frontend (new terminal)
-cd frontend && npm install && npm run dev
-```
+3. **Manual Setup**
 
-**🔑 Default Login:** admin@vigor.com / admin123!
+   ```bash
+   # Backend
+   cd backend
+   python -m venv venv && source venv/bin/activate
+   pip install -r requirements.txt
+   LLM_PROVIDER=fallback OPENAI_API_KEY=sk-placeholder python main.py  # http://localhost:8000
+
+   # Frontend (new terminal)
+   cd frontend && npm install && npm run dev  # http://localhost:5173
+   ```
+
+**🔑 Default Login:** `admin@vigor.com` / `admin123!`
 
 ### 🐳 Docker Development
 
@@ -67,28 +74,30 @@ docker-compose up -d
 ### ☁️ Azure Production Deployment
 
 ```bash
-# One-command deploy
+# Setup secrets and deploy infrastructure
 ./scripts/setup-production-secrets.sh
 cd infrastructure/bicep && ./deploy.sh
-git push origin main  # Triggers automatic deployment
+
+# Trigger automatic deployment
+git push origin main
 ```
 
 ---
 
-## 💰 Pricing & AI Providers
+## 💰 Pricing & AI Integration
 
-### Flexible AI Integration
+### Flexible AI Providers
 
-- **OpenAI GPT-4**: Premium AI coaching experience
-- **Google Gemini**: Alternative AI provider with competitive performance
-- **Perplexity**: Research-focused AI for nutrition and science-based advice
-- **Fallback Mode**: Basic functionality without AI for cost-sensitive users
+- **OpenAI GPT-3.5:** Premium AI coaching experience
+- **Google Gemini 2.5 Flash:** Cost-effective alternative with competitive performance
+- **Perplexity Llama 3.1:** Research-focused AI for nutrition and science-based advice
+- **Fallback Mode:** Basic functionality without AI for cost-sensitive deployments
 
-### Cost-Optimized Architecture
+### Cost-Optimized Azure Deployment
 
-- **Monthly Operating Cost**: ~$43/month on Azure
-- **Free Tier Available**: 100 AI requests/month for new users
-- **Scalable Pricing**: Pay-as-you-grow model with multiple subscription tiers
+- **Monthly Operating Cost:** ~$20-43/month (F1 free tier or B1 Basic App Service + Basic PostgreSQL)
+- **Single-Slot Strategy:** Direct production deployment for cost efficiency
+- **Scalable Architecture:** Pay-as-you-grow with multiple subscription tiers
 
 ---
 
@@ -98,7 +107,7 @@ git push origin main  # Triggers automatic deployment
 
 ```
 React Frontend ← → FastAPI Backend ← → AI Providers
-      ↓                    ↓                ↓
+     ↓                    ↓                ↓
 Static Web App      App Service       OpenAI/Gemini
                           ↓
                   PostgreSQL Database
@@ -106,19 +115,33 @@ Static Web App      App Service       OpenAI/Gemini
 
 ### Technology Stack
 
-- **Frontend**: React 18, TypeScript 5, Chakra UI, Zustand, PWA
-- **Backend**: FastAPI, SQLAlchemy, Alembic, Pydantic, JWT
-- **Database**: PostgreSQL (Azure Flexible Server)
-- **Infrastructure**: Azure App Service, Key Vault, Application Insights
-- **AI**: OpenAI GPT-4, Google Gemini, Perplexity APIs
-- **DevOps**: GitHub Actions, Azure Bicep, Docker
+**Backend:**
+
+- **Framework:** FastAPI with Python 3.12+
+- **AI Integration:** OpenAI GPT-4, Google Gemini, Perplexity APIs
+- **Authentication:** JWT tokens with Azure Key Vault
+- **Database:** PostgreSQL with SQLAlchemy ORM
+
+**Frontend:**
+
+- **Framework:** React 19 + TypeScript 5 + Vite
+- **UI Library:** Chakra UI with responsive design
+- **State Management:** Zustand for global state
+- **PWA Ready:** Service worker included for enhanced caching
+
+**Infrastructure:**
+
+- **Cloud:** Azure App Service, Static Web Apps, PostgreSQL Flexible Server
+- **IaC:** Azure Bicep templates
+- **Monitoring:** Application Insights, health checks
+- **CI/CD:** GitHub Actions with quality gates
 
 ### Design Principles
 
-- **Clean Architecture**: Domain, Application, Infrastructure layers
-- **Cost Optimization**: Single-slot deployment, efficient resource usage
-- **Provider Agnostic**: Seamless switching between AI providers
-- **Progressive Enhancement**: Core functionality works without AI
+- **Clean Architecture:** Domain, Application, Infrastructure layers
+- **Cost Optimization:** Single-slot deployment, efficient resource usage
+- **Provider Agnostic:** Seamless switching between AI providers
+- **Progressive Enhancement:** Core functionality works without AI
 
 ---
 
@@ -127,94 +150,97 @@ Static Web App      App Service       OpenAI/Gemini
 ### Automated Testing
 
 ```bash
-# Run full test suite
+# Run comprehensive validation
 ./scripts/enhanced-local-validation.sh
 
-# Backend tests
+# Backend tests with coverage
 cd backend && pytest -v --cov=.
 
 # Frontend tests
 cd frontend && npm test
 
-# E2E tests
-npm run test:e2e
+# End-to-end tests
+cd frontend && npm run test:e2e
 ```
 
-### Quality Metrics
+### Quality Metrics & Tools
 
-- **Backend Coverage**: 50%+ (target: 80%)
-- **Frontend Coverage**: 31%+ (target: 80%)
-- **Code Quality**: Black, Ruff, ESLint, TypeScript strict mode
-- **Security**: Bandit, Safety, Gitleaks scanning
+- **Code Quality:** Black, Ruff (Python) | ESLint, Prettier (TypeScript)
+- **Type Safety:** MyPy strict mode + TypeScript strict mode
+- **Security:** Bandit, Safety scanning, pre-commit hooks
+- **Test Coverage:** Backend 51%+ | Frontend 31%+ (target: 80% both)
+- **CI/CD:** Quality gates enforced on every commit
 
 ---
 
 ## 🚀 Deployment & Operations
 
-### Automated CI/CD
+### Simplified CI/CD Pipeline
 
-- **Simplified Pipeline**: Quality checks → Build → Deploy → Verify
-- **Single-Slot Strategy**: Direct production deployment for cost efficiency
-- **Health Monitoring**: Automated deployment verification
-- **Rollback Capability**: Emergency rollback procedures
+Our streamlined deployment process focuses on quality and reliability:
+
+1. **Quality Checks** → Code formatting, linting, type checking, security scans
+2. **Testing** → Unit tests, integration tests, build verification
+3. **Deploy** → Automatic deployment to Azure on push to main
+4. **Verify** → Health checks and deployment validation
 
 ### Infrastructure as Code
 
-- **Azure Bicep**: Modern, type-safe infrastructure templates
-- **Cost-Optimized**: Basic SKUs, single resource group strategy
-- **Security**: Managed identities, Key Vault integration
-- **Monitoring**: Application Insights, Log Analytics
+- **Azure Bicep:** Modern, type-safe infrastructure templates
+- **Cost-Optimized:** Basic SKUs, efficient resource allocation
+- **Security:** Managed identities, Key Vault integration
+- **Monitoring:** Application Insights for comprehensive observability
 
-### Performance Features
+### Available VS Code Tasks
 
-- **Caching**: Redis for sessions and API responses
-- **CDN**: Azure Static Web Apps for frontend assets
-- **Database**: Connection pooling, query optimization
-- **API**: Async FastAPI with Pydantic validation
+- **Install All Dependencies** - Complete project setup
+- **Start Backend Server** - FastAPI with hot reload
+- **Start Frontend Dev Server** - React with Vite
+- **Run Backend/Frontend Tests** - Execute test suites
+- **Format Backend/Frontend Code** - Apply code formatting standards
 
 ---
 
-## 📚 Documentation & Support
+## 📚 Documentation & API
 
 ### Development Resources
 
-- **📖 Complete Documentation**: [docs/metadata.md](docs/metadata.md)
-- **🏗️ Architecture Decisions**: [docs/adr/](docs/adr/)
-- **🤝 Contributing Guide**: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
-- **🔐 Security Guide**: [docs/secrets_management_guide.md](docs/secrets_management_guide.md)
+- **📖 [Complete Documentation](docs/metadata.md)** - Project overview, roadmap, and technical details
+- **🏗️ [Architecture Decisions](docs/adr/)** - ADR records for major technical decisions
+- **🤝 [Contributing Guide](docs/CONTRIBUTING.md)** - How to contribute to the project
+- **🔐 [Security Guide](docs/secrets_management_guide.md)** - Security best practices
 
 ### API Documentation
 
-- **Interactive API Docs**: http://localhost:8000/docs (Swagger UI)
-- **ReDoc Format**: http://localhost:8000/redoc
-- **OpenAPI Schema**: Fully documented REST API
+- **Interactive API Docs:** http://localhost:8000/docs (Swagger UI)
+- **ReDoc Format:** http://localhost:8000/redoc
+- **OpenAPI Schema:** Fully documented REST API with examples
 
 ### Key Scripts
 
-- **Local Validation**: `./scripts/enhanced-local-validation.sh`
-- **Health Checks**: `./scripts/health-check.sh`
-- **E2E Testing**: `./scripts/test-e2e-local.sh`
-- **Deployment**: `./scripts/setup-production-secrets.sh`
+- **Local Validation:** `./scripts/enhanced-local-validation.sh`
+- **Health Checks:** `./scripts/health-check.sh`
+- **Production Setup:** `./scripts/setup-production-secrets.sh`
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](docs/CONTRIBUTING.md) for details.
+We welcome contributions! Please read our [Contributing Guide](docs/CONTRIBUTING.md) for detailed information.
 
 ### Development Workflow
 
-1. **Fork** the repository
-2. **Create** a feature branch
-3. **Run** local validation: `./scripts/enhanced-local-validation.sh`
+1. **Fork** the repository and create a feature branch
+2. **Make changes** following our coding standards
+3. **Run validation** with `./scripts/enhanced-local-validation.sh`
 4. **Submit** a pull request with tests and documentation
 
 ### Code Standards
 
-- **Python**: Black formatting, Ruff linting, mypy type checking
-- **TypeScript**: ESLint, Prettier, strict type checking
-- **Testing**: Minimum 50% coverage, integration tests required
-- **Documentation**: Update relevant docs with changes
+- **Python:** Black formatting, Ruff linting, MyPy type checking
+- **TypeScript:** ESLint, Prettier, strict type checking
+- **Testing:** Maintain/improve test coverage, include integration tests
+- **Documentation:** Update relevant docs with significant changes
 
 ---
 
@@ -224,158 +250,32 @@ This project is licensed under the **GNU Affero General Public License v3.0** (A
 
 **What this means:**
 
-- ✅ **Commercial Use**: You can use this software commercially
-- ✅ **Modification**: You can modify and improve the code
-- ✅ **Distribution**: You can distribute copies of the software
-- ✅ **Private Use**: You can use this for private projects
+- ✅ **Commercial Use:** You can use this software commercially
+- ✅ **Modification:** You can modify and improve the code
+- ✅ **Distribution:** You can distribute copies of the software
+- ✅ **Private Use:** You can use this for private projects
 
 **Requirements:**
 
-- 📋 **Include License**: Include the original license in distributions
-- 📝 **State Changes**: Document any changes you make
-- 🔓 **Disclose Source**: If you run this as a web service, you must make your source code available
-- 📑 **Same License**: Derivative works must use the same license
+- 📋 **Include License:** Include the original license in distributions
+- 📝 **State Changes:** Document any changes you make
+- 🔓 **Disclose Source:** If you run this as a web service, you must make your source code available
+- 📑 **Same License:** Derivative works must use the same license
 
 For more details, see the [LICENSE](LICENSE) file.
-
-**Commercial Licensing**: If you need different licensing terms for commercial use without source disclosure requirements, please contact us.
 
 ---
 
 ## 🙏 Acknowledgments
 
-- **FastAPI**: For the amazing Python web framework
-- **React Team**: For the incredible frontend library
-- **Azure**: For reliable cloud infrastructure
-- **OpenAI/Google**: For powerful AI capabilities
-- **Open Source Community**: For the amazing tools and libraries
+- **FastAPI** - For the amazing Python web framework
+- **React Team** - For the incredible frontend library
+- **Azure** - For reliable cloud infrastructure
+- **OpenAI/Google** - For powerful AI capabilities
+- **Open Source Community** - For the amazing tools and libraries
 
 ---
 
 **Built with ❤️ for the fitness community**
 
 _Transform your fitness journey today with Vigor - where AI meets personalized training._
-
-# Access services:
-
-# - Backend: http://localhost:8000
-
-# - Frontend: http://localhost:5173
-
-# - Database: localhost:5432
-
-````
-
-## 🏗️ Architecture Overview
-
-```mermaid
-flowchart TD
-  subgraph Frontend
-    A[React 18 + Vite] --> B[Zustand Store]
-    B --> C[REST API]
-  end
-
-  subgraph Backend [FastAPI Backend]
-    C --> D[LLM Gateway Facade]
-    D --> E[Redis Cache]
-    D --> F[Celery Worker]
-    D --> G[PostgreSQL]
-  end
-
-  F -->|Health-checks| D
-  D -->|Traces| H(OpenTelemetry Collector)
-````
-
-**Clean Architecture** with distinct layers:
-
-- **Domain:** Core business logic and entities
-- **Application:** Use cases and orchestration (LLM facade, routing, validation)
-- **Infrastructure:** Database repositories, cache adapters, external services
-- **API:** FastAPI routes and middleware
-
-## 🛡️ Quality Gates
-
-- **Code Quality:** Ruff, Black, ESLint, Prettier
-- **Type Safety:** MyPy strict + TypeScript strict
-- **Testing:** Pytest/Jest coverage ≥ 80% enforced in CI
-- **Security:** Bandit, Safety, pre-commit hooks
-- **Architecture:** ADR documentation, clean architecture principles
-
-## 🏗️ Technology Stack
-
-### Backend
-
-- **Framework:** FastAPI + Python 3.9+
-- **Database:** PostgreSQL with SQLAlchemy ORM
-- **AI/LLM:** Multi-provider support (OpenAI, Gemini, Perplexity)
-- **Caching:** Redis with distributed cache adapter
-- **Background Tasks:** Celery with Redis broker
-- **Observability:** OpenTelemetry tracing and structured logging
-
-### Frontend
-
-- **Framework:** React 18 + TypeScript + Vite
-- **UI Library:** Chakra UI with responsive design
-- **State Management:** Zustand for global state
-- **Development:** Storybook for component development
-- **Testing:** Jest + Testing Library + Playwright E2E
-
-### DevOps & Infrastructure
-
-- **Containerization:** Docker + Docker Compose
-- **CI/CD:** GitHub Actions with quality gates
-- **Cloud:** Azure deployment with Bicep IaC
-- **Monitoring:** Application Insights, health checks
-
-## 📚 Documentation
-
-- **[Getting Started](docs/getting-started.md)** - Complete setup guide
-- **[Architecture](docs/architecture.md)** - Technical deep dive
-- **[ADR Documentation](docs/adr/)** - Architecture decision records
-- **[Metadata & Roadmap](docs/metadata.md)** - Project status and roadmap
-- **[API Docs](http://localhost:8000/docs)** - Interactive API reference (when running locally)
-- **[Contributing](docs/CONTRIBUTING.md)** - How to contribute
-
-## 🚀 Development Scripts
-
-The project includes VS Code tasks for common development workflows:
-
-- **Install All Dependencies** - Sets up both backend and frontend
-- **Start Backend Server** - Runs FastAPI with proper environment
-- **Start Frontend Dev Server** - Runs React development server
-- **Run Backend Tests** - Executes Python test suite
-- **Run Frontend Tests** - Executes JavaScript/TypeScript tests
-- **Format Code** - Runs Black, isort for backend; ESLint for frontend
-
-## 🔧 Environment Configuration
-
-### Backend Environment Variables
-
-```env
-# Required
-DATABASE_URL=postgresql://user:pass@localhost:5432/vigor
-OPENAI_API_KEY=your_openai_key
-
-# Optional
-REDIS_URL=redis://localhost:6379/0
-DEBUG=true
-TESTING=false
-LLM_PROVIDER=openai  # openai, gemini, perplexity, fallback
-```
-
-### Frontend Environment Variables
-
-```env
-VITE_API_BASE_URL=http://localhost:8000
-```
-
-## 🤝 Contributing
-
-We welcome contributions! Please read our [Contributing Guide](docs/CONTRIBUTING.md) and follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes following our coding standards
-4. Run tests and ensure quality gates pass
-5. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-   _Transform your fitness journey today with Vigor - where AI meets personalized training._
