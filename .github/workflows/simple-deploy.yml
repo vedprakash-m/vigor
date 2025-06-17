@@ -48,11 +48,23 @@ jobs:
           cd backend
           black --check .
           isort --check-only .
+          ruff check .
+
+      - name: Backend type checking
+        run: |
+          cd backend
+          mypy .
+
+      - name: Backend security scan
+        run: |
+          cd backend
+          bandit -r . -f json -o bandit_report.json || true
+          safety check
 
       - name: Backend tests
         run: |
           cd backend
-          pytest -v --cov=. --cov-fail-under=50
+          pytest -v --cov=. --cov-fail-under=50 --cov-report=term-missing
 
       # Frontend checks
       - name: Install frontend dependencies
@@ -60,20 +72,23 @@ jobs:
           cd frontend
           npm ci
 
-      - name: Frontend linting
+      - name: Frontend linting & type checking
         run: |
           cd frontend
           npm run lint
+          npm run type-check
 
       - name: Frontend tests
         run: |
           cd frontend
           npm test -- --coverage --watchAll=false
 
-      - name: Frontend build
+      - name: Frontend build verification
         run: |
           cd frontend
           npm run build
+          # Verify build output
+          ls -la dist/
 
   # Simple direct deployment - no staging
   deploy-production:
