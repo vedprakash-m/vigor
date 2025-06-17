@@ -3,7 +3,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
@@ -39,18 +39,6 @@ def init_db():
     """Initialize database tables."""
     # Import all the SQLAlchemy models here to make sure they are registered
     try:
-        from database.sql_models import (
-            AdminSettingsDB,
-            AICoachMessageDB,
-            AIProviderPriorityDB,
-            AIUsageLogDB,
-            BudgetSettingsDB,
-            ChatMessageDB,
-            ProgressMetricsDB,
-            UserProfileDB,
-            WorkoutLogDB,
-            WorkoutPlanDB,
-        )
 
         # Create all tables
         Base.metadata.create_all(bind=engine)

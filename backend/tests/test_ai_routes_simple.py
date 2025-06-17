@@ -2,11 +2,13 @@
 Simple tests for AI routes - Working version
 Tests basic API structure and schema validation
 """
-import pytest
-from unittest.mock import patch, MagicMock
+
+from unittest.mock import MagicMock, patch
+
 from fastapi.testclient import TestClient
-from main import app
+
 from api.schemas.ai import ChatMessage, WorkoutRecommendationRequest
+from main import app
 
 client = TestClient(app)
 
@@ -41,7 +43,7 @@ class TestAIRoutesSimple:
             goals=["muscle_gain"],
             equipment="moderate",
             duration_minutes=45,
-            focus_areas=["chest", "shoulders"]
+            focus_areas=["chest", "shoulders"],
         )
 
         assert request.goals == ["muscle_gain"]
@@ -51,10 +53,7 @@ class TestAIRoutesSimple:
 
     def test_chat_endpoint_authentication_required(self):
         """Test that chat endpoint requires authentication"""
-        response = client.post(
-            "/ai/chat",
-            json={"message": "Hello"}
-        )
+        response = client.post("/ai/chat", json={"message": "Hello"})
 
         # Should require authentication
         assert response.status_code == 401
@@ -66,8 +65,8 @@ class TestAIRoutesSimple:
             json={
                 "goals": ["muscle_gain"],
                 "equipment": "moderate",
-                "duration_minutes": 45
-            }
+                "duration_minutes": 45,
+            },
         )
 
         # Should require authentication
@@ -100,11 +99,11 @@ class TestAIRoutesSimple:
         mock_chat_service.return_value = "Great question! Here's some fitness advice."
 
         # Make request with auth headers (would be handled by mock)
-        with patch("api.routes.ai.get_db") as mock_db:
+        with patch("api.routes.ai.get_db"):
             response = client.post(
                 "/ai/chat",
                 json={"message": "What's the best exercise?"},
-                headers={"Authorization": "Bearer mock-token"}
+                headers={"Authorization": "Bearer mock-token"},
             )
 
             # Service should be called but auth will still fail without proper setup

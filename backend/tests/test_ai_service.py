@@ -2,13 +2,14 @@
 Simplified test suite for AI service functionality
 """
 
-import json
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from api.schemas.ai import ChatMessage, ChatResponse, WorkoutRecommendationRequest, GeneratedWorkoutPlan
+from api.schemas.ai import (
+    ChatMessage,
+    WorkoutRecommendationRequest,
+)
 from database.models import UserProfile
 
 
@@ -41,9 +42,7 @@ class TestAIService:
     @pytest.fixture
     def sample_chat_request(self):
         """Sample chat request"""
-        return ChatMessage(
-            message="How can I improve my bench press form?"
-        )
+        return ChatMessage(message="How can I improve my bench press form?")
 
     def test_sample_test(self):
         """Simple test to validate imports"""

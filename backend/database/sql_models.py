@@ -1,16 +1,13 @@
 import uuid
-from datetime import date as date_type
-from datetime import datetime
 
 from sqlalchemy import JSON, Boolean, Column, Date, DateTime
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import Float, ForeignKey, Index, Integer, String, Text
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from .connection import Base
-from .models import Equipment, FitnessLevel, Goal
+from .models import Equipment, FitnessLevel
 
 
 class UserProfileDB(Base):

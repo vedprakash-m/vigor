@@ -6,10 +6,8 @@ legacy operations to the existing infrastructure until full migration is complet
 
 import time
 import uuid
-from typing import Optional
 
 from core.llm_orchestration.adapters import (
-    AdapterFactory,
     LLMResponse,
     LLMServiceAdapter,
     create_adapters_from_configs,

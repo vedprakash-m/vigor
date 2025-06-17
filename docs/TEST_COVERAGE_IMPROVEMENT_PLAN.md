@@ -361,6 +361,7 @@ Final: 60% → 75%
 ### ✅ **Completed Tasks**
 
 #### **Backend Test Coverage Improvements**
+
 - **Current Coverage: 52%** (improved from ~48%)
 - **✅ Fixed comprehensive test file issues**: Removed broken tests with import/schema mismatches
 - **✅ Created working simple test suites**:
@@ -371,6 +372,7 @@ Final: 60% → 75%
 - **✅ All 45 backend tests passing**
 
 #### **Frontend E2E Test Improvements**
+
 - **✅ Fixed homepage.spec.ts**: Updated for proper element visibility checking
 - **✅ Fixed workout-flow.spec.ts**: Improved navigation and API testing
 - **✅ Fixed api.spec.ts**: Updated endpoints to match backend (/health, /auth/me)
@@ -378,6 +380,7 @@ Final: 60% → 75%
 - **✅ 10/11 E2E tests passing** (1 minor visibility test needs adjustment)
 
 #### **Test Infrastructure**
+
 - **✅ Removed broken comprehensive test files** that had too many schema mismatches
 - **✅ Created focused, working test suites** that match actual codebase structure
 - **✅ Fixed import and authentication issues** in test files
@@ -386,13 +389,16 @@ Final: 60% → 75%
 ### 📊 **Current Coverage Status**
 
 #### **Backend Coverage: 52% (Target: 80%+)**
+
 **Improved Areas:**
+
 - AI Routes: 56% (improved with endpoint testing)
 - Budget Manager: 28% (basic functionality tested)
 - LLM Gateway: 30% (data structures and initialization tested)
 - Application Layer: 89-100% (well tested)
 
 **Still Need Focus:**
+
 - `core/llm_orchestration/routing.py`: 19% coverage
 - `core/llm_orchestration/adapters.py`: 35% coverage
 - `core/llm_orchestration/budget_manager.py`: 28% coverage
@@ -400,11 +406,14 @@ Final: 60% → 75%
 - `api/services/ai.py`: 31% coverage
 
 #### **Frontend Coverage: ~31% (Target: 70%+)**
+
 **Existing Tests:**
+
 - Component tests: Basic utilities and pages
 - E2E tests: User flows and API integration
 
 **Need to Add:**
+
 - Dashboard component tests
 - Authentication flow tests
 - Chat/workout component integration tests
@@ -412,7 +421,9 @@ Final: 60% → 75%
 ### 🎯 **Next Steps (Priority Order)**
 
 #### **Phase 4: Expand Critical Backend Modules (Week 3)**
+
 1. **LLM Orchestration Core** - Focus on the most critical low-coverage modules:
+
    - Add tests for `core/llm_orchestration/routing.py` (19% → 60%+)
    - Add tests for `core/llm_orchestration/adapters.py` (35% → 60%+)
    - Add tests for `core/ai.py` (20% → 50%+)
@@ -423,7 +434,9 @@ Final: 60% → 75%
    - Add workflow tests for user services
 
 #### **Phase 5: Frontend Component & Integration Tests (Week 4)**
+
 1. **Core Component Tests**:
+
    - Dashboard components
    - Chat interface components
    - Workout tracking components
@@ -435,17 +448,20 @@ Final: 60% → 75%
    - Chat conversation flows
 
 ### 🏆 **Test Quality Standards**
+
 - ✅ **Simple, Working Tests**: Focus on tests that actually pass and provide value
 - ✅ **Match Actual Code Structure**: Tests align with real class signatures and methods
 - ✅ **Comprehensive but Realistic**: Test critical paths without over-engineering
 - ✅ **Maintainable**: Easy to understand and modify as code evolves
 
 ### 📈 **Coverage Targets (Revised)**
+
 - **Backend: 52% → 65%** by end of Phase 4 (realistic given time constraints)
 - **Frontend: 31% → 50%** by end of Phase 5
 - **E2E: 91%** maintain current high coverage
 
 ### 🛡️ **Risk Mitigation**
+
 - ✅ **Removed Overly Complex Tests**: Focused on working, maintainable test suites
 - ✅ **Fixed Schema Mismatches**: Tests now use correct data structures
 - ✅ **Stable Test Foundation**: All current tests pass reliably

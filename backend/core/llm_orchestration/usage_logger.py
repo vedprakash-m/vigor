@@ -6,7 +6,7 @@ Comprehensive logging system for LLM usage analytics and billing
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 

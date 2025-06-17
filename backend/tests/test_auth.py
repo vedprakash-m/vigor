@@ -2,16 +2,11 @@
 Simplified test suite for auth functionality
 """
 
-from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import datetime
 
-import bcrypt
-import pytest
 from fastapi.testclient import TestClient
 
 from api.schemas.auth import Token, UserLogin, UserRegister
-from core.security import create_access_token
-from database.sql_models import UserProfileDB
 from main import app
 
 client = TestClient(app)
@@ -25,7 +20,7 @@ def test_register_user_success():
         "password": "testpassword123",
         "fitness_level": "beginner",
         "goals": ["weight_loss"],
-        "equipment": "none"
+        "equipment": "none",
     }
 
     # Mock the registration - this is a simplified test
@@ -36,10 +31,7 @@ def test_register_user_success():
 
 def test_user_login_schema():
     """Test user login schema"""
-    login_data = {
-        "email": "test@example.com",
-        "password": "testpassword123"
-    }
+    login_data = {"email": "test@example.com", "password": "testpassword123"}
 
     user_login = UserLogin(**login_data)
     assert user_login.email == login_data["email"]
@@ -51,7 +43,7 @@ def test_token_schema():
     token_data = {
         "access_token": "test_token",
         "token_type": "bearer",
-        "expires_at": datetime.utcnow()
+        "expires_at": datetime.utcnow(),
     }
 
     token = Token(**token_data)

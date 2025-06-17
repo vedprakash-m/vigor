@@ -3,7 +3,6 @@ Key Vault Integration Service
 Provides secure API key retrieval from various Key Vault providers
 """
 
-import asyncio
 import logging
 import os
 from abc import ABC, abstractmethod

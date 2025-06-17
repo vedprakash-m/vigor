@@ -3,7 +3,6 @@ Azure Function client for the Vigor backend
 This module handles the communication with the Azure Functions
 """
 
-import json
 import logging
 import os
 from typing import Any, Dict, List, Optional

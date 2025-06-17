@@ -2,7 +2,6 @@ import asyncio
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Optional
 
 import uvicorn
 from fastapi import FastAPI

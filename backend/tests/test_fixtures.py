@@ -16,7 +16,6 @@ from core.llm_orchestration.key_vault import (
     KeyVaultProvider,
     SecretReference,
 )
-from database.models import UserProfile
 
 
 @pytest.fixture

@@ -2,12 +2,9 @@
 Simplified test suite for LLM Orchestration Routes - Coverage improvement
 """
 
-from datetime import datetime
-from unittest.mock import MagicMock, patch
 
-import pytest
 
-from api.schemas.admin import BudgetSettingsUpdate, AdminSettingsUpdate
+from api.schemas.admin import AdminSettingsUpdate, BudgetSettingsUpdate
 
 
 class TestLLMOrchestrationRoutes:
@@ -42,10 +39,7 @@ class TestLLMOrchestrationRoutes:
 
     def test_admin_settings_schema(self):
         """Test admin settings schema"""
-        admin_data = {
-            "value": "enabled",
-            "description": "Enable the setting"
-        }
+        admin_data = {"value": "enabled", "description": "Enable the setting"}
 
         admin_settings = AdminSettingsUpdate(**admin_data)
         assert admin_settings.value == "enabled"
@@ -53,9 +47,7 @@ class TestLLMOrchestrationRoutes:
 
     def test_admin_settings_with_minimal_data(self):
         """Test admin settings with minimal required data"""
-        admin_data = {
-            "value": "test_value"
-        }
+        admin_data = {"value": "test_value"}
 
         admin_settings = AdminSettingsUpdate(**admin_data)
         assert admin_settings.value == "test_value"

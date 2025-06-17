@@ -7,7 +7,6 @@ Create Date: 2025-06-02 10:00:00.000000
 """
 
 import sqlalchemy as sa
-from sqlalchemy.dialects import sqlite
 
 from alembic import op
 

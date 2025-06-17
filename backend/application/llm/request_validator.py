@@ -8,7 +8,6 @@ references to concrete infrastructure (DB, key-vault, HTTP frameworks).
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional
 
 from core.llm_orchestration.adapters import LLMRequest  # noqa: E402 – same rationale
 

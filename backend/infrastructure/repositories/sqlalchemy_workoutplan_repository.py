@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import uuid
 from datetime import datetime
 from typing import List, Optional
 
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from database.models import FitnessLevel, WorkoutPlan
+from database.models import WorkoutPlan
 from database.sql_models import WorkoutPlanDB
 from domain.repositories.base import Repository
 

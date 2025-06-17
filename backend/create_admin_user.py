@@ -3,12 +3,9 @@
 Script to create an admin user for the LLM orchestration system
 """
 import asyncio
-import sys
 
-from sqlalchemy.orm import Session
 
 from api.services.auth import register_user
-from core.security import get_password_hash
 from database.connection import SessionLocal
 
 

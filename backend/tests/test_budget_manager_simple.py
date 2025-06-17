@@ -4,7 +4,7 @@ Simplified test suite for Budget Manager - Coverage improvement
 
 from datetime import datetime, timedelta
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -46,7 +46,7 @@ class TestBudgetManagerSimple:
             reset_period_start=datetime.utcnow(),
             reset_period_end=datetime.utcnow() + timedelta(days=30),
             status=BudgetStatus.ACTIVE,
-            last_updated=datetime.utcnow()
+            last_updated=datetime.utcnow(),
         )
 
         assert usage.budget_id == "test-budget"
@@ -58,11 +58,11 @@ class TestBudgetManagerSimple:
     def test_budget_manager_methods_exist(self, budget_manager):
         """Test that expected methods exist on budget manager"""
         # Test that key methods are available
-        assert hasattr(budget_manager, 'can_proceed')
-        assert hasattr(budget_manager, 'record_usage')
-        assert hasattr(budget_manager, 'get_usage_summary')
+        assert hasattr(budget_manager, "can_proceed")
+        assert hasattr(budget_manager, "record_usage")
+        assert hasattr(budget_manager, "get_usage_summary")
 
-    @patch('core.llm_orchestration.budget_manager.logger')
+    @patch("core.llm_orchestration.budget_manager.logger")
     def test_budget_manager_logging(self, mock_logger, budget_manager):
         """Test that budget manager uses logging"""
         # This test ensures logging is set up correctly
@@ -79,7 +79,7 @@ class TestBudgetManagerSimple:
             reset_period_start=datetime.utcnow(),
             reset_period_end=datetime.utcnow() + timedelta(days=7),
             status=BudgetStatus.WARNING,
-            last_updated=datetime.utcnow()
+            last_updated=datetime.utcnow(),
         )
 
         assert usage.budget_id == "minimal-budget"
@@ -107,7 +107,7 @@ class TestBudgetManagerSimple:
             reset_period_start=now,
             reset_period_end=now + timedelta(days=30),
             status=BudgetStatus.ACTIVE,
-            last_updated=now
+            last_updated=now,
         )
 
         assert usage.last_updated == now
@@ -116,7 +116,12 @@ class TestBudgetManagerSimple:
 
     def test_budget_status_values(self):
         """Test budget status handling"""
-        statuses = [BudgetStatus.ACTIVE, BudgetStatus.WARNING, BudgetStatus.EXCEEDED, BudgetStatus.SUSPENDED]
+        statuses = [
+            BudgetStatus.ACTIVE,
+            BudgetStatus.WARNING,
+            BudgetStatus.EXCEEDED,
+            BudgetStatus.SUSPENDED,
+        ]
 
         for status in statuses:
             usage = BudgetUsage(
@@ -128,6 +133,6 @@ class TestBudgetManagerSimple:
                 reset_period_start=datetime.utcnow(),
                 reset_period_end=datetime.utcnow() + timedelta(days=30),
                 status=status,
-                last_updated=datetime.utcnow()
+                last_updated=datetime.utcnow(),
             )
             assert usage.status == status

@@ -1,9 +1,7 @@
-import json
 import logging
 import time
-from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session

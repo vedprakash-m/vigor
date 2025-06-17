@@ -1,4 +1,3 @@
-import asyncio
 import uuid
 from datetime import datetime
 
@@ -7,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from database.connection import Base
-from database.sql_models import ProgressMetricsDB, UserProfileDB
+from database.sql_models import UserProfileDB
 from domain.repositories.base import Repository
 from infrastructure.repositories.sqlalchemy_progress_repository import (
     SQLAlchemyProgressRepository,

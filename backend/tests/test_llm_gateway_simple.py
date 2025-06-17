@@ -2,14 +2,12 @@
 Simple tests for LLM Gateway functionality - Working version
 Tests focus on basic functionality and data structure validation
 """
-import pytest
+
 from unittest.mock import MagicMock
-from datetime import datetime
-from core.llm_orchestration.gateway import (
-    LLMGateway,
-    GatewayRequest,
-    GatewayResponse
-)
+
+import pytest
+
+from core.llm_orchestration.gateway import GatewayRequest, GatewayResponse, LLMGateway
 
 
 class TestLLMGatewaySimple:
@@ -33,9 +31,9 @@ class TestLLMGatewaySimple:
     def test_gateway_initialization(self, gateway):
         """Test basic gateway initialization"""
         assert gateway is not None
-        assert hasattr(gateway, 'adapters')
-        assert hasattr(gateway, 'is_initialized')
-        assert gateway.is_initialized == False
+        assert hasattr(gateway, "adapters")
+        assert hasattr(gateway, "is_initialized")
+        assert not gateway.is_initialized
 
     def test_gateway_request_creation(self):
         """Test gateway request data structure"""
@@ -45,7 +43,7 @@ class TestLLMGatewaySimple:
             task_type="question_answering",
             max_tokens=150,
             temperature=0.7,
-            metadata={"context": "fitness"}
+            metadata={"context": "fitness"},
         )
 
         assert request.prompt == "What is the best exercise?"
@@ -67,7 +65,7 @@ class TestLLMGatewaySimple:
             latency_ms=250,
             cached=False,
             user_id="test-user",
-            metadata={"context": "fitness"}
+            metadata={"context": "fitness"},
         )
 
         assert response.content == "Here's a great exercise routine..."
@@ -77,23 +75,20 @@ class TestLLMGatewaySimple:
         assert response.tokens_used == 75
         assert response.cost_estimate == 0.00015
         assert response.latency_ms == 250
-        assert response.cached == False
+        assert not response.cached
         assert response.user_id == "test-user"
         assert response.metadata["context"] == "fitness"
 
     def test_gateway_methods_exist(self, gateway):
         """Test that essential gateway methods exist"""
-        assert hasattr(gateway, 'initialize')
-        assert hasattr(gateway, 'process_request')
-        assert hasattr(gateway, 'get_provider_status')
+        assert hasattr(gateway, "initialize")
+        assert hasattr(gateway, "process_request")
+        assert hasattr(gateway, "get_provider_status")
         assert callable(gateway.initialize)
 
     def test_gateway_request_with_minimal_data(self):
         """Test gateway request with minimal required data"""
-        request = GatewayRequest(
-            prompt="Test prompt",
-            user_id="user123"
-        )
+        request = GatewayRequest(prompt="Test prompt", user_id="user123")
 
         assert request.prompt == "Test prompt"
         assert request.user_id == "user123"
@@ -109,7 +104,7 @@ class TestLLMGatewaySimple:
             cost_estimate=0.001,
             latency_ms=200,
             cached=True,
-            user_id="test-user"
+            user_id="test-user",
         )
 
         assert isinstance(response.content, str)
@@ -125,10 +120,7 @@ class TestLLMGatewaySimple:
     def test_gateway_request_validation(self):
         """Test basic gateway request validation"""
         # Valid request should work
-        request = GatewayRequest(
-            prompt="Valid prompt",
-            user_id="valid-user"
-        )
+        request = GatewayRequest(prompt="Valid prompt", user_id="valid-user")
 
         assert request.prompt
         assert request.user_id
@@ -149,7 +141,7 @@ class TestLLMGatewaySimple:
             latency_ms=100,
             cached=False,
             user_id="user",
-            metadata=metadata
+            metadata=metadata,
         )
 
         assert response.metadata is not None
@@ -158,15 +150,9 @@ class TestLLMGatewaySimple:
 
     def test_multiple_request_creation(self):
         """Test creating multiple requests doesn't interfere"""
-        request1 = GatewayRequest(
-            prompt="First prompt",
-            user_id="user1"
-        )
+        request1 = GatewayRequest(prompt="First prompt", user_id="user1")
 
-        request2 = GatewayRequest(
-            prompt="Second prompt",
-            user_id="user2"
-        )
+        request2 = GatewayRequest(prompt="Second prompt", user_id="user2")
 
         assert request1.prompt == "First prompt"
         assert request2.prompt == "Second prompt"
@@ -175,10 +161,10 @@ class TestLLMGatewaySimple:
     def test_gateway_component_integration(self, gateway):
         """Test basic gateway component integration"""
         # Test that components are accessible
-        assert hasattr(gateway, 'routing_engine')
-        assert hasattr(gateway, 'budget_manager')
-        assert hasattr(gateway, 'usage_logger')
-        assert hasattr(gateway, 'cost_estimator')
-        assert hasattr(gateway, 'cache_manager')
-        assert hasattr(gateway, 'circuit_breaker')
-        assert hasattr(gateway, 'analytics')
+        assert hasattr(gateway, "routing_engine")
+        assert hasattr(gateway, "budget_manager")
+        assert hasattr(gateway, "usage_logger")
+        assert hasattr(gateway, "cost_estimator")
+        assert hasattr(gateway, "cache_manager")
+        assert hasattr(gateway, "circuit_breaker")
+        assert hasattr(gateway, "analytics")

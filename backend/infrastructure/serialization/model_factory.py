@@ -8,7 +8,6 @@ Increments will gradually replace legacy manual Pydantic classes.
 
 from typing import Any, Type
 
-from database.connection import Base  # Ensure models registered
 
 
 def pydantic_model(sqlalchemy_model: Type[Any], **kwargs):  # noqa: D401

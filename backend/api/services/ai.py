@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from api.services.usage_tracking import UsageTrackingService
 
 # Use direct AI functionality if function client isn't available
 from core.ai import (
