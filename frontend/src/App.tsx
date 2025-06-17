@@ -30,8 +30,8 @@ function App() {
   return (
     <ChakraProvider value={defaultSystem}>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Router>
+        <Router>
+          <AuthProvider>
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
@@ -51,8 +51,8 @@ function App() {
                 <Route path="/llm" element={<LLMOrchestrationPage />} />
               </Route>
             </Routes>
-          </Router>
-        </AuthProvider>
+          </AuthProvider>
+        </Router>
       </QueryClientProvider>
     </ChakraProvider>
   )

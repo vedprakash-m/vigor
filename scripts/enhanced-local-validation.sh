@@ -34,6 +34,7 @@ print_error() {
 # Parse arguments
 FIX_MODE=true
 SKIP_TESTS=false
+SKIP_E2E=false
 
 for arg in "$@"; do
     case $arg in
@@ -43,11 +44,15 @@ for arg in "$@"; do
         --skip-tests)
             SKIP_TESTS=true
             ;;
+        --skip-e2e)
+            SKIP_E2E=true
+            ;;
         --help)
             echo "Usage: $0 [options]"
             echo "Options:"
             echo "  --check-only     Only check formatting, don't fix"
             echo "  --skip-tests     Skip running tests"
+            echo "  --skip-e2e       Skip E2E tests (requires servers)"
             echo "  --help           Show this help"
             exit 0
             ;;
@@ -161,7 +166,84 @@ if [ "$SKIP_TESTS" = false ]; then
     cd ..
 fi
 
-# Step 4: Check Git Status
+# Step 4: Run E2E Tests (requires servers)
+if [ "$SKIP_E2E" = false ]; then
+    print_step "Running E2E Tests"
+
+    # Check if Playwright is installed
+    cd frontend
+    if [ ! -d "node_modules/@playwright" ]; then
+        print_step "Installing Playwright browsers"
+        npx playwright install --with-deps
+    fi
+
+    # Build frontend for testing
+    print_step "Building frontend for E2E testing"
+    npm run build || {
+        print_error "Frontend build failed"
+        exit 1
+    }
+
+    # Start backend server in background
+    print_step "Starting backend server for E2E tests"
+    cd ../backend
+
+    # Check if venv is still active
+    if [ -z "$VIRTUAL_ENV" ]; then
+        source venv/bin/activate
+    fi
+
+    # Set environment variables for testing
+    export DATABASE_URL="sqlite:///test.db"
+    export LLM_PROVIDER="fallback"
+    export OPENAI_API_KEY="sk-placeholder"
+
+    # Start backend server in background
+    python main.py &
+    BACKEND_PID=$!
+    print_success "Backend server started (PID: $BACKEND_PID)"
+
+    # Wait for backend to be ready
+    sleep 5
+
+    # Start frontend dev server in background
+    print_step "Starting frontend dev server for E2E tests"
+    cd ../frontend
+    npm run dev &
+    FRONTEND_PID=$!
+    print_success "Frontend dev server started (PID: $FRONTEND_PID)"
+
+    # Wait for frontend to be ready
+    print_step "Waiting for servers to be ready"
+    npx wait-on http://localhost:5173 --timeout 30000 || {
+        print_error "Frontend server failed to start"
+        kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+        exit 1
+    }
+
+    # Check backend health
+    npx wait-on http://localhost:8000/health --timeout 15000 || {
+        print_warning "Backend health check failed, but continuing with E2E tests"
+    }
+
+    # Run E2E tests
+    print_step "Running Playwright E2E tests"
+    npm run test:e2e || {
+        print_error "E2E tests failed"
+        kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+        exit 1
+    }
+
+    # Cleanup servers
+    print_step "Stopping test servers"
+    kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+    sleep 2
+    print_success "E2E tests passed"
+
+    cd ..
+fi
+
+# Step 5: Check Git Status
 print_step "Checking Git Status"
 if [ -n "$(git status --porcelain)" ]; then
     print_warning "Files were modified during validation:"
@@ -172,14 +254,17 @@ else
     print_success "No files were modified"
 fi
 
-# Step 5: Final Summary
+# Step 6: Final Summary
 echo ""
 echo -e "${GREEN}🎉 Local E2E Validation Complete!${NC}"
 echo "=================================="
 echo -e "${GREEN}✅ Backend formatting and quality checks passed${NC}"
 echo -e "${GREEN}✅ Frontend linting passed${NC}"
 if [ "$SKIP_TESTS" = false ]; then
-    echo -e "${GREEN}✅ All tests passed${NC}"
+    echo -e "${GREEN}✅ All unit tests passed${NC}"
+fi
+if [ "$SKIP_E2E" = false ]; then
+    echo -e "${GREEN}✅ E2E tests passed${NC}"
 fi
 echo ""
 echo -e "${BLUE}Your code is ready for CI/CD pipeline! 🚀${NC}"

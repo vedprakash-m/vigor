@@ -1,6 +1,6 @@
 # Vigor Modernization & Refactor Plan
 
-_Last updated: 2025-06-15_
+_Last updated: 2025-06-16_
 
 ---
 
@@ -16,6 +16,7 @@ Adopt _Clean / Hexagonal Architecture_ principles to achieve: testability, scala
 
 | ID       | Date       | Decision                                                                                                         | Rationale                                                  |
 | -------- | ---------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| ADR-0007 | 2025-06-16 | **Local Validation**: Enhanced E2E validation to match CI/CD pipeline requirements                               | Fix gap where local validation skipped E2E tests           |
 | ADR-0001 | 2025-06-15 | Adopt Clean Architecture with Domain, Application, Adapters, Infrastructure layers                               | Aligns with SOLID, DDD, enables modular growth             |
 | ADR-0002 | 2025-06-15 | Track modernization via `docs/metadata.md` + ADRs                                                                | Single, auditable trail of progress and decisions          |
 | ADR-0003 | 2025-06-15 | **Infrastructure**: Use 2 Azure Resource Groups: `vigor-db-rg` (persistent) + `vigor-rg` (compute)               | Cost control, separation of concerns, idempotency          |
