@@ -1,136 +1,315 @@
-# Vigor Modernization & Refactor Plan
+# Vigor Fitness Platform - Project Metadata
 
 _Last updated: 2025-06-16_
 
 ---
 
-## 0. Overview
+## 📋 Overview
 
-This document is the **single source of truth** for architectural decisions, phased roadmap, and task tracking for the Vigor modernization effort. It will be updated continuously as work progresses.
+**Vigor** is a modern fitness platform with AI-powered workout generation and coaching features. Built with clean architecture principles, cost-optimized for single-slot deployment, and designed for scalability.
 
-## 1. Architectural Vision
-
-Adopt _Clean / Hexagonal Architecture_ principles to achieve: testability, scalability, clear domain boundaries, and future service extraction.
-
-## 2. Decision Log
-
-| ID       | Date       | Decision                                                                                                         | Rationale                                                     |
-| -------- | ---------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| ADR-0008 | 2025-06-16 | **CI/CD Simplification**: Replace complex staging pipeline with single-slot cost-optimized deployment            | Reduce monthly costs from $96 to $43, align with requirements |
-| ADR-0007 | 2025-06-16 | **Local Validation**: Enhanced E2E validation to match CI/CD pipeline requirements                               | Fix gap where local validation skipped E2E tests              |
-| ADR-0001 | 2025-06-15 | Adopt Clean Architecture with Domain, Application, Adapters, Infrastructure layers                               | Aligns with SOLID, DDD, enables modular growth                |
-| ADR-0002 | 2025-06-15 | Track modernization via `docs/metadata.md` + ADRs                                                                | Single, auditable trail of progress and decisions             |
-| ADR-0003 | 2025-06-15 | **Infrastructure**: Use 2 Azure Resource Groups: `vigor-db-rg` (persistent) + `vigor-rg` (compute)               | Cost control, separation of concerns, idempotency             |
-| ADR-0004 | 2025-06-15 | **Deployment**: Single environment, single slot, static naming for cost optimization                             | Keep monthly cost under $100, simplify operations             |
-| ADR-0005 | 2025-06-15 | **Resources**: vigor-backend (App Service), vigor-db (PostgreSQL), vigor-kv (Key Vault), vigor-storage (Storage) | Simple, static names for idempotency and clarity              |
-| ADR-0006 | 2025-06-15 | **CI/CD**: Unified DAG-based pipeline replacing separate workflows                                               | Proper orchestration, staging validation, failure handling    |
-
-_(Add new rows at the top as decisions are made.)_
-
-## 3. Phased Roadmap & Task Board
-
-The board uses GitHub-style checkboxes so progress can be tracked directly in code reviews.
-
-### Phase 0 – Governance & Quality Gates (Week 1)
-
-- [x] **Create ADR framework** (`docs/adr/README.md`, template, ADR-0001 & ADR-0002)
-- [x] **Enforce quality gates in CI** (lint, mypy, tests, coverage ≥ 80 %)
-- [x] **Introduce pre-commit hooks** (black, ruff, isort, commitlint)
-
-### Phase 1 – Core Extraction (Weeks 1-2)
-
-- [x] `request_validator.py`
-- [x] `routing_engine.py`
-- [x] `budget_enforcer.py`
-- [x] `response_recorder.py`
-- [x] Provide thin façade `LLMGatewayFacade` that composes the above.
-- [x] Add unit tests (≥ 90 % coverage) for each extracted component.
-
-### Phase 2 – Data Layer Consolidation (Weeks 3-4)
-
-- [x] Introduce `repositories/` package encapsulating SQLAlchemy.
-- [x] Generate/aligned Pydantic schemas via `pydantic-sqlalchemy` or custom mappers.
-- [x] Remove direct ORM access from FastAPI routes.
-
-### Phase 3 – Observability & Resilience (Weeks 4-5)
-
-- [x] Add OpenTelemetry tracing + structured logging middleware.
-- [x] Extract health-check & analytics jobs into background-worker (Celery/RQ).
-- [x] Integrate distributed cache (e.g., Redis) via adapter pattern.
-
-### Phase 4 – Frontend Restructure (Weeks 5-6)
-
-- [x] Reorganize `frontend/src` into feature-sliced folders.
-- [x] Introduce Zustand (state) + Storybook (UI inventory).
-- [ ] Increase component/unit test coverage to 80 %.
-
-### Phase 5 – DevOps & Delivery (Weeks 6-7)
-
-- [ ] Optimise Dockerfiles with multi-stage builds.
-- [ ] Enable Dependabot + licence scanning.
+**Tech Stack**: React + TypeScript frontend, FastAPI + Python backend, PostgreSQL database, Azure cloud deployment.
 
 ---
 
-## 4. Risks & Mitigations
+## 🏗️ System Architecture
 
-| Risk                                     | Impact | Mitigation                           |
-| ---------------------------------------- | ------ | ------------------------------------ |
-| Large-scale refactor may break prod APIs | High   | Phase-wise releases + contract tests |
-| Schema changes cause data loss           | High   | Write migration scripts + backups    |
-| Incomplete test coverage                 | Medium | Enforce coverage gate in CI          |
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   React Frontend │    │  FastAPI Backend │    │  AI Providers   │
+│                 │    │                 │    │                 │
+│ • Chakra UI     │◄───┤ • JWT Auth      │◄───┤ • OpenAI        │
+│ • TypeScript    │    │ • User Tiers    │    │ • Gemini        │
+│ • PWA Ready     │    │ • Usage Tracking│    │ • Perplexity    │
+│ • Mobile-First  │    │ • LLM Abstraction│    │ • Fallback Mode │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Azure Static   │    │   PostgreSQL    │    │  Azure Services │
+│    Web App      │    │   Database      │    │   (Key Vault)   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### Design Principles
+
+1. **Clean Architecture**: Domain, Application, Infrastructure layers
+2. **Cost Optimization**: Single-slot deployment, Basic SKUs
+3. **Provider Agnostic**: Seamless AI provider switching
+4. **Progressive Enhancement**: Works without AI (fallback mode)
 
 ---
 
-## 5. Infrastructure Architecture (Final)
+## 🚀 Quick Start
 
-### **Resource Groups & Naming Convention**
+### Prerequisites
 
-#### **vigor-db-rg** (Persistent Layer)
+- Python 3.12+, Node.js 20+, Git
+- Azure subscription (for cloud deployment)
 
-- `vigor-db` - PostgreSQL Flexible Server (Basic tier)
-- `vigor-kv` - Key Vault (Standard tier)
-- `vigor-storage` - Storage Account (Standard LRS)
+### Local Development
 
-#### **vigor-rg** (Compute Layer)
+```bash
+# Using VS Code Tasks (recommended)
+1. Task: Install All Dependencies
+2. Task: Start Backend Server
+3. Task: Start Frontend Dev Server
 
-- `vigor-backend` - App Service (Basic B1)
-- `vigor-frontend` - Static Web App (Free tier)
+# Manual setup
+cd backend && python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt && python main.py
 
-### **Cost-Optimized Architecture**
-
+cd frontend && npm install && npm run dev
 ```
-Internet → Static Web App (Free) → App Service (Basic B1) → PostgreSQL (Basic)
-                                         ↓
-                                   Key Vault + Storage
-```
 
-### **Monthly Cost Estimate**
+**Access**: Frontend at http://localhost:5173, Backend at http://localhost:8000
+**Default Admin**: admin@vigor.com / admin123!
 
-- App Service Basic B1: ~$13/month
-- PostgreSQL Basic: ~$25/month
-- Key Vault: ~$3/month
-- Storage Account: ~$2/month
-- Static Web App: Free
-- **Total: ~$43/month**
+---
 
-### **Deployment Strategy**
+## 📖 Architectural Decisions (ADRs)
+
+| ID       | Date       | Decision                                                         | Rationale                              |
+| -------- | ---------- | ---------------------------------------------------------------- | -------------------------------------- |
+| ADR-0008 | 2025-06-16 | **CI/CD Simplification**: Single-slot cost-optimized deployment  | Reduce costs from $96 to $43/month     |
+| ADR-0007 | 2025-06-16 | **Local Validation**: Enhanced E2E validation matching CI/CD     | Fix validation gaps                    |
+| ADR-0006 | 2025-06-15 | **CI/CD**: Unified pipeline replacing separate workflows         | Proper orchestration, failure handling |
+| ADR-0005 | 2025-06-15 | **Resources**: Static naming (vigor-backend, vigor-db, vigor-kv) | Idempotency and clarity                |
+| ADR-0004 | 2025-06-15 | **Deployment**: Single environment, single slot strategy         | Keep costs under $50/month             |
+| ADR-0003 | 2025-06-15 | **Infrastructure**: Single resource group vigor-rg               | Cost control, simplified operations    |
+| ADR-0002 | 2025-06-15 | **Documentation**: Track via docs/metadata.md + ADRs             | Single source of truth                 |
+| ADR-0001 | 2025-06-15 | **Architecture**: Clean/Hexagonal Architecture adoption          | Testability, scalability, modularity   |
+
+---
+
+## 🗺️ Project Roadmap
+
+### ✅ Completed (Phases 0-3)
+
+- [x] **Clean Architecture**: Extracted LLM gateway components (request_validator, routing_engine, budget_enforcer, response_recorder)
+- [x] **Quality Gates**: Pre-commit hooks, linting, testing (coverage: backend 50%+, frontend 31%+)
+- [x] **Data Layer**: Repository pattern, Pydantic schemas, removed direct ORM access
+- [x] **Observability**: OpenTelemetry tracing, structured logging, background workers
+- [x] **CI/CD Optimization**: Simplified from complex staging pipeline to cost-optimized single-slot deployment
+
+### 🔄 In Progress (Phase 4)
+
+- [x] **Frontend Structure**: Feature-sliced organization, Zustand state management
+- [ ] **Test Coverage**: Increase to 80% for both frontend and backend
+
+### 📋 Planned (Phase 5)
+
+- [ ] **DevOps**: Multi-stage Dockerfiles, Dependabot, license scanning
+- [ ] **Performance**: Caching optimization, CDN integration
+- [ ] **Security**: Enhanced vulnerability scanning
+
+---
+
+## 💰 Infrastructure & Deployment
+
+### Cost-Optimized Azure Architecture
+
+**Resource Groups:**
+
+- `vigor-rg`: All compute and storage resources
+
+**Resources & Monthly Costs:**
+
+- **App Service Basic B1**: ~$13/month (backend API)
+- **PostgreSQL Flexible Basic**: ~$25/month (database)
+- **Key Vault Standard**: ~$3/month (secrets)
+- **Storage Account LRS**: ~$2/month (static assets)
+- **Static Web App**: Free tier (frontend)
+
+**Total: ~$43/month** (55% cost reduction from previous $96/month)
+
+### Deployment Strategy
 
 - **Single Environment**: Production only (no staging)
-- **Single Slot**: No deployment slots (cost savings)
-- **Static Naming**: All resources use static names for idempotency
-- **Blue-Green**: Not used (cost optimization)
+- **Single Slot**: No deployment slots for cost savings
+- **Direct Deployment**: CI/CD deploys directly to production
+- **Infrastructure as Code**: Azure Bicep templates
 
-### **Current Status** ⚠️ **CRITICAL CHANGE REQUIRED**
+### CI/CD Pipeline (Simplified)
 
-- Resource groups exist and deployed
-- Backend returning 503 (needs deployment fix)
-- **MAJOR ISSUE**: CI/CD pipeline misaligned with cost requirements
-- **Complex staging pipeline** causing $53/month unnecessary costs
-- **Remediation in progress**: Implementing single-slot deployment strategy
+```
+Quality Checks → Build → Deploy Production → Health Check
+```
+
+**File**: `.github/workflows/simple-deploy.yml`
+
+- Combined frontend/backend validation
+- Direct production deployment
+- Simple health verification
+- ~5-10 minute runtime vs 30+ minutes previously
 
 ---
 
-## 6. Glossary
+## 🔧 Development Workflow
 
-_ADR_ – Architecture Decision Record.
-_Domain Layer_ – Core business rules independent of frameworks.
+### Local Validation
+
+```bash
+# Before committing, run:
+./scripts/enhanced-local-validation.sh
+
+# Includes:
+# - Backend: black, isort, ruff, pytest (coverage ≥50%)
+# - Frontend: eslint, typescript, jest (coverage ≥31%)
+# - Optional: E2E tests with --include-e2e flag
+```
+
+### Testing Strategy
+
+- **Backend**: pytest with coverage reporting, integration tests
+- **Frontend**: Jest unit tests, Playwright E2E tests
+- **API**: FastAPI test client, OpenAPI validation
+- **E2E**: Cross-browser testing, mobile viewport testing
+
+### Code Quality
+
+- **Formatting**: Black (Python), Prettier (TypeScript)
+- **Linting**: Ruff (Python), ESLint (TypeScript)
+- **Type Checking**: mypy (Python), TypeScript compiler
+- **Security**: Bandit, Safety, Gitleaks, TruffleHog
+
+---
+
+## 🔒 Security & Configuration
+
+### Environment Variables
+
+```bash
+# Required for production
+DATABASE_URL=postgresql://user:pass@host:5432/vigor
+SECRET_KEY=your-jwt-signing-key-minimum-32-characters
+ADMIN_EMAIL=admin@yourdomain.com
+
+# AI Providers (optional)
+OPENAI_API_KEY=sk-...
+LLM_PROVIDER=openai|gemini|perplexity|fallback
+```
+
+### AI Provider Support
+
+- **OpenAI GPT**: Primary AI provider
+- **Google Gemini**: Alternative provider
+- **Perplexity**: Research-focused AI
+- **Fallback Mode**: Basic responses without AI
+
+---
+
+## 🎯 Key Features
+
+### Core Functionality
+
+- **User Management**: JWT authentication, tier-based access
+- **Workout Generation**: AI-powered personalized workouts
+- **Progress Tracking**: Exercise logs, streak tracking
+- **Coach Chat**: AI fitness coaching interface
+- **Nutrition Guidance**: Meal planning and dietary advice
+
+### Technical Features
+
+- **PWA Support**: Offline capability, mobile app-like experience
+- **Responsive Design**: Mobile-first, works on all devices
+- **Real-time Updates**: WebSocket connections for live features
+- **Caching**: Redis for session management and response caching
+- **Monitoring**: Application Insights, health checks, error tracking
+
+---
+
+## 📁 Project Structure
+
+```
+vigor/
+├── backend/              # FastAPI application
+│   ├── api/             # REST API endpoints
+│   ├── application/     # Application services (Clean Architecture)
+│   ├── core/            # Business logic and entities
+│   ├── database/        # Database models and repositories
+│   ├── domain/          # Domain models and interfaces
+│   └── infrastructure/  # External service adapters
+├── frontend/            # React TypeScript application
+│   ├── src/
+│   │   ├── components/  # Reusable UI components
+│   │   ├── pages/       # Route components
+│   │   ├── services/    # API client and external services
+│   │   ├── stores/      # Zustand state management
+│   │   └── types/       # TypeScript type definitions
+├── functions/           # Azure Functions (AI processing)
+├── infrastructure/      # Azure Bicep IaC templates
+├── scripts/            # Development and deployment scripts
+└── docs/               # Project documentation
+```
+
+---
+
+## 🛠️ Maintenance & Operations
+
+### Monitoring
+
+- **Health Endpoint**: `/health` for deployment verification
+- **Metrics**: Application Insights for performance monitoring
+- **Logs**: Structured logging with OpenTelemetry tracing
+- **Alerts**: Automated failure notifications via GitHub issues
+
+### Backup Strategy
+
+- **Database**: Automated Azure PostgreSQL backups (7-day retention)
+- **Code**: Git repository with branch protection
+- **Secrets**: Azure Key Vault with access logging
+- **Infrastructure**: Version-controlled Bicep templates
+
+### Performance Optimization
+
+- **Frontend**: Vite build optimization, lazy loading, tree shaking
+- **Backend**: FastAPI async operations, database indexing
+- **Caching**: Response caching, static asset CDN
+- **Database**: Connection pooling, query optimization
+
+---
+
+## 🚨 Known Issues & Risks
+
+### Current Issues
+
+- **Test Coverage**: Frontend at 31% (target: 80%)
+- **Error Handling**: Need enhanced error boundaries
+- **Mobile UX**: Some components need mobile optimization
+
+### Risk Mitigation
+
+- **API Changes**: Contract testing prevents breaking changes
+- **Database Migration**: Alembic migrations with rollback capability
+- **Deployment Failure**: Automated rollback via emergency workflow
+- **Security**: Regular dependency updates, vulnerability scanning
+
+---
+
+## 📞 Support & Resources
+
+### Documentation
+
+- **API Documentation**: `/docs` endpoint (OpenAPI/Swagger)
+- **Architecture Decisions**: `docs/adr/` directory
+- **Development Guide**: `docs/CONTRIBUTING.md`
+- **Security Guide**: `docs/secrets_management_guide.md`
+
+### Key Scripts
+
+- **Local Validation**: `scripts/enhanced-local-validation.sh`
+- **Health Check**: `scripts/health-check.sh`
+- **E2E Testing**: `scripts/test-e2e-local.sh`
+- **Setup Secrets**: `scripts/setup-github-secrets.sh`
+
+### External Dependencies
+
+- **Frontend**: React 18, TypeScript 5, Chakra UI, Zustand
+- **Backend**: FastAPI, SQLAlchemy, Alembic, Pydantic, JWT
+- **Infrastructure**: Azure App Service, PostgreSQL, Key Vault
+- **AI**: OpenAI GPT, Google Gemini, Perplexity APIs
+
+---
+
+_This document serves as the single source of truth for the Vigor project. All architectural decisions, deployment strategies, and development workflows are documented here._
