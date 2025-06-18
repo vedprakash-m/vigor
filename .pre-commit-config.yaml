@@ -1,48 +1,78 @@
 repos:
+  # Backend Python hooks
   - repo: https://github.com/psf/black
     rev: 25.1.0
     hooks:
       - id: black
-        language_version: python3
+        language_version: python3.12
         args: ["--line-length", "88"]
+        files: ^backend/.*\.py$
 
   - repo: https://github.com/pycqa/isort
     rev: 6.0.1
     hooks:
       - id: isort
         name: isort (imports)
-        files: \.(py)$
+        files: ^backend/.*\.py$
         args: ["--profile", "black"]
 
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.2.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.1
     hooks:
-      - id: flake8
-        additional_dependencies: ["flake8==7.2.0"]
+      - id: ruff
+        files: ^backend/.*\.py$
+        args: [--fix, --exit-non-zero-on-fix]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        files: ^backend/.*\.py$
+        args: [--ignore-missing-imports]
 
   - repo: https://github.com/PyCQA/bandit
     rev: 1.8.3
     hooks:
       - id: bandit
         name: bandit (security)
-        args:
-          ["-c", "backend/.bandit", "-r", "backend", "--severity-level", "high"]
+        files: ^backend/.*\.py$
+        args: ["-c", "backend/pyproject.toml", "--severity-level", "medium"]
 
+  # Frontend hooks
   - repo: local
     hooks:
       - id: eslint-frontend
         name: eslint (frontend)
-        entry: npx --yes eslint -c frontend/eslint.config.js "frontend/src/**/*.{ts,tsx}"
-        language: node
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        files: ^frontend/.*\.(ts|tsx|js|jsx)$
         pass_filenames: false
-        types: [tsx, ts]
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.4
+      - id: typescript-check
+        name: TypeScript check
+        entry: bash -c 'cd frontend && npm run type-check'
+        language: system
+        files: ^frontend/.*\.(ts|tsx)$
+        pass_filenames: false
+
+  # General file quality hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
     hooks:
-      - id: ruff
-        args: ["--line-length", "88"]
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+        files: ^(frontend/|backend/|\.github/workflows/).*\.json$
+      - id: check-toml
+        files: ^backend/.*\.toml$
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=1000"]
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
 
+  # Conventional commits (optional but good practice)
   - repo: https://github.com/conventional-changelog/commitlint
     rev: v17.8.1
     hooks:
@@ -51,3 +81,10 @@ repos:
         entry: npx --yes commitlint --edit $1
         language: node
         stages: [commit-msg]
+
+# Global settings
+default_language_version:
+  python: python3.12
+  node: "20"
+
+fail_fast: false

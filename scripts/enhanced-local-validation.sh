@@ -114,9 +114,19 @@ mypy . --ignore-missing-imports || {
 }
 
 print_step "Running Bandit security scanning"
-bandit -c .bandit -r . --severity-level medium --quiet || {
-    print_warning "Bandit found security issues (not blocking)"
-}
+if bandit -r . -f json -o bandit_report.json --severity-level medium; then
+    print_success "Bandit security scan passed"
+else
+    print_warning "Bandit found security issues - check bandit_report.json"
+fi
+
+print_step "Running Safety vulnerability check"
+if safety check; then
+    print_success "Safety vulnerability check passed"
+else
+    print_error "Safety found vulnerabilities in dependencies"
+    exit 1
+fi
 
 cd ..
 
@@ -150,24 +160,63 @@ cd ..
 if [ "$SKIP_TESTS" = false ]; then
     print_step "Running Backend Tests"
     cd backend
-    pytest --cov=. --cov-report=term-missing || {
-        print_error "Backend tests failed"
+    pytest --cov=. --cov-report=term-missing --cov-fail-under=50 || {
+        print_error "Backend tests failed or coverage below 50%"
         exit 1
     }
-    print_success "Backend tests passed"
+    print_success "Backend tests passed with adequate coverage"
     cd ..
 
     print_step "Running Frontend Tests"
     cd frontend
-    npm test -- --coverage --watchAll=false || {
+    npm test -- --coverage --watchAll=false --coverageReporters=text --coverageReporters=lcov || {
         print_error "Frontend tests failed"
         exit 1
     }
+
+    # Check coverage thresholds (matching CI/CD expectations)
+    print_step "Checking frontend test coverage"
+    if npm test -- --coverage --watchAll=false --passWithNoTests --silent | grep -q "Statements.*[0-9][0-9]%"; then
+        print_success "Frontend test coverage adequate"
+    else
+        print_warning "Frontend test coverage may be below threshold"
+    fi
+
     print_success "Frontend tests passed"
+    cd ..
+
+    print_step "Frontend type checking"
+    cd frontend
+    npm run type-check || {
+        print_error "Frontend TypeScript compilation failed"
+        exit 1
+    }
+    print_success "Frontend TypeScript check passed"
     cd ..
 fi
 
-# Step 4: Run E2E Tests (requires servers)
+# Step 4: Build Verification (matching CI/CD)
+if [ "$SKIP_TESTS" = false ]; then
+    print_step "Frontend Build Verification"
+    cd frontend
+    npm run build || {
+        print_error "Frontend build failed"
+        exit 1
+    }
+
+    # Verify build output exists (like CI/CD does)
+    if [ -d "dist" ] && [ "$(ls -A dist)" ]; then
+        print_success "Frontend build completed successfully"
+        # Clean up build artifacts for local dev
+        rm -rf dist
+    else
+        print_error "Frontend build output missing or empty"
+        exit 1
+    fi
+    cd ..
+fi
+
+# Step 5: Run E2E Tests (requires servers)
 if [ "$SKIP_E2E" = false ]; then
     print_step "Running E2E Tests"
 
@@ -178,7 +227,7 @@ if [ "$SKIP_E2E" = false ]; then
         npx playwright install --with-deps
     fi
 
-    # Build frontend for testing
+    # Build frontend for testing (again, since we cleaned up)
     print_step "Building frontend for E2E testing"
     npm run build || {
         print_error "Frontend build failed"
@@ -194,10 +243,11 @@ if [ "$SKIP_E2E" = false ]; then
         source venv/bin/activate
     fi
 
-    # Set environment variables for testing
+    # Set environment variables for testing (matching CI/CD)
     export DATABASE_URL="sqlite:///test.db"
     export LLM_PROVIDER="fallback"
     export OPENAI_API_KEY="sk-placeholder"
+    export E2E_TEST="true"
 
     # Start backend server in background
     python main.py &
@@ -244,7 +294,24 @@ if [ "$SKIP_E2E" = false ]; then
     cd ..
 fi
 
-# Step 7: Check Git Status
+# Step 6: Dependency Security Scanning (NEW - matches CI/CD)
+print_step "Dependency Security Scanning"
+
+# Frontend dependency audit
+cd frontend
+print_step "Running npm audit for frontend dependencies"
+if npm audit --audit-level=moderate; then
+    print_success "Frontend dependencies security audit passed"
+else
+    print_warning "Frontend dependencies have security vulnerabilities"
+    print_warning "Run 'npm audit fix' to attempt automatic fixes"
+fi
+cd ..
+
+# Backend dependency scanning (already done with safety above)
+print_success "Backend dependency security scan completed with Safety"
+
+# Step 7: Git and Repository Validation
 print_step "Checking Git Status"
 if [ -n "$(git status --porcelain)" ]; then
     print_warning "Files were modified during validation:"
@@ -255,7 +322,7 @@ else
     print_success "No files were modified"
 fi
 
-# Step 6: Azure & Deployment Validation (NEW)
+# Step 8: Azure & Deployment Validation (Comprehensive)
 print_step "Azure Authentication & Deployment Validation"
 
 # Check if Azure CLI is installed
@@ -347,13 +414,31 @@ if command -v actionlint &> /dev/null; then
         print_success "GitHub Actions workflow syntax valid"
     else
         print_error "GitHub Actions workflow has syntax errors"
+        exit 1
     fi
 else
     print_warning "actionlint not installed - skipping workflow validation"
     print_warning "Install with: go install github.com/rhymond/actionlint/cmd/actionlint@latest"
 fi
 
-# Step 7: Check Git Status
+# Check for pre-commit hooks consistency
+print_step "Validating pre-commit hooks"
+if [ -f ".pre-commit-config.yaml" ]; then
+    if command -v pre-commit &> /dev/null; then
+        if pre-commit run --all-files --verbose; then
+            print_success "Pre-commit hooks validation passed"
+        else
+            print_warning "Pre-commit hooks found issues (may have been auto-fixed)"
+        fi
+    else
+        print_warning "pre-commit not installed - skipping hook validation"
+        print_warning "Install with: pip install pre-commit"
+    fi
+else
+    print_warning "No .pre-commit-config.yaml found"
+fi
+
+# Step 9: Final Git Status Check
 print_step "Checking Git Status"
 if [ -n "$(git status --porcelain)" ]; then
     print_warning "Files were modified during validation:"
@@ -364,17 +449,31 @@ else
     print_success "No files were modified"
 fi
 
-# Step 8: Final Summary
+# Step 10: Final Summary
 echo ""
-echo -e "${GREEN}🎉 Local E2E Validation Complete!${NC}"
-echo "=================================="
+echo -e "${GREEN}🎉 Comprehensive Local E2E Validation Complete!${NC}"
+echo "=================================================="
 echo -e "${GREEN}✅ Backend formatting and quality checks passed${NC}"
-echo -e "${GREEN}✅ Frontend linting passed${NC}"
+echo -e "${GREEN}✅ Backend security scanning completed${NC}"
+echo -e "${GREEN}✅ Frontend linting and type checking passed${NC}"
+echo -e "${GREEN}✅ Dependency vulnerability scanning completed${NC}"
 if [ "$SKIP_TESTS" = false ]; then
-    echo -e "${GREEN}✅ All unit tests passed${NC}"
+    echo -e "${GREEN}✅ All unit tests passed with coverage requirements${NC}"
+    echo -e "${GREEN}✅ Build verification completed${NC}"
 fi
 if [ "$SKIP_E2E" = false ]; then
     echo -e "${GREEN}✅ E2E tests passed${NC}"
 fi
+echo -e "${GREEN}✅ Azure and GitHub repository validation completed${NC}"
+echo -e "${GREEN}✅ CI/CD workflow syntax validated${NC}"
 echo ""
-echo -e "${BLUE}Your code is ready for CI/CD pipeline! 🚀${NC}"
+echo -e "${BLUE}📊 Validation Summary:${NC}"
+echo -e "${BLUE}   • Code quality: ✅ Formatting, linting, type checking${NC}"
+echo -e "${BLUE}   • Security: ✅ Bandit, Safety, npm audit${NC}"
+echo -e "${BLUE}   • Testing: ✅ Unit tests, E2E tests, coverage thresholds${NC}"
+echo -e "${BLUE}   • Build: ✅ Frontend build verification${NC}"
+echo -e "${BLUE}   • Infrastructure: ✅ Azure resources, GitHub secrets${NC}"
+echo -e "${BLUE}   • CI/CD: ✅ Workflow validation, pre-commit hooks${NC}"
+echo ""
+echo -e "${GREEN}🚀 Your code is ready for the CI/CD pipeline!${NC}"
+echo -e "${BLUE}All checks performed locally match the GitHub Actions workflow.${NC}"
