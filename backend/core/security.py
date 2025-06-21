@@ -113,11 +113,12 @@ class BaseInputValidator(BaseModel):
         if isinstance(v, str):
             # Check for common SQL injection patterns
             sql_patterns = [
-                r"(\b(Union[DROP, DELETE]|Union[TRUNCATE, UPDATE])\s+)",
-                r"(\bUNION\s+SELECT\b)",
-                r"(\b(Union[OR, AND])\s+\d+\s*=\s*\d+)",
-                r"(\bSELECT\s+.*\bFROM\b)",
-                r"(--|\#|\/\*)",
+                r"(DROP\s+TABLE|TRUNCATE\s+TABLE|DELETE\s+FROM)",
+                r"(UNION\s+SELECT)",
+                r"(\bOR\s+\d+\s*=\s*\d+|\bAND\s+\d+\s*=\s*\d+)",
+                r"(SELECT\s+.*\bFROM\b)",
+                r"(--|#|/\*)",
+                r"(\';|'OR|'AND)",
             ]
             for pattern in sql_patterns:
                 if re.search(pattern, v, re.IGNORECASE):
@@ -269,18 +270,22 @@ async def check_request_origin(request: Request):
         logger.warning(f"Request without origin/referer from {request.client.host}")
         return
 
-    allowed_origins = settings.CORS_ORIGINS
+    # Use get_settings() to allow for mocking in tests
+    from core.config import get_settings
+    current_settings = get_settings()
+    allowed_origins = getattr(current_settings, 'ALLOWED_ORIGINS', getattr(current_settings, 'CORS_ORIGINS', []))
     if origin and origin not in allowed_origins:
         logger.warning(f"Suspicious origin: {origin} from {request.client.host}")
-        raise HTTPException(status_code=403, detail="Forbidden origin")
+        raise HTTPException(status_code=403, detail="Origin not allowed")
 
 
 class InputValidationError(HTTPException):
     """Custom exception for input validation errors"""
 
     def __init__(self, detail: str, field: Optional[str] = None):
+        self.field = field
         super().__init__(
-            status_code=422,
+            status_code=400,
             detail={
                 "error": "validation_error",
                 "message": detail,
@@ -342,7 +347,10 @@ class SecurityAuditLogger:
             "reason": reason,
             "url": str(request.url),
         }
-        logger.info(f"AUTH_AUDIT: {event}")
+        if success:
+            logger.info(f"AUTH_AUDIT: Authentication attempt SUCCESS - {event}")
+        else:
+            logger.warning(f"AUTH_AUDIT: Authentication attempt FAILED - {event}")
 
     @staticmethod
     async def log_suspicious_activity(
@@ -358,7 +366,7 @@ class SecurityAuditLogger:
             "details": details,
             "url": str(request.url),
         }
-        logger.warning(f"SECURITY_AUDIT: {event}")
+        logger.error(f"SECURITY_AUDIT: Suspicious activity {activity_type} - {event}")
 
     @staticmethod
     async def log_rate_limit_exceeded(request: Request, limit: str):
@@ -371,7 +379,7 @@ class SecurityAuditLogger:
             "limit": limit,
             "url": str(request.url),
         }
-        logger.warning(f"RATE_LIMIT_AUDIT: {event}")
+        logger.warning(f"RATE_LIMIT_AUDIT: Rate limit exceeded {limit} - {event}")
 
 
 # Error Handler for Rate Limiting
@@ -390,17 +398,26 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 # Health Check Security
 async def secure_health_check() -> dict[str, Any]:
     """Secure health check that doesn't expose sensitive information"""
+    checks = {
+        "database": await _check_database_health(),
+        "redis": await _check_redis_health(),
+        "ai_providers": await _check_ai_providers_health(),
+    }
+
+    # Determine overall status
+    status = "healthy"
+    if any(check in ["error", "unhealthy"] for check in checks.values()):
+        status = "degraded"
+    elif any(check == "unknown" for check in checks.values()):
+        status = "degraded"
+
     return {
-        "status": "healthy",
+        "status": status,
         "timestamp": datetime.utcnow().isoformat(),
-        "version": settings.APP_VERSION,
+        "version": getattr(settings, 'APP_VERSION', '1.0.0'),
         "environment": settings.ENVIRONMENT,
         # Don't expose detailed system information in production
-        "checks": {
-            "database": await _check_database_health(),
-            "redis": await _check_redis_health(),
-            "ai_providers": await _check_ai_providers_health(),
-        },
+        "checks": checks,
     }
 
 
