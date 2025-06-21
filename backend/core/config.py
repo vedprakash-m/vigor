@@ -29,6 +29,7 @@ class Settings(BaseSettings):
 
     # Authentication
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+    ALGORITHM: str = "HS256"  # JWT algorithm
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # AI Provider APIs - all optional, fallback gracefully
