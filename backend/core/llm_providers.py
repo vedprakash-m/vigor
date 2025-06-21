@@ -1,12 +1,17 @@
-import json
-from abc import ABC, abstractmethod
+"""
+LLM Provider implementations with Python 3.9+ compatibility.
+Uses Optional instead of union syntax for better compatibility.
+"""
 
-import httpx
-from openai import AsyncOpenAI
+import logging
+import time
+from abc import ABC, abstractmethod
+from typing import Optional, Tuple
 
 from .config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 class LLMProvider(ABC):
@@ -16,248 +21,233 @@ class LLMProvider(ABC):
     async def chat_completion(
         self,
         messages: list[dict[str, str]],
-        system_prompt: str | None = None,
         max_tokens: int = 500,
         temperature: float = 0.7,
-        json_response: bool = False,
-    ) -> str:
-        """Generate a chat completion response."""
+        system_prompt: Optional[str] = None,
+    ) -> Tuple[str, int, int]:
+        """Generate chat completion. Returns (response, input_tokens, output_tokens)."""
         pass
 
     @abstractmethod
     def is_available(self) -> bool:
-        """Check if the provider is properly configured."""
+        """Check if provider is available."""
         pass
 
 
 class OpenAIProvider(LLMProvider):
-    """OpenAI LLM provider."""
+    """OpenAI API provider."""
 
     def __init__(self):
         self.client = None
-        if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY not in [
-            "your-openai-api-key-here",
-            "sk-placeholder",
-        ]:
-            self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        if settings.OPENAI_API_KEY:
+            try:
+                import openai
+
+                self.client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+            except ImportError:
+                logger.warning("OpenAI library not installed")
 
     def is_available(self) -> bool:
+        """Check if OpenAI provider is available."""
         return self.client is not None
 
     async def chat_completion(
         self,
         messages: list[dict[str, str]],
-        system_prompt: str | None = None,
         max_tokens: int = 500,
         temperature: float = 0.7,
-        json_response: bool = False,
-    ) -> str:
-        if not self.is_available():
-            raise ValueError("OpenAI provider not properly configured")
-
-        # Prepare messages
-        formatted_messages = []
-        if system_prompt:
-            formatted_messages.append({"role": "system", "content": system_prompt})
-        formatted_messages.extend(messages)
-
-        # Prepare request parameters
-        request_params = {
-            "model": settings.OPENAI_MODEL,
-            "messages": formatted_messages,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-        }
-
-        if json_response:
-            request_params["response_format"] = {"type": "json_object"}
-
+        system_prompt: Optional[str] = None,
+    ) -> Tuple[str, int, int]:
+        """Generate OpenAI chat completion."""
         if self.client is None:
-            raise RuntimeError("OpenAI client is not initialized")
+            raise RuntimeError("OpenAI client not available")
 
-        # Type ignore for OpenAI API overload complexity
-        response = await self.client.chat.completions.create(**request_params)  # type: ignore[call-overload]
-        return response.choices[0].message.content or ""
+        try:
+            formatted_messages = []
+            if system_prompt:
+                formatted_messages.append({"role": "system", "content": system_prompt})
+
+            for msg in messages:
+                formatted_messages.append(msg)
+
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=formatted_messages,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+
+            content = response.choices[0].message.content
+            input_tokens = response.usage.prompt_tokens
+            output_tokens = response.usage.completion_tokens
+
+            return content, input_tokens, output_tokens
+
+        except Exception as e:
+            logger.error(f"OpenAI API error: {e}")
+            raise
 
 
 class GeminiProvider(LLMProvider):
-    """Google Gemini LLM provider."""
+    """Google Gemini API provider."""
 
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY
-        self.model = settings.GEMINI_MODEL or "gemini-2.5-flash"
-        self.base_url = "https://generativelanguage.googleapis.com/v1beta/models"
+        self.client = None
+        if settings.GEMINI_API_KEY:
+            try:
+                import google.generativeai as genai
+
+                genai.configure(api_key=settings.GEMINI_API_KEY)
+                self.client = genai.GenerativeModel("gemini-2.5-flash")
+            except ImportError:
+                logger.warning("Google Generative AI library not installed")
 
     def is_available(self) -> bool:
-        return bool(self.api_key and self.api_key != "your-gemini-api-key-here")
+        """Check if Gemini provider is available."""
+        return self.client is not None
 
     async def chat_completion(
         self,
         messages: list[dict[str, str]],
-        system_prompt: str | None = None,
         max_tokens: int = 500,
         temperature: float = 0.7,
-        json_response: bool = False,
-    ) -> str:
-        if not self.is_available():
-            raise ValueError("Gemini provider not properly configured")
+        system_prompt: Optional[str] = None,
+    ) -> Tuple[str, int, int]:
+        """Generate Gemini chat completion."""
+        if self.client is None:
+            raise RuntimeError("Gemini client not available")
 
-        # Format messages for Gemini API
-        contents = []
+        try:
+            # Format messages for Gemini
+            prompt_parts = []
+            if system_prompt:
+                prompt_parts.append(system_prompt)
 
-        if system_prompt:
-            contents.append(
-                {"role": "user", "parts": [{"text": f"System: {system_prompt}"}]}
+            for msg in messages:
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                prompt_parts.append(f"{role}: {content}")
+
+            prompt = "\n".join(prompt_parts)
+
+            response = self.client.generate_content(
+                prompt,
+                generation_config={
+                    "max_output_tokens": max_tokens,
+                    "temperature": temperature,
+                },
             )
 
-        for message in messages:
-            role = "model" if message["role"] == "assistant" else "user"
-            contents.append({"role": role, "parts": [{"text": message["content"]}]})
+            content = response.text
+            # Gemini doesn't provide token counts in the same way
+            # Estimate tokens: ~4 characters per token
+            input_tokens = len(prompt) // 4
+            output_tokens = len(content) // 4
 
-        # Add JSON format instruction if needed
-        if json_response and contents:
-            # Get the last message content
-            last_message = contents[-1]
-            if isinstance(last_message, dict) and "parts" in last_message:
-                parts = last_message["parts"]
-                if parts and isinstance(parts[0], dict) and "text" in parts[0]:
-                    last_content = str(parts[0]["text"])
-                    # Create new parts list to avoid Collection indexing issues
-                    last_message["parts"] = [
-                        {
-                            "text": f"{last_content}\n\nPlease respond in valid JSON format."
-                        }
-                    ]
+            return content, input_tokens, output_tokens
 
-        payload = {
-            "contents": contents,
-            "generationConfig": {
-                "temperature": temperature,
-                "maxOutputTokens": max_tokens,
-            },
-        }
-
-        url = f"{self.base_url}/{self.model}:generateContent?key={self.api_key}"
-
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload)
-            response.raise_for_status()
-
-            result = response.json()
-            if "candidates" in result and result["candidates"]:
-                return str(
-                    result["candidates"][0]["content"]["parts"][0]["text"]
-                )  # Explicit str conversion
-            else:
-                raise ValueError("No response generated by Gemini")
+        except Exception as e:
+            logger.error(f"Gemini API error: {e}")
+            raise
 
 
 class PerplexityProvider(LLMProvider):
-    """Perplexity LLM provider."""
+    """Perplexity AI API provider."""
 
     def __init__(self):
-        self.api_key = settings.PERPLEXITY_API_KEY
-        self.model = settings.PERPLEXITY_MODEL or "llama-3.1-sonar-small-128k-online"
-        self.base_url = "https://api.perplexity.ai/chat/completions"
+        self.client = None
+        if settings.PERPLEXITY_API_KEY:
+            try:
+                import openai
+
+                # Perplexity uses OpenAI-compatible API
+                self.client = openai.OpenAI(
+                    api_key=settings.PERPLEXITY_API_KEY,
+                    base_url="https://api.perplexity.ai",
+                )
+            except ImportError:
+                logger.warning("OpenAI library not installed for Perplexity")
 
     def is_available(self) -> bool:
-        return bool(self.api_key and self.api_key != "your-perplexity-api-key-here")
+        """Check if Perplexity provider is available."""
+        return self.client is not None
 
     async def chat_completion(
         self,
         messages: list[dict[str, str]],
-        system_prompt: str | None = None,
         max_tokens: int = 500,
         temperature: float = 0.7,
-        json_response: bool = False,
-    ) -> str:
-        if not self.is_available():
-            raise ValueError("Perplexity provider not properly configured")
+        system_prompt: Optional[str] = None,
+    ) -> Tuple[str, int, int]:
+        """Generate Perplexity chat completion."""
+        if self.client is None:
+            raise RuntimeError("Perplexity client not available")
 
-        # Prepare messages
-        formatted_messages = []
-        if system_prompt:
-            formatted_messages.append({"role": "system", "content": system_prompt})
+        try:
+            formatted_messages = []
+            if system_prompt:
+                formatted_messages.append({"role": "system", "content": system_prompt})
 
-        # Add JSON format instruction if needed
-        for message in messages:
-            content = message["content"]
-            if json_response and message["role"] == "user":
-                content = f"{content}\n\nPlease respond in valid JSON format."
-            formatted_messages.append({"role": message["role"], "content": content})
+            for msg in messages:
+                formatted_messages.append(msg)
 
-        payload = {
-            "model": self.model,
-            "messages": formatted_messages,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-        }
+            response = self.client.chat.completions.create(
+                model="llama-3.1-sonar-small-128k-online",
+                messages=formatted_messages,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
 
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
+            content = response.choices[0].message.content
+            input_tokens = response.usage.prompt_tokens if response.usage else 0
+            output_tokens = response.usage.completion_tokens if response.usage else 0
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(self.base_url, json=payload, headers=headers)
-            response.raise_for_status()
+            return content, input_tokens, output_tokens
 
-            result = response.json()
-            return str(
-                result["choices"][0]["message"]["content"]
-            )  # Explicit str conversion
+        except Exception as e:
+            logger.error(f"Perplexity API error: {e}")
+            raise
 
 
 class FallbackProvider(LLMProvider):
-    """Fallback provider for when no LLM is configured."""
+    """Fallback provider for when no AI services are available."""
 
     def is_available(self) -> bool:
+        """Fallback is always available."""
         return True
 
     async def chat_completion(
         self,
         messages: list[dict[str, str]],
-        system_prompt: str | None = None,
         max_tokens: int = 500,
         temperature: float = 0.7,
-        json_response: bool = False,
-    ) -> str:
-        # Extract user message for context
-        user_message = ""
-        for message in messages:
-            if message["role"] == "user":
-                user_message = message["content"]
+        system_prompt: Optional[str] = None,
+    ) -> Tuple[str, int, int]:
+        """Generate fallback response."""
+        # Basic fallback responses based on message content
+        last_message = messages[-1].get("content", "").lower() if messages else ""
+
+        fallback_responses = {
+            "workout": "I'd recommend starting with 3 sets of bodyweight exercises: push-ups, squats, and planks. Adjust reps based on your fitness level.",
+            "exercise": "For a balanced workout, combine cardio (20-30 min) with strength training (2-3 exercises per muscle group).",
+            "nutrition": "Focus on whole foods: lean proteins, complex carbs, healthy fats, and plenty of vegetables. Stay hydrated!",
+            "rest": "Rest days are crucial for recovery. Consider light activities like walking or gentle stretching.",
+            "motivation": "Remember, consistency is key. Every workout, no matter how small, is progress toward your goals!",
+        }
+
+        # Find matching response
+        response = "I'm here to help with your fitness journey! However, AI services are currently unavailable. Please try again later or consult with a fitness professional."
+
+        for keyword, fallback_response in fallback_responses.items():
+            if keyword in last_message:
+                response = fallback_response
                 break
 
-        if json_response:
-            return json.dumps(
-                {
-                    "name": "Sample Bodyweight Workout",
-                    "description": "A basic workout plan (LLM not configured - this is a sample)",
-                    "exercises": [
-                        {
-                            "name": "Push-ups",
-                            "sets": 3,
-                            "reps": "8-12",
-                            "rest": "60 seconds",
-                            "notes": "Keep your core tight",
-                        },
-                        {
-                            "name": "Squats",
-                            "sets": 3,
-                            "reps": "12-15",
-                            "rest": "60 seconds",
-                            "notes": "Keep your chest up",
-                        },
-                    ],
-                    "difficulty": "beginner",
-                    "equipment_needed": ["none"],
-                    "duration_minutes": 30,
-                    "notes": "Configure an LLM provider for personalized AI-generated workouts.",
-                }
-            )
-        else:
-            return f"Hello! I'm your AI fitness coach (demo mode - no LLM configured). You said: '{user_message}'. For personalized responses, please configure an LLM provider (OpenAI, Gemini, or Perplexity). In the meantime, I recommend staying consistent with your workouts!"
+        # Simulate token usage (rough estimate)
+        input_tokens = sum(len(msg.get("content", "")) for msg in messages) // 4
+        output_tokens = len(response) // 4
+
+        return response, input_tokens, output_tokens
 
 
 def get_llm_provider() -> LLMProvider:

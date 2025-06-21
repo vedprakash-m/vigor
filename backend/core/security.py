@@ -5,7 +5,7 @@ Implements rate limiting, input validation, security headers, and comprehensive 
 
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 from functools import wraps
 from fastapi import HTTPException, Request, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -124,6 +124,10 @@ class BaseInputValidator(BaseModel):
 class UserInputValidator(BaseInputValidator):
     """Validator for user-related inputs"""
 
+    email: str
+    username: str
+    password: str
+
     @validator('email')
     def validate_email(cls, v):
         if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', v):
@@ -151,18 +155,24 @@ class UserInputValidator(BaseInputValidator):
 class WorkoutInputValidator(BaseInputValidator):
     """Validator for workout-related inputs"""
 
+    duration: Optional[int] = None
+    fitness_level: Optional[str] = None
+    goals: Optional[List[str]] = None
+
     @validator('duration')
     def validate_duration(cls, v):
-        if not isinstance(v, int) or v < 5 or v > 300:
+        if v is not None and (not isinstance(v, int) or v < 5 or v > 300):
             raise ValueError('Duration must be between 5 and 300 minutes')
         return v
 
     @validator('fitness_level')
     def validate_fitness_level(cls, v):
-        allowed_levels = ['beginner', 'intermediate', 'advanced', 'expert']
-        if v.lower() not in allowed_levels:
-            raise ValueError(f'Fitness level must be one of: {allowed_levels}')
-        return v.lower()
+        if v is not None:
+            allowed_levels = ['beginner', 'intermediate', 'advanced', 'expert']
+            if v.lower() not in allowed_levels:
+                raise ValueError(f'Fitness level must be one of: {allowed_levels}')
+            return v.lower()
+        return v
 
     @validator('goals')
     def validate_goals(cls, v):
@@ -180,17 +190,22 @@ class WorkoutInputValidator(BaseInputValidator):
 class AIInputValidator(BaseInputValidator):
     """Validator for AI/LLM inputs"""
 
+    message: Optional[str] = None
+    max_tokens: Optional[int] = None
+
     @validator('message')
     def validate_message(cls, v):
-        if len(v) > 2000:
-            raise ValueError('Message too long (max 2000 characters)')
-        if len(v.strip()) == 0:
-            raise ValueError('Message cannot be empty')
-        return v.strip()
+        if v is not None:
+            if len(v) > 2000:
+                raise ValueError('Message too long (max 2000 characters)')
+            if len(v.strip()) == 0:
+                raise ValueError('Message cannot be empty')
+            return v.strip()
+        return v
 
     @validator('max_tokens')
     def validate_max_tokens(cls, v):
-        if not isinstance(v, int) or v < 1 or v > 4000:
+        if v is not None and (not isinstance(v, int) or v < 1 or v > 4000):
             raise ValueError('Max tokens must be between 1 and 4000')
         return v
 
@@ -237,7 +252,7 @@ async def check_request_origin(request: Request):
 
 class InputValidationError(HTTPException):
     """Custom exception for input validation errors"""
-    def __init__(self, detail: str, field: str = None):
+    def __init__(self, detail: str, field: Optional[str] = None):
         super().__init__(status_code=422, detail={
             "error": "validation_error",
             "message": detail,
@@ -270,7 +285,7 @@ class SecurityAuditLogger:
     """Security event audit logger"""
 
     @staticmethod
-    async def log_auth_attempt(request: Request, user_id: str = None, success: bool = False, reason: str = None):
+    async def log_auth_attempt(request: Request, user_id: Optional[str] = None, success: bool = False, reason: Optional[str] = None):
         """Log authentication attempts"""
         event = {
             "event_type": "auth_attempt",
@@ -402,7 +417,7 @@ def get_password_hash(password: str) -> str:
     return str(pwd_context.hash(password))
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create JWT access token."""
     to_encode = data.copy()
     if expires_delta:

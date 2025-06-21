@@ -1,26 +1,37 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import Generic, List, Optional, TypeVar
 
-T = TypeVar("T")
+from pydantic import BaseModel
+
+T = TypeVar("T", bound=BaseModel)
 
 
-class Repository(ABC, Generic[T]):
-    """Abstract base repository defining CRUD operations."""
+class BaseRepository(ABC, Generic[T]):
+    """Base repository interface."""
 
     @abstractmethod
-    async def get(self, entity_id: str) -> T | None:  # noqa: D401
+    async def get(self, entity_id: str) -> Optional[T]:  # noqa: D401
+        """Get entity by ID."""
         pass
 
     @abstractmethod
-    async def add(self, entity: T) -> T:  # noqa: D401
+    async def create(self, entity: T) -> T:  # noqa: D401
+        """Create new entity."""
         pass
 
     @abstractmethod
-    async def update(self, entity_id: str, update_data: dict) -> T:  # noqa: D401
+    async def update(self, entity: T) -> T:  # noqa: D401
+        """Update existing entity."""
         pass
 
     @abstractmethod
-    async def list(self, **filters) -> list[T]:  # noqa: D401
+    async def delete(self, entity_id: str) -> bool:  # noqa: D401
+        """Delete entity by ID."""
+        pass
+
+    @abstractmethod
+    async def list(self, limit: int = 100, offset: int = 0) -> List[T]:  # noqa: D401
+        """List entities with pagination."""
         pass

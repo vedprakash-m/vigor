@@ -1,185 +1,217 @@
+"""
+Enhanced Pydantic models for the Vigor fitness platform
+Compatible with Python 3.9+ using Union types instead of | syntax
+"""
+
 from datetime import date, datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional, Union
+from uuid import uuid4
 
-from pydantic import BaseModel, Field
-
-
-class FitnessLevel(str, Enum):
-    BEGINNER = "beginner"
-    INTERMEDIATE = "intermediate"
-    ADVANCED = "advanced"
-
-
-class Goal(str, Enum):
-    WEIGHT_LOSS = "weight_loss"
-    MUSCLE_GAIN = "muscle_gain"
-    ENDURANCE = "endurance"
-    FLEXIBILITY = "flexibility"
-    GENERAL_FITNESS = "general_fitness"
-
-
-class Equipment(str, Enum):
-    NONE = "none"
-    MINIMAL = "minimal"  # Dumbbells, resistance bands
-    MODERATE = "moderate"  # Basic home gym
-    FULL = "full"  # Full gym access
+from pydantic import BaseModel, Field, validator
 
 
 class UserTier(str, Enum):
+    """User subscription tiers with usage limits"""
+
     FREE = "free"
     PREMIUM = "premium"
     UNLIMITED = "unlimited"
 
 
-class UserProfile(BaseModel):
-    model_config = {"from_attributes": True}
+class Equipment(str, Enum):
+    """Available workout equipment"""
 
-    id: str
-    email: str
-    username: str
-    fitness_level: FitnessLevel
-    goals: list[Goal]
-    equipment: Equipment
-    injuries: list[str] = []
-    preferences: dict[str, Any] = {}
-    user_tier: UserTier = UserTier.FREE
+    NONE = "none"
+    DUMBBELLS = "dumbbells"
+    RESISTANCE_BANDS = "resistance_bands"
+    PULL_UP_BAR = "pull_up_bar"
+    FULL_GYM = "full_gym"
+
+
+class FitnessLevel(str, Enum):
+    """User fitness experience levels"""
+
+    BEGINNER = "beginner"
+    INTERMEDIATE = "intermediate"
+    ADVANCED = "advanced"
+    EXPERT = "expert"
+
+
+class UserProfile(BaseModel):
+    """Enhanced user profile with tier management and timestamps"""
+
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    email: str = Field(..., description="User's email address")
+    username: str = Field(..., description="User's display name")
+    hashed_password: str = Field(..., description="Hashed password")
+    is_active: bool = Field(default=True, description="Account status")
+    user_tier: UserTier = Field(default=UserTier.FREE, description="Subscription tier")
     tier_updated_at: Optional[datetime] = None
-    monthly_budget: float = 5.0
-    current_month_usage: float = 0.0
-    created_at: datetime
-    updated_at: datetime
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    last_login: Optional[datetime] = None
+
+    # Fitness profile
+    fitness_level: FitnessLevel = Field(default=FitnessLevel.BEGINNER)
+    goals: List[str] = Field(default_factory=list)
+    equipment: List[Equipment] = Field(default_factory=list)
 
 
 class WorkoutPlan(BaseModel):
-    model_config = {"from_attributes": True}
+    """AI-generated workout plan with metadata"""
 
-    id: str
-    user_id: str
-    name: str
-    description: str
-    exercises: list[dict[str, Any]]
-    duration_minutes: int
-    difficulty: FitnessLevel
-    equipment_needed: list[str]
-    created_at: datetime
-    updated_at: datetime
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    user_id: str = Field(..., description="Owner of the workout plan")
+    name: str = Field(..., description="Workout plan name")
+    description: str = Field(..., description="Plan description")
+    exercises: List[Dict[str, Any]] = Field(default_factory=list)
+    duration_minutes: int = Field(..., ge=5, le=300)
+    difficulty_level: FitnessLevel
+    equipment_needed: List[Equipment] = Field(default_factory=list)
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class WorkoutLog(BaseModel):
-    model_config = {"from_attributes": True}
+    """User workout completion tracking"""
 
-    id: str
-    user_id: str
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    user_id: str = Field(..., description="User who completed the workout")
     plan_id: Optional[str] = None
-    exercises: list[dict[str, Any]]
-    duration_minutes: int
+    workout_name: str = Field(..., description="Name of the workout")
+    completed_at: datetime = Field(default_factory=datetime.utcnow)
     notes: Optional[str] = None
-    rating: Optional[int] = None
-    completed_at: datetime
-    created_at: datetime
+    rating: Optional[int] = Field(None, ge=1, le=5)
+
+    # Exercise tracking
+    exercises_completed: List[Dict[str, Any]] = Field(default_factory=list)
+    total_duration_minutes: int = Field(..., ge=1)
 
 
 class ProgressMetrics(BaseModel):
-    model_config = {"from_attributes": True}
+    """User progress tracking and analytics"""
 
-    id: str
-    user_id: str
-    date: datetime
-    weight: Optional[float]
-    body_fat: Optional[float]
-    measurements: Optional[dict]
-    notes: Optional[str]
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    user_id: str = Field(..., description="User these metrics belong to")
+    metric_date: date = Field(default_factory=date.today)
+
+    # Workout metrics
+    workouts_completed: int = Field(default=0, ge=0)
+    total_workout_time_minutes: int = Field(default=0, ge=0)
+    average_workout_rating: Optional[float] = Field(None, ge=1.0, le=5.0)
+
+    # Streak tracking
+    current_streak_days: int = Field(default=0, ge=0)
+    longest_streak_days: int = Field(default=0, ge=0)
+
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class AICoachMessage(BaseModel):
-    model_config = {"from_attributes": True}
+    """AI coach conversation tracking"""
 
-    id: str
-    user_id: str
-    message: str
-    response: str
-    context: Optional[dict]
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    user_id: str = Field(..., description="User in the conversation")
+    message: str = Field(..., description="Message content")
+    is_user_message: bool = Field(..., description="True if from user, False if from AI")
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
 
-
-class ChatMessage(BaseModel):
-    id: str
-    user_id: str
-    message: str
-    response: str
-    created_at: datetime
-
-
-class AIProviderPriority(BaseModel):
-    model_config = {"protected_namespaces": ()}  # Allow model_ fields
-
-    id: str
-    provider_name: str  # openai, gemini, perplexity
-    model_name: str  # gpt-4o, gemini-2.5-flash, etc.
-    priority: int = 1  # 1 = highest priority
-    is_enabled: bool = True
-    max_daily_cost: Optional[float] = None
-    max_weekly_cost: Optional[float] = None
-    max_monthly_cost: Optional[float] = None
-    created_at: datetime
-    updated_at: datetime
+    # AI metadata
+    model_used: Optional[str] = None
+    tokens_used: Optional[int] = None
+    response_time_ms: Optional[int] = None
 
 
 class BudgetSettings(BaseModel):
-    id: str
-    total_weekly_budget: float  # dollars
-    total_monthly_budget: float  # dollars
-    alert_threshold_percentage: float = 80.0  # alert when 80% of budget used
-    auto_disable_on_budget_exceeded: bool = True
-    created_at: datetime
-    updated_at: datetime
+    """Budget management for AI API usage"""
+
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    user_id: str = Field(..., description="User this budget applies to")
+
+    # Budget limits (in USD)
+    max_daily_cost: Optional[float] = None
+    max_weekly_cost: Optional[float] = None
+    max_monthly_cost: Optional[float] = None
+
+    # Current usage tracking
+    daily_cost_used: float = Field(default=0.0, ge=0)
+    weekly_cost_used: float = Field(default=0.0, ge=0)
+    monthly_cost_used: float = Field(default=0.0, ge=0)
+
+    # Metadata
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    last_reset_date: date = Field(default_factory=date.today)
 
 
 class AIUsageLog(BaseModel):
-    model_config = {"protected_namespaces": ()}  # Allow model_ fields
+    """Track AI/LLM API usage for cost management and analytics"""
 
-    id: str
-    user_id: str | None  # Track per-user usage
-    provider_name: str  # openai, gemini, perplexity
-    model_name: str  # specific model used
-    endpoint: str  # chat, completion, etc.
-    input_tokens: int
-    output_tokens: int
-    cost: float  # calculated cost in USD
-    response_time_ms: int
-    success: bool
-    error_message: str | None = None
-    created_at: datetime
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    user_id: Optional[str] = None  # Track per-user usage
+    provider: str = Field(..., description="AI provider used (openai, gemini, etc.)")
+    model: str = Field(..., description="Specific model used")
+    endpoint: str = Field(..., description="API endpoint called")
+    tokens_used: int = Field(..., ge=0, description="Number of tokens consumed")
+    cost_usd: float = Field(..., ge=0, description="Cost in USD")
+    response_time_ms: int = Field(..., ge=0, description="Response time in milliseconds")
+    success: bool = Field(..., description="Whether the request was successful")
+    error_message: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Additional metadata for debugging and optimization
+    request_metadata: Optional[Dict[str, Any]] = None
+    response_metadata: Optional[Dict[str, Any]] = None
 
 
 class AdminSettings(BaseModel):
-    id: str
-    key: str  # setting name
-    value: str  # JSON string for complex values
-    description: str | None = None
-    created_at: datetime
-    updated_at: datetime
+    """Admin configuration for LLM providers and budgets"""
+
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    setting_key: str = Field(..., description="Configuration key")
+    setting_value: str = Field(..., description="Configuration value")
+    description: Optional[str] = None
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-class UserUsageLimits(BaseModel):
-    id: int
+class BudgetUsage(BaseModel):
+    """Current budget usage status"""
+
     user_id: str
-    daily_requests_used: int = 0
-    weekly_requests_used: int = 0
-    monthly_requests_used: int = 0
-    last_reset_date: date | None = None
-    created_at: datetime
-    updated_at: datetime
+    tier: UserTier
+    daily_cost_used: float = 0.0
+    weekly_cost_used: float = 0.0
+    monthly_cost_used: float = 0.0
+    last_reset_date: Optional[date] = None
+
+    daily_limit: Optional[float] = None
+    weekly_limit: Optional[float] = None
+    monthly_limit: Optional[float] = None
+
+    is_over_daily_limit: bool = False
+    is_over_weekly_limit: bool = False
+    is_over_monthly_limit: bool = False
 
 
-class UserTierLimits(BaseModel):
-    id: int
-    tier_name: str
-    daily_limit: int
-    weekly_limit: int
-    monthly_limit: int
-    monthly_budget: float
-    created_at: datetime
-    updated_at: datetime
+class AIProviderPriority(BaseModel):
+    """AI provider priority configuration for admin management"""
+
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    provider_name: str = Field(..., description="Provider name (openai, gemini, etc.)")
+    model_name: str = Field(..., description="Specific model name")
+    priority: int = Field(..., description="Priority order (1 = highest)")
+    is_enabled: bool = Field(default=True, description="Whether provider is enabled")
+
+    # Cost limits
+    max_daily_cost: Optional[float] = None
+    max_weekly_cost: Optional[float] = None
+    max_monthly_cost: Optional[float] = None
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)

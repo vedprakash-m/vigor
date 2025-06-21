@@ -4,7 +4,7 @@ Provides admin and user-facing endpoints for the LLM orchestration layer
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -33,17 +33,17 @@ class LLMRequest(BaseModel):
     prompt: str = Field(
         ..., min_length=1, max_length=50000, description="The prompt to send to the LLM"
     )
-    task_type: str | None = Field(
+    task_type: Optional[str] = Field(
         None, description="Type of task (chat, coding, analysis, etc.)"
     )
-    max_tokens: int | None = Field(
+    max_tokens: Optional[int] = Field(
         None, ge=1, le=32000, description="Maximum tokens to generate"
     )
-    temperature: float | None = Field(
+    temperature: Optional[float] = Field(
         None, ge=0.0, le=2.0, description="Temperature for response generation"
     )
     stream: bool = Field(False, description="Whether to stream the response")
-    metadata: dict[str, Any] | None = Field(None, description="Additional metadata")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
 class LLMResponse(BaseModel):
@@ -56,16 +56,16 @@ class LLMResponse(BaseModel):
     latency_ms: int
     cached: bool
     user_id: str
-    metadata: dict[str, Any] | None = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class SystemStatusResponse(BaseModel):
     active_models: int
     total_models: int
-    circuit_breakers: dict[str, Any]
-    cache_stats: dict[str, Any]
-    budget_status: dict[str, Any]
-    providers: dict[str, Any]
+    circuit_breakers: Dict[str, Any]
+    cache_stats: Dict[str, Any]
+    budget_status: Dict[str, Any]
+    providers: Dict[str, Any]
 
 
 class ModelConfigRequest(BaseModel):
@@ -90,8 +90,8 @@ class ModelConfigRequest(BaseModel):
 class RoutingRuleRequest(BaseModel):
     rule_id: str = Field(..., description="Unique identifier for the rule")
     name: str = Field(..., description="Human-readable name")
-    conditions: dict[str, Any] = Field(..., description="Conditions for rule matching")
-    target_models: list[str] = Field(
+    conditions: Dict[str, Any] = Field(..., description="Conditions for rule matching")
+    target_models: List[str] = Field(
         ..., description="Target model IDs in priority order"
     )
     weight: float = Field(1.0, ge=0, description="Rule weight for prioritization")
@@ -104,13 +104,13 @@ class ABTestRequest(BaseModel):
     description: str = Field(..., description="Test description")
     start_date: datetime = Field(..., description="Test start date")
     end_date: datetime = Field(..., description="Test end date")
-    traffic_split: dict[str, float] = Field(
+    traffic_split: Dict[str, float] = Field(
         ..., description="Traffic split between variants"
     )
-    model_variants: dict[str, list[str]] = Field(
+    model_variants: Dict[str, List[str]] = Field(
         ..., description="Model variants for each test group"
     )
-    success_metrics: list[str] = Field(
+    success_metrics: List[str] = Field(
         default_factory=list, description="Metrics to track"
     )
 
@@ -122,13 +122,13 @@ class BudgetConfigRequest(BaseModel):
     reset_period: str = Field(
         ..., description="Budget reset period (daily, weekly, monthly, quarterly)"
     )
-    alert_thresholds: list[float] = Field(
+    alert_thresholds: List[float] = Field(
         default_factory=lambda: [0.5, 0.8, 0.95], description="Alert thresholds"
     )
     auto_disable_at_limit: bool = Field(
         True, description="Auto-disable when limit reached"
     )
-    user_groups: list[str] = Field(
+    user_groups: List[str] = Field(
         default_factory=list, description="User groups (empty = global)"
     )
 
@@ -136,8 +136,8 @@ class BudgetConfigRequest(BaseModel):
 class UsageReportRequest(BaseModel):
     start_date: datetime
     end_date: datetime
-    user_id: str | None = None
-    group_by: str | None = Field(
+    user_id: Optional[str] = None
+    group_by: Optional[str] = Field(
         None, description="Group by: user, model, provider, day"
     )
 
@@ -472,7 +472,7 @@ async def create_budget_configuration(
 async def get_usage_report(
     start_date: datetime,
     end_date: datetime,
-    user_id: str | None = None,
+    user_id: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
     """

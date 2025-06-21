@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from database.models import ProgressMetrics
 from database.sql_models import ProgressMetricsDB
-from domain.repositories.base import Repository
+from domain.repositories.base import BaseRepository as Repository
 
 
 class SQLAlchemyProgressRepository(Repository[ProgressMetrics]):

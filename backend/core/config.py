@@ -1,6 +1,11 @@
+"""
+Application configuration with environment variable support.
+Compatible with Python 3.9+ using Optional instead of Union syntax.
+"""
+
 import os
 from functools import lru_cache
-from typing import ClassVar
+from typing import ClassVar, List, Optional
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
@@ -9,58 +14,56 @@ load_dotenv()
 
 
 class Settings(BaseSettings):
-    # Application
+    """Application settings with validation."""
+
+    # Core application settings
     APP_NAME: str = "Vigor"
-    APP_VERSION: str = "0.1.0"
-    DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
+    APP_VERSION: str = "1.0.0"
+    DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
 
-    # Security
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-here")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    ALGORITHM: str = "HS256"
-
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./vigor.db")
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL", "sqlite:///./vigor.db"
+    )  # Fallback for dev
 
-    # LLM Provider Configuration
-    LLM_PROVIDER: str = os.getenv(
-        "LLM_PROVIDER", "openai"
-    )  # openai, gemini, perplexity
+    # Authentication
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # OpenAI
-    OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
-    OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+    # AI Provider APIs - all optional, fallback gracefully
+    OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "fallback")
 
-    # Google Gemini
-    GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    # Alternative AI providers
+    GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
+    ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
 
-    # Perplexity
-    PERPLEXITY_API_KEY: str | None = os.getenv("PERPLEXITY_API_KEY")
-    PERPLEXITY_MODEL: str = os.getenv(
-        "PERPLEXITY_MODEL", "llama-3.1-sonar-small-128k-online"
+    # Perplexity AI
+    PERPLEXITY_API_KEY: Optional[str] = os.getenv("PERPLEXITY_API_KEY")
+
+    # Azure Functions
+    AZURE_FUNCTIONS_BASE_URL: str = os.getenv(
+        "AZURE_FUNCTIONS_BASE_URL", "http://localhost:7071"
     )
 
-    # Redis
-    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    # Redis Configuration (optional - will use in-memory if not available)
+    REDIS_URL: str = os.getenv("REDIS_URL", "memory://")
 
-    # CORS
-    CORS_ORIGINS: list[str] = [
-        "http://localhost:3000",  # Frontend development server
-        "http://localhost:8000",  # Backend development server
-    ]
+    # Azure Key Vault
+    AZURE_KEY_VAULT_URL: str = os.getenv("AZURE_KEY_VAULT_URL", "")
 
-    # Add any additional CORS origins from environment.
-    # Use a leading underscore and ClassVar to signal this should not be treated
-    # as a Pydantic model field.
-    _cors_origins_env: ClassVar[str | None] = os.getenv("CORS_ORIGINS")
-
-    if _cors_origins_env:
-        CORS_ORIGINS.extend(_cors_origins_env.split(","))
+    # CORS settings
+    _cors_origins_env: ClassVar[Optional[str]] = os.getenv("CORS_ORIGINS")
+    CORS_ORIGINS: List[str] = (
+        _cors_origins_env.split(",") if _cors_origins_env else ["http://localhost:5173"]
+    )
 
     class Config:
-        case_sensitive = True
+        """Pydantic configuration."""
+
+        env_file = ".env"
+        extra = "ignore"  # Ignore extra fields from .env
 
 
 @lru_cache

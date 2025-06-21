@@ -3,11 +3,13 @@ Admin Configuration Manager
 Handles enterprise-grade configuration management for LLM orchestration
 """
 
+import asyncio
 import logging
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Optional, List
 
 from .key_vault import SecretReference
 
@@ -124,13 +126,15 @@ class RateLimitConfiguration:
 
 @dataclass
 class UserTierConfiguration:
-    """User/tenant tier configuration"""
+    """Configuration for a specific user tier"""
 
     tier_id: str
-    name: str
-    model_access: list[str]  # Model IDs accessible to this tier
+    tier_name: str
+    priority: int
+    budget_allocation: Optional[float] = None
+    rate_limit_requests_per_minute: int = 60
+    model_access: list[str] = field(default_factory=list)
     priority_boost: int = 0  # Priority modifier
-    budget_allocation: float | None = None
     rate_limit_multiplier: float = 1.0
     custom_routing_rules: list[str] = field(default_factory=list)
     api_key_overrides: dict[str, SecretReference] = field(default_factory=dict)
@@ -233,9 +237,9 @@ class AdminConfigManager:
         """Get all active model configurations"""
         return [config for config in self.models.values() if config.is_active]
 
-    def get_models_by_priority(
-        self, priority: ModelPriority | None = None
-    ) -> list[ModelConfiguration]:
+    async def get_routing_priority(
+        self, priority: Optional[ModelPriority] = None
+    ) -> List[ModelConfiguration]:
         """Get models filtered by priority"""
         models = self.get_active_models()
         if priority:
@@ -342,7 +346,7 @@ class AdminConfigManager:
 
     def get_budget_for_user_group(
         self, user_groups: list[str]
-    ) -> BudgetConfiguration | None:
+    ) -> BudgetConfiguration] = None:
         """Get budget configuration for specific user groups"""
         # Find most specific budget (smallest user_groups list that matches)
         matching_budgets = []
@@ -374,7 +378,7 @@ class AdminConfigManager:
             logger.error(f"Failed to create user tier {tier_config.tier_id}: {e}")
             return False
 
-    def get_user_tier(self, tier_id: str) -> UserTierConfiguration | None:
+    def get_user_tier(self, tier_id: str) -> UserTierConfiguration] = None:
         """Get user tier configuration"""
         return self.user_tiers.get(tier_id)
 
@@ -513,10 +517,12 @@ class AdminConfigManager:
         """Serialize user tier for export"""
         return {
             "tier_id": tier.tier_id,
-            "name": tier.name,
+            "tier_name": tier.tier_name,
+            "priority": tier.priority,
+            "budget_allocation": tier.budget_allocation,
+            "rate_limit_requests_per_minute": tier.rate_limit_requests_per_minute,
             "model_access": tier.model_access,
             "priority_boost": tier.priority_boost,
-            "budget_allocation": tier.budget_allocation,
             "rate_limit_multiplier": tier.rate_limit_multiplier,
             "custom_routing_rules": tier.custom_routing_rules,
             "api_key_overrides": {

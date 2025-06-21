@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Optional, Union
 
 # Third-party imports
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
@@ -219,7 +219,7 @@ async def login(
 
 
 class RefreshRequest(BaseModel):
-    refresh_token: str | None = None
+    refresh_token: Optional[str] = None
 
 
 @router.post("/refresh", response_model=Token, summary="Refresh Access Token")

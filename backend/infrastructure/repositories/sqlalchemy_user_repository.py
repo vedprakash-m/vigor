@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from database.models import UserProfile
 from database.sql_models import UserProfileDB
-from domain.repositories.base import Repository
+from domain.repositories.base import BaseRepository as Repository
 
 
 class SQLAlchemyUserRepository(Repository[UserProfile]):
@@ -15,7 +15,7 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
     def __init__(self, session: Session):  # noqa: D401
         self._session = session
 
-    async def get(self, entity_id: str) -> UserProfile | None:
+    async def get(self, entity_id: str) -> UserProfile] = None:
         record = (
             self._session.query(UserProfileDB)
             .filter(UserProfileDB.id == entity_id)

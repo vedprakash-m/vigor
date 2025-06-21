@@ -26,7 +26,7 @@ from database.connection import SessionLocal
 logger = logging.getLogger(__name__)
 
 # Global gateway instance
-_gateway: LLMGateway | None = None
+_gateway: LLMGateway] = None = None
 
 
 async def initialize_llm_orchestration():

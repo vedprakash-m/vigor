@@ -9,7 +9,7 @@ import uuid
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional, Union
 
 from .adapters import (
     AdapterFactory,
@@ -41,14 +41,14 @@ class GatewayRequest:
 
     prompt: str
     user_id: str
-    task_type: str | None = None
-    user_tier: str | None = None
-    session_id: str | None = None
-    max_tokens: int | None = None
-    temperature: float | None = None
+    task_type: Optional[str] = None
+    user_tier: Optional[str] = None
+    session_id: Optional[str] = None
+    max_tokens: Optional[int] = None
+    temperature: Optional[float] = None
     stream: bool = False
     priority: int = 0  # Higher = more priority
-    metadata: dict[str, Any] | None = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 @dataclass
@@ -63,9 +63,9 @@ class GatewayResponse:
     cost_estimate: float
     latency_ms: int
     cached: bool = False
-    user_id: str | None = None
-    session_id: str | None = None
-    metadata: dict[str, Any] | None = None
+    user_id: Optional[str] = None
+    session_id: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class LLMGateway:
@@ -94,7 +94,7 @@ class LLMGateway:
         self.analytics = AnalyticsCollector(db_session)
 
         # Runtime state
-        self.adapters: dict[str, LLMServiceAdapter] = {}
+        self.adapters: Dict[str, LLMServiceAdapter] = {}
         self.is_initialized = False
         self._health_check_interval = 60  # seconds
         self._last_health_check = 0.0
@@ -278,7 +278,7 @@ class LLMGateway:
                 self.circuit_breaker.record_failure(selected_adapter.model_id)
             raise
 
-    async def get_provider_status(self) -> dict[str, Any]:
+    async def get_provider_status(self) -> Dict[str, Any]:
         """Get current status of all providers"""
         if not self.is_initialized:
             return {"error": "Gateway not initialized"}
@@ -288,7 +288,7 @@ class LLMGateway:
         if current_time - self._last_health_check > self._health_check_interval:
             await self._perform_health_check()
 
-        status: dict[str, Any] = {
+        status: Dict[str, Any] = {
             "active_models": len([a for a in self.adapters.values() if a.is_healthy()]),
             "total_models": len(self.adapters),
             "circuit_breakers": self.circuit_breaker.get_status(),
@@ -393,7 +393,7 @@ class LLMGateway:
             metadata=request.metadata,
         )
 
-    async def _check_cache(self, request: LLMRequest) -> LLMResponse | None:
+    async def _check_cache(self, request: LLMRequest) -> Optional[LLMResponse]:
         """Check if response is cached"""
         try:
             return await self.cache_manager.get(request)
@@ -521,7 +521,7 @@ class LLMGateway:
 
     async def _handle_error_fallback(
         self, request: GatewayRequest, request_id: str, error_message: str
-    ) -> GatewayResponse | None:
+    ) -> Optional[GatewayResponse]:
         """Handle error with fallback response"""
         try:
             if "fallback" in self.adapters:
@@ -590,7 +590,7 @@ class LLMGateway:
 
 
 # Global gateway instance
-gateway: LLMGateway | None = None
+gateway: Optional[LLMGateway] = None
 
 
 async def initialize_gateway(

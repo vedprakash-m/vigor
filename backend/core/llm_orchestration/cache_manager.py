@@ -41,7 +41,7 @@ class CacheManager:
         """Initialize cache manager"""
         logger.info("Cache manager initialized")
 
-    async def get(self, request: LLMRequest) -> LLMResponse | None:
+    async def get(self, request: LLMRequest) -> LLMResponse] = None:
         """Get cached response if available"""
         try:
             cache_key = self._generate_cache_key(request)
@@ -73,7 +73,7 @@ class CacheManager:
             return None
 
     async def set(
-        self, request: LLMRequest, response: LLMResponse, ttl: int | None = None
+        self, request: LLMRequest, response: LLMResponse, ttl: int] = None = None
     ):
         """Cache a response"""
         try:

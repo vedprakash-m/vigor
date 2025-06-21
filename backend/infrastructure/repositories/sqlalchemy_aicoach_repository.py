@@ -5,14 +5,14 @@ from sqlalchemy.orm import Session
 
 from database.models import AICoachMessage
 from database.sql_models import AICoachMessageDB
-from domain.repositories.base import Repository
+from domain.repositories.base import BaseRepository as Repository
 
 
 class SQLAlchemyAICoachMessageRepository(Repository[AICoachMessage]):
     def __init__(self, session: Session):
         self._session = session
 
-    async def get(self, entity_id: str) -> AICoachMessage | None:
+    async def get(self, entity_id: str) -> AICoachMessage] = None:
         rec = (
             self._session.query(AICoachMessageDB)
             .filter(AICoachMessageDB.id == entity_id)

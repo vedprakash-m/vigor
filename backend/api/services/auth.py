@@ -22,8 +22,8 @@ from core.security import (
     verify_token,
 )
 from database.connection import get_db
-from database.models import UserProfile
-from database.sql_models import UserProfileDB, UserTier
+from database.models import UserProfile, UserTier
+from database.sql_models import UserProfileDB
 
 settings = get_settings()
 security = HTTPBearer()

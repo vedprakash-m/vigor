@@ -3,7 +3,7 @@ AI module for fitness coaching and workout plan generation.
 """
 
 import json
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 from core.admin_llm_manager import AdminLLMManager
 from core.config import get_settings
@@ -15,11 +15,11 @@ settings = get_settings()
 
 async def generate_workout_plan(
     user_profile: UserProfile,
-    goals: list[str] | None = None,
-    equipment: str | None = None,
+    goals: Optional[List[str]] = None,
+    equipment: Optional[str] = None,
     duration_minutes: int = 45,
-    focus_areas: list[str] | None = None,
-) -> dict[str, Any]:
+    focus_areas: Optional[List[str]] = None,
+) -> Dict[str, Any]:
     """
     Generate personalized workout plan using AI.
     """
@@ -119,7 +119,7 @@ Provide the workout plan in this exact JSON structure:
 async def get_ai_coach_response(
     user_profile: UserProfile,
     message: str,
-    conversation_history: list[dict[Any, Any]] | None = None,
+    conversation_history: Optional[List[Dict[Any, Any]]] = None,
 ) -> str:
     """
     Get response from AI fitness coach.
@@ -171,8 +171,8 @@ User's message: {message}
 
 
 async def analyze_workout_log(
-    user_profile: UserProfile, workout_data: dict[str, Any]
-) -> dict[str, Any]:
+    user_profile: UserProfile, workout_data: Dict[str, Any]
+) -> Dict[str, Any]:
     """
     Analyze a completed workout and provide feedback.
     """

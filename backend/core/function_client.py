@@ -5,7 +5,7 @@ This module handles the communication with the Azure Functions
 
 import logging
 import os
-from typing import Any
+from typing import Any, Dict, List, Optional, Union
 
 import httpx
 
@@ -32,7 +32,7 @@ perf_monitor = FunctionPerformanceMonitor()
 class FunctionsClient:
     """Client for interacting with Azure Functions."""
 
-    def __init__(self, base_url: str | None = None):
+    def __init__(self, base_url: Optional[str] = None):
         """Initialize the client."""
         self.base_url = base_url or FUNCTIONS_API_URL
         # Remove trailing slash if present
@@ -40,8 +40,8 @@ class FunctionsClient:
             self.base_url = self.base_url[:-1]
 
     async def _call_function(
-        self, endpoint: str, payload: dict[str, Any], timeout: int = 30
-    ) -> dict[str, Any]:
+        self, endpoint: str, payload: Dict[str, Any], timeout: int = 30
+    ) -> Dict[str, Any]:
         """Call an Azure Function endpoint."""
         url = f"{self.base_url}/{endpoint}"
 
@@ -88,11 +88,11 @@ class FunctionsClient:
     async def generate_workout_plan(
         self,
         fitness_level: str,
-        goals: list[str],
-        equipment: str | None = None,
+        goals: List[str],
+        equipment: Optional[str] = None,
         duration_minutes: int = 45,
-        focus_areas: list[str] | None = None,
-    ) -> dict[str, Any]:
+        focus_areas: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
         """Call the GenerateWorkout function."""
         payload = {
             "fitness_level": fitness_level,
@@ -113,10 +113,10 @@ class FunctionsClient:
 
     async def analyze_workout(
         self,
-        workout_data: dict[str, Any],
+        workout_data: Dict[str, Any],
         user_fitness_level: str,
-        previous_workouts: list[dict[str, Any]] | None = None,
-    ) -> dict[str, Any]:
+        previous_workouts: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
         """Call the AnalyzeWorkout function."""
         payload = {
             "workout_data": workout_data,
@@ -137,8 +137,8 @@ class FunctionsClient:
         self,
         message: str,
         fitness_level: str,
-        goals: list[str],
-        conversation_history: list[dict[str, str]] | None = None,
+        goals: List[str],
+        conversation_history: Optional[List[Dict[str, str]]] = None,
     ) -> str:
         """Call the CoachChat function."""
         payload = {

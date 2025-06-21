@@ -7,14 +7,14 @@ from sqlalchemy.orm import Session
 
 from database.models import WorkoutPlan
 from database.sql_models import WorkoutPlanDB
-from domain.repositories.base import Repository
+from domain.repositories.base import BaseRepository as Repository
 
 
 class SQLAlchemyWorkoutPlanRepository(Repository[WorkoutPlan]):
     def __init__(self, session: Session):
         self._session = session
 
-    async def get(self, entity_id: str) -> WorkoutPlan | None:
+    async def get(self, entity_id: str) -> WorkoutPlan] = None:
         record = (
             self._session.query(WorkoutPlanDB)
             .filter(WorkoutPlanDB.id == entity_id)
