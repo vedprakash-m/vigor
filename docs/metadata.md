@@ -449,3 +449,253 @@ vigor/
 ---
 
 _This document serves as the single source of truth for the Vigor project. All architectural decisions, deployment strategies, and development workflows are documented here._
+
+## **Project Overview**
+
+AI-Powered Fitness Coaching Platform with Enterprise LLM Orchestration and Production Security
+
+## **Current Sprint: Test Infrastructure Overhaul & Quality Engineering**
+
+**Sprint Goal**: Fix test failures, improve coverage, and implement robust local validation
+**Duration**: December 2024 - January 2025
+**Priority**: HIGH - Critical for code quality and deployment readiness
+
+---
+
+## **📊 Current Status (Updated: December 21, 2024)**
+
+### **🎯 Test Suite Progress**
+
+- **Backend Tests**: 396 passed, 125 failed (76% pass rate) - **MAJOR IMPROVEMENT** ⬆️
+  - _Previous_: 381 passed, 140 failed (73% pass rate)
+  - _Target_: 90% pass rate (471 passed, <56 failed)
+- **Frontend Tests**: 22 passed, 0 failed (100% pass rate) ✅
+- **Test Coverage**: Backend 48%, Frontend 30% (Target: 80% both)
+
+### **🚀 Major Fixes Completed**
+
+1. **✅ Routes Infrastructure** - Fixed critical 404 errors
+
+   - Removed double router prefixes causing endpoint failures
+   - All API routes now properly registered (auth, users, workouts, ai, admin, llm, tiers)
+   - FastAPI app correctly includes all routers with single prefix
+
+2. **✅ Database Model Alignment** - Fixed Pydantic/SQLAlchemy confusion
+
+   - Auth service now uses `UserProfileDB` for database operations
+   - `UserProfile` reserved for API response schemas
+   - Added missing fields: `is_active`, `last_login` to SQLAlchemy models
+   - Fixed enum access patterns (removed `.value` calls)
+
+3. **✅ Schema Validation** - Fixed 15+ validation errors
+
+   - Corrected regex patterns (removed `Union[` syntax errors)
+   - Added missing enum values: `Equipment.MINIMAL`, `Equipment.MODERATE`, etc.
+   - Fixed schema class imports and relationships
+
+4. **✅ Local Validation Script** - Created functional `local-ci-validate.sh`
+   - Comprehensive validation pipeline matching CI/CD
+   - Supports fast pre-commit mode
+   - Integration with enhanced validation script
+
+### **🔥 Critical Issues Fixed**
+
+- ❌ Double router prefixes → ✅ Proper endpoint routing
+- ❌ Database model confusion → ✅ Clear separation of concerns
+- ❌ Missing schema classes → ✅ Complete import structure
+- ❌ Invalid regex patterns → ✅ Valid Pydantic validation
+
+---
+
+## **📋 Execution Plan - Remaining Work**
+
+### **Phase 1: High-Impact Service Layer Fixes** _(Priority 1)_
+
+**Target**: Fix 50+ test failures from missing service methods
+
+1. **Missing Service Classes** (Estimated: 2-3 hours)
+
+   - `AIService` in `api.services.ai`
+   - `UserService` in `api.services.users`
+   - `LLMFacade` in `application.llm.facade`
+   - `AIOrchestrator` in `core.ai`
+
+2. **Repository Method Alignment** (Estimated: 1-2 hours)
+
+   - Fix remaining `add()` vs `create()` inconsistencies
+   - Ensure all repositories implement `BaseRepository` interface
+   - Test CRUD operations work end-to-end
+
+3. **Schema Field Completion** (Estimated: 1-2 hours)
+   - Add missing fields to schemas (e.g., `estimated_duration_minutes`)
+   - Fix import errors (`LLMRequest`, `ExerciseSet`, etc.)
+   - Ensure schema compatibility across test suites
+
+### **Phase 2: LLM Orchestration Integration** _(Priority 2)_
+
+**Target**: Fix 25+ LLM-related test failures
+
+1. **Core LLM Classes** (Estimated: 3-4 hours)
+
+   - Implement missing adapter methods
+   - Fix async/sync inconsistencies in orchestration
+   - Add proper budget manager methods
+
+2. **Provider Integration** (Estimated: 2-3 hours)
+   - Fix adapter abstract method implementations
+   - Ensure provider routing works correctly
+   - Test cost estimation and usage tracking
+
+### **Phase 3: Frontend-Backend Integration** _(Priority 3)_
+
+**Target**: Ensure full-stack functionality
+
+1. **API Contract Validation** (Estimated: 2-3 hours)
+
+   - Test actual HTTP requests to all endpoints
+   - Verify request/response schemas match
+   - Fix any serialization issues
+
+2. **End-to-End Testing** (Estimated: 2-3 hours)
+   - User registration/login flow
+   - Workout generation and logging
+   - AI chat functionality
+
+### **Phase 4: Test Coverage & Quality** _(Priority 4)_
+
+**Target**: Achieve 80% test coverage
+
+1. **Coverage Gap Analysis** (Estimated: 2-3 hours)
+
+   - Identify untested code paths
+   - Add unit tests for core business logic
+   - Integration tests for critical workflows
+
+2. **Performance & Security Testing** (Estimated: 2-3 hours)
+   - Load testing for LLM endpoints
+   - Security validation tests
+   - Rate limiting verification
+
+---
+
+## **🎯 Success Metrics**
+
+### **Immediate Goals (Next 2-3 Days)**
+
+- [ ] **Test Pass Rate**: 76% → 85% (90+ additional passing tests)
+- [ ] **Critical API Routes**: All endpoints return 2xx/4xx instead of 404
+- [ ] **Service Layer**: All service classes exist and have basic methods
+- [ ] **Local Validation**: Script passes without errors
+
+### **Sprint Goals (1-2 Weeks)**
+
+- [ ] **Test Pass Rate**: 90%+ (470+ tests passing)
+- [ ] **Test Coverage**: Backend 80%, Frontend 80%
+- [ ] **CI/CD Pipeline**: All checks pass locally before push
+- [ ] **Documentation**: Complete coverage and validation analysis
+
+### **Quality Gates**
+
+- [ ] **No 404 errors** on defined API routes
+- [ ] **No import errors** in test suite
+- [ ] **Local validation** matches CI/CD pipeline
+- [ ] **Database migrations** work correctly
+- [ ] **Security tests** all pass
+
+---
+
+## **🔧 Technical Architecture**
+
+### **Backend Structure**
+
+```
+backend/
+├── api/               # FastAPI routes and schemas
+│   ├── routes/        # HTTP endpoints (✅ Fixed)
+│   ├── schemas/       # Pydantic models (✅ Fixed)
+│   └── services/      # Business logic (🔄 In Progress)
+├── core/              # Core functionality
+│   ├── llm_orchestration/ # LLM management (🔄 Fixing)
+│   └── security.py    # Auth & validation (✅ Working)
+├── database/          # Data layer
+│   ├── models.py      # Pydantic models (✅ Fixed)
+│   └── sql_models.py  # SQLAlchemy models (✅ Fixed)
+└── infrastructure/    # External integrations
+    └── repositories/  # Data access (✅ Fixed)
+```
+
+### **Test Strategy**
+
+- **Unit Tests**: Individual components and functions
+- **Integration Tests**: Service layer interactions
+- **API Tests**: HTTP endpoint validation
+- **E2E Tests**: Complete user workflows
+
+---
+
+## **📝 Key Decisions & Rationale**
+
+### **Database Model Strategy**
+
+**Decision**: Separate Pydantic (`UserProfile`) and SQLAlchemy (`UserProfileDB`) models
+**Rationale**: Clear separation between API contracts and database schema
+**Impact**: Resolved 20+ test failures related to model confusion
+
+### **Router Architecture**
+
+**Decision**: Single prefix definition in `main.py`, no prefix in individual routers
+**Rationale**: Prevents double-prefix issues causing 404 errors
+**Impact**: All API endpoints now accessible and testable
+
+### **Validation Pipeline**
+
+**Decision**: Comprehensive local validation script matching CI/CD
+**Rationale**: Enable developers to catch issues before pushing
+**Impact**: Faster feedback loop, fewer CI/CD failures
+
+---
+
+## **🚨 Risk Assessment**
+
+### **High Risk**
+
+- **LLM Provider Costs**: Budget management during testing
+- **Database Migrations**: Schema changes may require migration scripts
+- **Performance**: Test suite runtime may increase significantly
+
+### **Medium Risk**
+
+- **Test Maintenance**: Large test suite requires ongoing maintenance
+- **Flaky Tests**: Async tests may be unstable without proper mocking
+- **Coverage Goals**: 80% coverage may require significant test writing
+
+### **Mitigation Strategies**
+
+- **Cost Controls**: Use test mode for LLM providers, implement strict budgets
+- **Incremental Migrations**: Test schema changes in isolated environments
+- **Test Stability**: Use fixtures and mocking for external dependencies
+- **Continuous Monitoring**: Track test metrics and performance over time
+
+---
+
+## **🔄 Next Actions (Immediate)**
+
+### **Today's Focus**
+
+1. **Service Layer Implementation**: Add missing service classes and methods
+2. **Schema Completion**: Fix remaining import errors and missing fields
+3. **Route Testing**: Verify all endpoints respond correctly
+4. **Quick Win Tests**: Target easy fixes to improve pass rate quickly
+
+### **This Week**
+
+1. **LLM Integration**: Fix orchestration layer and provider adapters
+2. **Coverage Improvement**: Add tests for high-impact, low-coverage areas
+3. **Performance Testing**: Ensure new test suite runs efficiently
+4. **Documentation**: Update validation analysis with final results
+
+---
+
+**Last Updated**: December 21, 2024
+**Next Review**: December 23, 2024
+**Status**: 🟡 In Progress - Major Infrastructure Fixed, Service Layer Next

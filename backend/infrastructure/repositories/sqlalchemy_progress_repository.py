@@ -62,3 +62,8 @@ class SQLAlchemyProgressRepository(Repository[ProgressMetrics]):
         query = self._session.query(ProgressMetricsDB).order_by(desc(ProgressMetricsDB.date))
         records = query.offset(offset).limit(limit).all()
         return [ProgressMetrics.model_validate(r) for r in records]
+
+    # Alias for backward compatibility
+    async def add(self, entity: ProgressMetrics) -> ProgressMetrics:
+        """Alias for create method."""
+        return await self.create(entity)

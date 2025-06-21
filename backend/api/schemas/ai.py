@@ -27,6 +27,20 @@ class AICoachMessage(BaseModel):
     response_time_ms: Optional[int] = None
 
 
+class LLMRequest(BaseModel):
+    """LLM request schema for API endpoints"""
+
+    prompt: str
+    user_id: Optional[str] = None
+    session_id: Optional[str] = None
+    task_type: Optional[str] = None
+    max_tokens: Optional[int] = None
+    temperature: Optional[float] = None
+    stream: bool = False
+    context: Optional[dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
+
+
 class WorkoutRecommendationRequest(BaseModel):
     """Request for workout recommendations"""
 

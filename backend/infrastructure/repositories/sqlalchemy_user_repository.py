@@ -65,3 +65,8 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
         query = self._session.query(UserProfileDB).offset(offset).limit(limit)
         records = query.all()
         return [UserProfile.model_validate(r) for r in records]
+
+    # Alias for backward compatibility
+    async def add(self, entity: UserProfile) -> UserProfile:
+        """Alias for create method."""
+        return await self.create(entity)

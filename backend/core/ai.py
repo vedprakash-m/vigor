@@ -229,3 +229,38 @@ Provide analysis in this exact JSON structure:
             "recommendations": ["Please try the analysis again later"],
             "next_steps": "Continue with your fitness routine",
         }
+
+
+class AIOrchestrator:
+    """Orchestrator class for AI operations."""
+
+    def __init__(self, db=None):
+        self.db = db
+
+    async def generate_workout_plan(
+        self,
+        user_profile: UserProfile,
+        goals: Optional[list[str]] = None,
+        equipment: Optional[str] = None,
+        duration_minutes: int = 45,
+        focus_areas: Optional[list[str]] = None,
+    ) -> dict[str, Any]:
+        """Generate workout plan."""
+        return await generate_workout_plan(
+            user_profile, goals, equipment, duration_minutes, focus_areas
+        )
+
+    async def get_coach_response(
+        self,
+        user_profile: UserProfile,
+        message: str,
+        conversation_history: Optional[list[dict[Any, Any]]] = None,
+    ) -> str:
+        """Get AI coach response."""
+        return await get_ai_coach_response(user_profile, message, conversation_history)
+
+    async def analyze_workout(
+        self, user_profile: UserProfile, workout_data: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Analyze workout log."""
+        return await analyze_workout_log(user_profile, workout_data)

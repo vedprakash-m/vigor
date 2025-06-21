@@ -171,3 +171,7 @@ class LLMGatewayFacade:
             session_id=original.session_id,
             metadata=original.metadata,
         )
+
+
+# Alias for tests that expect LLMFacade
+LLMFacade = LLMGatewayFacade

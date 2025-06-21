@@ -61,3 +61,30 @@ async def get_user_progress(
     """Get user progress metrics."""
     repo = SQLAlchemyProgressRepository(db)
     return await repo.list(user_id=user_id, limit=limit)
+
+
+class UserService:
+    """User service class for handling user-related operations."""
+
+    def __init__(self, db: Session):
+        self.db = db
+
+    async def get_profile(self, user_id: str) -> UserProfile:
+        """Get user profile."""
+        return await get_user_profile(self.db, user_id)
+
+    async def update_profile(self, user_id: str, update_data: dict) -> UserProfile:
+        """Update user profile."""
+        return await update_user_profile(self.db, user_id, update_data)
+
+    async def create_progress_metric(self, user_id: str, metric_data: dict) -> ProgressMetrics:
+        """Create progress metric."""
+        return await create_progress_metric(self.db, user_id, metric_data)
+
+    async def get_progress(self, user_id: str, limit: int = 50) -> list[ProgressMetrics]:
+        """Get user progress."""
+        return await get_user_progress(self.db, user_id, limit)
+
+
+# Alias for tests that expect UsersService
+UsersService = UserService

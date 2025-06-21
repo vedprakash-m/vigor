@@ -206,3 +206,44 @@ async def get_conversation_history(
     """Get user's conversation history with AI coach."""
     repo = SQLAlchemyAICoachMessageRepository(db)
     return await repo.list(user_id=user_id, limit=limit)
+
+
+class AIService:
+    """AI service class for handling AI-related operations."""
+
+    def __init__(self, db: Session):
+        self.db = db
+
+    async def chat_with_coach(
+        self,
+        user: UserProfile,
+        message: str,
+        conversation_history: Optional[list[dict[str, str]]] = None
+    ) -> str:
+        """Chat with AI coach."""
+        return await chat_with_ai_coach(self.db, user, message, conversation_history)
+
+    async def generate_workout_plan(
+        self,
+        user: UserProfile,
+        goals: Optional[list[str]] = None,
+        equipment: Optional[str] = None,
+        duration_minutes: int = 45,
+        focus_areas: Optional[list[str]] = None,
+    ) -> dict[str, Any]:
+        """Generate AI workout plan."""
+        return await generate_ai_workout_plan(
+            self.db, user, goals, equipment, duration_minutes, focus_areas
+        )
+
+    async def analyze_workout(
+        self, user: UserProfile, workout_log_id: str
+    ) -> dict[str, Any]:
+        """Analyze user workout."""
+        return await analyze_user_workout(self.db, user, workout_log_id)
+
+    async def get_conversation_history(
+        self, user_id: str, limit: int = 20
+    ) -> list[AICoachMessage]:
+        """Get conversation history."""
+        return await get_conversation_history(self.db, user_id, limit)
