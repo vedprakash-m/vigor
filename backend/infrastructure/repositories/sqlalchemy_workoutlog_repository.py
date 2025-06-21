@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from database.models import WorkoutLog
 from database.sql_models import WorkoutLogDB
-from domain.repositories.base import BaseRepository as Repository
+from domain.repositories.base import BaseRepository
 
 
-class SQLAlchemyWorkoutLogRepository(Repository[WorkoutLog]):
+class SQLAlchemyWorkoutLogRepository(BaseRepository[WorkoutLog]):
     def __init__(self, session: Session):
         self._session = session
 

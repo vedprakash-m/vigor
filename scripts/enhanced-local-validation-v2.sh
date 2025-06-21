@@ -35,11 +35,17 @@ print_error() {
 FIX_MODE=true
 SKIP_TESTS=false
 SKIP_E2E=false
+CI_MODE=false
 
 for arg in "$@"; do
     case $arg in
         --check-only)
             FIX_MODE=false
+            ;;
+        --ci-mode)
+            FIX_MODE=false
+            CI_MODE=true
+            print_step "🤖 CI MODE: Running validation exactly like CI/CD pipeline"
             ;;
         --skip-tests)
             SKIP_TESTS=true
@@ -51,6 +57,7 @@ for arg in "$@"; do
             echo "Usage: $0 [options]"
             echo "Options:"
             echo "  --check-only     Only check formatting, don't fix"
+            echo "  --ci-mode        Run exactly like CI/CD (strict validation)"
             echo "  --skip-tests     Skip running tests"
             echo "  --skip-e2e       Skip E2E tests (requires servers)"
             echo "  --help           Show this help"
@@ -145,10 +152,20 @@ if [ "$FIX_MODE" = true ]; then
     print_success "Import sorting applied"
 else
     print_step "Checking Black formatting (check-only mode)"
-    black --check --diff .
+    if black --check --diff .; then
+        print_success "Black formatting check passed"
+    else
+        print_error "Black formatting check failed - files need formatting"
+        exit 1
+    fi
 
     print_step "Checking isort import sorting (check-only mode)"
-    isort --check-only --diff .
+    if isort --check-only --diff .; then
+        print_success "Import sorting check passed"
+    else
+        print_error "Import sorting check failed - imports need sorting"
+        exit 1
+    fi
 fi
 
 # Run quality checks
@@ -156,14 +173,25 @@ print_step "Running flake8 linting"
 if flake8 .; then
     print_success "Flake8 linting passed"
 else
-    print_error "Flake8 linting failed"
-    exit 1
+    if [ "$CI_MODE" = true ]; then
+        print_error "Flake8 linting failed - this will fail CI/CD"
+        exit 1
+    else
+        print_warning "Flake8 found issues (not blocking in local mode)"
+    fi
 fi
 
 print_step "Running MyPy type checking"
-mypy . --ignore-missing-imports || {
-    print_warning "MyPy found type issues (not blocking)"
-}
+if mypy . --ignore-missing-imports; then
+    print_success "MyPy type checking passed"
+else
+    if [ "$CI_MODE" = true ]; then
+        print_error "MyPy type checking failed - this will fail CI/CD"
+        exit 1
+    else
+        print_warning "MyPy found type issues (not blocking in local mode)"
+    fi
+fi
 
 print_step "Running Safety vulnerability check"
 if safety check; then
@@ -171,6 +199,36 @@ if safety check; then
 else
     print_error "Safety found vulnerabilities in dependencies"
     exit 1
+fi
+
+# Additional CI-mode checks
+if [ "$CI_MODE" = true ]; then
+    print_step "🤖 CI MODE: Additional strict validation"
+
+    # Check for any unstaged changes that might cause CI/CD issues
+    if ! git diff --quiet; then
+        print_error "Unstaged changes detected - commit all changes before CI/CD"
+        exit 1
+    fi
+
+    # Verify all imports can be resolved
+    print_step "🤖 CI MODE: Verifying all Python imports"
+    if ! python -c "
+import sys
+import os
+sys.path.insert(0, os.getcwd())
+try:
+    import main
+    print('✅ Main module imports successfully')
+except Exception as e:
+    print(f'❌ Import error: {e}')
+    sys.exit(1)
+"; then
+        print_error "Import validation failed - this will fail CI/CD"
+        exit 1
+    fi
+
+    print_success "🤖 CI MODE: All strict validations passed - CI/CD will succeed"
 fi
 
 cd ..

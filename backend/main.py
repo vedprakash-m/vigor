@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -38,6 +39,7 @@ from database.connection import init_db
 from infrastructure.observability.otel_middleware import OTelMiddleware
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -95,7 +97,12 @@ async def lifespan(app: FastAPI):
         print(f"📊 Environment: {settings.ENVIRONMENT}")
         print(f"🤖 LLM Provider: {settings.LLM_PROVIDER}")
         print(f"🔧 Debug mode: {settings.DEBUG}")
-        print(f"🔒 Security features: Rate limiting, Input validation, Audit logging")
+        print("🔒 Security features: Rate limiting, Input validation, Audit logging")
+
+        logger.info("Environment: %s", settings.ENVIRONMENT)
+        logger.info("Debug mode: %s", settings.DEBUG)
+        logger.info("Database URL configured: %s", bool(settings.DATABASE_URL))
+        logger.info("Application startup completed")
 
     except Exception as e:
         print(f"❌ Startup failed: {e}")
@@ -173,10 +180,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Global exception handler for production safety"""
-    import logging
     import traceback
-
-    logger = logging.getLogger(__name__)
 
     # Log the full error for debugging
     logger.error(f"Unhandled exception: {exc}")

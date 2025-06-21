@@ -4,17 +4,18 @@ Target: High-impact modules with low coverage for maximum ROI
 Current: 48% → Target: 60%+ with strategic expansion
 """
 
-import pytest
-from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 from fastapi import HTTPException, status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 # Import testable modules (not main app which has issues)
 from core.config import get_settings
-from core.security import get_password_hash, verify_password, create_access_token
-from database.models import UserProfile, UserTier, FitnessLevel, Goal
+from core.security import create_access_token, get_password_hash, verify_password
+from database.models import FitnessLevel, Goal, UserProfile, UserTier
 
 
 class TestConfigurationExpansion:
@@ -24,8 +25,8 @@ class TestConfigurationExpansion:
         """Test settings creation and basic properties"""
         settings = get_settings()
         assert settings is not None
-        assert hasattr(settings, 'DATABASE_URL')
-        assert hasattr(settings, 'SECRET_KEY')
+        assert hasattr(settings, "DATABASE_URL")
+        assert hasattr(settings, "SECRET_KEY")
 
     def test_settings_caching(self):
         """Test that settings are cached properly"""
@@ -78,7 +79,7 @@ class TestDatabaseModelsExpansion:
             goals=[Goal.WEIGHT_LOSS],
             preferences={},
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
 
         assert profile.id == "test123"
@@ -121,14 +122,14 @@ class TestServiceLayerExpansion:
 
     def test_auth_service_instantiation(self):
         """Test AuthService can be instantiated"""
-        with patch('api.services.auth.AuthService') as MockAuthService:
+        with patch("api.services.auth.AuthService") as MockAuthService:
             mock_db = Mock()
             service = MockAuthService(mock_db)
             assert service is not None
 
     def test_user_service_instantiation(self):
         """Test UserService can be instantiated"""
-        with patch('api.services.users.UserService') as MockUserService:
+        with patch("api.services.users.UserService") as MockUserService:
             service = MockUserService()
             assert service is not None
 
@@ -136,7 +137,7 @@ class TestServiceLayerExpansion:
 class TestApplicationLayerExpansion:
     """Test application layer components"""
 
-    @patch('application.llm.facade.LLMFacade')
+    @patch("application.llm.facade.LLMFacade")
     def test_llm_facade_mock(self, mock_facade):
         """Test LLM facade can be mocked"""
         facade = mock_facade()
@@ -149,6 +150,7 @@ class TestApplicationLayerExpansion:
         """Test routing engine can be imported"""
         try:
             from application.llm.routing_engine import LLMRoutingEngine
+
             assert LLMRoutingEngine is not None
         except ImportError:
             pytest.skip("LLMRoutingEngine not available")
@@ -160,9 +162,12 @@ class TestInfrastructureExpansion:
     def test_repository_base_import(self):
         """Test base repository can be imported"""
         from domain.repositories.base import BaseRepository
+
         assert BaseRepository is not None
 
-    @patch('infrastructure.repositories.sqlalchemy_user_repository.SQLAlchemyUserRepository')
+    @patch(
+        "infrastructure.repositories.sqlalchemy_user_repository.SQLAlchemyUserRepository"
+    )
     def test_user_repository_mock(self, mock_repo):
         """Test user repository can be mocked"""
         repo = mock_repo()

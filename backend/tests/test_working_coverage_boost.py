@@ -4,14 +4,15 @@ Focus on modules that can be tested without import issues
 Target: Boost coverage from 48% to 55%+ with stable tests
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
+
+import pytest
 
 # Import only stable, working modules
 from core.config import get_settings
-from core.security import get_password_hash, verify_password, create_access_token
-from database.models import UserProfile, UserTier, FitnessLevel, Goal
+from core.security import create_access_token, get_password_hash, verify_password
+from database.models import FitnessLevel, Goal, UserProfile, UserTier
 
 
 class TestConfigExpansion:
@@ -22,7 +23,7 @@ class TestConfigExpansion:
         settings = get_settings()
         assert settings is not None
         # Test that it has expected attributes
-        expected_attrs = ['DATABASE_URL', 'SECRET_KEY', 'ACCESS_TOKEN_EXPIRE_MINUTES']
+        expected_attrs = ["DATABASE_URL", "SECRET_KEY", "ACCESS_TOKEN_EXPIRE_MINUTES"]
         for attr in expected_attrs:
             assert hasattr(settings, attr)
 
@@ -99,7 +100,11 @@ class TestModelExpansion:
 
     def test_fitness_level_enum_complete(self):
         """Test all FitnessLevel enum values"""
-        levels = [FitnessLevel.BEGINNER, FitnessLevel.INTERMEDIATE, FitnessLevel.ADVANCED]
+        levels = [
+            FitnessLevel.BEGINNER,
+            FitnessLevel.INTERMEDIATE,
+            FitnessLevel.ADVANCED,
+        ]
         level_values = [level.value for level in levels]
 
         assert "beginner" in level_values
@@ -129,7 +134,7 @@ class TestModelExpansion:
             goals=[Goal.WEIGHT_LOSS],
             preferences={},
             created_at=now,
-            updated_at=now
+            updated_at=now,
         )
 
         # Test all basic attributes
@@ -158,7 +163,7 @@ class TestModelExpansion:
             goals=[Goal.WEIGHT_LOSS, Goal.MUSCLE_GAIN, Goal.ENDURANCE],
             preferences={"workout_days": 5, "intensity": "high"},
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
 
         assert len(profile.goals) == 3
@@ -204,7 +209,7 @@ class TestEdgeCases:
 class TestMockableComponents:
     """Test components that can be easily mocked"""
 
-    @patch('core.security.get_password_hash')
+    @patch("core.security.get_password_hash")
     def test_password_hash_mocking(self, mock_hash):
         """Test that password hashing can be mocked"""
         mock_hash.return_value = "mocked_hash"
@@ -213,7 +218,7 @@ class TestMockableComponents:
         assert result == "mocked_hash"
         mock_hash.assert_called_once_with("password")
 
-    @patch('core.security.create_access_token')
+    @patch("core.security.create_access_token")
     def test_token_creation_mocking(self, mock_create):
         """Test that token creation can be mocked"""
         mock_create.return_value = "mocked_token"
@@ -222,7 +227,7 @@ class TestMockableComponents:
         assert result == "mocked_token"
         mock_create.assert_called_once_with({"sub": "user"})
 
-    @patch('core.config.get_settings')
+    @patch("core.config.get_settings")
     def test_settings_mocking(self, mock_settings):
         """Test that settings can be mocked"""
         mock_config = Mock()

@@ -281,11 +281,12 @@ async def forgot_password(request: Request, email: str, db: Session = Depends(ge
 
         # Validate email format
         try:
-            validated_input = UserInputValidator(
+            validate_input = UserInputValidator(
                 email=email,
                 username="temp",  # Not used
                 password="TempPass123!",  # Not used
             )
+            validated_email = validate_input.email
         except Exception as validation_error:
             await SecurityAuditLogger.log_suspicious_activity(
                 request,
@@ -295,7 +296,7 @@ async def forgot_password(request: Request, email: str, db: Session = Depends(ge
             raise HTTPException(status_code=422, detail="Invalid email format")
 
         auth_service = AuthService(db)
-        await auth_service.request_password_reset(validated_input.email)
+        await auth_service.request_password_reset(validated_email)
 
         # Always return success to prevent email enumeration
         # But log the actual result for monitoring
@@ -303,7 +304,7 @@ async def forgot_password(request: Request, email: str, db: Session = Depends(ge
             request,
             user_id=None,
             success=True,
-            reason=f"password_reset_requested: {validated_input.email}",
+            reason=f"password_reset_requested: {validated_email}",
         )
 
         return {"message": "If the email exists, a reset link has been sent"}
