@@ -14,7 +14,7 @@ class SQLAlchemyWorkoutLogRepository(Repository[WorkoutLog]):
     def __init__(self, session: Session):
         self._session = session
 
-    async def get(self, entity_id: str) -> WorkoutLog] = None:  # noqa: D401
+    async def get(self, entity_id: str) -> Optional[WorkoutLog]:  # noqa: D401
         rec = (
             self._session.query(WorkoutLogDB)
             .filter(WorkoutLogDB.id == entity_id)

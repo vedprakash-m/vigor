@@ -7,6 +7,7 @@ import logging
 import time
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,7 @@ class CircuitBreakerManager:
             self.add_model(model_id)
         logger.info(f"Initialized circuit breakers for {len(model_ids)} models")
 
-    def add_model(self, model_id: str, config: CircuitBreakerConfig] = None = None):
+    def add_model(self, model_id: str, config: Optional[CircuitBreakerConfig] = None):
         """Add circuit breaker for a model"""
         self._circuits[model_id] = CircuitBreakerState(
             state=CircuitState.CLOSED,

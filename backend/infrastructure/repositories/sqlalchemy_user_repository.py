@@ -15,7 +15,7 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
     def __init__(self, session: Session):  # noqa: D401
         self._session = session
 
-    async def get(self, entity_id: str) -> UserProfile] = None:
+    async def get(self, entity_id: str) -> Optional[UserProfile]:
         record = (
             self._session.query(UserProfileDB)
             .filter(UserProfileDB.id == entity_id)

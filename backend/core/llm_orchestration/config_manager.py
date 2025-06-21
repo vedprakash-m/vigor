@@ -346,7 +346,7 @@ class AdminConfigManager:
 
     def get_budget_for_user_group(
         self, user_groups: list[str]
-    ) -> BudgetConfiguration] = None:
+    ) -> Optional[BudgetConfiguration]:
         """Get budget configuration for specific user groups"""
         # Find most specific budget (smallest user_groups list that matches)
         matching_budgets = []
@@ -378,7 +378,7 @@ class AdminConfigManager:
             logger.error(f"Failed to create user tier {tier_config.tier_id}: {e}")
             return False
 
-    def get_user_tier(self, tier_id: str) -> UserTierConfiguration] = None:
+    def get_user_tier(self, tier_id: str) -> Optional[UserTierConfiguration]:
         """Get user tier configuration"""
         return self.user_tiers.get(tier_id)
 

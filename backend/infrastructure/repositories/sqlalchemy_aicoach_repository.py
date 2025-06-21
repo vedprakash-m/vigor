@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from database.models import AICoachMessage
 from database.sql_models import AICoachMessageDB
@@ -12,7 +13,7 @@ class SQLAlchemyAICoachMessageRepository(Repository[AICoachMessage]):
     def __init__(self, session: Session):
         self._session = session
 
-    async def get(self, entity_id: str) -> AICoachMessage] = None:
+    async def get(self, entity_id: str) -> Optional[AICoachMessage]:
         rec = (
             self._session.query(AICoachMessageDB)
             .filter(AICoachMessageDB.id == entity_id)
