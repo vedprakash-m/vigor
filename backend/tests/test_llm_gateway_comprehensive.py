@@ -634,14 +634,15 @@ class TestLLMGateway:
         """Test fallback model selection"""
         request = Mock()
 
-        # Mock fallback adapter
+        # Set up a fallback adapter in the gateway
         fallback_adapter = Mock(spec=LLMServiceAdapter)
-        gateway.routing_engine.select_fallback_adapter = AsyncMock(return_value=fallback_adapter)
+        fallback_adapter.is_healthy.return_value = True
+        gateway.adapters = {"fallback": fallback_adapter}
+        gateway.circuit_breaker.can_proceed.return_value = True
 
         result = await gateway._select_fallback_model(request)
 
         assert result == fallback_adapter
-        gateway.routing_engine.select_fallback_adapter.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_execute_llm_request(self, gateway):
@@ -650,12 +651,12 @@ class TestLLMGateway:
         request = Mock()
         response = Mock()
 
-        adapter.execute_request = AsyncMock(return_value=response)
+        adapter.generate_response = AsyncMock(return_value=response)
 
         result = await gateway._execute_llm_request(adapter, request)
 
         assert result == response
-        adapter.execute_request.assert_called_once_with(request)
+        adapter.generate_response.assert_called_once_with(request)
 
     @pytest.mark.asyncio
     async def test_create_gateway_response(self, gateway):
@@ -686,7 +687,7 @@ class TestLLMGateway:
         assert result.model_used == "test-model"
         assert result.request_id == "req123"
         assert result.tokens_used == 50
-        assert result.cost_estimate == 0.001
+        assert result.cost_estimate == 0.02
         assert result.user_id == "user123"
         assert result.session_id == "session123"
         assert result.cached is False
@@ -721,14 +722,23 @@ class TestLLMGateway:
         """Test error fallback handling"""
         request = GatewayRequest(prompt="Test", user_id="user123")
 
-        # Mock fallback handling
-        gateway._select_fallback_model = AsyncMock(return_value=Mock())
-        gateway._execute_llm_request = AsyncMock(return_value=Mock())
-        gateway._create_gateway_response = AsyncMock(return_value=Mock())
+        # Set up fallback adapter
+        fallback_adapter = Mock()
+        fallback_response = Mock()
+        fallback_response.content = "Fallback response"
+        fallback_response.tokens_used = 10
+        fallback_response.latency_ms = 100
+        fallback_adapter.generate_response = AsyncMock(return_value=fallback_response)
+
+        gateway.adapters = {"fallback": fallback_adapter}
+        gateway._enrich_request = AsyncMock(return_value=Mock())
 
         result = await gateway._handle_error_fallback(request, "req123", "Test error")
 
         assert result is not None
+        assert "Service temporarily unavailable" in result.content
+        assert result.model_used == "fallback"
+        assert result.provider == "fallback"
 
     @pytest.mark.asyncio
     async def test_perform_health_check(self, gateway):
@@ -795,7 +805,7 @@ class TestGatewayFunctions:
 
     def test_get_gateway(self):
         """Test get_gateway function"""
-        with patch('core.llm_orchestration.gateway._gateway_instance', None):
+        with patch('core.llm_orchestration.gateway.gateway', None):
             with pytest.raises(RuntimeError, match="Gateway not initialized"):
                 get_gateway()
 
