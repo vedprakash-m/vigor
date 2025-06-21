@@ -169,6 +169,7 @@ class TestLifecycleManagement:
             async with lifespan(app):
                 pass
 
+    @pytest.mark.asyncio
     @patch.dict("os.environ", {"USE_FUNCTIONS": "true"})
     @patch("main.init_db")
     @patch("main.initialize_llm_orchestration")
@@ -181,12 +182,17 @@ class TestLifecycleManagement:
         mock_init_db.return_value = None
         mock_init_llm.return_value = AsyncMock()
         mock_functions.return_value = Mock()
-        mock_perf.keep_warm.return_value = AsyncMock()
+
+        # Create a proper async coroutine for keep_warm with correct signature
+        async def mock_keep_warm(warmup_func=None, function_name=None, interval=None):
+            return True
+        mock_perf.keep_warm = mock_keep_warm
 
         async with lifespan(app):
             # Should initialize functions when enabled
             mock_functions.assert_called()
 
+    @pytest.mark.asyncio
     @patch.dict("os.environ", {"USE_FUNCTIONS": "false"})
     @patch("main.init_db")
     @patch("main.initialize_llm_orchestration")
