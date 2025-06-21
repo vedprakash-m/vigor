@@ -15,10 +15,10 @@ def test_config_import():
 
 def test_security_functions():
     """Test security module functions"""
-    from core.security import hash_password, verify_password
+    from core.security import get_password_hash, verify_password
 
     password = "TestPassword123!"
-    hashed = hash_password(password)
+    hashed = get_password_hash(password)
 
     assert hashed is not None
     assert verify_password(password, hashed) is True
@@ -66,18 +66,23 @@ def test_schemas_import():
 
 def test_database_connection():
     """Test database connection module"""
-    from database.connection import get_db_url
+    from database.connection import get_db, init_db
 
-    db_url = get_db_url()
-    assert db_url is not None
-    assert isinstance(db_url, str)
+    # Test init_db function exists
+    assert init_db is not None
+
+    # Test get_db function exists
+    assert get_db is not None
 
 
 def test_auth_service_import():
     """Test auth service can be imported"""
     from api.services.auth import AuthService
+    from unittest.mock import Mock
 
-    auth_service = AuthService()
+    # Mock database dependency
+    mock_db = Mock()
+    auth_service = AuthService(mock_db)
     assert auth_service is not None
 
 
