@@ -68,6 +68,15 @@ class ChatRequest(BaseModel):
     context: Optional[dict[str, Any]] = None
 
 
+class WorkoutAnalysisRequest(BaseModel):
+    """Request for workout analysis with body data"""
+
+    workout_data: str = Field(..., min_length=1, max_length=5000, description="Workout data to analyze")
+    analysis_type: Optional[str] = Field("performance", description="Type of analysis to perform")
+    include_recommendations: bool = Field(True, description="Whether to include recommendations")
+    workout_log_id: Optional[str] = Field(None, description="Optional workout log ID if analyzing existing log")
+
+
 class GeneratedWorkoutPlan(BaseModel):
     name: str
     description: str

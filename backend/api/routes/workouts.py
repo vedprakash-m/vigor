@@ -62,6 +62,17 @@ async def log_workout_session(
     return await log_workout(db, current_user.id, log_data.dict())
 
 
+# Route alias for test compatibility
+@router.post("/log", response_model=WorkoutLogResponse)
+async def log_workout_alias(
+    log_data: WorkoutLogCreate,
+    current_user: UserProfile = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Log a completed workout session (alias for /logs)."""
+    return await log_workout(db, current_user.id, log_data.dict())
+
+
 @router.get("/logs", response_model=list[WorkoutLogResponse])
 async def get_logs(
     limit: int = 50,
@@ -69,6 +80,17 @@ async def get_logs(
     db: Session = Depends(get_db),
 ):
     """Get user's workout history."""
+    return await get_user_workout_logs(db, current_user.id, limit)
+
+
+# Route alias for test compatibility
+@router.get("/history", response_model=list[WorkoutLogResponse])
+async def get_history(
+    limit: int = 50,
+    current_user: UserProfile = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Get user's workout history (alias for /logs)."""
     return await get_user_workout_logs(db, current_user.id, limit)
 
 

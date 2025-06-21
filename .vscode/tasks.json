@@ -1,103 +1,131 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Start Backend Server",
-            "type": "shell",
-            "command": "cd backend && source venv/bin/activate && LLM_PROVIDER=fallback OPENAI_API_KEY=sk-placeholder python main.py",
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "new"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Start Frontend Dev Server",
-            "type": "shell",
-            "command": "cd frontend && npm run dev",
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "new"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Run Backend Tests",
-            "type": "shell",
-            "command": "cd backend && source venv/bin/activate && pytest -v",
-            "group": "test",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Run Frontend Tests",
-            "type": "shell",
-            "command": "cd frontend && npm test",
-            "group": "test",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Format Backend Code",
-            "type": "shell",
-            "command": "cd backend && source venv/bin/activate && black . && isort .",
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "silent",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Format Frontend Code",
-            "type": "shell",
-            "command": "cd frontend && npm run lint:fix",
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "silent",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Docker Build Backend",
-            "type": "shell",
-            "command": "cd backend && docker build -t vigor-backend .",
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Install All Dependencies",
-            "type": "shell",
-            "command": "cd backend && source venv/bin/activate && pip install -r requirements.txt && cd ../frontend && npm install",
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Backend Server",
+      "type": "shell",
+      "command": "cd backend && source venv/bin/activate && LLM_PROVIDER=fallback OPENAI_API_KEY=sk-placeholder python main.py",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Frontend Dev Server",
+      "type": "shell",
+      "command": "cd frontend && npm run dev",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Backend Tests",
+      "type": "shell",
+      "command": "cd backend && source venv/bin/activate && pytest -v",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Run Frontend Tests",
+      "type": "shell",
+      "command": "cd frontend && npm test",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Format Backend Code",
+      "type": "shell",
+      "command": "cd backend && source venv/bin/activate && black . && isort .",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Format Frontend Code",
+      "type": "shell",
+      "command": "cd frontend && npm run lint:fix",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Docker Build Backend",
+      "type": "shell",
+      "command": "cd backend && docker build -t vigor-backend .",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Install All Dependencies",
+      "type": "shell",
+      "command": "cd backend && source venv/bin/activate && pip install -r requirements.txt && cd ../frontend && npm install",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "type": "func",
+      "label": "func: host start",
+      "command": "host start",
+      "problemMatcher": "$func-python-watch",
+      "isBackground": true,
+      "dependsOn": "pip install (functions)",
+      "options": {
+        "cwd": "${workspaceFolder}/functions"
+      }
+    },
+    {
+      "label": "pip install (functions)",
+      "type": "shell",
+      "osx": {
+        "command": "${config:azureFunctions.pythonVenv}/bin/python -m pip install -r requirements.txt"
+      },
+      "windows": {
+        "command": "${config:azureFunctions.pythonVenv}\\Scripts\\python -m pip install -r requirements.txt"
+      },
+      "linux": {
+        "command": "${config:azureFunctions.pythonVenv}/bin/python -m pip install -r requirements.txt"
+      },
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}/functions"
+      }
+    }
+  ]
 }

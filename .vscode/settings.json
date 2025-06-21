@@ -6,18 +6,18 @@
   "python.linting.flake8Enabled": true,
   "python.formatting.provider": "black",
   "python.sortImports.args": ["--profile", "black"],
-  
+
   // TypeScript/JavaScript settings
   "typescript.preferences.importModuleSpecifier": "relative",
   "javascript.preferences.importModuleSpecifier": "relative",
-  
+
   // Formatting settings
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.organizeImports": "explicit",
     "source.fixAll.eslint": "explicit"
   },
-  
+
   // File associations
   "files.associations": {
     "*.tf": "terraform",
@@ -25,15 +25,15 @@
     "Dockerfile*": "dockerfile",
     "docker-compose*.yml": "dockercompose"
   },
-  
+
   // Terraform settings
   "terraform.experimentalFeatures.validateOnSave": true,
   "terraform.experimentalFeatures.prefillRequiredFields": true,
-  
+
   // Git settings
   "git.autofetch": true,
   "git.enableSmartCommit": true,
-  
+
   // Explorer settings
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
@@ -42,15 +42,15 @@
     "package.json": "package-lock.json,yarn.lock,pnpm-lock.yaml",
     "requirements.txt": "requirements-dev.txt,requirements-prod.txt"
   },
-  
+
   // Workbench settings
   "workbench.colorTheme": "Default Dark+",
   "workbench.iconTheme": "material-icon-theme",
-  
+
   // Terminal settings
   "terminal.integrated.defaultProfile.osx": "zsh",
   "terminal.integrated.cwd": "${workspaceFolder}",
-  
+
   // Language-specific settings
   "[python]": {
     "editor.tabSize": 4,
@@ -72,7 +72,7 @@
     "editor.insertSpaces": true,
     "editor.rulers": [120]
   },
-  
+
   // Search settings
   "search.exclude": {
     "**/node_modules": true,
@@ -82,5 +82,11 @@
     "**/build": true,
     "**/__pycache__": true,
     "**/.git": true
-  }
-} 
+  },
+  "azureFunctions.deploySubpath": "functions",
+  "azureFunctions.scmDoBuildDuringDeployment": true,
+  "azureFunctions.pythonVenv": ".venv",
+  "azureFunctions.projectLanguage": "Python",
+  "azureFunctions.projectRuntime": "~4",
+  "debug.internalConsoleOptions": "neverOpen"
+}

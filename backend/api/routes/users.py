@@ -28,6 +28,16 @@ async def get_me(
     return current_user
 
 
+# Route alias for test compatibility
+@router.get("/profile", response_model=UserProfileResponse)
+async def get_profile(
+    current_user: UserProfile = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Get current user profile (alias for /me)."""
+    return current_user
+
+
 @router.put("/me", response_model=UserProfileResponse)
 async def update_me(
     profile_update: UserProfileUpdate,
@@ -35,6 +45,23 @@ async def update_me(
     db: Session = Depends(get_db),
 ):
     """Update current user profile."""
+    # Filter out None values
+    update_data = {k: v for k, v in profile_update.dict().items() if v is not None}
+
+    if not update_data:
+        return current_user
+
+    return await update_user_profile(db, current_user.id, update_data)
+
+
+# Route alias for test compatibility
+@router.put("/profile", response_model=UserProfileResponse)
+async def update_profile(
+    profile_update: UserProfileUpdate,
+    current_user: UserProfile = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Update current user profile (alias for /me)."""
     # Filter out None values
     update_data = {k: v for k, v in profile_update.dict().items() if v is not None}
 
@@ -61,6 +88,17 @@ async def get_my_progress(
     db: Session = Depends(get_db),
 ):
     """Get current user's progress metrics."""
+    return await get_user_progress(db, current_user.id, limit)
+
+
+# Route alias for test compatibility
+@router.get("/progress", response_model=list[ProgressMetricResponse])
+async def get_progress_alias(
+    limit: int = 50,
+    current_user: UserProfile = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Get current user's progress metrics (alias for /me/progress)."""
     return await get_user_progress(db, current_user.id, limit)
 
 

@@ -16,6 +16,68 @@ from database.models import UserTier
 router = APIRouter()
 
 
+@router.get("", response_model=dict[str, Any])
+async def get_available_tiers():
+    """Get all available tier options and their features"""
+    return {
+        "available_tiers": {
+            "free": {
+                "name": "Free",
+                "price": 0,
+                "daily_limit": 10,
+                "weekly_limit": 50,
+                "monthly_limit": 200,
+                "monthly_budget": 5.0,
+                "features": ["Basic AI coaching", "Simple workouts", "Basic analytics"],
+                "description": "Perfect for getting started with AI fitness coaching"
+            },
+            "premium": {
+                "name": "Premium",
+                "price": 9.99,
+                "daily_limit": 50,
+                "weekly_limit": 300,
+                "monthly_limit": 1000,
+                "monthly_budget": 25.0,
+                "features": [
+                    "Advanced AI coaching",
+                    "Custom workouts",
+                    "Progress tracking",
+                    "Nutrition advice",
+                ],
+                "description": "Enhanced features for serious fitness enthusiasts"
+            },
+            "unlimited": {
+                "name": "Unlimited",
+                "price": 29.99,
+                "daily_limit": 1000,
+                "weekly_limit": 5000,
+                "monthly_limit": 20000,
+                "monthly_budget": 100.0,
+                "features": [
+                    "Unlimited AI coaching",
+                    "Premium workouts",
+                    "Advanced analytics",
+                    "Personal trainer mode",
+                    "Priority support"
+                ],
+                "description": "Ultimate fitness experience with unlimited access"
+            },
+        },
+        "comparison": {
+            "ai_requests_per_month": {
+                "free": 200,
+                "premium": 1000,
+                "unlimited": 20000
+            },
+            "support_level": {
+                "free": "Community",
+                "premium": "Email",
+                "unlimited": "Priority"
+            }
+        }
+    }
+
+
 @router.get("/current", response_model=dict[str, Any])
 async def get_current_tier_info(
     current_user: UserResponse = Depends(get_current_user),
@@ -172,3 +234,13 @@ async def get_usage_analytics(
             ),
         },
     }
+
+
+# Route alias for test compatibility
+@router.get("/usage", response_model=dict[str, Any])
+async def get_usage_alias(
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get detailed usage analytics for the current user (alias for /usage-analytics)"""
+    return await get_usage_analytics(current_user, db)
