@@ -2,9 +2,11 @@
  * Comprehensive test suite for Chat components - Frontend coverage improvement
  */
 
-import { beforeEach, describe, expect, it, jest } from '@jest/globals'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import '@testing-library/jest-dom';
+import { render, screen } from '@testing-library/react';
+import React from 'react';
 
 // Mock the auth context
 const mockAuthContext = {

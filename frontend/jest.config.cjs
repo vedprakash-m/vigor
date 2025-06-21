@@ -25,9 +25,12 @@ module.exports = {
     '!src/services/authService.ts', // Exclude files with import.meta.env
     '!src/test-utils.tsx',
     '!src/pages/**', // Exclude untested pages for now
-    '!src/components/**', // Exclude untested components for now
     '!src/features/**', // Exclude untested features for now
     '!src/hooks/**', // Exclude untested hooks for now
+    // Include tested components and contexts
+    'src/contexts/AuthContext.tsx',
+    'src/components/Layout.tsx',
+    'src/components/LLMStatus.tsx',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
@@ -39,13 +42,11 @@ module.exports = {
     '<rootDir>/src/__tests__/performance/.*',
     '<rootDir>/src/__tests__/accessibility/.*',
     '<rootDir>/src/pages/AdminPage.test.tsx',
-    '<rootDir>/src/__tests__/contexts/.*',
     '<rootDir>/src/__tests__/components/ForgotPasswordPage.test.tsx',
     '<rootDir>/src/__tests__/pages/OnboardingPage.test.tsx',
     '<rootDir>/src/pages/SupportConsolePage.test.tsx',
     '<rootDir>/src/__tests__/services/.*',
     '<rootDir>/src/__tests__/integration/.*',
-    '<rootDir>/src/__tests__/components/.*',
     '<rootDir>/src/components/.*test\.tsx$',
     '<rootDir>/src/__tests__/pages/ProfilePage.test.tsx',
   ],

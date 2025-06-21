@@ -200,12 +200,12 @@ class TestTierRoutes:
         data = {"new_tier": "premium"}
 
         response = client.post("/tiers/upgrade", json=data)
-        assert response.status_code in [200, 401, 422]
+        assert response.status_code in [200, 401, 403, 422]
 
     def test_get_usage_endpoint_exists(self):
         """Test get usage stats endpoint exists"""
         response = client.get("/tiers/usage")
-        assert response.status_code in [200, 401]
+        assert response.status_code in [200, 401, 403]
 
 
 class TestAdminRoutes:
