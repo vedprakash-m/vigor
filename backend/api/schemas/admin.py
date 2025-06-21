@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -16,13 +15,13 @@ class AIProviderPriorityBase(BaseModel):
     is_enabled: bool = Field(
         default=True, description="Whether this provider is enabled"
     )
-    max_daily_cost: Optional[float] = Field(
+    max_daily_cost: float | None = Field(
         None, ge=0, description="Maximum daily cost limit"
     )
-    max_weekly_cost: Optional[float] = Field(
+    max_weekly_cost: float | None = Field(
         None, ge=0, description="Maximum weekly cost limit"
     )
-    max_monthly_cost: Optional[float] = Field(
+    max_monthly_cost: float | None = Field(
         None, ge=0, description="Maximum monthly cost limit"
     )
 
@@ -72,16 +71,16 @@ class AIUsageLogResponse(BaseModel):
     model_config = {"protected_namespaces": (), "from_attributes": True}
 
     id: str
-    user_id: Optional[str]
+    user_id: str | None
     provider_name: str
     model_name: str
     endpoint: str
-    request_tokens: Optional[int]
-    response_tokens: Optional[int]
+    request_tokens: int | None
+    response_tokens: int | None
     cost: float
     success: bool
-    error_message: Optional[str]
-    response_time_ms: Optional[int]
+    error_message: str | None
+    response_time_ms: int | None
     created_at: datetime
 
 
@@ -89,7 +88,7 @@ class AIUsageLogResponse(BaseModel):
 class AdminSettingsBase(BaseModel):
     key: str = Field(..., description="Setting key/name")
     value: str = Field(..., description="Setting value (JSON for complex data)")
-    description: Optional[str] = Field(None, description="Description of this setting")
+    description: str | None = Field(None, description="Description of this setting")
 
 
 class AdminSettingsCreate(AdminSettingsBase):
@@ -98,7 +97,7 @@ class AdminSettingsCreate(AdminSettingsBase):
 
 class AdminSettingsUpdate(BaseModel):
     value: str = Field(..., description="New setting value")
-    description: Optional[str] = Field(None, description="Updated description")
+    description: str | None = Field(None, description="Updated description")
 
 
 class AdminSettingsResponse(AdminSettingsBase):
@@ -117,8 +116,8 @@ class UsageStatsResponse(BaseModel):
     total_requests_today: int
     total_requests_week: int
     avg_cost_per_request: float
-    top_providers: List[Dict]
-    recent_usage: List[Dict]
+    top_providers: list[dict]
+    recent_usage: list[dict]
 
 
 class ProviderStatsResponse(BaseModel):
@@ -131,13 +130,13 @@ class ProviderStatsResponse(BaseModel):
     avg_cost_per_request: float
     success_rate: float
     avg_response_time_ms: float
-    last_used: Optional[datetime]
+    last_used: datetime | None
 
 
 class CostBreakdownResponse(BaseModel):
-    by_provider: List[Dict[str, float]]
-    by_day: List[Dict[str, float]]
-    by_user: List[Dict[str, float]]
+    by_provider: list[dict[str, float]]
+    by_day: list[dict[str, float]]
+    by_user: list[dict[str, float]]
     total_cost: float
     budget_remaining: float
     budget_usage_percentage: float
@@ -146,10 +145,10 @@ class CostBreakdownResponse(BaseModel):
 # System Health Schemas
 class SystemHealthResponse(BaseModel):
     status: str  # "healthy", "warning", "critical"
-    ai_providers_status: Dict[str, bool]
+    ai_providers_status: dict[str, bool]
     database_status: bool
     budget_status: str  # "ok", "warning", "exceeded"
-    recent_errors: List[str]
+    recent_errors: list[str]
     uptime_hours: float
     last_check: datetime
 
@@ -160,7 +159,7 @@ class AlertResponse(BaseModel):
     type: str  # "budget", "error", "performance"
     severity: str  # "info", "warning", "critical"
     message: str
-    data: Optional[Dict]
+    data: dict | None
     acknowledged: bool
     created_at: datetime
-    acknowledged_at: Optional[datetime]
+    acknowledged_at: datetime | None

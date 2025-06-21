@@ -2,7 +2,7 @@
 User tier management API routes
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,7 +16,7 @@ from database.models import UserTier
 router = APIRouter(prefix="/tiers", tags=["user-tiers"])
 
 
-@router.get("/current", response_model=Dict[str, Any])
+@router.get("/current", response_model=dict[str, Any])
 async def get_current_tier_info(
     current_user: UserResponse = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

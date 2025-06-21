@@ -1,7 +1,6 @@
 import logging
 import time
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple, Union
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -77,7 +76,7 @@ class BudgetMonitor:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_current_budget(self) -> Optional[BudgetSettingsDB]:
+    def get_current_budget(self) -> BudgetSettingsDB | None:
         """Get current budget settings."""
         return self.db.query(BudgetSettingsDB).first()
 
@@ -121,7 +120,7 @@ class BudgetMonitor:
 
     def check_budget_limits(
         self, provider: str, estimated_cost: float
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Check if request would exceed budget limits."""
         budget = self.get_current_budget()
         if not budget:
@@ -177,7 +176,7 @@ class AdminLLMManager:
             "fallback": FallbackProvider(),
         }
 
-    def get_provider_priorities(self) -> List[AIProviderPriorityDB]:
+    def get_provider_priorities(self) -> list[AIProviderPriorityDB]:
         """Get enabled providers ordered by priority."""
         return (
             self.db.query(AIProviderPriorityDB)
@@ -207,14 +206,14 @@ class AdminLLMManager:
         self,
         provider_name: str,
         model_name: str,
-        user_id: Optional[str],
+        user_id: str | None,
         endpoint: str,
         input_tokens: int,
         output_tokens: int,
         cost: float,
         response_time_ms: int,
         success: bool,
-        error_message: Optional[str] = None,
+        error_message: str | None = None,
     ):
         """Log AI usage for analytics and billing."""
         log_entry = AIUsageLogDB(
@@ -239,14 +238,14 @@ class AdminLLMManager:
 
     async def chat_completion(
         self,
-        messages: List[Dict[str, str]],
-        system_prompt: Optional[str] = None,
+        messages: list[dict[str, str]],
+        system_prompt: str | None = None,
         max_tokens: int = 500,
         temperature: float = 0.7,
         json_response: bool = False,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
         endpoint: str = "chat",
-    ) -> Tuple[str, float, str]:
+    ) -> tuple[str, float, str]:
         """
         Get chat completion with automatic provider fallback and budget monitoring.
 
@@ -356,7 +355,7 @@ class AdminLLMManager:
         )
 
 
-def get_admin_llm_manager(db: Union[Session, None] = None) -> AdminLLMManager:
+def get_admin_llm_manager(db: Session | None = None) -> AdminLLMManager:
     """Get admin LLM manager instance."""
     if db is None:
         db = next(get_db())

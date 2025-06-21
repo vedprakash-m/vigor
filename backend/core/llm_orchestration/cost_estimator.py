@@ -5,7 +5,7 @@ Advanced cost estimation and optimization for LLM usage
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ class CostEstimator:
             logger.warning(f"Cost estimation failed for {model_name}: {e}")
             return self._default_cost_breakdown(model_name, input_tokens, output_tokens)
 
-    def _get_model_pricing(self, model_name: str) -> Dict[str, Any]:
+    def _get_model_pricing(self, model_name: str) -> dict[str, Any]:
         """Get pricing for a model"""
         # Try exact match first
         if model_name in self.MODEL_PRICING:

@@ -7,7 +7,7 @@ import hashlib
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .adapters import LLMRequest, LLMResponse
 
@@ -31,7 +31,7 @@ class CacheManager:
     """
 
     def __init__(self):
-        self._cache: Dict[str, CacheEntry] = {}
+        self._cache: dict[str, CacheEntry] = {}
         self._max_size = 10000
         self._default_ttl = 3600  # 1 hour
         self._hits = 0
@@ -41,7 +41,7 @@ class CacheManager:
         """Initialize cache manager"""
         logger.info("Cache manager initialized")
 
-    async def get(self, request: LLMRequest) -> Optional[LLMResponse]:
+    async def get(self, request: LLMRequest) -> LLMResponse | None:
         """Get cached response if available"""
         try:
             cache_key = self._generate_cache_key(request)
@@ -73,7 +73,7 @@ class CacheManager:
             return None
 
     async def set(
-        self, request: LLMRequest, response: LLMResponse, ttl: Optional[int] = None
+        self, request: LLMRequest, response: LLMResponse, ttl: int | None = None
     ):
         """Cache a response"""
         try:
@@ -117,7 +117,7 @@ class CacheManager:
             key_to_remove = sorted_entries[i][0]
             del self._cache[key_to_remove]
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics"""
         total_requests = self._hits + self._misses
         hit_rate = (self._hits / total_requests * 100) if total_requests > 0 else 0

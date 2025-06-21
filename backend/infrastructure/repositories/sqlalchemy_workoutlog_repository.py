@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
 
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
@@ -15,7 +14,7 @@ class SQLAlchemyWorkoutLogRepository(Repository[WorkoutLog]):
     def __init__(self, session: Session):
         self._session = session
 
-    async def get(self, entity_id: str) -> Optional[WorkoutLog]:  # noqa: D401
+    async def get(self, entity_id: str) -> WorkoutLog | None:  # noqa: D401
         rec = (
             self._session.query(WorkoutLogDB)
             .filter(WorkoutLogDB.id == entity_id)
@@ -46,7 +45,7 @@ class SQLAlchemyWorkoutLogRepository(Repository[WorkoutLog]):
         self._session.refresh(rec)
         return WorkoutLog.model_validate(rec)
 
-    async def list(self, **filters) -> List[WorkoutLog]:
+    async def list(self, **filters) -> list[WorkoutLog]:
         user_id = filters.get("user_id")
         limit = filters.get("limit", 50)
         q = self._session.query(WorkoutLogDB)
@@ -55,7 +54,7 @@ class SQLAlchemyWorkoutLogRepository(Repository[WorkoutLog]):
         q = q.order_by(desc(WorkoutLogDB.completed_at)).limit(limit)
         return [WorkoutLog.model_validate(r) for r in q.all()]
 
-    async def list_dates(self, user_id: str) -> List[str]:
+    async def list_dates(self, user_id: str) -> list[str]:
         rows = (
             self._session.query(WorkoutLogDB.completed_at)
             .filter(WorkoutLogDB.user_id == user_id)

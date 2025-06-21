@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List, Optional
-
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
@@ -14,7 +12,7 @@ class SQLAlchemyAICoachMessageRepository(Repository[AICoachMessage]):
     def __init__(self, session: Session):
         self._session = session
 
-    async def get(self, entity_id: str) -> Optional[AICoachMessage]:
+    async def get(self, entity_id: str) -> AICoachMessage | None:
         rec = (
             self._session.query(AICoachMessageDB)
             .filter(AICoachMessageDB.id == entity_id)
@@ -44,7 +42,7 @@ class SQLAlchemyAICoachMessageRepository(Repository[AICoachMessage]):
         self._session.refresh(rec)
         return AICoachMessage.model_validate(rec)
 
-    async def list(self, **filters) -> List[AICoachMessage]:
+    async def list(self, **filters) -> list[AICoachMessage]:
         user_id = filters.get("user_id")
         limit = filters.get("limit", 20)
         q = self._session.query(AICoachMessageDB)

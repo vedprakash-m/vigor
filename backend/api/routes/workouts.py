@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -24,7 +22,7 @@ from database.models import UserProfile
 router = APIRouter(prefix="/workouts", tags=["workouts"])
 
 
-@router.get("/plans", response_model=List[WorkoutPlanResponse])
+@router.get("/plans", response_model=list[WorkoutPlanResponse])
 async def list_plans(
     limit: int = 50,
     current_user: UserProfile = Depends(get_current_active_user),
@@ -64,7 +62,7 @@ async def log_workout_session(
     return await log_workout(db, current_user.id, log_data.dict())
 
 
-@router.get("/logs", response_model=List[WorkoutLogResponse])
+@router.get("/logs", response_model=list[WorkoutLogResponse])
 async def get_logs(
     limit: int = 50,
     current_user: UserProfile = Depends(get_current_active_user),
@@ -74,7 +72,7 @@ async def get_logs(
     return await get_user_workout_logs(db, current_user.id, limit)
 
 
-@router.get("/days", response_model=List[str])
+@router.get("/days", response_model=list[str])
 async def get_workout_days(
     current_user: UserProfile = Depends(get_current_active_user),
     db: Session = Depends(get_db),

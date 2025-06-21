@@ -1,6 +1,5 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
 
 import httpx
 from openai import AsyncOpenAI
@@ -16,8 +15,8 @@ class LLMProvider(ABC):
     @abstractmethod
     async def chat_completion(
         self,
-        messages: List[Dict[str, str]],
-        system_prompt: Optional[str] = None,
+        messages: list[dict[str, str]],
+        system_prompt: str | None = None,
         max_tokens: int = 500,
         temperature: float = 0.7,
         json_response: bool = False,
@@ -47,8 +46,8 @@ class OpenAIProvider(LLMProvider):
 
     async def chat_completion(
         self,
-        messages: List[Dict[str, str]],
-        system_prompt: Optional[str] = None,
+        messages: list[dict[str, str]],
+        system_prompt: str | None = None,
         max_tokens: int = 500,
         temperature: float = 0.7,
         json_response: bool = False,
@@ -94,8 +93,8 @@ class GeminiProvider(LLMProvider):
 
     async def chat_completion(
         self,
-        messages: List[Dict[str, str]],
-        system_prompt: Optional[str] = None,
+        messages: list[dict[str, str]],
+        system_prompt: str | None = None,
         max_tokens: int = 500,
         temperature: float = 0.7,
         json_response: bool = False,
@@ -166,8 +165,8 @@ class PerplexityProvider(LLMProvider):
 
     async def chat_completion(
         self,
-        messages: List[Dict[str, str]],
-        system_prompt: Optional[str] = None,
+        messages: list[dict[str, str]],
+        system_prompt: str | None = None,
         max_tokens: int = 500,
         temperature: float = 0.7,
         json_response: bool = False,
@@ -217,8 +216,8 @@ class FallbackProvider(LLMProvider):
 
     async def chat_completion(
         self,
-        messages: List[Dict[str, str]],
-        system_prompt: Optional[str] = None,
+        messages: list[dict[str, str]],
+        system_prompt: str | None = None,
         max_tokens: int = 500,
         temperature: float = 0.7,
         json_response: bool = False,

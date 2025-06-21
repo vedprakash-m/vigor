@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Dict, List
-
 from core.llm_orchestration.config_manager import AdminConfigManager
 from core.llm_orchestration.routing import RoutingStrategyEngine  # Bridge import
 
@@ -18,6 +16,6 @@ class RoutingEngine:
     def __init__(self, config_manager: AdminConfigManager):
         self._delegate = RoutingStrategyEngine(config_manager)
 
-    async def select_model(self, context: Dict[str, str], candidates: List[str]) -> str:
+    async def select_model(self, context: dict[str, str], candidates: list[str]) -> str:
         """Return the chosen model ID from *candidates* for the given *context*."""
         return await self._delegate.select_model(context, candidates)

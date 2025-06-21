@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import List
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -36,7 +35,7 @@ async def create_workout_plan(
 
 async def get_user_workout_plans(
     db: Session, user_id: str, limit: int = 50
-) -> List[WorkoutPlan]:
+) -> list[WorkoutPlan]:
     """Get user's workout plans."""
     repo = SQLAlchemyWorkoutPlanRepository(db)
     return await repo.list(user_id=user_id, limit=limit)
@@ -80,13 +79,13 @@ async def log_workout(db: Session, user_id: str, log_data: dict) -> WorkoutLog:
 
 async def get_user_workout_logs(
     db: Session, user_id: str, limit: int = 50
-) -> List[WorkoutLog]:
+) -> list[WorkoutLog]:
     """Get user's workout logs."""
     repo = SQLAlchemyWorkoutLogRepository(db)
     return await repo.list(user_id=user_id, limit=limit)
 
 
-async def get_user_workout_days(db: Session, user_id: str) -> List[str]:
+async def get_user_workout_days(db: Session, user_id: str) -> list[str]:
     """Return list of ISO date strings (YYYY-MM-DD) when user completed workouts."""
     repo = SQLAlchemyWorkoutLogRepository(db)
     return await repo.list_dates(user_id)

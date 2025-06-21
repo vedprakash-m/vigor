@@ -3,7 +3,7 @@ Test fixtures and utilities for LLM orchestration testing
 """
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -252,7 +252,7 @@ class MockLLMGateway:
             metadata=request.metadata,
         )
 
-    async def get_provider_status(self) -> Dict[str, Any]:
+    async def get_provider_status(self) -> dict[str, Any]:
         """Mock provider status"""
         return {
             "total_models": 1,

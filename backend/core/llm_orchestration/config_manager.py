@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .key_vault import SecretReference
 
@@ -51,7 +51,7 @@ class ModelConfiguration:
     rate_limit_rpm: int = 60  # Requests per minute
     circuit_breaker_threshold: int = 5
     circuit_breaker_timeout: int = 60
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -60,8 +60,8 @@ class RoutingRule:
 
     rule_id: str
     name: str
-    conditions: Dict[str, Any]  # e.g., {"task_type": "coding", "user_tier": "premium"}
-    target_models: List[str]  # Model IDs in priority order
+    conditions: dict[str, Any]  # e.g., {"task_type": "coding", "user_tier": "premium"}
+    target_models: list[str]  # Model IDs in priority order
     weight: float = 1.0
     is_active: bool = True
     created_at: datetime = field(default_factory=datetime.utcnow)
@@ -77,12 +77,12 @@ class ABTestConfiguration:
     is_active: bool
     start_date: datetime
     end_date: datetime
-    traffic_split: Dict[str, float]  # {"variant_a": 0.5, "variant_b": 0.5}
-    model_variants: Dict[
-        str, List[str]
+    traffic_split: dict[str, float]  # {"variant_a": 0.5, "variant_b": 0.5}
+    model_variants: dict[
+        str, list[str]
     ]  # {"variant_a": ["gpt-4"], "variant_b": ["gemini-pro"]}
-    success_metrics: List[str]
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    success_metrics: list[str]
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -93,10 +93,10 @@ class BudgetConfiguration:
     name: str
     total_budget: float
     reset_period: BudgetResetPeriod
-    alert_thresholds: List[float]  # [0.5, 0.8, 0.95] for 50%, 80%, 95% alerts
+    alert_thresholds: list[float]  # [0.5, 0.8, 0.95] for 50%, 80%, 95% alerts
     auto_disable_at_limit: bool = True
     rollover_unused: bool = False
-    user_groups: List[str] = field(default_factory=list)  # Empty = global budget
+    user_groups: list[str] = field(default_factory=list)  # Empty = global budget
     created_at: datetime = field(default_factory=datetime.utcnow)
 
 
@@ -107,7 +107,7 @@ class CachingConfiguration:
     enabled: bool = True
     default_ttl: int = 3600  # 1 hour
     max_cache_size: int = 10000
-    cache_strategies: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    cache_strategies: dict[str, dict[str, Any]] = field(default_factory=dict)
     # e.g., {"task_type": {"coding": {"ttl": 7200}, "chat": {"ttl": 1800}}}
 
 
@@ -117,7 +117,7 @@ class RateLimitConfiguration:
 
     global_rate_limit: int = 1000  # Requests per minute globally
     per_user_rate_limit: int = 60  # Requests per minute per user
-    per_model_rate_limit: Dict[str, int] = field(default_factory=dict)
+    per_model_rate_limit: dict[str, int] = field(default_factory=dict)
     burst_allowance: int = 10
     rate_limit_window: int = 60  # seconds
 
@@ -128,13 +128,13 @@ class UserTierConfiguration:
 
     tier_id: str
     name: str
-    model_access: List[str]  # Model IDs accessible to this tier
+    model_access: list[str]  # Model IDs accessible to this tier
     priority_boost: int = 0  # Priority modifier
-    budget_allocation: Optional[float] = None
+    budget_allocation: float | None = None
     rate_limit_multiplier: float = 1.0
-    custom_routing_rules: List[str] = field(default_factory=list)
-    api_key_overrides: Dict[str, SecretReference] = field(default_factory=dict)
-    features: List[str] = field(default_factory=list)
+    custom_routing_rules: list[str] = field(default_factory=list)
+    api_key_overrides: dict[str, SecretReference] = field(default_factory=dict)
+    features: list[str] = field(default_factory=list)
 
 
 class AdminConfigManager:
@@ -145,16 +145,16 @@ class AdminConfigManager:
 
     def __init__(self, db_session=None):
         self.db = db_session
-        self._config_cache: Dict[str, Any] = {}
+        self._config_cache: dict[str, Any] = {}
         self._cache_ttl = 300  # 5 minutes
         self._last_cache_update = datetime.utcnow()
 
         # Configuration storage
-        self.models: Dict[str, ModelConfiguration] = {}
-        self.routing_rules: Dict[str, RoutingRule] = {}
-        self.ab_tests: Dict[str, ABTestConfiguration] = {}
-        self.budgets: Dict[str, BudgetConfiguration] = {}
-        self.user_tiers: Dict[str, UserTierConfiguration] = {}
+        self.models: dict[str, ModelConfiguration] = {}
+        self.routing_rules: dict[str, RoutingRule] = {}
+        self.ab_tests: dict[str, ABTestConfiguration] = {}
+        self.budgets: dict[str, BudgetConfiguration] = {}
+        self.user_tiers: dict[str, UserTierConfiguration] = {}
         self.caching_config = CachingConfiguration()
         self.rate_limit_config = RateLimitConfiguration()
 
@@ -229,13 +229,13 @@ class AdminConfigManager:
             logger.error(f"Failed to toggle model {model_id}: {e}")
             return False
 
-    def get_active_models(self) -> List[ModelConfiguration]:
+    def get_active_models(self) -> list[ModelConfiguration]:
         """Get all active model configurations"""
         return [config for config in self.models.values() if config.is_active]
 
     def get_models_by_priority(
-        self, priority: Optional[ModelPriority] = None
-    ) -> List[ModelConfiguration]:
+        self, priority: ModelPriority | None = None
+    ) -> list[ModelConfiguration]:
         """Get models filtered by priority"""
         models = self.get_active_models()
         if priority:
@@ -277,7 +277,7 @@ class AdminConfigManager:
             logger.error(f"Failed to update routing rule {rule_id}: {e}")
             return False
 
-    def get_matching_routing_rules(self, context: Dict[str, Any]) -> List[RoutingRule]:
+    def get_matching_routing_rules(self, context: dict[str, Any]) -> list[RoutingRule]:
         """Get routing rules that match the given context"""
         matching_rules = []
 
@@ -316,7 +316,7 @@ class AdminConfigManager:
             logger.error(f"Failed to create A/B test {test_config.test_id}: {e}")
             return False
 
-    def get_active_ab_tests(self) -> List[ABTestConfiguration]:
+    def get_active_ab_tests(self) -> list[ABTestConfiguration]:
         """Get all active A/B tests"""
         now = datetime.utcnow()
         return [
@@ -341,8 +341,8 @@ class AdminConfigManager:
             return False
 
     def get_budget_for_user_group(
-        self, user_groups: List[str]
-    ) -> Optional[BudgetConfiguration]:
+        self, user_groups: list[str]
+    ) -> BudgetConfiguration | None:
         """Get budget configuration for specific user groups"""
         # Find most specific budget (smallest user_groups list that matches)
         matching_budgets = []
@@ -374,7 +374,7 @@ class AdminConfigManager:
             logger.error(f"Failed to create user tier {tier_config.tier_id}: {e}")
             return False
 
-    def get_user_tier(self, tier_id: str) -> Optional[UserTierConfiguration]:
+    def get_user_tier(self, tier_id: str) -> UserTierConfiguration | None:
         """Get user tier configuration"""
         return self.user_tiers.get(tier_id)
 
@@ -418,7 +418,7 @@ class AdminConfigManager:
 
     # Utility Methods
 
-    def export_configuration(self) -> Dict[str, Any]:
+    def export_configuration(self) -> dict[str, Any]:
         """Export current configuration for backup/migration"""
         return {
             "models": {
@@ -443,7 +443,7 @@ class AdminConfigManager:
             ),
         }
 
-    def _serialize_model_config(self, config: ModelConfiguration) -> Dict[str, Any]:
+    def _serialize_model_config(self, config: ModelConfiguration) -> dict[str, Any]:
         """Serialize model configuration for export"""
         return {
             "model_id": config.model_id,
@@ -468,7 +468,7 @@ class AdminConfigManager:
             "metadata": config.metadata,
         }
 
-    def _serialize_routing_rule(self, rule: RoutingRule) -> Dict[str, Any]:
+    def _serialize_routing_rule(self, rule: RoutingRule) -> dict[str, Any]:
         """Serialize routing rule for export"""
         return {
             "rule_id": rule.rule_id,
@@ -480,7 +480,7 @@ class AdminConfigManager:
             "created_at": rule.created_at.isoformat(),
         }
 
-    def _serialize_ab_test(self, test: ABTestConfiguration) -> Dict[str, Any]:
+    def _serialize_ab_test(self, test: ABTestConfiguration) -> dict[str, Any]:
         """Serialize A/B test for export"""
         return {
             "test_id": test.test_id,
@@ -495,7 +495,7 @@ class AdminConfigManager:
             "metadata": test.metadata,
         }
 
-    def _serialize_budget_config(self, budget: BudgetConfiguration) -> Dict[str, Any]:
+    def _serialize_budget_config(self, budget: BudgetConfiguration) -> dict[str, Any]:
         """Serialize budget configuration for export"""
         return {
             "budget_id": budget.budget_id,
@@ -509,7 +509,7 @@ class AdminConfigManager:
             "created_at": budget.created_at.isoformat(),
         }
 
-    def _serialize_user_tier(self, tier: UserTierConfiguration) -> Dict[str, Any]:
+    def _serialize_user_tier(self, tier: UserTierConfiguration) -> dict[str, Any]:
         """Serialize user tier for export"""
         return {
             "tier_id": tier.tier_id,
@@ -531,7 +531,7 @@ class AdminConfigManager:
             "features": tier.features,
         }
 
-    def _serialize_caching_config(self, config: CachingConfiguration) -> Dict[str, Any]:
+    def _serialize_caching_config(self, config: CachingConfiguration) -> dict[str, Any]:
         """Serialize caching configuration for export"""
         return {
             "enabled": config.enabled,
@@ -542,7 +542,7 @@ class AdminConfigManager:
 
     def _serialize_rate_limit_config(
         self, config: RateLimitConfiguration
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Serialize rate limit configuration for export"""
         return {
             "global_rate_limit": config.global_rate_limit,

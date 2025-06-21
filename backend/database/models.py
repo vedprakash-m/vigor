@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -39,10 +39,10 @@ class UserProfile(BaseModel):
     email: str
     username: str
     fitness_level: FitnessLevel
-    goals: List[Goal]
+    goals: list[Goal]
     equipment: Equipment
-    injuries: List[str] = []
-    preferences: Dict[str, Any] = {}
+    injuries: list[str] = []
+    preferences: dict[str, Any] = {}
     user_tier: UserTier = UserTier.FREE
     tier_updated_at: Optional[datetime] = None
     monthly_budget: float = 5.0
@@ -58,10 +58,10 @@ class WorkoutPlan(BaseModel):
     user_id: str
     name: str
     description: str
-    exercises: List[Dict[str, Any]]
+    exercises: list[dict[str, Any]]
     duration_minutes: int
     difficulty: FitnessLevel
-    equipment_needed: List[str]
+    equipment_needed: list[str]
     created_at: datetime
     updated_at: datetime
 
@@ -72,7 +72,7 @@ class WorkoutLog(BaseModel):
     id: str
     user_id: str
     plan_id: Optional[str] = None
-    exercises: List[Dict[str, Any]]
+    exercises: list[dict[str, Any]]
     duration_minutes: int
     notes: Optional[str] = None
     rating: Optional[int] = None
@@ -141,7 +141,7 @@ class AIUsageLog(BaseModel):
     model_config = {"protected_namespaces": ()}  # Allow model_ fields
 
     id: str
-    user_id: Optional[str]  # Track per-user usage
+    user_id: str | None  # Track per-user usage
     provider_name: str  # openai, gemini, perplexity
     model_name: str  # specific model used
     endpoint: str  # chat, completion, etc.
@@ -150,7 +150,7 @@ class AIUsageLog(BaseModel):
     cost: float  # calculated cost in USD
     response_time_ms: int
     success: bool
-    error_message: Optional[str] = None
+    error_message: str | None = None
     created_at: datetime
 
 
@@ -158,7 +158,7 @@ class AdminSettings(BaseModel):
     id: str
     key: str  # setting name
     value: str  # JSON string for complex values
-    description: Optional[str] = None
+    description: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -169,7 +169,7 @@ class UserUsageLimits(BaseModel):
     daily_requests_used: int = 0
     weekly_requests_used: int = 0
     monthly_requests_used: int = 0
-    last_reset_date: Optional[date] = None
+    last_reset_date: date | None = None
     created_at: datetime
     updated_at: datetime
 

@@ -40,7 +40,7 @@ async def test_budget_enforcer_allows():
 @pytest.mark.asyncio
 async def test_budget_enforcer_blocks():
     enforcer = BudgetEnforcer(DummyBudgetManager(False))
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError, match="Budget exceeded"):
         await enforcer.ensure_within_budget("u1", [])
 
 

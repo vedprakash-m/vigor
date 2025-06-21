@@ -7,7 +7,6 @@ import logging
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional, Set
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +46,7 @@ class CircuitBreakerManager:
     """
 
     def __init__(self):
-        self._circuits: Dict[str, CircuitBreakerState] = {}
+        self._circuits: dict[str, CircuitBreakerState] = {}
         self._default_config = CircuitBreakerConfig()
 
     async def initialize(self, model_ids: list):
@@ -56,7 +55,7 @@ class CircuitBreakerManager:
             self.add_model(model_id)
         logger.info(f"Initialized circuit breakers for {len(model_ids)} models")
 
-    def add_model(self, model_id: str, config: Optional[CircuitBreakerConfig] = None):
+    def add_model(self, model_id: str, config: CircuitBreakerConfig | None = None):
         """Add circuit breaker for a model"""
         self._circuits[model_id] = CircuitBreakerState(
             state=CircuitState.CLOSED,
@@ -141,7 +140,7 @@ class CircuitBreakerManager:
                     f"Circuit breaker for {model_id} OPENED due to {circuit.failure_count} failures"
                 )
 
-    def get_status(self) -> Dict[str, Dict]:
+    def get_status(self) -> dict[str, dict]:
         """Get status of all circuit breakers"""
         status = {}
         for model_id, circuit in self._circuits.items():
@@ -153,7 +152,7 @@ class CircuitBreakerManager:
             }
         return status
 
-    def get_healthy_models(self) -> Set[str]:
+    def get_healthy_models(self) -> set[str]:
         """Get set of models that can accept requests"""
         healthy = set()
         for model_id in self._circuits:

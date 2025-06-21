@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -16,7 +15,7 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
     def __init__(self, session: Session):  # noqa: D401
         self._session = session
 
-    async def get(self, entity_id: str) -> Optional[UserProfile]:
+    async def get(self, entity_id: str) -> UserProfile | None:
         record = (
             self._session.query(UserProfileDB)
             .filter(UserProfileDB.id == entity_id)
@@ -48,7 +47,7 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
         self._session.refresh(record)
         return UserProfile.model_validate(record)
 
-    async def list(self, **filters) -> List[UserProfile]:
+    async def list(self, **filters) -> list[UserProfile]:
         query = self._session.query(UserProfileDB)
         for field, value in filters.items():
             if hasattr(UserProfileDB, field):

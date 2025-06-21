@@ -1,6 +1,6 @@
 import os
 from functools import lru_cache
-from typing import ClassVar, List, Optional
+from typing import ClassVar
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
@@ -29,15 +29,15 @@ class Settings(BaseSettings):
     )  # openai, gemini, perplexity
 
     # OpenAI
-    OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
+    OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
 
     # Google Gemini
-    GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
+    GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
     # Perplexity
-    PERPLEXITY_API_KEY: Optional[str] = os.getenv("PERPLEXITY_API_KEY")
+    PERPLEXITY_API_KEY: str | None = os.getenv("PERPLEXITY_API_KEY")
     PERPLEXITY_MODEL: str = os.getenv(
         "PERPLEXITY_MODEL", "llama-3.1-sonar-small-128k-online"
     )
@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
     # CORS
-    CORS_ORIGINS: List[str] = [
+    CORS_ORIGINS: list[str] = [
         "http://localhost:3000",  # Frontend development server
         "http://localhost:8000",  # Backend development server
     ]
@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     # Add any additional CORS origins from environment.
     # Use a leading underscore and ClassVar to signal this should not be treated
     # as a Pydantic model field.
-    _cors_origins_env: ClassVar[Optional[str]] = os.getenv("CORS_ORIGINS")
+    _cors_origins_env: ClassVar[str | None] = os.getenv("CORS_ORIGINS")
 
     if _cors_origins_env:
         CORS_ORIGINS.extend(_cors_origins_env.split(","))
@@ -63,7 +63,7 @@ class Settings(BaseSettings):
         case_sensitive = True
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()

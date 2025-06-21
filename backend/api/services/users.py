@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import List
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -58,7 +57,7 @@ async def create_progress_metric(
 
 async def get_user_progress(
     db: Session, user_id: str, limit: int = 50
-) -> List[ProgressMetrics]:
+) -> list[ProgressMetrics]:
     """Get user progress metrics."""
     repo = SQLAlchemyProgressRepository(db)
     return await repo.list(user_id=user_id, limit=limit)

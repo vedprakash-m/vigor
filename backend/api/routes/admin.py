@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime, timedelta
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel
@@ -24,9 +23,9 @@ class AIProviderPriorityRequest(BaseModel):
     model_name: str
     priority: int
     is_enabled: bool = True
-    max_daily_cost: Optional[float] = None
-    max_weekly_cost: Optional[float] = None
-    max_monthly_cost: Optional[float] = None
+    max_daily_cost: float | None = None
+    max_weekly_cost: float | None = None
+    max_monthly_cost: float | None = None
 
 
 class BudgetSettingsRequest(BaseModel):
@@ -43,8 +42,8 @@ class UsageStatsResponse(BaseModel):
     total_requests_today: int
     total_requests_week: int
     avg_cost_per_request: float
-    top_providers: List[dict]
-    recent_usage: List[dict]
+    top_providers: list[dict]
+    recent_usage: list[dict]
 
 
 # Admin Authentication Check
@@ -61,7 +60,7 @@ async def verify_admin_user(
 
 
 # Provider Priority Management
-@router.get("/ai-providers", response_model=List[AIProviderPriority])
+@router.get("/ai-providers", response_model=list[AIProviderPriority])
 async def get_ai_provider_priorities(
     db: Session = Depends(get_db), admin_user: UserProfile = Depends(verify_admin_user)
 ):
@@ -184,7 +183,7 @@ async def delete_ai_provider_priority(
 
 
 # Budget Management
-@router.get("/budget", response_model=Optional[BudgetSettings])
+@router.get("/budget", response_model=BudgetSettings | None)
 async def get_budget_settings(
     db: Session = Depends(get_db), admin_user: UserProfile = Depends(verify_admin_user)
 ):

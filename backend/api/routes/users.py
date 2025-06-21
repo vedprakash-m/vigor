@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -56,7 +54,7 @@ async def add_progress_metric(
     return await create_progress_metric(db, current_user.id, metric.dict())
 
 
-@router.get("/me/progress", response_model=List[ProgressMetricResponse])
+@router.get("/me/progress", response_model=list[ProgressMetricResponse])
 async def get_my_progress(
     limit: int = 50,
     current_user: UserProfile = Depends(get_current_active_user),
@@ -66,7 +64,7 @@ async def get_my_progress(
     return await get_user_progress(db, current_user.id, limit)
 
 
-@router.get("/{user_id}/progress", response_model=List[ProgressMetricResponse])
+@router.get("/{user_id}/progress", response_model=list[ProgressMetricResponse])
 async def get_progress(
     user_id: str,
     limit: int = 50,

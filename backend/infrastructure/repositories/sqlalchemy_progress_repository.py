@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
@@ -46,7 +44,7 @@ class SQLAlchemyProgressRepository(Repository[ProgressMetrics]):
         self._session.refresh(record)
         return ProgressMetrics.model_validate(record)
 
-    async def list(self, **filters) -> List[ProgressMetrics]:
+    async def list(self, **filters) -> list[ProgressMetrics]:
         user_id = filters.get("user_id")
         limit = filters.get("limit", 50)
         query = self._session.query(ProgressMetricsDB)

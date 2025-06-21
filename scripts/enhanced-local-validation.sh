@@ -97,16 +97,29 @@ fi
 
 # Run quality checks
 print_step "Running Ruff linting"
-ruff check . || {
-    if [ "$FIX_MODE" = true ]; then
-        print_warning "Ruff issues found, attempting to fix"
-        ruff check --fix .
-        print_success "Ruff auto-fixes applied"
+if [ "$FIX_MODE" = true ]; then
+    # First attempt to fix issues
+    print_step "Attempting to fix Ruff issues automatically"
+    ruff check --fix .
+
+    # Then re-check to ensure all issues are resolved
+    print_step "Re-checking Ruff after auto-fixes"
+    if ruff check .; then
+        print_success "Ruff linting passed after auto-fixes"
     else
-        print_error "Ruff linting failed"
+        print_error "Ruff found unfixable issues - manual intervention required"
+        print_warning "Run 'ruff check .' to see remaining issues"
         exit 1
     fi
-}
+else
+    # Check-only mode (matching CI/CD exactly)
+    if ruff check .; then
+        print_success "Ruff linting passed"
+    else
+        print_error "Ruff linting failed - run without --check-only to auto-fix"
+        exit 1
+    fi
+fi
 
 print_step "Running MyPy type checking"
 mypy . --ignore-missing-imports || {

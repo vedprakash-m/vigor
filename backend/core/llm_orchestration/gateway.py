@@ -6,9 +6,10 @@ Provides unified interface with security, cost optimization, and high availabili
 import logging
 import time
 import uuid
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import Any
 
 from .adapters import (
     AdapterFactory,
@@ -40,14 +41,14 @@ class GatewayRequest:
 
     prompt: str
     user_id: str
-    task_type: Optional[str] = None
-    user_tier: Optional[str] = None
-    session_id: Optional[str] = None
-    max_tokens: Optional[int] = None
-    temperature: Optional[float] = None
+    task_type: str | None = None
+    user_tier: str | None = None
+    session_id: str | None = None
+    max_tokens: int | None = None
+    temperature: float | None = None
     stream: bool = False
     priority: int = 0  # Higher = more priority
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
 
 @dataclass
@@ -62,9 +63,9 @@ class GatewayResponse:
     cost_estimate: float
     latency_ms: int
     cached: bool = False
-    user_id: Optional[str] = None
-    session_id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    user_id: str | None = None
+    session_id: str | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class LLMGateway:
@@ -93,7 +94,7 @@ class LLMGateway:
         self.analytics = AnalyticsCollector(db_session)
 
         # Runtime state
-        self.adapters: Dict[str, LLMServiceAdapter] = {}
+        self.adapters: dict[str, LLMServiceAdapter] = {}
         self.is_initialized = False
         self._health_check_interval = 60  # seconds
         self._last_health_check = 0.0
@@ -277,7 +278,7 @@ class LLMGateway:
                 self.circuit_breaker.record_failure(selected_adapter.model_id)
             raise
 
-    async def get_provider_status(self) -> Dict[str, Any]:
+    async def get_provider_status(self) -> dict[str, Any]:
         """Get current status of all providers"""
         if not self.is_initialized:
             return {"error": "Gateway not initialized"}
@@ -287,7 +288,7 @@ class LLMGateway:
         if current_time - self._last_health_check > self._health_check_interval:
             await self._perform_health_check()
 
-        status: Dict[str, Any] = {
+        status: dict[str, Any] = {
             "active_models": len([a for a in self.adapters.values() if a.is_healthy()]),
             "total_models": len(self.adapters),
             "circuit_breakers": self.circuit_breaker.get_status(),
@@ -392,7 +393,7 @@ class LLMGateway:
             metadata=request.metadata,
         )
 
-    async def _check_cache(self, request: LLMRequest) -> Optional[LLMResponse]:
+    async def _check_cache(self, request: LLMRequest) -> LLMResponse | None:
         """Check if response is cached"""
         try:
             return await self.cache_manager.get(request)
@@ -520,7 +521,7 @@ class LLMGateway:
 
     async def _handle_error_fallback(
         self, request: GatewayRequest, request_id: str, error_message: str
-    ) -> Optional[GatewayResponse]:
+    ) -> GatewayResponse | None:
         """Handle error with fallback response"""
         try:
             if "fallback" in self.adapters:
@@ -589,7 +590,7 @@ class LLMGateway:
 
 
 # Global gateway instance
-gateway: Optional[LLMGateway] = None
+gateway: LLMGateway | None = None
 
 
 async def initialize_gateway(
