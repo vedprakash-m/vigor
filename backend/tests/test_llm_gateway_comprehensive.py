@@ -492,7 +492,7 @@ class TestLLMGateway:
         assert enriched.user_id == "user123"
         assert enriched.max_tokens == 100
         assert enriched.temperature == 0.7
-        assert enriched.request_id == "req123"
+        assert enriched.context["request_id"] == "req123"  # request_id is in context, not direct attribute
 
     @pytest.mark.asyncio
     async def test_check_cache(self, gateway):
