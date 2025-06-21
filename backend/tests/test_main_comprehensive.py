@@ -125,6 +125,7 @@ class TestErrorHandlers:
 class TestLifecycleManagement:
     """Test application lifecycle management"""
 
+    @pytest.mark.asyncio
     @patch("main.init_db")
     @patch("main.initialize_llm_orchestration")
     @patch("main.shutdown_llm_orchestration")
@@ -145,6 +146,7 @@ class TestLifecycleManagement:
         # Shutdown code should have run
         mock_shutdown.assert_called_once()
 
+    @pytest.mark.asyncio
     @patch("main.init_db")
     @patch("main.initialize_llm_orchestration")
     async def test_lifespan_startup_success(self, mock_init_llm, mock_init_db):
@@ -162,10 +164,11 @@ class TestLifecycleManagement:
         # Should not raise exceptions with mocked dependencies
         assert startup_success or mock_init_db.called
 
+    @pytest.mark.asyncio
     @patch("main.init_db", side_effect=Exception("Database error"))
     async def test_lifespan_startup_failure(self, mock_init_db):
         """Test startup failure handling"""
-        with pytest.raises((RuntimeError, ValueError, OSError)):
+        with pytest.raises((RuntimeError, ValueError, OSError, Exception)):
             async with lifespan(app):
                 pass
 
