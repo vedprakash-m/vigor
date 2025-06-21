@@ -25,7 +25,7 @@ from core.security import get_current_admin_user, get_current_user
 from database.connection import get_db
 from database.models import UserProfile
 
-router = APIRouter(prefix="/llm", tags=["LLM Orchestration"])
+router = APIRouter()
 
 
 # Request/Response Models

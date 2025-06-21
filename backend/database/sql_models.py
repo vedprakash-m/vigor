@@ -28,6 +28,8 @@ class UserProfileDB(Base):
     email = Column(String, unique=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    is_active = Column(Boolean, default=True)
+    last_login = Column(DateTime, nullable=True)
     fitness_level: Column[FitnessLevel] = Column(SQLEnum(FitnessLevel))
     goals = Column(JSON)  # Store as JSON array
     equipment: Column[Equipment] = Column(SQLEnum(Equipment))

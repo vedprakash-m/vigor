@@ -22,7 +22,7 @@ from core.security import get_current_user
 from database.connection import get_db
 from database.models import UserProfile
 
-router = APIRouter(prefix="/ai", tags=["ai"])
+router = APIRouter()
 
 
 @router.get("/provider-status")

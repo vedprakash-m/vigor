@@ -13,7 +13,7 @@ from api.services.usage_tracking import UsageTrackingService
 from database.connection import get_db
 from database.models import UserTier
 
-router = APIRouter(prefix="/tiers", tags=["user-tiers"])
+router = APIRouter()
 
 
 @router.get("/current", response_model=dict[str, Any])

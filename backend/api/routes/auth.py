@@ -21,7 +21,7 @@ from database.connection import get_db
 from database.models import UserProfile
 from typing import Optional
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter()
 
 settings = get_settings()
 

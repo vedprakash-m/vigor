@@ -62,9 +62,9 @@ class AuthService:
         try:
             # Check if user already exists
             existing_user = (
-                self.db.query(UserProfile)
+                self.db.query(UserProfileDB)
                 .filter(
-                    or_(UserProfile.email == email, UserProfile.username == username)
+                    or_(UserProfileDB.email == email, UserProfileDB.username == username)
                 )
                 .first()
             )
@@ -83,13 +83,12 @@ class AuthService:
             hashed_password = pwd_context.hash(password)
 
             # Create new user
-            new_user = UserProfile(
+            new_user = UserProfileDB(
                 email=email,
                 username=username,
                 hashed_password=hashed_password,
-                is_active=True,
+                user_tier="free",  # Default tier
                 created_at=datetime.utcnow(),
-                user_tier=UserTier.FREE,  # Default tier
             )
 
             self.db.add(new_user)
@@ -110,8 +109,7 @@ class AuthService:
                     "id": new_user.id,
                     "email": new_user.email,
                     "username": new_user.username,
-                    "tier": new_user.user_tier.value.upper(),
-                    "is_active": new_user.is_active,
+                    "tier": new_user.user_tier.upper(),
                 },
             }
 
@@ -148,7 +146,7 @@ class AuthService:
         """
         try:
             # Find user by email
-            user = self.db.query(UserProfile).filter(UserProfile.email == email).first()
+            user = self.db.query(UserProfileDB).filter(UserProfileDB.email == email).first()
 
             if not user:
                 # Don't reveal whether email exists or not
@@ -180,7 +178,7 @@ class AuthService:
                     "id": user.id,
                     "email": user.email,
                     "username": user.username,
-                    "tier": user.user_tier.value.upper(),
+                    "tier": user.user_tier.upper(),
                     "is_active": user.is_active,
                     "last_login": (
                         user.last_login.isoformat() if user.last_login else None
@@ -222,7 +220,7 @@ class AuthService:
                 raise HTTPException(status_code=401, detail="Invalid token type")
 
             # Find user
-            user = self.db.query(UserProfile).filter(UserProfile.id == user_id).first()
+            user = self.db.query(UserProfileDB).filter(UserProfileDB.id == user_id).first()
 
             if not user:
                 raise HTTPException(status_code=401, detail="User not found")
@@ -244,7 +242,7 @@ class AuthService:
                     "id": user.id,
                     "email": user.email,
                     "username": user.username,
-                    "tier": user.user_tier.value.upper(),
+                    "tier": user.user_tier.upper(),
                     "is_active": user.is_active,
                 },
             }
@@ -273,7 +271,7 @@ class AuthService:
             Dict with success message (same regardless of user existence)
         """
         try:
-            user = self.db.query(UserProfile).filter(UserProfile.email == email).first()
+            user = self.db.query(UserProfileDB).filter(UserProfileDB.email == email).first()
 
             if user and user.is_active:
                 # Generate reset token
@@ -338,7 +336,7 @@ class AuthService:
                 raise HTTPException(status_code=400, detail="Invalid token type")
 
             # Find user
-            user = self.db.query(UserProfile).filter(UserProfile.id == user_id).first()
+            user = self.db.query(UserProfileDB).filter(UserProfileDB.id == user_id).first()
 
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
@@ -402,7 +400,7 @@ class AuthService:
                 raise HTTPException(status_code=401, detail="Invalid token type")
 
             # Find user
-            user = self.db.query(UserProfile).filter(UserProfile.id == user_id).first()
+            user = self.db.query(UserProfileDB).filter(UserProfileDB.id == user_id).first()
 
             if not user:
                 raise HTTPException(status_code=401, detail="User not found")
@@ -416,7 +414,7 @@ class AuthService:
                     "id": user.id,
                     "email": user.email,
                     "username": user.username,
-                    "tier": user.user_tier.value.upper(),
+                    "tier": user.user_tier.upper(),
                     "is_active": user.is_active,
                 },
                 "expires_at": datetime.fromtimestamp(payload.get("exp")).isoformat(),
@@ -431,7 +429,7 @@ class AuthService:
             logger.error(f"Unexpected error during token verification: {e}")
             raise HTTPException(status_code=500, detail="Token verification failed")
 
-    async def _create_user_tokens(self, user: UserProfile) -> dict[str, str]:
+    async def _create_user_tokens(self, user: UserProfileDB) -> dict[str, str]:
         """
         Create access and refresh tokens for user
 

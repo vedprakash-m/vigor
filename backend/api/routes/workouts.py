@@ -19,7 +19,7 @@ from core.security import get_current_active_user
 from database.connection import get_db
 from database.models import UserProfile
 
-router = APIRouter(prefix="/workouts", tags=["workouts"])
+router = APIRouter()
 
 
 @router.get("/plans", response_model=list[WorkoutPlanResponse])

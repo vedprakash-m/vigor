@@ -15,7 +15,7 @@ from database.models import AIProviderPriority, BudgetSettings, UserProfile
 from database.sql_models import AIProviderPriorityDB, AIUsageLogDB, BudgetSettingsDB
 from typing import Optional
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter()
 
 
 # Request/Response Models

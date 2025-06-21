@@ -16,7 +16,7 @@ from core.security import get_current_active_user
 from database.connection import get_db
 from database.models import UserProfile
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter()
 
 
 @router.get("/me", response_model=UserProfileResponse)
