@@ -1,21 +1,24 @@
 """High-impact coverage tests targeting key modules"""
 
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
 from fastapi.testclient import TestClient
 
 
 def test_main_app_import():
     """Test main app can be imported and instantiated"""
     from main import app
+
     assert app is not None
-    assert hasattr(app, 'title')
-    assert hasattr(app, 'version')
+    assert hasattr(app, "title")
+    assert hasattr(app, "version")
 
 
 def test_main_app_with_test_client():
     """Test main app with test client"""
     from main import app
+
     client = TestClient(app)
     assert client is not None
 
@@ -23,6 +26,7 @@ def test_main_app_with_test_client():
 def test_main_app_routes():
     """Test main app has routes registered"""
     from main import app
+
     routes = app.router.routes
     assert len(routes) >= 0  # Should have some routes
 
@@ -30,6 +34,7 @@ def test_main_app_routes():
 def test_config_settings_comprehensive():
     """Test comprehensive config settings"""
     from core.config import get_settings
+
     settings = get_settings()
 
     # Basic settings
@@ -45,8 +50,14 @@ def test_config_settings_comprehensive():
 def test_database_models_comprehensive():
     """Test comprehensive database models functionality"""
     from database.models import (
-        UserProfile, UserTier, FitnessLevel, Goal, Equipment,
-        WorkoutPlan, Exercise, ExerciseSet
+        Equipment,
+        Exercise,
+        ExerciseSet,
+        FitnessLevel,
+        Goal,
+        UserProfile,
+        UserTier,
+        WorkoutPlan,
     )
 
     # Test enum values
@@ -63,7 +74,7 @@ def test_database_models_comprehensive():
         user_tier=UserTier.PREMIUM,
         fitness_level=FitnessLevel.INTERMEDIATE,
         goals=[Goal.MUSCLE_GAIN, Goal.ENDURANCE],
-        equipment=[Equipment.DUMBBELLS, Equipment.RESISTANCE_BANDS]
+        equipment=[Equipment.DUMBBELLS, Equipment.RESISTANCE_BANDS],
     )
 
     assert user.email == "comprehensive@test.com"
@@ -75,7 +86,7 @@ def test_database_models_comprehensive():
 
 def test_database_connection_functions():
     """Test database connection module functions"""
-    from database.connection import init_db, get_db
+    from database.connection import get_db, init_db
 
     # Test functions exist
     assert init_db is not None
@@ -86,10 +97,10 @@ def test_database_connection_functions():
 
 def test_schemas_comprehensive():
     """Test comprehensive schema functionality"""
-    from api.schemas.auth import UserRegister, UserLogin, Token, UserResponse
-    from api.schemas.workouts import WorkoutPlan, Exercise, ExerciseSet
-    from api.schemas.users import UserProfileResponse, UserProfileUpdate
     from api.schemas.ai import ChatMessage, ChatResponse
+    from api.schemas.auth import Token, UserLogin, UserRegister, UserResponse
+    from api.schemas.users import UserProfileResponse, UserProfileUpdate
+    from api.schemas.workouts import Exercise, ExerciseSet, WorkoutPlan
 
     # Test auth schemas
     user_reg = UserRegister(
@@ -98,7 +109,7 @@ def test_schemas_comprehensive():
         password="SchemaPassword123!",
         fitness_level="advanced",
         goals=["athletic_performance", "strength"],
-        equipment="full_gym"
+        equipment="full_gym",
     )
     assert user_reg.email == "schema@test.com"
     assert user_reg.fitness_level == "advanced"
@@ -112,9 +123,7 @@ def test_schemas_comprehensive():
     assert exercise_set.weight == 50.0
 
     exercise = Exercise(
-        name="Push-ups",
-        sets=[exercise_set],
-        instructions="Standard push-up form"
+        name="Push-ups", sets=[exercise_set], instructions="Standard push-up form"
     )
     assert exercise.name == "Push-ups"
     assert len(exercise.sets) == 1
@@ -127,8 +136,13 @@ def test_schemas_comprehensive():
 def test_security_comprehensive():
     """Test comprehensive security functionality"""
     from core.security import (
-        get_password_hash, verify_password, create_access_token, verify_token,
-        SecurityMiddleware, UserInputValidator, SECURITY_HEADERS
+        SECURITY_HEADERS,
+        SecurityMiddleware,
+        UserInputValidator,
+        create_access_token,
+        get_password_hash,
+        verify_password,
+        verify_token,
     )
 
     # Test password functions
@@ -153,10 +167,10 @@ def test_security_comprehensive():
 def test_application_llm_modules():
     """Test application LLM modules can be imported"""
     from application.llm.budget_enforcer import BudgetEnforcer
+    from application.llm.facade import LLMFacade
     from application.llm.request_validator import RequestValidator
     from application.llm.response_recorder import ResponseRecorder
     from application.llm.routing_engine import RoutingEngine
-    from application.llm.facade import LLMFacade
 
     # Test classes exist
     assert BudgetEnforcer is not None
@@ -196,12 +210,13 @@ def test_core_llm_orchestration_modules():
 
 def test_api_services_basic():
     """Test API services basic functionality"""
-    from api.services.auth import AuthService
+    from unittest.mock import Mock
+
     from api.services.ai import AIService
+    from api.services.auth import AuthService
+    from api.services.usage_tracking import UsageTrackingService
     from api.services.users import UsersService
     from api.services.workouts import WorkoutService
-    from api.services.usage_tracking import UsageTrackingService
-    from unittest.mock import Mock
 
     # Test services can be instantiated with mocked dependencies
     mock_db = Mock()
@@ -224,12 +239,23 @@ def test_api_services_basic():
 
 def test_infrastructure_repositories():
     """Test infrastructure repositories"""
-    from infrastructure.repositories.sqlalchemy_user_repository import SqlAlchemyUserRepository
-    from infrastructure.repositories.sqlalchemy_workoutplan_repository import SqlAlchemyWorkoutPlanRepository
-    from infrastructure.repositories.sqlalchemy_workoutlog_repository import SqlAlchemyWorkoutLogRepository
-    from infrastructure.repositories.sqlalchemy_aicoach_repository import SqlAlchemyAICoachRepository
-    from infrastructure.repositories.sqlalchemy_progress_repository import SqlAlchemyProgressRepository
     from unittest.mock import Mock
+
+    from infrastructure.repositories.sqlalchemy_aicoach_repository import (
+        SqlAlchemyAICoachRepository,
+    )
+    from infrastructure.repositories.sqlalchemy_progress_repository import (
+        SqlAlchemyProgressRepository,
+    )
+    from infrastructure.repositories.sqlalchemy_user_repository import (
+        SqlAlchemyUserRepository,
+    )
+    from infrastructure.repositories.sqlalchemy_workoutlog_repository import (
+        SqlAlchemyWorkoutLogRepository,
+    )
+    from infrastructure.repositories.sqlalchemy_workoutplan_repository import (
+        SqlAlchemyWorkoutPlanRepository,
+    )
 
     # Test repositories can be instantiated
     mock_db = Mock()
@@ -252,11 +278,11 @@ def test_infrastructure_repositories():
 
 def test_core_modules_comprehensive():
     """Test core modules comprehensive functionality"""
+    from core.admin_llm_manager import AdminLLMManager
     from core.ai import AIOrchestrator
     from core.azure_auth import AzureAuthenticator
     from core.function_client import FunctionsClient
     from core.function_performance import perf_monitor
-    from core.admin_llm_manager import AdminLLMManager
     from core.llm_providers import LLMProviderManager
 
     # Test classes and objects exist
@@ -286,7 +312,10 @@ def test_domain_repositories():
 @pytest.mark.asyncio
 async def test_async_functionality():
     """Test async functionality where applicable"""
-    from core.llm_orchestration_init import initialize_llm_orchestration, shutdown_llm_orchestration
+    from core.llm_orchestration_init import (
+        initialize_llm_orchestration,
+        shutdown_llm_orchestration,
+    )
 
     # Test async functions exist
     assert initialize_llm_orchestration is not None
@@ -304,9 +333,10 @@ def test_error_handling_components():
 
 def test_schema_validation_comprehensive():
     """Test comprehensive schema validation"""
+    from pydantic import ValidationError
+
     from api.schemas.auth import UserRegister
     from api.schemas.workouts import WorkoutPlanCreate
-    from pydantic import ValidationError
 
     # Test valid data
     valid_user = UserRegister(
@@ -315,7 +345,7 @@ def test_schema_validation_comprehensive():
         password="ValidPassword123!",
         fitness_level="beginner",
         goals=["strength"],
-        equipment="none"
+        equipment="none",
     )
     assert valid_user.email == "valid@email.com"
 
@@ -327,7 +357,7 @@ def test_schema_validation_comprehensive():
             password="weak",  # Weak password
             fitness_level="invalid",  # Invalid fitness level
             goals=[],  # Empty goals
-            equipment="invalid"  # Invalid equipment
+            equipment="invalid",  # Invalid equipment
         )
         # If validation doesn't catch it, that's also valid behavior
         assert True
@@ -338,13 +368,29 @@ def test_schema_validation_comprehensive():
 
 def test_enum_comprehensive_usage():
     """Test comprehensive enum usage across models"""
-    from database.models import UserTier, FitnessLevel, Goal, Equipment
+    from database.models import Equipment, FitnessLevel, Goal, UserTier
 
     # Test all enum values
     all_tiers = [UserTier.FREE, UserTier.PREMIUM, UserTier.UNLIMITED]
-    all_fitness_levels = [FitnessLevel.BEGINNER, FitnessLevel.INTERMEDIATE, FitnessLevel.ADVANCED]
-    all_goals = [Goal.WEIGHT_LOSS, Goal.MUSCLE_GAIN, Goal.STRENGTH, Goal.ENDURANCE, Goal.ATHLETIC_PERFORMANCE]
-    all_equipment = [Equipment.NONE, Equipment.DUMBBELLS, Equipment.RESISTANCE_BANDS, Equipment.PULL_UP_BAR, Equipment.FULL_GYM]
+    all_fitness_levels = [
+        FitnessLevel.BEGINNER,
+        FitnessLevel.INTERMEDIATE,
+        FitnessLevel.ADVANCED,
+    ]
+    all_goals = [
+        Goal.WEIGHT_LOSS,
+        Goal.MUSCLE_GAIN,
+        Goal.STRENGTH,
+        Goal.ENDURANCE,
+        Goal.ATHLETIC_PERFORMANCE,
+    ]
+    all_equipment = [
+        Equipment.NONE,
+        Equipment.DUMBBELLS,
+        Equipment.RESISTANCE_BANDS,
+        Equipment.PULL_UP_BAR,
+        Equipment.FULL_GYM,
+    ]
 
     # Test enum counts
     assert len(all_tiers) == 3

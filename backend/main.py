@@ -27,12 +27,12 @@ from core.llm_orchestration_init import (
     shutdown_llm_orchestration,
 )
 from core.security import (
-    limiter,
+    InputValidationError,
+    SecurityAuditLogger,
     SecurityMiddleware,
+    limiter,
     rate_limit_handler,
     secure_health_check,
-    SecurityAuditLogger,
-    InputValidationError
 )
 from database.connection import init_db
 from infrastructure.observability.otel_middleware import OTelMiddleware
@@ -136,32 +136,28 @@ app.add_middleware(OTelMiddleware)
 # Add rate limiting state
 app.state.limiter = limiter
 
+
 # Enhanced Error Handlers
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
     """Handle rate limit exceeded with proper logging"""
     return await rate_limit_handler(request, exc)
 
+
 @app.exception_handler(InputValidationError)
 async def input_validation_error_handler(request: Request, exc: InputValidationError):
     """Handle input validation errors"""
     await SecurityAuditLogger.log_suspicious_activity(
-        request,
-        "input_validation_failed",
-        {"error": exc.detail}
+        request, "input_validation_failed", {"error": exc.detail}
     )
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=exc.detail
-    )
+    return JSONResponse(status_code=exc.status_code, content=exc.detail)
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle Pydantic validation errors"""
     await SecurityAuditLogger.log_suspicious_activity(
-        request,
-        "request_validation_failed",
-        {"errors": exc.errors()}
+        request, "request_validation_failed", {"errors": exc.errors()}
     )
     return JSONResponse(
         status_code=422,
@@ -169,15 +165,16 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             "error": "validation_error",
             "message": "Invalid request data",
             "details": exc.errors(),
-            "timestamp": datetime.utcnow().isoformat()
-        }
+            "timestamp": datetime.utcnow().isoformat(),
+        },
     )
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Global exception handler for production safety"""
-    import traceback
     import logging
+    import traceback
 
     logger = logging.getLogger(__name__)
 
@@ -191,8 +188,8 @@ async def global_exception_handler(request: Request, exc: Exception):
         "unhandled_exception",
         {
             "exception_type": type(exc).__name__,
-            "exception_message": str(exc)[:500]  # Limit message length
-        }
+            "exception_message": str(exc)[:500],  # Limit message length
+        },
     )
 
     # Return safe error response (don't expose internal details)
@@ -203,8 +200,8 @@ async def global_exception_handler(request: Request, exc: Exception):
                 "error": "internal_server_error",
                 "message": str(exc),
                 "timestamp": datetime.utcnow().isoformat(),
-                "type": type(exc).__name__
-            }
+                "type": type(exc).__name__,
+            },
         )
     else:
         return JSONResponse(
@@ -212,9 +209,10 @@ async def global_exception_handler(request: Request, exc: Exception):
             content={
                 "error": "internal_server_error",
                 "message": "An unexpected error occurred",
-                "timestamp": datetime.utcnow().isoformat()
-            }
+                "timestamp": datetime.utcnow().isoformat(),
+            },
         )
+
 
 # Enhanced Health Check Endpoint
 @app.get("/health", summary="Health Check", tags=["System"])
@@ -230,18 +228,17 @@ async def health_check(request: Request):
     except Exception as e:
         # Log health check failures
         await SecurityAuditLogger.log_suspicious_activity(
-            request,
-            "health_check_failed",
-            {"error": str(e)}
+            request, "health_check_failed", {"error": str(e)}
         )
         return JSONResponse(
             status_code=503,
             content={
                 "status": "unhealthy",
                 "timestamp": datetime.utcnow().isoformat(),
-                "error": "Health check failed"
-            }
+                "error": "Health check failed",
+            },
         )
+
 
 # Root endpoint with security awareness
 @app.get("/", summary="API Information", tags=["System"])
@@ -260,7 +257,7 @@ async def root(request: Request):
             "⚡ High-Performance Caching",
             "🛡️ Circuit Breaker Protection",
             "📊 Comprehensive Analytics & Monitoring",
-            "🔍 Security Audit Logging"
+            "🔍 Security Audit Logging",
         ],
         "endpoints": {
             "docs": "/docs",
@@ -272,10 +269,11 @@ async def root(request: Request):
             "rate_limiting": "enabled",
             "input_validation": "enabled",
             "audit_logging": "enabled",
-            "cors_protection": "enabled"
+            "cors_protection": "enabled",
         },
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
+
 
 # Include routers with rate limiting applied
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
@@ -294,5 +292,5 @@ if __name__ == "__main__":
         port=8000,
         reload=settings.DEBUG,
         access_log=True,
-        use_colors=True
+        use_colors=True,
     )

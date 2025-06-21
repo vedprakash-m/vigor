@@ -4,16 +4,22 @@ Strategic tests to increase coverage across high-impact modules
 Target: Boost coverage from 44% to 60%+ with 100% pass rate
 """
 
-import pytest
-from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 # Import core modules that exist
 from core.config import get_settings
-from core.security import get_password_hash, verify_password, create_access_token, verify_token
-from database.models import UserProfile, UserTier, FitnessLevel, Goal, Equipment
+from core.security import (
+    create_access_token,
+    get_password_hash,
+    verify_password,
+    verify_token,
+)
+from database.models import Equipment, FitnessLevel, Goal, UserProfile, UserTier
 
 
 class TestConfigurationModule:
@@ -23,9 +29,9 @@ class TestConfigurationModule:
         """Test basic settings retrieval"""
         settings = get_settings()
         assert settings is not None
-        assert hasattr(settings, 'SECRET_KEY')
-        assert hasattr(settings, 'ALGORITHM')
-        assert hasattr(settings, 'DATABASE_URL')
+        assert hasattr(settings, "SECRET_KEY")
+        assert hasattr(settings, "ALGORITHM")
+        assert hasattr(settings, "DATABASE_URL")
 
     def test_settings_secret_key(self):
         """Test secret key configuration"""
@@ -36,13 +42,16 @@ class TestConfigurationModule:
     def test_settings_algorithm(self):
         """Test JWT algorithm setting"""
         settings = get_settings()
-        assert settings.ALGORITHM in ['HS256', 'RS256', 'ES256']
+        assert settings.ALGORITHM in ["HS256", "RS256", "ES256"]
 
     def test_settings_database_url(self):
         """Test database URL configuration"""
         settings = get_settings()
         assert settings.DATABASE_URL is not None
-        assert 'postgresql://' in settings.DATABASE_URL or 'sqlite://' in settings.DATABASE_URL
+        assert (
+            "postgresql://" in settings.DATABASE_URL
+            or "sqlite://" in settings.DATABASE_URL
+        )
 
 
 class TestSecurityFunctions:
@@ -107,7 +116,7 @@ class TestDatabaseModels:
             user_tier=UserTier.FREE,
             fitness_level=FitnessLevel.BEGINNER,
             goals=[Goal.WEIGHT_LOSS],
-            available_equipment=[Equipment.DUMBBELLS]
+            available_equipment=[Equipment.DUMBBELLS],
         )
 
         assert user.email == "model@test.com"
@@ -121,23 +130,35 @@ class TestDatabaseModels:
         # Test UserTier enum
         assert UserTier.FREE in [UserTier.FREE, UserTier.PREMIUM, UserTier.UNLIMITED]
         assert UserTier.PREMIUM in [UserTier.FREE, UserTier.PREMIUM, UserTier.UNLIMITED]
-        assert UserTier.UNLIMITED in [UserTier.FREE, UserTier.PREMIUM, UserTier.UNLIMITED]
+        assert UserTier.UNLIMITED in [
+            UserTier.FREE,
+            UserTier.PREMIUM,
+            UserTier.UNLIMITED,
+        ]
 
         # Test FitnessLevel enum
-        assert FitnessLevel.BEGINNER in [FitnessLevel.BEGINNER, FitnessLevel.INTERMEDIATE, FitnessLevel.ADVANCED]
+        assert FitnessLevel.BEGINNER in [
+            FitnessLevel.BEGINNER,
+            FitnessLevel.INTERMEDIATE,
+            FitnessLevel.ADVANCED,
+        ]
 
         # Test Goal enum
         assert Goal.WEIGHT_LOSS in [Goal.WEIGHT_LOSS, Goal.MUSCLE_GAIN, Goal.ENDURANCE]
 
         # Test Equipment enum
-        assert Equipment.DUMBBELLS in [Equipment.DUMBBELLS, Equipment.BARBELL, Equipment.BODYWEIGHT]
+        assert Equipment.DUMBBELLS in [
+            Equipment.DUMBBELLS,
+            Equipment.BARBELL,
+            Equipment.BODYWEIGHT,
+        ]
 
     def test_user_profile_defaults(self):
         """Test UserProfile default values"""
         user = UserProfile(
             email="defaults@test.com",
             username="defaultuser",
-            hashed_password=get_password_hash("password123")
+            hashed_password=get_password_hash("password123"),
         )
 
         # Check defaults are set
@@ -153,12 +174,16 @@ class TestDatabaseModels:
         user = UserProfile(
             email="valid@test.com",
             username="validuser",
-            hashed_password=get_password_hash("ValidPassword123!")
+            hashed_password=get_password_hash("ValidPassword123!"),
         )
         assert user.email == "valid@test.com"
 
         # Test different fitness levels
-        for level in [FitnessLevel.BEGINNER, FitnessLevel.INTERMEDIATE, FitnessLevel.ADVANCED]:
+        for level in [
+            FitnessLevel.BEGINNER,
+            FitnessLevel.INTERMEDIATE,
+            FitnessLevel.ADVANCED,
+        ]:
             user.fitness_level = level
             assert user.fitness_level == level
 
@@ -168,11 +193,11 @@ class TestSchemaValidation:
 
     def test_schema_imports(self):
         """Test all schema modules can be imported"""
-        from api.schemas.auth import UserRegistration, UserLogin, TokenResponse
+        from api.schemas.admin import ModelConfiguration, UserManagement
+        from api.schemas.ai import AICoachMessage, LLMRequest
+        from api.schemas.auth import TokenResponse, UserLogin, UserRegistration
         from api.schemas.users import UserProfileResponse
         from api.schemas.workouts import WorkoutPlan, WorkoutSession
-        from api.schemas.ai import AICoachMessage, LLMRequest
-        from api.schemas.admin import UserManagement, ModelConfiguration
 
         # Test they can be instantiated with basic data
         assert UserRegistration is not None
@@ -188,7 +213,7 @@ class TestSchemaValidation:
 
     def test_auth_schema_validation(self):
         """Test basic auth schema validation"""
-        from api.schemas.auth import UserRegistration, UserLogin
+        from api.schemas.auth import UserLogin, UserRegistration
 
         # Valid registration data
         reg_data = {
@@ -197,7 +222,7 @@ class TestSchemaValidation:
             "password": "SchemaTest123!",
             "fitness_level": "beginner",
             "goals": ["weight_loss"],
-            "available_equipment": ["bodyweight"]
+            "available_equipment": ["bodyweight"],
         }
 
         user_reg = UserRegistration(**reg_data)
@@ -205,10 +230,7 @@ class TestSchemaValidation:
         assert user_reg.username == "schemauser"
 
         # Valid login data
-        login_data = {
-            "email": "login@test.com",
-            "password": "LoginTest123!"
-        }
+        login_data = {"email": "login@test.com", "password": "LoginTest123!"}
 
         user_login = UserLogin(**login_data)
         assert user_login.email == "login@test.com"
@@ -223,7 +245,7 @@ class TestSchemaValidation:
             "duration_minutes": 45,
             "difficulty_level": "beginner",
             "target_muscle_groups": ["chest", "arms"],
-            "exercises": []
+            "exercises": [],
         }
 
         workout = WorkoutPlan(**workout_data)
@@ -288,7 +310,7 @@ class TestUtilityFunctions:
         valid_emails = [
             "test@example.com",
             "user.name@domain.co.uk",
-            "firstname+lastname@company.org"
+            "firstname+lastname@company.org",
         ]
 
         for email in valid_emails:
@@ -302,11 +324,7 @@ class TestUtilityFunctions:
 
     def test_password_strength_validation(self):
         """Test password strength validation patterns"""
-        strong_passwords = [
-            "StrongPassword123!",
-            "AnotherGood1@",
-            "Complex_Pass123"
-        ]
+        strong_passwords = ["StrongPassword123!", "AnotherGood1@", "Complex_Pass123"]
 
         for password in strong_passwords:
             assert len(password) >= 8
@@ -320,7 +338,7 @@ class TestUtilityFunctions:
         unsafe_strings = [
             "<script>alert('xss')</script>",
             "'; DROP TABLE users; --",
-            "<img src=x onerror=alert('xss')>"
+            "<img src=x onerror=alert('xss')>",
         ]
 
         for unsafe in unsafe_strings:

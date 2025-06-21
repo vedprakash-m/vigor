@@ -1,19 +1,21 @@
 """Simple test expansion to boost coverage"""
 
-import pytest
+from datetime import datetime
 from unittest.mock import Mock, patch
+
+import pytest
+
+from api.schemas.auth import Token, UserLogin, UserRegister, UserResponse
 from core.config import get_settings
 from database.models import UserProfile, UserTier
-from api.schemas.auth import UserRegister, UserLogin, UserResponse, Token
-from datetime import datetime
 
 
 def test_config_loading():
     """Test configuration loading"""
     settings = get_settings()
     assert settings is not None
-    assert hasattr(settings, 'SECRET_KEY')
-    assert hasattr(settings, 'DATABASE_URL')
+    assert hasattr(settings, "SECRET_KEY")
+    assert hasattr(settings, "DATABASE_URL")
 
 
 def test_user_tier_enum():
@@ -30,7 +32,7 @@ def test_user_profile_creation():
         username="testuser",
         hashed_password="hashed_password_here",
         is_active=True,
-        user_tier=UserTier.FREE
+        user_tier=UserTier.FREE,
     )
 
     assert user.email == "test@example.com"
@@ -47,7 +49,7 @@ def test_user_register_schema():
         password="StrongPassword123!",
         fitness_level="beginner",
         goals=["strength", "muscle_gain"],
-        equipment="minimal"
+        equipment="minimal",
     )
 
     assert user_data.email == "test@example.com"
@@ -58,10 +60,7 @@ def test_user_register_schema():
 
 def test_user_login_schema():
     """Test UserLogin schema validation"""
-    login_data = UserLogin(
-        email="test@example.com",
-        password="StrongPassword123!"
-    )
+    login_data = UserLogin(email="test@example.com", password="StrongPassword123!")
 
     assert login_data.email == "test@example.com"
     assert login_data.password == "StrongPassword123!"
@@ -69,10 +68,7 @@ def test_user_login_schema():
 
 def test_token_schema():
     """Test Token schema"""
-    token = Token(
-        access_token="sample_token_here",
-        expires_at=datetime.utcnow()
-    )
+    token = Token(access_token="sample_token_here", expires_at=datetime.utcnow())
 
     assert token.access_token == "sample_token_here"
     assert token.token_type == "bearer"

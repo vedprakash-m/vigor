@@ -2,14 +2,17 @@
 Final comprehensive coverage boost targeting highest-impact modules
 Focusing on admin schemas (0% coverage, 150 statements) and other high-impact areas
 """
-import pytest
+
 from unittest.mock import Mock, patch
+
+import pytest
 
 # Import the highest impact modules
 from api.schemas import admin
+from api.services import auth as auth_service
+from api.services import usage_tracking
 from core import admin_llm_manager, ai, azure_auth, function_client
-from core.llm_orchestration import gateway, routing, budget_manager
-from api.services import auth as auth_service, usage_tracking
+from core.llm_orchestration import budget_manager, gateway, routing
 
 
 class TestAdminSchemasHighImpact:
@@ -22,7 +25,7 @@ class TestAdminSchemasHighImpact:
     def test_admin_schema_attributes_comprehensive(self):
         """Comprehensive test of admin schema attributes"""
         # Get all public attributes from admin module
-        public_attrs = [attr for attr in dir(admin) if not attr.startswith('_')]
+        public_attrs = [attr for attr in dir(admin) if not attr.startswith("_")]
 
         # Should have substantial content for 150 statements
         assert len(public_attrs) > 0, "Admin module should have public attributes"
@@ -33,8 +36,8 @@ class TestAdminSchemasHighImpact:
             assert attr is not None, f"Attribute {attr_name} should not be None"
 
             # If it's a class, access its properties
-            if attr_name[0].isupper() and hasattr(attr, '__name__'):
-                assert hasattr(attr, '__module__')
+            if attr_name[0].isupper() and hasattr(attr, "__name__"):
+                assert hasattr(attr, "__module__")
                 assert attr.__name__ == attr_name
 
     def test_admin_schema_classes_comprehensive(self):
@@ -45,21 +48,23 @@ class TestAdminSchemasHighImpact:
             schema_class = getattr(admin, class_name)
 
             # Test class properties
-            assert hasattr(schema_class, '__name__')
+            assert hasattr(schema_class, "__name__")
             assert schema_class.__name__ == class_name
 
             # Test if it's a Pydantic model
-            if hasattr(schema_class, '__fields__') or hasattr(schema_class, 'model_fields'):
+            if hasattr(schema_class, "__fields__") or hasattr(
+                schema_class, "model_fields"
+            ):
                 # Try to access model configuration
-                if hasattr(schema_class, '__config__'):
+                if hasattr(schema_class, "__config__"):
                     config = schema_class.__config__
                     assert config is not None
 
                 # Try to get field information
-                if hasattr(schema_class, '__fields__'):
+                if hasattr(schema_class, "__fields__"):
                     fields = schema_class.__fields__
                     assert isinstance(fields, dict)
-                elif hasattr(schema_class, 'model_fields'):
+                elif hasattr(schema_class, "model_fields"):
                     fields = schema_class.model_fields
                     assert isinstance(fields, dict)
 
@@ -110,21 +115,23 @@ class TestHighImpactCoreModules:
         assert admin_llm_manager is not None
 
         # Get all public attributes
-        public_items = [item for item in dir(admin_llm_manager) if not item.startswith('_')]
+        public_items = [
+            item for item in dir(admin_llm_manager) if not item.startswith("_")
+        ]
 
         for item_name in public_items:
             item = getattr(admin_llm_manager, item_name)
             assert item is not None
 
             # If it's a class, test class properties
-            if item_name[0].isupper() and hasattr(item, '__name__'):
-                assert hasattr(item, '__module__')
+            if item_name[0].isupper() and hasattr(item, "__name__"):
+                assert hasattr(item, "__module__")
 
     def test_core_ai_comprehensive(self):
         """Test core AI - 20% coverage, 49 statements"""
         assert ai is not None
 
-        public_items = [item for item in dir(ai) if not item.startswith('_')]
+        public_items = [item for item in dir(ai) if not item.startswith("_")]
 
         for item_name in public_items:
             item = getattr(ai, item_name)
@@ -134,7 +141,7 @@ class TestHighImpactCoreModules:
         """Test Azure auth - 36% coverage, 42 statements"""
         assert azure_auth is not None
 
-        public_items = [item for item in dir(azure_auth) if not item.startswith('_')]
+        public_items = [item for item in dir(azure_auth) if not item.startswith("_")]
 
         for item_name in public_items:
             item = getattr(azure_auth, item_name)
@@ -144,7 +151,9 @@ class TestHighImpactCoreModules:
         """Test function client - 37% coverage, 54 statements"""
         assert function_client is not None
 
-        public_items = [item for item in dir(function_client) if not item.startswith('_')]
+        public_items = [
+            item for item in dir(function_client) if not item.startswith("_")
+        ]
 
         for item_name in public_items:
             item = getattr(function_client, item_name)
@@ -158,7 +167,7 @@ class TestHighImpactLLMOrchestration:
         """Test gateway - 25% coverage, 270 statements"""
         assert gateway is not None
 
-        public_items = [item for item in dir(gateway) if not item.startswith('_')]
+        public_items = [item for item in dir(gateway) if not item.startswith("_")]
 
         for item_name in public_items:
             item = getattr(gateway, item_name)
@@ -168,7 +177,7 @@ class TestHighImpactLLMOrchestration:
         """Test routing - 17% coverage, 180 statements"""
         assert routing is not None
 
-        public_items = [item for item in dir(routing) if not item.startswith('_')]
+        public_items = [item for item in dir(routing) if not item.startswith("_")]
 
         for item_name in public_items:
             item = getattr(routing, item_name)
@@ -178,7 +187,9 @@ class TestHighImpactLLMOrchestration:
         """Test budget manager - 25% coverage, 185 statements"""
         assert budget_manager is not None
 
-        public_items = [item for item in dir(budget_manager) if not item.startswith('_')]
+        public_items = [
+            item for item in dir(budget_manager) if not item.startswith("_")
+        ]
 
         for item_name in public_items:
             item = getattr(budget_manager, item_name)
@@ -192,22 +203,24 @@ class TestHighImpactServices:
         """Test auth service - 19% coverage, 186 statements"""
         assert auth_service is not None
 
-        public_items = [item for item in dir(auth_service) if not item.startswith('_')]
+        public_items = [item for item in dir(auth_service) if not item.startswith("_")]
 
         for item_name in public_items:
             item = getattr(auth_service, item_name)
             assert item is not None
 
             # If it's a class, try to access its methods
-            if item_name[0].isupper() and hasattr(item, '__name__'):
-                methods = [method for method in dir(item) if not method.startswith('_')]
+            if item_name[0].isupper() and hasattr(item, "__name__"):
+                methods = [method for method in dir(item) if not method.startswith("_")]
                 assert len(methods) >= 0
 
     def test_usage_tracking_comprehensive(self):
         """Test usage tracking - 26% coverage, 43 statements"""
         assert usage_tracking is not None
 
-        public_items = [item for item in dir(usage_tracking) if not item.startswith('_')]
+        public_items = [
+            item for item in dir(usage_tracking) if not item.startswith("_")
+        ]
 
         for item_name in public_items:
             item = getattr(usage_tracking, item_name)
@@ -220,8 +233,16 @@ class TestCoverageBoostIntegration:
     def test_all_high_impact_modules_loaded(self):
         """Test all high-impact modules are loaded"""
         modules = [
-            admin, admin_llm_manager, ai, azure_auth, function_client,
-            gateway, routing, budget_manager, auth_service, usage_tracking
+            admin,
+            admin_llm_manager,
+            ai,
+            azure_auth,
+            function_client,
+            gateway,
+            routing,
+            budget_manager,
+            auth_service,
+            usage_tracking,
         ]
 
         for module in modules:
@@ -230,29 +251,40 @@ class TestCoverageBoostIntegration:
     def test_module_content_accessibility(self):
         """Test module content is accessible"""
         high_impact_modules = [
-            ('admin', admin, 150),  # Highest impact - 0% coverage, 150 statements
-            ('admin_llm_manager', admin_llm_manager, 123),
-            ('auth_service', auth_service, 186),
-            ('gateway', gateway, 270),
-            ('routing', routing, 180),
-            ('budget_manager', budget_manager, 185),
+            ("admin", admin, 150),  # Highest impact - 0% coverage, 150 statements
+            ("admin_llm_manager", admin_llm_manager, 123),
+            ("auth_service", auth_service, 186),
+            ("gateway", gateway, 270),
+            ("routing", routing, 180),
+            ("budget_manager", budget_manager, 185),
         ]
 
         for module_name, module, expected_statements in high_impact_modules:
-            public_items = [item for item in dir(module) if not item.startswith('_')]
+            public_items = [item for item in dir(module) if not item.startswith("_")]
 
             # Should have content proportional to statement count
-            min_expected_items = max(1, expected_statements // 50)  # At least 1 item per 50 statements
-            assert len(public_items) >= min_expected_items, f"{module_name} should have at least {min_expected_items} public items"
+            min_expected_items = max(
+                1, expected_statements // 50
+            )  # At least 1 item per 50 statements
+            assert (
+                len(public_items) >= min_expected_items
+            ), f"{module_name} should have at least {min_expected_items} public items"
 
     def test_coverage_maximization(self):
         """Test designed to maximize coverage across all high-impact modules"""
         # This test touches multiple aspects of each module to maximize coverage
-        modules_to_maximize = [admin, admin_llm_manager, ai, gateway, routing, auth_service]
+        modules_to_maximize = [
+            admin,
+            admin_llm_manager,
+            ai,
+            gateway,
+            routing,
+            auth_service,
+        ]
 
         for module in modules_to_maximize:
             # Touch all public attributes
-            public_attrs = [attr for attr in dir(module) if not attr.startswith('_')]
+            public_attrs = [attr for attr in dir(module) if not attr.startswith("_")]
 
             for attr_name in public_attrs:
                 attr = getattr(module, attr_name)
@@ -261,8 +293,8 @@ class TestCoverageBoostIntegration:
                 assert attr is not None
 
                 # For classes, access class metadata
-                if hasattr(attr, '__name__') and attr_name[0].isupper():
-                    assert hasattr(attr, '__module__')
+                if hasattr(attr, "__name__") and attr_name[0].isupper():
+                    assert hasattr(attr, "__module__")
 
                 # For functions, verify they're callable
                 if callable(attr) and not attr_name[0].isupper():

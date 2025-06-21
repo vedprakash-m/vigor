@@ -4,6 +4,7 @@ Workout-related schemas and data models
 
 from datetime import datetime
 from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 from database.models import FitnessLevel

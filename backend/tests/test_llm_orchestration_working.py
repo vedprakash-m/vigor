@@ -4,16 +4,17 @@ Tests for core/llm_orchestration modules (routing, adapters, config management)
 Target: Increase LLM orchestration coverage from 17-48% to 80%+
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
-from typing import Dict, List, Any
+from typing import Any, Dict, List
+from unittest.mock import Mock, patch
 
-from core.llm_orchestration.routing import RoutingStrategyEngine
-from core.llm_orchestration.adapters import LLMServiceAdapter, LLMRequest, LLMResponse
-from core.llm_orchestration.config_manager import AdminConfigManager
-from core.llm_orchestration.budget_manager import BudgetManager, BudgetStatus
+import pytest
+
+from core.llm_orchestration.adapters import LLMRequest, LLMResponse, LLMServiceAdapter
 from core.llm_orchestration.analytics import AnalyticsCollector
+from core.llm_orchestration.budget_manager import BudgetManager, BudgetStatus
+from core.llm_orchestration.config_manager import AdminConfigManager
+from core.llm_orchestration.routing import RoutingStrategyEngine
 
 
 class TestRoutingStrategyEngine:
@@ -32,7 +33,7 @@ class TestRoutingStrategyEngine:
     def test_routing_engine_initialization(self, routing_engine, config_manager):
         """Test routing engine initializes correctly"""
         assert routing_engine.config_manager is config_manager
-        assert hasattr(routing_engine, 'select_model')
+        assert hasattr(routing_engine, "select_model")
 
     def test_basic_model_selection(self, routing_engine):
         """Test basic model selection functionality"""
@@ -55,7 +56,7 @@ class TestLLMServiceAdapter:
 
     def test_adapter_initialization(self, adapter):
         """Test adapter initializes correctly"""
-        assert hasattr(adapter, 'providers')
+        assert hasattr(adapter, "providers")
         assert isinstance(adapter.providers, dict)
 
     def test_llm_request_creation(self):
@@ -63,7 +64,7 @@ class TestLLMServiceAdapter:
         request = LLMRequest(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": "Hello"}],
-            max_tokens=100
+            max_tokens=100,
         )
 
         assert request.model == "gpt-3.5-turbo"
@@ -76,7 +77,7 @@ class TestLLMServiceAdapter:
             content="Hello! How can I help?",
             model_used="gpt-3.5-turbo",
             tokens_used=25,
-            cost=0.001
+            cost=0.001,
         )
 
         assert response.content == "Hello! How can I help?"
@@ -95,8 +96,8 @@ class TestBudgetManager:
 
     def test_budget_manager_initialization(self, budget_manager):
         """Test budget manager initializes correctly"""
-        assert hasattr(budget_manager, 'check_budget')
-        assert hasattr(budget_manager, 'track_usage')
+        assert hasattr(budget_manager, "check_budget")
+        assert hasattr(budget_manager, "track_usage")
 
     def test_budget_status_enum(self):
         """Test budget status enumeration"""
@@ -125,8 +126,8 @@ class TestAnalyticsCollector:
 
     def test_analytics_initialization(self, analytics):
         """Test analytics collector initializes correctly"""
-        assert hasattr(analytics, 'record_usage')
-        assert hasattr(analytics, 'get_analytics')
+        assert hasattr(analytics, "record_usage")
+        assert hasattr(analytics, "get_analytics")
 
     def test_usage_recording(self, analytics):
         """Test usage recording functionality"""
@@ -134,7 +135,7 @@ class TestAnalyticsCollector:
             "user_id": "test_user",
             "model": "gpt-3.5-turbo",
             "tokens": 100,
-            "cost": 0.002
+            "cost": 0.002,
         }
 
         # Should not raise errors
@@ -151,8 +152,8 @@ class TestAdminConfigManager:
 
     def test_config_manager_initialization(self, config_manager):
         """Test config manager initializes"""
-        assert hasattr(config_manager, 'get_config')
-        assert hasattr(config_manager, 'update_config')
+        assert hasattr(config_manager, "get_config")
+        assert hasattr(config_manager, "update_config")
 
     def test_basic_config_operations(self, config_manager):
         """Test basic configuration operations"""

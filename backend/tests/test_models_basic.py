@@ -1,10 +1,12 @@
 """Basic model and schema tests"""
 
-import pytest
 from datetime import datetime
-from database.models import UserProfile, UserTier, FitnessLevel, Goal, Equipment
-from api.schemas.auth import UserRegister, UserLogin
-from api.schemas.workouts import ExerciseSet, Exercise
+
+import pytest
+
+from api.schemas.auth import UserLogin, UserRegister
+from api.schemas.workouts import Exercise, ExerciseSet
+from database.models import Equipment, FitnessLevel, Goal, UserProfile, UserTier
 
 
 def test_user_tier_enum():
@@ -48,7 +50,7 @@ def test_user_profile_creation():
         user_tier=UserTier.FREE,
         fitness_level=FitnessLevel.BEGINNER,
         goals=[Goal.STRENGTH],
-        equipment=[Equipment.DUMBBELLS]
+        equipment=[Equipment.DUMBBELLS],
     )
 
     assert user.email == "test@example.com"
@@ -66,7 +68,7 @@ def test_user_register_schema():
         password="StrongPassword123!",
         fitness_level="beginner",
         goals=["strength"],
-        equipment="minimal"
+        equipment="minimal",
     )
 
     assert data.email == "test@example.com"
@@ -76,10 +78,7 @@ def test_user_register_schema():
 
 def test_user_login_schema():
     """Test UserLogin schema"""
-    data = UserLogin(
-        email="test@example.com",
-        password="password123"
-    )
+    data = UserLogin(email="test@example.com", password="password123")
 
     assert data.email == "test@example.com"
     assert data.password == "password123"
@@ -87,11 +86,7 @@ def test_user_login_schema():
 
 def test_exercise_set_schema():
     """Test ExerciseSet schema"""
-    data = ExerciseSet(
-        reps="10",
-        weight=50.0,
-        rest="60 seconds"
-    )
+    data = ExerciseSet(reps="10", weight=50.0, rest="60 seconds")
 
     assert data.reps == "10"
     assert data.weight == 50.0
@@ -112,13 +107,11 @@ def test_exercise_schema():
     """Test Exercise schema"""
     sets_data = [
         ExerciseSet(reps="10", weight=45.0),
-        ExerciseSet(reps="8", weight=50.0)
+        ExerciseSet(reps="8", weight=50.0),
     ]
 
     data = Exercise(
-        name="Bench Press",
-        muscle_groups=["chest", "triceps"],
-        sets=sets_data
+        name="Bench Press", muscle_groups=["chest", "triceps"], sets=sets_data
     )
 
     assert data.name == "Bench Press"

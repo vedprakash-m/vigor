@@ -2,6 +2,7 @@
 
 import pytest
 from fastapi.testclient import TestClient
+
 from main import app
 
 # Create test client
@@ -30,7 +31,7 @@ def test_auth_register_endpoint_structure():
         "password": "StrongPassword123!",
         "fitness_level": "beginner",
         "goals": ["strength"],
-        "equipment": "none"
+        "equipment": "none",
     }
 
     response = client.post("/auth/register", json=data)
@@ -46,7 +47,7 @@ def test_auth_register_validation():
         "password": "StrongPassword123!",
         "fitness_level": "beginner",
         "goals": ["strength"],
-        "equipment": "none"
+        "equipment": "none",
     }
 
     response = client.post("/auth/register", json=data)
@@ -56,10 +57,7 @@ def test_auth_register_validation():
 
 def test_auth_login_endpoint_structure():
     """Test auth login endpoint accepts POST"""
-    data = {
-        "email": "test@example.com",
-        "password": "password123"
-    }
+    data = {"email": "test@example.com", "password": "password123"}
 
     response = client.post("/auth/login", json=data)
     # Include 404 for unimplemented endpoints
@@ -82,10 +80,7 @@ def test_workouts_plans_endpoint():
 
 def test_ai_chat_endpoint_structure():
     """Test AI chat endpoint structure"""
-    data = {
-        "message": "Hello AI",
-        "context": {}
-    }
+    data = {"message": "Hello AI", "context": {}}
 
     response = client.post("/ai/chat", json=data)
     # Include 404 for unimplemented endpoints
@@ -104,7 +99,7 @@ def test_invalid_json_handling():
     response = client.post(
         "/auth/register",
         data="invalid json",
-        headers={"Content-Type": "application/json"}
+        headers={"Content-Type": "application/json"},
     )
     # Include 404 for unimplemented endpoints
     assert response.status_code in [400, 404, 422]
@@ -136,7 +131,7 @@ def test_workout_plan_creation_structure():
         "description": "Test workout plan",
         "exercises": [],
         "duration_minutes": 30,
-        "equipment_needed": []
+        "equipment_needed": [],
     }
 
     response = client.post("/workouts/plans", json=data)
@@ -146,11 +141,7 @@ def test_workout_plan_creation_structure():
 
 def test_workout_log_structure():
     """Test workout log structure"""
-    data = {
-        "plan_id": "test-plan-id",
-        "duration_minutes": 45,
-        "exercises": []
-    }
+    data = {"plan_id": "test-plan-id", "duration_minutes": 45, "exercises": []}
 
     response = client.post("/workouts/log", json=data)
     # Include 404 for unimplemented endpoints
@@ -168,7 +159,7 @@ def test_fitness_level_validation():
             "password": "StrongPassword123!",
             "fitness_level": level,
             "goals": ["strength"],
-            "equipment": "none"
+            "equipment": "none",
         }
 
         response = client.post("/auth/register", json=data)
@@ -184,7 +175,7 @@ def test_invalid_fitness_level():
         "password": "StrongPassword123!",
         "fitness_level": "superhuman",  # Invalid
         "goals": ["strength"],
-        "equipment": "none"
+        "equipment": "none",
     }
 
     response = client.post("/auth/register", json=data)
@@ -195,7 +186,7 @@ def test_invalid_fitness_level():
 def test_fastapi_app_creation():
     """Test that FastAPI app is created successfully"""
     assert app is not None
-    assert hasattr(app, 'router')
+    assert hasattr(app, "router")
 
 
 def test_test_client_creation():

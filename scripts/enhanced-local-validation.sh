@@ -59,6 +59,61 @@ for arg in "$@"; do
     esac
 done
 
+# Step 0: CRITICAL DEPENDENCY VALIDATION (NEW - prevents CI/CD failures)
+print_step "Critical Dependency Installation Validation"
+echo "============================================="
+
+# Test clean dependency installation in a temporary virtual environment
+# This catches dependency conflicts that would fail in CI/CD but might be masked locally
+print_step "Creating temporary test environment for dependency validation..."
+TEMP_VENV_DIR="/tmp/vigor_dep_test_$$"
+python -m venv "$TEMP_VENV_DIR"
+source "$TEMP_VENV_DIR/bin/activate"
+
+cd backend
+
+print_step "Testing clean pip install -r requirements.txt (simulating CI/CD)..."
+if ! pip install -r requirements.txt > /tmp/pip_install.log 2>&1; then
+    print_error "DEPENDENCY INSTALLATION FAILED! This would fail in CI/CD. Check /tmp/pip_install.log for details."
+    cat /tmp/pip_install.log
+    deactivate
+    rm -rf "$TEMP_VENV_DIR"
+    exit 1
+fi
+
+print_success "Clean dependency installation successful - CI/CD dependencies OK"
+
+# Test import of key modules to ensure no missing dependencies
+print_step "Testing critical module imports..."
+python -c "
+import sys
+try:
+    import fastapi
+    import sqlalchemy
+    import pytest
+    import opentelemetry
+    import google.generativeai
+    import anthropic
+    import pydantic
+    import uvicorn
+    print('✅ All critical modules import successfully')
+except ImportError as e:
+    print(f'❌ Import error: {e}')
+    sys.exit(1)
+" || {
+    print_error "Critical module import failed - this would break CI/CD deployment"
+    deactivate
+    rm -rf "$TEMP_VENV_DIR"
+    exit 1
+}
+
+# Cleanup test environment
+deactivate
+rm -rf "$TEMP_VENV_DIR"
+print_success "Dependency validation complete - CI/CD will not fail on dependencies"
+
+cd ..
+
 # Step 1: Backend Formatting and Quality
 print_step "Backend Code Quality Checks"
 

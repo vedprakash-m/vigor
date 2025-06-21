@@ -129,7 +129,9 @@ class AICoachMessage(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     user_id: str = Field(..., description="User in the conversation")
     message: str = Field(..., description="Message content")
-    is_user_message: bool = Field(..., description="True if from user, False if from AI")
+    is_user_message: bool = Field(
+        ..., description="True if from user, False if from AI"
+    )
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
     # AI metadata
@@ -170,7 +172,9 @@ class AIUsageLog(BaseModel):
     endpoint: str = Field(..., description="API endpoint called")
     tokens_used: int = Field(..., ge=0, description="Number of tokens consumed")
     cost_usd: float = Field(..., ge=0, description="Cost in USD")
-    response_time_ms: int = Field(..., ge=0, description="Response time in milliseconds")
+    response_time_ms: int = Field(
+        ..., ge=0, description="Response time in milliseconds"
+    )
     success: bool = Field(..., description="Whether the request was successful")
     error_message: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)

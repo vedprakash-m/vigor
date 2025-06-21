@@ -2,14 +2,24 @@
 High-impact LLM orchestration testing for coverage expansion
 Targeting modules with low coverage: routing.py (17%), gateway.py (25%)
 """
-import pytest
+
 from unittest.mock import Mock
+
+import pytest
 
 # Import LLM orchestration modules
 from core.llm_orchestration import (
-    adapters, analytics, budget_manager, cache_manager,
-    circuit_breaker, config_manager, cost_estimator,
-    gateway, key_vault, routing, usage_logger
+    adapters,
+    analytics,
+    budget_manager,
+    cache_manager,
+    circuit_breaker,
+    config_manager,
+    cost_estimator,
+    gateway,
+    key_vault,
+    routing,
+    usage_logger,
 )
 
 
@@ -27,7 +37,11 @@ class TestLLMAdapters:
 
     def test_adapters_functions(self):
         """Test adapters has utility functions"""
-        functions = [item for item in dir(adapters) if callable(getattr(adapters, item)) and not item.startswith('_')]
+        functions = [
+            item
+            for item in dir(adapters)
+            if callable(getattr(adapters, item)) and not item.startswith("_")
+        ]
         assert len(functions) > 0
 
 
@@ -40,7 +54,7 @@ class TestLLMAnalytics:
 
     def test_analytics_structure(self):
         """Test analytics module structure"""
-        items = [item for item in dir(analytics) if not item.startswith('_')]
+        items = [item for item in dir(analytics) if not item.startswith("_")]
         assert len(items) > 0
 
     def test_analytics_classes(self):
@@ -65,7 +79,11 @@ class TestBudgetManager:
 
     def test_budget_manager_functions(self):
         """Test budget manager functions"""
-        functions = [item for item in dir(budget_manager) if callable(getattr(budget_manager, item)) and not item.startswith('_')]
+        functions = [
+            item
+            for item in dir(budget_manager)
+            if callable(getattr(budget_manager, item)) and not item.startswith("_")
+        ]
         assert len(functions) > 0
 
 
@@ -78,7 +96,7 @@ class TestCacheManager:
 
     def test_cache_manager_structure(self):
         """Test cache manager structure"""
-        items = [item for item in dir(cache_manager) if not item.startswith('_')]
+        items = [item for item in dir(cache_manager) if not item.startswith("_")]
         assert len(items) > 0
 
 
@@ -106,7 +124,7 @@ class TestConfigManager:
 
     def test_config_manager_structure(self):
         """Test config manager structure"""
-        items = [item for item in dir(config_manager) if not item.startswith('_')]
+        items = [item for item in dir(config_manager) if not item.startswith("_")]
         assert len(items) > 0
 
 
@@ -119,7 +137,11 @@ class TestCostEstimator:
 
     def test_cost_estimator_functions(self):
         """Test cost estimator functions"""
-        functions = [item for item in dir(cost_estimator) if callable(getattr(cost_estimator, item)) and not item.startswith('_')]
+        functions = [
+            item
+            for item in dir(cost_estimator)
+            if callable(getattr(cost_estimator, item)) and not item.startswith("_")
+        ]
         assert len(functions) > 0
 
 
@@ -145,7 +167,7 @@ class TestKeyVault:
 
     def test_key_vault_structure(self):
         """Test key vault structure"""
-        items = [item for item in dir(key_vault) if not item.startswith('_')]
+        items = [item for item in dir(key_vault) if not item.startswith("_")]
         assert len(items) > 0
 
 
@@ -171,7 +193,7 @@ class TestUsageLogger:
 
     def test_usage_logger_structure(self):
         """Test usage logger structure"""
-        items = [item for item in dir(usage_logger) if not item.startswith('_')]
+        items = [item for item in dir(usage_logger) if not item.startswith("_")]
         assert len(items) > 0
 
 
@@ -181,9 +203,17 @@ class TestLLMOrchestrationIntegration:
     def test_all_modules_loaded(self):
         """Test all orchestration modules load properly"""
         modules = [
-            adapters, analytics, budget_manager, cache_manager,
-            circuit_breaker, config_manager, cost_estimator,
-            gateway, key_vault, routing, usage_logger
+            adapters,
+            analytics,
+            budget_manager,
+            cache_manager,
+            circuit_breaker,
+            config_manager,
+            cost_estimator,
+            gateway,
+            key_vault,
+            routing,
+            usage_logger,
         ]
 
         for module in modules:
@@ -196,5 +226,5 @@ class TestLLMOrchestrationIntegration:
 
         for module in critical_modules:
             # Each should have classes or functions for integration
-            items = [item for item in dir(module) if not item.startswith('_')]
+            items = [item for item in dir(module) if not item.startswith("_")]
             assert len(items) > 0

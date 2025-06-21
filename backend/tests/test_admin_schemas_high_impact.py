@@ -2,6 +2,7 @@
 EXTREMELY HIGH-IMPACT admin schemas testing
 Targeting admin.py with 0% coverage and 150 statements - potential for massive coverage boost
 """
+
 import pytest
 from pydantic import ValidationError
 
@@ -18,7 +19,7 @@ class TestAdminSchemaImports:
     def test_admin_module_content(self):
         """Test admin module has substantial content"""
         # Get all public attributes
-        public_attrs = [attr for attr in dir(admin) if not attr.startswith('_')]
+        public_attrs = [attr for attr in dir(admin) if not attr.startswith("_")]
         # Should have significant content given 150 statements
         assert len(public_attrs) > 0
 
@@ -39,7 +40,7 @@ class TestAdminSchemaStructure:
         for class_name in classes:
             schema_class = getattr(admin, class_name)
             assert schema_class is not None
-            assert hasattr(schema_class, '__name__')
+            assert hasattr(schema_class, "__name__")
 
     def test_admin_schemas_are_classes(self):
         """Test admin schemas are proper classes"""
@@ -59,7 +60,9 @@ class TestAdminSchemaStructure:
             schema_class = getattr(admin, class_name)
             try:
                 # Try various instantiation approaches
-                if hasattr(schema_class, '__fields__') or hasattr(schema_class, 'model_fields'):
+                if hasattr(schema_class, "__fields__") or hasattr(
+                    schema_class, "model_fields"
+                ):
                     # Pydantic model - try empty instantiation
                     try:
                         instance = schema_class()
@@ -89,14 +92,24 @@ class TestAdminSchemaFunctionality:
     def test_admin_module_functions(self):
         """Test admin module functions"""
         # Look for utility functions
-        functions = [item for item in dir(admin) if callable(getattr(admin, item)) and not item.startswith('_') and item[0].islower()]
+        functions = [
+            item
+            for item in dir(admin)
+            if callable(getattr(admin, item))
+            and not item.startswith("_")
+            and item[0].islower()
+        ]
         # May or may not have utility functions
         assert len(functions) >= 0
 
     def test_admin_module_constants(self):
         """Test admin module constants"""
         # Look for constants
-        constants = [item for item in dir(admin) if item.isupper() and not callable(getattr(admin, item))]
+        constants = [
+            item
+            for item in dir(admin)
+            if item.isupper() and not callable(getattr(admin, item))
+        ]
         # May have constants for schema definitions
         assert len(constants) >= 0
 
@@ -106,8 +119,8 @@ class TestAdminSchemaFunctionality:
 
         for schema_class in classes:
             # Each schema should have basic class attributes
-            assert hasattr(schema_class, '__name__')
-            assert hasattr(schema_class, '__module__')
+            assert hasattr(schema_class, "__name__")
+            assert hasattr(schema_class, "__module__")
 
 
 class TestAdminSchemaValidation:
@@ -119,9 +132,11 @@ class TestAdminSchemaValidation:
 
         for schema_class in classes:
             # Check if it's a Pydantic model
-            if hasattr(schema_class, '__fields__') or hasattr(schema_class, 'model_fields'):
+            if hasattr(schema_class, "__fields__") or hasattr(
+                schema_class, "model_fields"
+            ):
                 # This is a Pydantic model
-                assert hasattr(schema_class, '__name__')
+                assert hasattr(schema_class, "__name__")
 
     def test_admin_schema_error_handling(self):
         """Test admin schema error handling"""
@@ -130,7 +145,9 @@ class TestAdminSchemaValidation:
         for schema_class in classes:
             try:
                 # Try to test validation with invalid data
-                if hasattr(schema_class, '__fields__') or hasattr(schema_class, 'model_fields'):
+                if hasattr(schema_class, "__fields__") or hasattr(
+                    schema_class, "model_fields"
+                ):
                     # Try to trigger validation
                     try:
                         schema_class(definitely_invalid_field_name=True)
@@ -151,20 +168,32 @@ class TestAdminSchemaIntegration:
     def test_admin_schema_completeness(self):
         """Test admin schema module completeness"""
         # Given 150 statements, this should be a substantial module
-        all_items = [item for item in dir(admin) if not item.startswith('_')]
+        all_items = [item for item in dir(admin) if not item.startswith("_")]
 
         # Should have substantial content
-        assert len(all_items) >= 3, f"Admin module only has {len(all_items)} items, expected more for 150 statements"
+        assert (
+            len(all_items) >= 3
+        ), f"Admin module only has {len(all_items)} items, expected more for 150 statements"
 
     def test_admin_schema_types(self):
         """Test admin schema types and structure"""
         classes = [item for item in dir(admin) if item[0].isupper()]
-        functions = [item for item in dir(admin) if callable(getattr(admin, item)) and item[0].islower()]
-        constants = [item for item in dir(admin) if item.isupper() and not callable(getattr(admin, item))]
+        functions = [
+            item
+            for item in dir(admin)
+            if callable(getattr(admin, item)) and item[0].islower()
+        ]
+        constants = [
+            item
+            for item in dir(admin)
+            if item.isupper() and not callable(getattr(admin, item))
+        ]
 
         # Should have some combination of classes, functions, or constants
         total_items = len(classes) + len(functions) + len(constants)
-        assert total_items > 0, "Admin module should have classes, functions, or constants"
+        assert (
+            total_items > 0
+        ), "Admin module should have classes, functions, or constants"
 
     def test_admin_schema_imports_work(self):
         """Test admin schema imports work correctly"""
@@ -172,13 +201,13 @@ class TestAdminSchemaIntegration:
         assert admin is not None
 
         # Test that module has expected Python module characteristics
-        assert hasattr(admin, '__name__')
-        assert hasattr(admin, '__file__') or hasattr(admin, '__spec__')
+        assert hasattr(admin, "__name__")
+        assert hasattr(admin, "__file__") or hasattr(admin, "__spec__")
 
     def test_admin_schema_coverage_potential(self):
         """Test admin schema coverage potential"""
         # This test ensures we're touching the admin module extensively
-        public_items = [item for item in dir(admin) if not item.startswith('_')]
+        public_items = [item for item in dir(admin) if not item.startswith("_")]
 
         # Touch each public item to trigger coverage
         for item_name in public_items:
@@ -186,8 +215,8 @@ class TestAdminSchemaIntegration:
             assert item is not None
 
             # If it's a class, try to access its attributes
-            if item_name[0].isupper() and hasattr(item, '__name__'):
-                assert hasattr(item, '__module__')
+            if item_name[0].isupper() and hasattr(item, "__name__"):
+                assert hasattr(item, "__module__")
 
             # If it's callable, verify it's callable
             if callable(item):

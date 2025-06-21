@@ -4,6 +4,7 @@ Admin-related schemas and data models
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -232,18 +233,3 @@ class UsageAnalytics(BaseModel):
     timestamp: datetime
     success: bool
     error_message: Optional[str]
-
-
-class AdminSettingsUpdate(BaseModel):
-    """Admin settings update"""
-
-    value: str
-    description: Optional[str] = Field(None, description="Description of this setting")
-
-
-class AdminSettingsResponse(BaseModel):
-    """Admin settings response"""
-
-    key: str
-    value: str
-    description: Optional[str] = Field(None, description="Updated description")

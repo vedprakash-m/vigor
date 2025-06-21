@@ -1,17 +1,19 @@
 """Basic Core Module Tests"""
 
-import pytest
 from unittest.mock import Mock, patch
-from core.security import get_password_hash, verify_password
+
+import pytest
+
 from core.config import get_settings
+from core.security import get_password_hash, verify_password
 
 
 def test_settings_loading():
     """Test configuration loading"""
     settings = get_settings()
     assert settings is not None
-    assert hasattr(settings, 'SECRET_KEY')
-    assert hasattr(settings, 'DATABASE_URL')
+    assert hasattr(settings, "SECRET_KEY")
+    assert hasattr(settings, "DATABASE_URL")
 
 
 def test_password_hashing():

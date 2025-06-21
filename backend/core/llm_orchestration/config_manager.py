@@ -9,7 +9,7 @@ import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional, List
+from typing import Any, List, Optional
 
 from .key_vault import SecretReference
 

@@ -1,14 +1,17 @@
 """Coverage boost tests for various modules"""
 
+
 def test_main_import():
     """Test main module can be imported"""
     from main import app
+
     assert app is not None
 
 
 def test_config_import():
     """Test config module functions"""
     from core.config import get_settings
+
     settings = get_settings()
     assert settings is not None
 
@@ -27,14 +30,14 @@ def test_security_functions():
 
 def test_models_import():
     """Test models can be imported and used"""
-    from database.models import UserProfile, UserTier, FitnessLevel
+    from database.models import FitnessLevel, UserProfile, UserTier
 
     user = UserProfile(
         email="test@example.com",
         username="testuser",
         hashed_password="hashed",
         user_tier=UserTier.FREE,
-        fitness_level=FitnessLevel.BEGINNER
+        fitness_level=FitnessLevel.BEGINNER,
     )
 
     assert user.email == "test@example.com"
@@ -43,7 +46,7 @@ def test_models_import():
 
 def test_schemas_import():
     """Test schemas can be imported and used"""
-    from api.schemas.auth import UserRegister, UserLogin
+    from api.schemas.auth import UserLogin, UserRegister
 
     user_reg = UserRegister(
         email="test@example.com",
@@ -51,15 +54,12 @@ def test_schemas_import():
         password="Password123!",
         fitness_level="beginner",
         goals=["strength"],
-        equipment="none"
+        equipment="none",
     )
 
     assert user_reg.email == "test@example.com"
 
-    user_login = UserLogin(
-        email="test@example.com",
-        password="password"
-    )
+    user_login = UserLogin(email="test@example.com", password="password")
 
     assert user_login.email == "test@example.com"
 
@@ -77,8 +77,9 @@ def test_database_connection():
 
 def test_auth_service_import():
     """Test auth service can be imported"""
-    from api.services.auth import AuthService
     from unittest.mock import Mock
+
+    from api.services.auth import AuthService
 
     # Mock database dependency
     mock_db = Mock()

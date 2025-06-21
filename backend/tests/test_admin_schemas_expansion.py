@@ -2,9 +2,11 @@
 High-impact admin schemas testing for coverage expansion
 Targeting admin.py with 0% coverage and 150 statements
 """
+
+from unittest.mock import Mock
+
 import pytest
 from pydantic import ValidationError
-from unittest.mock import Mock
 
 # Import admin schemas
 from api.schemas import admin
@@ -24,19 +26,25 @@ class TestAdminSchemas:
 
     def test_admin_schema_structure(self):
         """Test admin schemas have expected structure"""
-        schema_classes = [getattr(admin, item) for item in dir(admin) if item[0].isupper()]
+        schema_classes = [
+            getattr(admin, item) for item in dir(admin) if item[0].isupper()
+        ]
 
         for schema_class in schema_classes:
-            assert hasattr(schema_class, '__name__')
+            assert hasattr(schema_class, "__name__")
 
     def test_admin_schema_instantiation(self):
         """Test admin schemas can be instantiated with valid data"""
-        schema_classes = [getattr(admin, item) for item in dir(admin) if item[0].isupper()]
+        schema_classes = [
+            getattr(admin, item) for item in dir(admin) if item[0].isupper()
+        ]
 
         for schema_class in schema_classes:
             try:
                 # Try to get schema fields for basic instantiation
-                if hasattr(schema_class, '__fields__') or hasattr(schema_class, 'model_fields'):
+                if hasattr(schema_class, "__fields__") or hasattr(
+                    schema_class, "model_fields"
+                ):
                     # This is likely a Pydantic model
                     try:
                         # Try minimal instantiation with empty dict
@@ -62,11 +70,15 @@ class TestAdminSchemas:
 
     def test_admin_schema_validation(self):
         """Test admin schema validation behavior"""
-        schema_classes = [getattr(admin, item) for item in dir(admin) if item[0].isupper()]
+        schema_classes = [
+            getattr(admin, item) for item in dir(admin) if item[0].isupper()
+        ]
 
         for schema_class in schema_classes:
             # Test that schemas have validation characteristics
-            if hasattr(schema_class, '__fields__') or hasattr(schema_class, 'model_fields'):
+            if hasattr(schema_class, "__fields__") or hasattr(
+                schema_class, "model_fields"
+            ):
                 # This is a Pydantic model
                 try:
                     # Test invalid data handling
@@ -82,15 +94,25 @@ class TestAdminSchemaFunctions:
 
     def test_admin_functions_exist(self):
         """Test admin module has utility functions"""
-        functions = [item for item in dir(admin) if callable(getattr(admin, item)) and not item.startswith('_') and item[0].islower()]
+        functions = [
+            item
+            for item in dir(admin)
+            if callable(getattr(admin, item))
+            and not item.startswith("_")
+            and item[0].islower()
+        ]
         # Should have some utility functions (could be 0 if all are classes)
         assert len(functions) >= 0
 
     def test_admin_constants(self):
         """Test admin module constants"""
-        constants = [item for item in dir(admin) if item.isupper() and not callable(getattr(admin, item))]
+        constants = [
+            item
+            for item in dir(admin)
+            if item.isupper() and not callable(getattr(admin, item))
+        ]
         # Module should have some structure (constants, classes, or functions)
-        total_items = len([item for item in dir(admin) if not item.startswith('_')])
+        total_items = len([item for item in dir(admin) if not item.startswith("_")])
         assert total_items > 0
 
 
@@ -102,7 +124,7 @@ class TestAdminSchemaIntegration:
         assert admin is not None
 
         module_attrs = dir(admin)
-        public_attrs = [attr for attr in module_attrs if not attr.startswith('_')]
+        public_attrs = [attr for attr in module_attrs if not attr.startswith("_")]
         assert len(public_attrs) > 0
 
     def test_admin_schema_types(self):
@@ -112,13 +134,13 @@ class TestAdminSchemaIntegration:
 
         for cls in classes:
             # Each class should have a proper name
-            assert hasattr(cls, '__name__')
+            assert hasattr(cls, "__name__")
             # Classes should be callable (constructible)
             assert callable(cls)
 
     def test_admin_module_completeness(self):
         """Test admin module has expected completeness"""
-        all_items = [item for item in dir(admin) if not item.startswith('_')]
+        all_items = [item for item in dir(admin) if not item.startswith("_")]
         assert len(all_items) > 5
 
 
@@ -128,13 +150,13 @@ class TestAdminSchemaEdgeCases:
     def test_admin_schema_error_handling(self):
         """Test admin schemas handle errors gracefully"""
         # Test that the module itself is robust
-        assert hasattr(admin, '__name__')
-        assert hasattr(admin, '__file__') or hasattr(admin, '__spec__')
+        assert hasattr(admin, "__name__")
+        assert hasattr(admin, "__file__") or hasattr(admin, "__spec__")
 
     def test_admin_schema_attributes(self):
         """Test admin schema attributes are accessible"""
         # Test each public attribute can be accessed
-        public_attrs = [attr for attr in dir(admin) if not attr.startswith('_')]
+        public_attrs = [attr for attr in dir(admin) if not attr.startswith("_")]
 
         for attr_name in public_attrs:
             attr = getattr(admin, attr_name)
@@ -147,6 +169,6 @@ class TestAdminSchemaEdgeCases:
 
         for cls in classes:
             # Class should have basic Python class characteristics
-            assert hasattr(cls, '__name__')
+            assert hasattr(cls, "__name__")
             # Class should be properly defined (not None)
             assert cls is not None

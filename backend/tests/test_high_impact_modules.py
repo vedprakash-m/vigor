@@ -2,14 +2,25 @@
 Strategic high-impact module testing for maximum coverage expansion
 Targeting multiple modules with significant statement counts and low coverage
 """
-import pytest
+
 from unittest.mock import Mock, patch
 
-# Import high-impact modules with low coverage
-from core import admin_llm_manager, ai, azure_auth, function_client, function_performance
+import pytest
+
+from api.routes import admin as admin_routes
+from api.routes import auth
 from api.schemas import admin
-from api.routes import auth, admin as admin_routes
-from api.services import auth as auth_service, ai as ai_service
+from api.services import ai as ai_service
+from api.services import auth as auth_service
+
+# Import high-impact modules with low coverage
+from core import (
+    admin_llm_manager,
+    ai,
+    azure_auth,
+    function_client,
+    function_performance,
+)
 
 
 class TestAdminLLMManager:
@@ -26,7 +37,11 @@ class TestAdminLLMManager:
 
     def test_admin_llm_manager_functions(self):
         """Test admin LLM manager functions"""
-        functions = [item for item in dir(admin_llm_manager) if callable(getattr(admin_llm_manager, item)) and not item.startswith('_')]
+        functions = [
+            item
+            for item in dir(admin_llm_manager)
+            if callable(getattr(admin_llm_manager, item)) and not item.startswith("_")
+        ]
         assert len(functions) > 0
 
 
@@ -39,7 +54,7 @@ class TestCoreAI:
 
     def test_core_ai_structure(self):
         """Test core AI structure"""
-        items = [item for item in dir(ai) if not item.startswith('_')]
+        items = [item for item in dir(ai) if not item.startswith("_")]
         assert len(items) > 0
 
     def test_core_ai_classes(self):
@@ -59,7 +74,11 @@ class TestAzureAuth:
 
     def test_azure_auth_functions(self):
         """Test Azure auth functions"""
-        functions = [item for item in dir(azure_auth) if callable(getattr(azure_auth, item)) and not item.startswith('_')]
+        functions = [
+            item
+            for item in dir(azure_auth)
+            if callable(getattr(azure_auth, item)) and not item.startswith("_")
+        ]
         assert len(functions) > 0
 
 
@@ -85,7 +104,7 @@ class TestFunctionPerformance:
 
     def test_function_performance_structure(self):
         """Test function performance structure"""
-        items = [item for item in dir(function_performance) if not item.startswith('_')]
+        items = [item for item in dir(function_performance) if not item.startswith("_")]
         assert len(items) > 0
 
 
@@ -103,17 +122,19 @@ class TestAdminSchemas:
 
     def test_admin_schemas_structure(self):
         """Test admin schemas structure"""
-        all_items = [item for item in dir(admin) if not item.startswith('_')]
+        all_items = [item for item in dir(admin) if not item.startswith("_")]
         assert len(all_items) > 5  # Should have substantial content
 
     def test_admin_schemas_instantiation(self):
         """Test admin schemas can be accessed"""
-        schema_classes = [getattr(admin, item) for item in dir(admin) if item[0].isupper()]
+        schema_classes = [
+            getattr(admin, item) for item in dir(admin) if item[0].isupper()
+        ]
 
         for schema_class in schema_classes:
             # Each schema should be accessible
             assert schema_class is not None
-            assert hasattr(schema_class, '__name__')
+            assert hasattr(schema_class, "__name__")
 
 
 class TestAuthRoutes:
@@ -125,12 +146,16 @@ class TestAuthRoutes:
 
     def test_auth_routes_router(self):
         """Test auth routes router"""
-        assert hasattr(auth, 'router')
+        assert hasattr(auth, "router")
         assert auth.router is not None
 
     def test_auth_routes_functions(self):
         """Test auth routes functions"""
-        functions = [item for item in dir(auth) if callable(getattr(auth, item)) and not item.startswith('_')]
+        functions = [
+            item
+            for item in dir(auth)
+            if callable(getattr(auth, item)) and not item.startswith("_")
+        ]
         assert len(functions) > 0
 
 
@@ -143,7 +168,7 @@ class TestAdminRoutes:
 
     def test_admin_routes_router(self):
         """Test admin routes router"""
-        assert hasattr(admin_routes, 'router')
+        assert hasattr(admin_routes, "router")
         assert admin_routes.router is not None
 
 
@@ -161,7 +186,11 @@ class TestAuthService:
 
     def test_auth_service_functions(self):
         """Test auth service functions"""
-        functions = [item for item in dir(auth_service) if callable(getattr(auth_service, item)) and not item.startswith('_')]
+        functions = [
+            item
+            for item in dir(auth_service)
+            if callable(getattr(auth_service, item)) and not item.startswith("_")
+        ]
         assert len(functions) > 0
 
 
@@ -174,7 +203,7 @@ class TestAIService:
 
     def test_ai_service_structure(self):
         """Test AI service structure"""
-        items = [item for item in dir(ai_service) if not item.startswith('_')]
+        items = [item for item in dir(ai_service) if not item.startswith("_")]
         assert len(items) > 0
 
 
@@ -184,9 +213,16 @@ class TestHighImpactIntegration:
     def test_all_modules_accessible(self):
         """Test all high-impact modules are accessible"""
         modules = [
-            admin_llm_manager, ai, azure_auth, function_client,
-            function_performance, admin, auth, admin_routes,
-            auth_service, ai_service
+            admin_llm_manager,
+            ai,
+            azure_auth,
+            function_client,
+            function_performance,
+            admin,
+            auth,
+            admin_routes,
+            auth_service,
+            ai_service,
         ]
 
         for module in modules:
@@ -196,10 +232,12 @@ class TestHighImpactIntegration:
         """Test modules have expected content"""
         modules_with_expected_items = [
             (admin, 5),  # Admin schemas should have substantial content
-            (auth, 3),   # Auth routes should have functions
+            (auth, 3),  # Auth routes should have functions
             (auth_service, 3),  # Auth service should have classes/functions
         ]
 
         for module, min_items in modules_with_expected_items:
-            items = [item for item in dir(module) if not item.startswith('_')]
-            assert len(items) >= min_items, f"Module {module.__name__} has only {len(items)} items, expected at least {min_items}"
+            items = [item for item in dir(module) if not item.startswith("_")]
+            assert (
+                len(items) >= min_items
+            ), f"Module {module.__name__} has only {len(items)} items, expected at least {min_items}"

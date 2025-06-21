@@ -3,22 +3,32 @@ Focused Schema Tests
 Tests actual Pydantic schemas for validation and edge cases
 """
 
-import pytest
 from datetime import datetime
 from typing import List
+
+import pytest
 from pydantic import ValidationError
 
-# Import actual schemas
-from api.schemas.auth import UserRegister, UserLogin, Token, TokenData, UserResponse
-from api.schemas.workouts import (
-    ExerciseSet, Exercise, WorkoutPlan, WorkoutSession,
-    WorkoutPlanRequest, WorkoutPlanCreate, WorkoutLogCreate, AIWorkoutRequest
-)
-from api.schemas.users import (
-    UserProfileResponse, UserProfileUpdate, ProgressMetricCreate
-)
 from api.schemas.ai import ChatMessage, ChatResponse
-from database.models import FitnessLevel, Goal, Equipment
+
+# Import actual schemas
+from api.schemas.auth import Token, TokenData, UserLogin, UserRegister, UserResponse
+from api.schemas.users import (
+    ProgressMetricCreate,
+    UserProfileResponse,
+    UserProfileUpdate,
+)
+from api.schemas.workouts import (
+    AIWorkoutRequest,
+    Exercise,
+    ExerciseSet,
+    WorkoutLogCreate,
+    WorkoutPlan,
+    WorkoutPlanCreate,
+    WorkoutPlanRequest,
+    WorkoutSession,
+)
+from database.models import Equipment, FitnessLevel, Goal
 
 
 class TestAuthSchemas:
@@ -32,7 +42,7 @@ class TestAuthSchemas:
             "password": "StrongPassword123!",
             "fitness_level": "beginner",
             "goals": ["strength", "endurance"],
-            "equipment": "minimal"
+            "equipment": "minimal",
         }
 
         user = UserRegister(**data)
@@ -52,7 +62,7 @@ class TestAuthSchemas:
                 password="StrongPassword123!",
                 fitness_level="beginner",
                 goals=["strength"],
-                equipment="minimal"
+                equipment="minimal",
             )
 
         # Short username
@@ -63,7 +73,7 @@ class TestAuthSchemas:
                 password="StrongPassword123!",
                 fitness_level="beginner",
                 goals=["strength"],
-                equipment="minimal"
+                equipment="minimal",
             )
 
         # Short password
@@ -74,15 +84,12 @@ class TestAuthSchemas:
                 password="short",  # Too short
                 fitness_level="beginner",
                 goals=["strength"],
-                equipment="minimal"
+                equipment="minimal",
             )
 
     def test_user_login_schema(self):
         """Test user login schema"""
-        data = {
-            "email": "test@example.com",
-            "password": "password123"
-        }
+        data = {"email": "test@example.com", "password": "password123"}
 
         login = UserLogin(**data)
         assert login.email == "test@example.com"
@@ -91,10 +98,7 @@ class TestAuthSchemas:
     def test_token_schema(self):
         """Test token schema"""
         expires_at = datetime.utcnow()
-        data = {
-            "access_token": "jwt_token_here",
-            "expires_at": expires_at
-        }
+        data = {"access_token": "jwt_token_here", "expires_at": expires_at}
 
         token = Token(**data)
         assert token.access_token == "jwt_token_here"
@@ -121,7 +125,7 @@ class TestWorkoutSchemas:
             "reps": "8-12",
             "weight": 50.0,
             "rest": "60 seconds",
-            "notes": "Felt strong"
+            "notes": "Felt strong",
         }
 
         exercise_set = ExerciseSet(**data)
@@ -144,14 +148,14 @@ class TestWorkoutSchemas:
         sets_data = [
             {"reps": "10", "weight": 45.0},
             {"reps": "10", "weight": 45.0},
-            {"reps": "8", "weight": 50.0}
+            {"reps": "8", "weight": 50.0},
         ]
 
         data = {
             "name": "Bench Press",
             "muscle_groups": ["chest", "triceps", "shoulders"],
             "sets": sets_data,
-            "instructions": "Keep your back flat on the bench"
+            "instructions": "Keep your back flat on the bench",
         }
 
         exercise = Exercise(**data)
@@ -175,7 +179,7 @@ class TestWorkoutSchemas:
             "estimated_duration_minutes": 45,
             "difficulty_level": "intermediate",
             "equipment_needed": ["dumbbells"],
-            "notes": "Great for building strength"
+            "notes": "Great for building strength",
         }
 
         workout = WorkoutPlan(**data)
@@ -193,7 +197,7 @@ class TestWorkoutSchemas:
                 description="Test",
                 exercises=[],
                 estimated_duration_minutes=0,  # Invalid
-                difficulty_level="beginner"
+                difficulty_level="beginner",
             )
 
         # Invalid difficulty level
@@ -203,7 +207,7 @@ class TestWorkoutSchemas:
                 description="Test",
                 exercises=[],
                 estimated_duration_minutes=30,
-                difficulty_level="superhuman"  # Invalid
+                difficulty_level="superhuman",  # Invalid
             )
 
     def test_workout_plan_request_schema(self):
@@ -214,7 +218,7 @@ class TestWorkoutSchemas:
             "available_equipment": ["dumbbells", "barbell"],
             "duration_minutes": 60,
             "focus_areas": ["upper_body"],
-            "notes": "I want to focus on compound movements"
+            "notes": "I want to focus on compound movements",
         }
 
         request = WorkoutPlanRequest(**data)
@@ -230,7 +234,7 @@ class TestWorkoutSchemas:
                 goals=["strength"],
                 fitness_level="beginner",
                 available_equipment=[],
-                duration_minutes=10  # Too short (minimum 15)
+                duration_minutes=10,  # Too short (minimum 15)
             )
 
         # Duration too long
@@ -239,7 +243,7 @@ class TestWorkoutSchemas:
                 goals=["strength"],
                 fitness_level="beginner",
                 available_equipment=[],
-                duration_minutes=150  # Too long (maximum 120)
+                duration_minutes=150,  # Too long (maximum 120)
             )
 
     def test_workout_log_create_schema(self):
@@ -247,7 +251,7 @@ class TestWorkoutSchemas:
         exercise_data = {
             "name": "Squats",
             "muscle_groups": ["quadriceps"],
-            "sets": [{"reps": "12", "weight": 100.0}]
+            "sets": [{"reps": "12", "weight": 100.0}],
         }
 
         data = {
@@ -255,7 +259,7 @@ class TestWorkoutSchemas:
             "duration_minutes": 45,
             "exercises": [exercise_data],
             "notes": "Great workout session!",
-            "rating": 5
+            "rating": 5,
         }
 
         log = WorkoutLogCreate(**data)
@@ -268,9 +272,7 @@ class TestWorkoutSchemas:
         # Invalid duration
         with pytest.raises(ValidationError):
             WorkoutLogCreate(
-                plan_id="plan123",
-                duration_minutes=0,  # Invalid
-                exercises=[]
+                plan_id="plan123", duration_minutes=0, exercises=[]  # Invalid
             )
 
         # Invalid rating
@@ -279,7 +281,7 @@ class TestWorkoutSchemas:
                 plan_id="plan123",
                 duration_minutes=30,
                 exercises=[],
-                rating=6  # Invalid (max 5)
+                rating=6,  # Invalid (max 5)
             )
 
     def test_ai_workout_request_schema(self):
@@ -288,7 +290,7 @@ class TestWorkoutSchemas:
             "goals": ["fat_loss", "endurance"],
             "equipment": "minimal",
             "duration_minutes": 30,
-            "focus_areas": ["cardio", "core"]
+            "focus_areas": ["cardio", "core"],
         }
 
         request = AIWorkoutRequest(**data)
@@ -307,7 +309,7 @@ class TestUserSchemas:
             "goals": [Goal.STRENGTH, Goal.MUSCLE_GAIN],
             "equipment": Equipment.MODERATE,
             "injuries": ["lower_back"],
-            "preferences": {"workout_time": "morning", "music": True}
+            "preferences": {"workout_time": "morning", "music": True},
         }
 
         update = UserProfileUpdate(**data)
@@ -329,7 +331,7 @@ class TestUserSchemas:
             "weight": 175.5,
             "body_fat": 15.2,
             "measurements": {"chest": 42.0, "waist": 34.0},
-            "notes": "Feeling stronger this week"
+            "notes": "Feeling stronger this week",
         }
 
         metric = ProgressMetricCreate(**data)
@@ -354,7 +356,7 @@ class TestAISchemas:
         """Test chat message schema"""
         data = {
             "message": "Give me a workout plan for building muscle",
-            "context": {"user_goal": "muscle_gain"}
+            "context": {"user_goal": "muscle_gain"},
         }
 
         chat_msg = ChatMessage(**data)
@@ -367,7 +369,7 @@ class TestAISchemas:
             "response": "Here's a great muscle-building workout...",
             "model_used": "gpt-3.5-turbo",
             "tokens_used": 150,
-            "confidence_score": 0.92
+            "confidence_score": 0.92,
         }
 
         response = ChatResponse(**data)
@@ -386,7 +388,7 @@ class TestSchemaEdgeCases:
             Exercise(
                 name="Test Exercise",
                 muscle_groups=[],  # Empty list might be invalid
-                sets=[]
+                sets=[],
             )
 
     def test_missing_required_fields(self):
@@ -398,7 +400,7 @@ class TestSchemaEdgeCases:
                 description="Test workout",
                 exercises=[],
                 estimated_duration_minutes=30,
-                difficulty_level="beginner"
+                difficulty_level="beginner",
             )
 
     def test_field_constraints(self):
@@ -409,7 +411,7 @@ class TestSchemaEdgeCases:
                 name="",  # Empty name should fail min_length constraint
                 description="Test",
                 exercises=[],
-                duration_minutes=30
+                duration_minutes=30,
             )
 
     def test_numeric_constraints(self):
@@ -419,7 +421,7 @@ class TestSchemaEdgeCases:
             WorkoutLogCreate(
                 plan_id="plan123",
                 duration_minutes=-10,  # Negative duration should fail
-                exercises=[]
+                exercises=[],
             )
 
         # Test rating bounds
@@ -428,5 +430,5 @@ class TestSchemaEdgeCases:
                 plan_id="plan123",
                 duration_minutes=30,
                 exercises=[],
-                rating=0  # Below minimum rating
+                rating=0,  # Below minimum rating
             )

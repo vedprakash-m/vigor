@@ -4,20 +4,21 @@ Tests for core/security.py functions that actually exist
 Target: Increase security coverage from 41% to 80%+
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
+
+import pytest
 from fastapi import HTTPException, status
 
 from core.security import (
-    create_access_token,
-    verify_token,
-    get_password_hash,
-    verify_password,
-    rate_limit,
-    auth_rate_limit,
     ai_rate_limit,
-    validate_input
+    auth_rate_limit,
+    create_access_token,
+    get_password_hash,
+    rate_limit,
+    validate_input,
+    verify_password,
+    verify_token,
 )
 
 
@@ -123,6 +124,7 @@ class TestInputValidation:
 
     def test_validate_input_can_be_called(self):
         """Test validate_input decorator can be called"""
+
         # Mock validator class
         class MockValidator:
             pass
@@ -145,6 +147,7 @@ class TestSecurityConstants:
 
         # After waiting, should expire (we'll mock this in real tests)
         import time
+
         time.sleep(2)
 
         # Should now be expired

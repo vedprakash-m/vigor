@@ -1,13 +1,14 @@
 """Comprehensive tests for main.py FastAPI application"""
 
-import pytest
-from unittest.mock import Mock, patch, AsyncMock
-from fastapi.testclient import TestClient
-from fastapi import status
 import asyncio
+from unittest.mock import AsyncMock, Mock, patch
 
-from main import app, lifespan
+import pytest
+from fastapi import status
+from fastapi.testclient import TestClient
+
 from core.config import get_settings
+from main import app, lifespan
 
 
 class TestMainApplication:
@@ -17,8 +18,8 @@ class TestMainApplication:
         """Test FastAPI app is created successfully"""
         assert app is not None
         assert app.title == "Vigor - AI Fitness Coach"
-        assert hasattr(app, 'router')
-        assert hasattr(app, 'state')
+        assert hasattr(app, "router")
+        assert hasattr(app, "state")
 
     def test_app_metadata(self):
         """Test app metadata is set correctly"""
@@ -29,13 +30,15 @@ class TestMainApplication:
 
     def test_app_state_initialization(self):
         """Test app state is initialized"""
-        assert hasattr(app.state, 'limiter')
+        assert hasattr(app.state, "limiter")
         assert app.state.limiter is not None
 
     def test_middleware_configuration(self):
         """Test middleware is properly configured"""
         # Check that middlewares are added
-        middleware_names = [type(middleware).__name__ for middleware in app.user_middleware]
+        middleware_names = [
+            type(middleware).__name__ for middleware in app.user_middleware
+        ]
 
         # Should have security, CORS, and observability middleware
         middleware_count = len(middleware_names)
@@ -52,9 +55,9 @@ class TestMainApplication:
         assert len(routes) > 0, "App should have routes registered"
 
         # Should have some common routes
-        route_paths = [getattr(route, 'path', '') for route in routes]
+        route_paths = [getattr(route, "path", "") for route in routes]
         # At least health check should be there
-        health_routes = [path for path in route_paths if 'health' in path.lower()]
+        health_routes = [path for path in route_paths if "health" in path.lower()]
         assert len(health_routes) >= 0  # May or may not be implemented
 
 
@@ -97,14 +100,18 @@ class TestErrorHandlers:
         response = client.post("/auth/register", json={"invalid": "data"})
 
         # Should handle validation errors properly
-        assert response.status_code in [404, 422, 429]  # 404 if endpoint not implemented
+        assert response.status_code in [
+            404,
+            422,
+            429,
+        ]  # 404 if endpoint not implemented
 
     def test_rate_limit_error_handling(self):
         """Test rate limit error handling"""
         client = TestClient(app)
 
         # This tests the error handler registration, not necessarily rate limiting
-        assert hasattr(app, 'exception_handlers')
+        assert hasattr(app, "exception_handlers")
         assert len(app.exception_handlers) > 0
 
     def test_global_exception_handling(self):
@@ -116,10 +123,12 @@ class TestErrorHandlers:
 class TestLifecycleManagement:
     """Test application lifecycle management"""
 
-    @patch('main.init_db')
-    @patch('main.initialize_llm_orchestration')
-    @patch('main.shutdown_llm_orchestration')
-    async def test_lifespan_startup_shutdown(self, mock_shutdown, mock_init_llm, mock_init_db):
+    @patch("main.init_db")
+    @patch("main.initialize_llm_orchestration")
+    @patch("main.shutdown_llm_orchestration")
+    async def test_lifespan_startup_shutdown(
+        self, mock_shutdown, mock_init_llm, mock_init_db
+    ):
         """Test lifespan startup and shutdown"""
         mock_init_db.return_value = None
         mock_init_llm.return_value = AsyncMock()
@@ -134,8 +143,8 @@ class TestLifecycleManagement:
         # Shutdown code should have run
         mock_shutdown.assert_called_once()
 
-    @patch('main.init_db')
-    @patch('main.initialize_llm_orchestration')
+    @patch("main.init_db")
+    @patch("main.initialize_llm_orchestration")
     async def test_lifespan_startup_success(self, mock_init_llm, mock_init_db):
         """Test successful startup"""
         mock_init_db.return_value = None
@@ -151,19 +160,21 @@ class TestLifecycleManagement:
         # Should not raise exceptions with mocked dependencies
         assert startup_success or mock_init_db.called
 
-    @patch('main.init_db', side_effect=Exception("Database error"))
+    @patch("main.init_db", side_effect=Exception("Database error"))
     async def test_lifespan_startup_failure(self, mock_init_db):
         """Test startup failure handling"""
         with pytest.raises(Exception):
             async with lifespan(app):
                 pass
 
-    @patch.dict('os.environ', {'USE_FUNCTIONS': 'true'})
-    @patch('main.init_db')
-    @patch('main.initialize_llm_orchestration')
-    @patch('main.FunctionsClient')
-    @patch('main.perf_monitor')
-    async def test_lifespan_with_functions_enabled(self, mock_perf, mock_functions, mock_init_llm, mock_init_db):
+    @patch.dict("os.environ", {"USE_FUNCTIONS": "true"})
+    @patch("main.init_db")
+    @patch("main.initialize_llm_orchestration")
+    @patch("main.FunctionsClient")
+    @patch("main.perf_monitor")
+    async def test_lifespan_with_functions_enabled(
+        self, mock_perf, mock_functions, mock_init_llm, mock_init_db
+    ):
         """Test lifespan with Azure Functions enabled"""
         mock_init_db.return_value = None
         mock_init_llm.return_value = AsyncMock()
@@ -174,9 +185,9 @@ class TestLifecycleManagement:
             # Should initialize functions when enabled
             mock_functions.assert_called()
 
-    @patch.dict('os.environ', {'USE_FUNCTIONS': 'false'})
-    @patch('main.init_db')
-    @patch('main.initialize_llm_orchestration')
+    @patch.dict("os.environ", {"USE_FUNCTIONS": "false"})
+    @patch("main.init_db")
+    @patch("main.initialize_llm_orchestration")
     async def test_lifespan_with_functions_disabled(self, mock_init_llm, mock_init_db):
         """Test lifespan with Azure Functions disabled"""
         mock_init_db.return_value = None
@@ -184,7 +195,10 @@ class TestLifecycleManagement:
 
         async with lifespan(app):
             # Should not have warmup tasks when functions disabled
-            assert not hasattr(app, 'warmup_tasks') or len(getattr(app, 'warmup_tasks', [])) == 0
+            assert (
+                not hasattr(app, "warmup_tasks")
+                or len(getattr(app, "warmup_tasks", [])) == 0
+            )
 
 
 class TestSecurityFeatures:
@@ -207,7 +221,7 @@ class TestSecurityFeatures:
 
     def test_rate_limiting_configured(self):
         """Test rate limiting is configured"""
-        assert hasattr(app.state, 'limiter')
+        assert hasattr(app.state, "limiter")
         assert app.state.limiter is not None
 
     def test_observability_middleware_added(self):
@@ -224,9 +238,9 @@ class TestApplicationSettings:
         """Test application settings are loaded"""
         settings = get_settings()
         assert settings is not None
-        assert hasattr(settings, 'APP_NAME')
-        assert hasattr(settings, 'APP_VERSION')
-        assert hasattr(settings, 'ENVIRONMENT')
+        assert hasattr(settings, "APP_NAME")
+        assert hasattr(settings, "APP_VERSION")
+        assert hasattr(settings, "ENVIRONMENT")
 
     def test_debug_mode_configuration(self):
         """Test debug mode configuration"""
@@ -237,14 +251,14 @@ class TestApplicationSettings:
     def test_cors_origins_configuration(self):
         """Test CORS origins are configured"""
         settings = get_settings()
-        assert hasattr(settings, 'CORS_ORIGINS')
+        assert hasattr(settings, "CORS_ORIGINS")
         # Should be a list
         assert isinstance(settings.CORS_ORIGINS, list)
 
     def test_llm_provider_configuration(self):
         """Test LLM provider is configured"""
         settings = get_settings()
-        assert hasattr(settings, 'LLM_PROVIDER')
+        assert hasattr(settings, "LLM_PROVIDER")
         assert settings.LLM_PROVIDER is not None
 
 
@@ -308,7 +322,7 @@ class TestApplicationIntegrity:
 
     def test_app_has_required_attributes(self):
         """Test app has all required attributes"""
-        required_attrs = ['title', 'version', 'description', 'router', 'state']
+        required_attrs = ["title", "version", "description", "router", "state"]
 
         for attr in required_attrs:
             assert hasattr(app, attr), f"App should have {attr} attribute"

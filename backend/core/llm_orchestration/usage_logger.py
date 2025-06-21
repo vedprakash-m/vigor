@@ -4,9 +4,9 @@ Comprehensive logging system for LLM usage analytics and billing
 """
 
 import logging
-from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Dict, List, Optional, Union
 
 logger = logging.getLogger(__name__)
 

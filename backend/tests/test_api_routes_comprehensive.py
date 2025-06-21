@@ -3,17 +3,18 @@ Comprehensive API Routes Tests
 Focused on testing all major API endpoints to boost coverage significantly
 """
 
-import pytest
-from unittest.mock import Mock, patch, AsyncMock
-from fastapi.testclient import TestClient
-from fastapi import status
 import json
 from datetime import datetime
+from unittest.mock import AsyncMock, Mock, patch
 
-from main import app
-from database.models import UserTier, FitnessLevel, Goal, Equipment
-from api.schemas.auth import UserRegister, UserLogin, Token
+import pytest
+from fastapi import status
+from fastapi.testclient import TestClient
+
+from api.schemas.auth import Token, UserLogin, UserRegister
 from api.schemas.workouts import WorkoutPlan, WorkoutSession
+from database.models import Equipment, FitnessLevel, Goal, UserTier
+from main import app
 
 # Create test client
 client = TestClient(app)
@@ -45,7 +46,7 @@ class TestAuthRoutes:
             "password": "StrongPassword123!",
             "fitness_level": "beginner",
             "goals": ["strength"],
-            "equipment": "none"
+            "equipment": "none",
         }
 
         response = client.post("/auth/register", json=data)
@@ -54,10 +55,7 @@ class TestAuthRoutes:
 
     def test_login_endpoint_exists(self):
         """Test that login endpoint exists"""
-        data = {
-            "email": "test@example.com",
-            "password": "password123"
-        }
+        data = {"email": "test@example.com", "password": "password123"}
 
         response = client.post("/auth/login", json=data)
         # Don't assert specific status - just check endpoint exists
@@ -72,7 +70,7 @@ class TestAuthRoutes:
             "password": "StrongPassword123!",
             "fitness_level": "beginner",
             "goals": ["strength"],
-            "equipment": "none"
+            "equipment": "none",
         }
 
         response = client.post("/auth/register", json=data)
@@ -110,10 +108,7 @@ class TestUserRoutes:
 
     def test_update_profile_endpoint_exists(self):
         """Test update profile endpoint exists"""
-        data = {
-            "fitness_level": "intermediate",
-            "goals": ["strength", "muscle_gain"]
-        }
+        data = {"fitness_level": "intermediate", "goals": ["strength", "muscle_gain"]}
 
         response = client.put("/users/profile", json=data)
         assert response.status_code in [200, 401, 422]
@@ -134,7 +129,7 @@ class TestWorkoutRoutes:
             "description": "A test workout plan",
             "exercises": [],
             "duration_minutes": 30,
-            "equipment_needed": []
+            "equipment_needed": [],
         }
 
         response = client.post("/workouts/plans", json=data)
@@ -151,7 +146,7 @@ class TestWorkoutRoutes:
             "plan_id": "test-plan-id",
             "duration_minutes": 45,
             "exercises": [],
-            "rating": 5
+            "rating": 5,
         }
 
         response = client.post("/workouts/log", json=data)
@@ -168,10 +163,7 @@ class TestAIRoutes:
 
     def test_chat_endpoint_exists(self):
         """Test AI chat endpoint exists"""
-        data = {
-            "message": "Give me a workout plan for building muscle",
-            "context": {}
-        }
+        data = {"message": "Give me a workout plan for building muscle", "context": {}}
 
         response = client.post("/ai/chat", json=data)
         assert response.status_code in [200, 401, 422, 500]
@@ -181,7 +173,7 @@ class TestAIRoutes:
         data = {
             "workout_data": "Completed 3x10 push-ups, 3x12 squats",
             "analysis_type": "performance",
-            "include_recommendations": True
+            "include_recommendations": True,
         }
 
         response = client.post("/ai/analyze-workout", json=data)
@@ -189,10 +181,7 @@ class TestAIRoutes:
 
     def test_chat_empty_message(self):
         """Test chat with empty message"""
-        data = {
-            "message": "",
-            "context": {}
-        }
+        data = {"message": "", "context": {}}
 
         response = client.post("/ai/chat", json=data)
         assert response.status_code == 422  # Validation error
@@ -208,9 +197,7 @@ class TestTierRoutes:
 
     def test_upgrade_tier_endpoint_exists(self):
         """Test tier upgrade endpoint exists"""
-        data = {
-            "new_tier": "premium"
-        }
+        data = {"new_tier": "premium"}
 
         response = client.post("/tiers/upgrade", json=data)
         assert response.status_code in [200, 401, 422]
@@ -262,7 +249,7 @@ class TestErrorHandling:
         response = client.post(
             "/auth/register",
             data="invalid json",
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
         assert response.status_code in [400, 422]
 
@@ -275,7 +262,7 @@ class TestErrorHandling:
             "fitness_level": "beginner",
             "goals": ["strength"],
             "equipment": "none",
-            "large_field": "x" * 10000  # Large field
+            "large_field": "x" * 10000,  # Large field
         }
 
         response = client.post("/auth/register", json=large_data)
@@ -289,7 +276,7 @@ class TestErrorHandling:
             "password": "StrongPassword123!@#$",
             "fitness_level": "beginner",
             "goals": ["strength"],
-            "equipment": "none"
+            "equipment": "none",
         }
 
         response = client.post("/auth/register", json=data)
@@ -307,7 +294,7 @@ class TestRequestValidation:
             "description": "Test",
             "exercises": [],
             "duration_minutes": 0,  # Invalid
-            "equipment_needed": []
+            "equipment_needed": [],
         }
 
         response = client.post("/workouts/plans", json=data)
@@ -319,7 +306,7 @@ class TestRequestValidation:
             "plan_id": "test-plan",
             "duration_minutes": 30,
             "exercises": [],
-            "rating": 10  # Invalid (max should be 5)
+            "rating": 10,  # Invalid (max should be 5)
         }
 
         response = client.post("/workouts/log", json=data)
@@ -327,13 +314,7 @@ class TestRequestValidation:
 
     def test_email_validation(self):
         """Test email validation across endpoints"""
-        invalid_emails = [
-            "notanemail",
-            "@example.com",
-            "test@",
-            "test.example.com",
-            ""
-        ]
+        invalid_emails = ["notanemail", "@example.com", "test@", "test.example.com", ""]
 
         for email in invalid_emails:
             data = {
@@ -342,7 +323,7 @@ class TestRequestValidation:
                 "password": "StrongPassword123!",
                 "fitness_level": "beginner",
                 "goals": ["strength"],
-                "equipment": "none"
+                "equipment": "none",
             }
 
             response = client.post("/auth/register", json=data)
@@ -357,7 +338,7 @@ class TestContentTypes:
         response = client.post(
             "/auth/register",
             data="email=test@example.com",
-            headers={"Content-Type": "application/x-www-form-urlencoded"}
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         # Should handle form data or reject it
         assert response.status_code in [200, 201, 415, 422]
@@ -393,7 +374,7 @@ class TestPerformanceAndLimits:
         """Test request with potentially long processing time"""
         data = {
             "message": "Generate a very detailed 12-week workout program with nutrition advice, exercise descriptions, progression tracking, and recovery protocols for an advanced athlete training for powerlifting competition.",
-            "context": {"complexity": "maximum"}
+            "context": {"complexity": "maximum"},
         }
 
         response = client.post("/ai/chat", json=data)
@@ -411,10 +392,10 @@ class TestSecurityHeaders:
         # Check for common security headers (may not all be present)
         headers = response.headers
         security_headers = [
-            'x-content-type-options',
-            'x-frame-options',
-            'x-xss-protection',
-            'strict-transport-security'
+            "x-content-type-options",
+            "x-frame-options",
+            "x-xss-protection",
+            "strict-transport-security",
         ]
 
         # At least some security headers should be present
@@ -437,7 +418,7 @@ class TestDataIntegrity:
                 "password": "StrongPassword123!",
                 "fitness_level": level,
                 "goals": ["strength"],
-                "equipment": "none"
+                "equipment": "none",
             }
 
             response = client.post("/auth/register", json=data)
@@ -452,7 +433,7 @@ class TestDataIntegrity:
             ["strength"],
             ["endurance"],
             ["strength", "muscle_gain"],  # Multiple goals
-            ["weight_loss", "endurance"]
+            ["weight_loss", "endurance"],
         ]
 
         for goals in valid_goals:
@@ -462,7 +443,7 @@ class TestDataIntegrity:
                 "password": "StrongPassword123!",
                 "fitness_level": "beginner",
                 "goals": goals,
-                "equipment": "none"
+                "equipment": "none",
             }
 
             response = client.post("/auth/register", json=data)

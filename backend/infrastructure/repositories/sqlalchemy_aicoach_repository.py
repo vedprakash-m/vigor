@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from typing import Optional
+
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
-from typing import Optional
 
 from database.models import AICoachMessage
 from database.sql_models import AICoachMessageDB
