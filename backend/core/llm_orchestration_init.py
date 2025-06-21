@@ -5,6 +5,7 @@ Sets up the enterprise LLM gateway with all required components
 
 import logging
 import os
+from typing import Optional
 
 # New facade
 from application.llm.facade import LLMGatewayFacade
@@ -14,6 +15,12 @@ from core.llm_orchestration import (
     AdminConfigManager,
     KeyVaultClientService,
     LLMGateway,  # type: ignore
+    AnalyticsCollector,
+    BudgetManager,
+    CacheManager,
+    CircuitBreakerManager,
+    RoutingStrategyEngine,
+    UsageLogger,
 )
 from core.llm_orchestration.config_manager import ModelPriority
 from core.llm_orchestration.key_vault import (
@@ -26,7 +33,7 @@ from database.connection import SessionLocal
 logger = logging.getLogger(__name__)
 
 # Global gateway instance
-_gateway: LLMGateway] = None = None
+_gateway: Optional[LLMGateway] = None
 
 
 async def initialize_llm_orchestration():

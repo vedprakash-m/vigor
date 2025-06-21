@@ -6,7 +6,7 @@ Implements intelligent model selection based on various strategies
 import hashlib
 import logging
 import secrets
-from typing import Any, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from .config_manager import AdminConfigManager
 

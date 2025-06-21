@@ -9,7 +9,7 @@ import uuid
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from .adapters import (
     AdapterFactory,
