@@ -231,33 +231,26 @@ class TestLLMGateway:
         gateway.is_initialized = True
         request = GatewayRequest(prompt="Test", user_id="user123")
 
-        # Mock cache hit
+        # Create cached response
         cached_response = LLMResponse(
             content="Cached response",
             model_used="test-model",
+            provider="test-provider",
             tokens_used=20,
-            cost_estimate=0.0005,
+            cost_estimate=0.01,
             latency_ms=5
         )
 
-        gateway._enrich_request = AsyncMock(return_value=Mock())
-        gateway._check_cache = AsyncMock(return_value=cached_response)
-        gateway._create_gateway_response = AsyncMock(return_value=GatewayResponse(
-            content="Cached response",
-            model_used="test-model",
-            provider="test",
-            request_id="req123",
-            tokens_used=20,
-            cost_estimate=0.0005,
-            latency_ms=5,
-            cached=True
-        ))
+        # Mock cache hit
+        gateway.cache_manager.get = AsyncMock(return_value=cached_response)
 
+        # Process request
         result = await gateway.process_request(request)
 
-        assert result.cached is True
+        assert isinstance(result, GatewayResponse)
         assert result.content == "Cached response"
-        gateway._check_cache.assert_called_once()
+        assert result.cached is True
+        gateway.cache_manager.get.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_process_request_full_pipeline(self, gateway):
@@ -269,9 +262,12 @@ class TestLLMGateway:
         enriched_request = Mock()
         selected_adapter = Mock(spec=LLMServiceAdapter)
         selected_adapter.model_id = "test-model"
+
+        # Create expected response with all required parameters
         llm_response = LLMResponse(
             content="Generated response",
             model_used="test-model",
+            provider="test-provider",
             tokens_used=50,
             cost_estimate=0.001,
             latency_ms=200
@@ -348,21 +344,20 @@ class TestLLMGateway:
         gateway.is_initialized = True
         request = GatewayRequest(prompt="Test", user_id="user123", stream=True)
 
-        # Mock streaming response
+        # Create async iterator for streaming
         async def mock_stream():
             yield "chunk1"
             yield "chunk2"
             yield "chunk3"
 
-        enriched_request = Mock()
-        selected_adapter = Mock()
-        selected_adapter.model_id = "test-model"
-        selected_adapter.stream_request = AsyncMock(return_value=mock_stream())
+        mock_adapter = Mock()
+        mock_adapter.model_id = "test-model"
+        mock_adapter.generate_stream = lambda request: mock_stream()
 
-        gateway._enrich_request = AsyncMock(return_value=enriched_request)
+        gateway._enrich_request = AsyncMock(return_value=Mock())
         gateway._enforce_budget = AsyncMock()
         gateway._check_rate_limits = AsyncMock()
-        gateway._select_model = AsyncMock(return_value=selected_adapter)
+        gateway._select_model = AsyncMock(return_value=mock_adapter)
         gateway.circuit_breaker.can_proceed = Mock(return_value=True)
         gateway._log_usage = AsyncMock()
         gateway.analytics.record_request = AsyncMock()
@@ -577,9 +572,10 @@ class TestLLMGateway:
         llm_response = LLMResponse(
             content="Test response",
             model_used="test-model",
+            provider="test-provider",
             tokens_used=50,
-            cost_estimate=0.001,
-            latency_ms=100
+            cost_estimate=0.02,
+            latency_ms=200
         )
 
         original_request = GatewayRequest(

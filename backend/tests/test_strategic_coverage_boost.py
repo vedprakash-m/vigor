@@ -72,19 +72,18 @@ class TestDatabaseModelsExpansion:
             id="test123",
             email="test@example.com",
             username="testuser",
-            full_name="Test User",
+            hashed_password="$2b$12$test_hashed_password",
             is_active=True,
-            tier=UserTier.FREE,
+            user_tier=UserTier.FREE,
             fitness_level=FitnessLevel.BEGINNER,
             goals=[Goal.WEIGHT_LOSS],
-            preferences={},
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
         )
 
         assert profile.id == "test123"
         assert profile.email == "test@example.com"
-        assert profile.tier == UserTier.FREE
+        assert profile.user_tier == UserTier.FREE
         assert profile.fitness_level == FitnessLevel.BEGINNER
 
     def test_user_tier_enum_values(self):

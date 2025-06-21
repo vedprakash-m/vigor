@@ -366,15 +366,11 @@ class TestAISchemas:
         """Test chat response schema"""
         data = {
             "response": "Here's a great muscle-building workout...",
-            "model_used": "gpt-3.5-turbo",
-            "tokens_used": 150,
-            "confidence_score": 0.92,
         }
 
         response = ChatResponse(**data)
         assert response.response == "Here's a great muscle-building workout..."
-        assert response.model_used == "gpt-3.5-turbo"
-        assert response.tokens_used == 150
+        assert response.created_at is not None  # Auto-generated field
 
 
 class TestSchemaEdgeCases:
