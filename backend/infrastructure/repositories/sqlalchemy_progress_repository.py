@@ -24,11 +24,39 @@ class SQLAlchemyProgressRepository(Repository[ProgressMetrics]):
         return None if record is None else ProgressMetrics.model_validate(record)
 
     async def create(self, entity: ProgressMetrics) -> ProgressMetrics:
-        db_obj = ProgressMetricsDB(**entity.model_dump())  # type: ignore[arg-type]
+        # Get model data and handle field name mapping
+        model_data = entity.model_dump()
+
+        # Map metric_date (Pydantic) to date (SQLAlchemy)
+        if 'metric_date' in model_data:
+            model_data['date'] = model_data.pop('metric_date')
+
+        # Remove fields that don't exist in SQLAlchemy model
+        fields_to_remove = [
+            'workouts_completed', 'total_workout_time_minutes', 'average_workout_rating',
+            'current_streak_days', 'longest_streak_days', 'updated_at'
+        ]
+        for field in fields_to_remove:
+            model_data.pop(field, None)
+
+        db_obj = ProgressMetricsDB(**model_data)  # type: ignore[arg-type]
         self._session.add(db_obj)
         self._session.commit()
         self._session.refresh(db_obj)
-        return ProgressMetrics.model_validate(db_obj)
+
+        # Convert back to Pydantic with field name mapping
+        db_dict = {
+            'id': db_obj.id,
+            'user_id': db_obj.user_id,
+            'metric_date': db_obj.date.date() if hasattr(db_obj.date, 'date') else db_obj.date,  # Map date back to metric_date
+            'weight': getattr(db_obj, 'weight', None),
+            'body_fat': getattr(db_obj, 'body_fat', None),
+            'measurements': getattr(db_obj, 'measurements', None),
+            'notes': getattr(db_obj, 'notes', None),
+            'created_at': db_obj.created_at,
+        }
+
+        return ProgressMetrics(**db_dict)
 
     async def update(self, entity: ProgressMetrics) -> ProgressMetrics:
         record = (
@@ -61,7 +89,23 @@ class SQLAlchemyProgressRepository(Repository[ProgressMetrics]):
     async def list(self, limit: int = 100, offset: int = 0) -> List[ProgressMetrics]:
         query = self._session.query(ProgressMetricsDB).order_by(desc(ProgressMetricsDB.date))
         records = query.offset(offset).limit(limit).all()
-        return [ProgressMetrics.model_validate(r) for r in records]
+
+        # Convert each SQLAlchemy object to Pydantic with proper field handling
+        result = []
+        for record in records:
+            db_dict = {
+                'id': record.id,
+                'user_id': record.user_id,
+                'metric_date': record.date.date() if hasattr(record.date, 'date') else record.date,  # Map date to metric_date
+                'weight': getattr(record, 'weight', None),
+                'body_fat': getattr(record, 'body_fat', None),
+                'measurements': getattr(record, 'measurements', None),
+                'notes': getattr(record, 'notes', None),
+                'created_at': record.created_at,
+            }
+            result.append(ProgressMetrics(**db_dict))
+
+        return result
 
     # Alias for backward compatibility
     async def add(self, entity: ProgressMetrics) -> ProgressMetrics:

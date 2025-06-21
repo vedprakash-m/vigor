@@ -17,7 +17,9 @@ class TestMainApplication:
     def test_app_creation(self):
         """Test FastAPI app is created successfully"""
         assert app is not None
-        assert app.title == "Vigor - AI Fitness Coach"
+        assert app.title == "Vigor"
+        assert app.version == "1.0.0"
+        assert "AI-Powered Fitness Coaching Platform" in app.description
         assert hasattr(app, "router")
         assert hasattr(app, "state")
 
