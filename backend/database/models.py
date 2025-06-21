@@ -38,6 +38,18 @@ class FitnessLevel(str, Enum):
     EXPERT = "expert"
 
 
+class Goal(str, Enum):
+    """User fitness goals"""
+
+    WEIGHT_LOSS = "weight_loss"
+    MUSCLE_GAIN = "muscle_gain"
+    STRENGTH = "strength"
+    ENDURANCE = "endurance"
+    GENERAL_FITNESS = "general_fitness"
+    FLEXIBILITY = "flexibility"
+    ATHLETIC_PERFORMANCE = "athletic_performance"
+
+
 class UserProfile(BaseModel):
     """Enhanced user profile with tier management and timestamps"""
 
@@ -55,7 +67,7 @@ class UserProfile(BaseModel):
 
     # Fitness profile
     fitness_level: FitnessLevel = Field(default=FitnessLevel.BEGINNER)
-    goals: List[str] = Field(default_factory=list)
+    goals: List[Goal] = Field(default_factory=list)
     equipment: List[Equipment] = Field(default_factory=list)
 
 

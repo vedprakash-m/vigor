@@ -215,10 +215,10 @@ class SystemHealth(BaseModel):
 class UserManagement(BaseModel):
     """User management operations"""
 
-    user_id: str
-    action: str = Field(..., regex="^(activate|deactivate|upgrade|downgrade)$")
-    tier: Optional[str] = None
-    reason: Optional[str] = None
+    user_id: str = Field(..., description="User ID to modify")
+    action: str = Field(..., pattern="^(activate|deactivate|upgrade|downgrade)$")
+    new_tier: Optional[str] = Field(None, description="New tier for upgrade/downgrade")
+    reason: Optional[str] = Field(None, description="Reason for the action")
 
 
 class UsageAnalytics(BaseModel):

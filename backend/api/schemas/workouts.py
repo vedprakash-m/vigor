@@ -33,9 +33,9 @@ class WorkoutPlan(BaseModel):
     name: str
     description: str
     exercises: List[Exercise]
-    estimated_duration: int = Field(..., ge=15, le=180)  # minutes
-    difficulty_level: str = Field(..., regex="^(beginner|intermediate|advanced)$")
-    equipment_needed: List[str]
+    estimated_duration_minutes: int = Field(..., gt=0)
+    difficulty_level: str = Field(..., pattern="^(beginner|intermediate|advanced)$")
+    equipment_needed: List[str] = []
     notes: Optional[str] = None
 
 
