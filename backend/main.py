@@ -161,15 +161,37 @@ async def input_validation_error_handler(request: Request, exc: InputValidationE
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle Pydantic validation errors"""
+
+    # Clean error details to ensure JSON serialization
+    def make_serializable(obj):
+        """Convert objects to JSON-serializable format"""
+        if isinstance(obj, bytes):
+            return f"<bytes: {len(obj)} bytes>"
+        elif isinstance(obj, dict):
+            return {k: make_serializable(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [make_serializable(item) for item in obj]
+        elif hasattr(obj, '__dict__'):
+            return str(obj)
+        else:
+            return obj
+
+    # Process error details to make them serializable
+    cleaned_errors = []
+    for error in exc.errors():
+        cleaned_error = make_serializable(error)
+        cleaned_errors.append(cleaned_error)
+
     await SecurityAuditLogger.log_suspicious_activity(
-        request, "request_validation_failed", {"errors": exc.errors()}
+        request, "request_validation_failed", {"errors": cleaned_errors}
     )
+
     return JSONResponse(
         status_code=422,
         content={
             "error": "validation_error",
             "message": "Invalid request data",
-            "details": exc.errors(),
+            "details": cleaned_errors,
             "timestamp": datetime.utcnow().isoformat(),
         },
     )
