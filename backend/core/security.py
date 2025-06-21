@@ -5,24 +5,20 @@ Implements rate limiting, input validation, security headers, and comprehensive 
 
 import logging
 import re
-import time
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional, Union
 
 import redis.asyncio as redis
 from fastapi import Depends, HTTPException, Request, Response, status
 from fastapi.security import (
-    HTTPAuthorizationCredentials,
-    HTTPBearer,
     OAuth2PasswordBearer,
 )
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel, ValidationError, validator
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
@@ -68,7 +64,7 @@ class SecurityMiddleware:
 
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http":
-            request = Request(scope, receive)
+            Request(scope, receive)
 
             # Add security headers
             async def send_wrapper(message):
@@ -117,9 +113,9 @@ class BaseInputValidator(BaseModel):
         if isinstance(v, str):
             # Check for common SQL injection patterns
             sql_patterns = [
-                r"(\b(DROP|DELETE|TRUNCATE|UPDATE)\s+)",
+                r"(\b(Union[DROP, DELETE]|Union[TRUNCATE, UPDATE])\s+)",
                 r"(\bUNION\s+SELECT\b)",
-                r"(\b(OR|AND)\s+\d+\s*=\s*\d+)",
+                r"(\b(Union[OR, AND])\s+\d+\s*=\s*\d+)",
                 r"(\bSELECT\s+.*\bFROM\b)",
                 r"(--|\#|\/\*)",
             ]
@@ -169,7 +165,7 @@ class WorkoutInputValidator(BaseInputValidator):
 
     duration: Optional[int] = None
     fitness_level: Optional[str] = None
-    goals: Optional[List[str]] = None
+    goals: Optional[list[str]] = None
 
     @validator("duration")
     def validate_duration(cls, v):
@@ -350,7 +346,7 @@ class SecurityAuditLogger:
 
     @staticmethod
     async def log_suspicious_activity(
-        request: Request, activity_type: str, details: Dict[str, Any]
+        request: Request, activity_type: str, details: dict[str, Any]
     ):
         """Log suspicious security events"""
         event = {
@@ -384,8 +380,7 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     await SecurityAuditLogger.log_rate_limit_exceeded(request, str(exc.detail))
 
     response = Response(
-        content='{"error": "rate_limit_exceeded", "message": "Too many requests", "retry_after": %d}'
-        % exc.retry_after,
+        content=f'{{"error": "rate_limit_exceeded", "message": "Too many requests", "retry_after": {exc.retry_after}}}',
         status_code=429,
         headers={"Retry-After": str(exc.retry_after)},
     )
@@ -393,7 +388,7 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 
 # Health Check Security
-async def secure_health_check() -> Dict[str, Any]:
+async def secure_health_check() -> dict[str, Any]:
     """Secure health check that doesn't expose sensitive information"""
     return {
         "status": "healthy",

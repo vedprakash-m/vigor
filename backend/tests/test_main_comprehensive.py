@@ -108,7 +108,7 @@ class TestErrorHandlers:
 
     def test_rate_limit_error_handling(self):
         """Test rate limit error handling"""
-        client = TestClient(app)
+        TestClient(app)
 
         # This tests the error handler registration, not necessarily rate limiting
         assert hasattr(app, "exception_handlers")
@@ -163,7 +163,7 @@ class TestLifecycleManagement:
     @patch("main.init_db", side_effect=Exception("Database error"))
     async def test_lifespan_startup_failure(self, mock_init_db):
         """Test startup failure handling"""
-        with pytest.raises(Exception):
+        with pytest.raises((RuntimeError, ValueError, OSError)):
             async with lifespan(app):
                 pass
 
@@ -269,7 +269,7 @@ class TestAPIRouteRegistration:
         """Test admin routes are registered"""
         # Check if admin routes are in the app
         routes = app.router.routes
-        route_info = str(routes)
+        str(routes)
 
         # Just verify routes exist (may not be accessible without auth)
         assert len(routes) > 0

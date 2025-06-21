@@ -5,7 +5,7 @@ This module handles the communication with the Azure Functions
 
 import logging
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -40,8 +40,8 @@ class FunctionsClient:
             self.base_url = self.base_url[:-1]
 
     async def _call_function(
-        self, endpoint: str, payload: Dict[str, Any], timeout: int = 30
-    ) -> Dict[str, Any]:
+        self, endpoint: str, payload: dict[str, Any], timeout: int = 30
+    ) -> dict[str, Any]:
         """Call an Azure Function endpoint."""
         url = f"{self.base_url}/{endpoint}"
 
@@ -88,11 +88,11 @@ class FunctionsClient:
     async def generate_workout_plan(
         self,
         fitness_level: str,
-        goals: List[str],
+        goals: list[str],
         equipment: Optional[str] = None,
         duration_minutes: int = 45,
-        focus_areas: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        focus_areas: Optional[list[str]] = None,
+    ) -> dict[str, Any]:
         """Call the GenerateWorkout function."""
         payload = {
             "fitness_level": fitness_level,
@@ -113,10 +113,10 @@ class FunctionsClient:
 
     async def analyze_workout(
         self,
-        workout_data: Dict[str, Any],
+        workout_data: dict[str, Any],
         user_fitness_level: str,
-        previous_workouts: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
+        previous_workouts: Optional[list[dict[str, Any]]] = None,
+    ) -> dict[str, Any]:
         """Call the AnalyzeWorkout function."""
         payload = {
             "workout_data": workout_data,
@@ -137,8 +137,8 @@ class FunctionsClient:
         self,
         message: str,
         fitness_level: str,
-        goals: List[str],
-        conversation_history: Optional[List[Dict[str, str]]] = None,
+        goals: list[str],
+        conversation_history: Optional[list[dict[str, str]]] = None,
     ) -> str:
         """Call the CoachChat function."""
         payload = {

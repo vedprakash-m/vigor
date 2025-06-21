@@ -1,7 +1,7 @@
 import os
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -35,7 +35,7 @@ async def chat_with_ai_coach(
     db: Session,
     user: UserProfile,
     message: str,
-    conversation_history: Optional[List[Dict[str, str]]] = None,
+    conversation_history: Optional[list[dict[str, str]]] = None,
 ) -> str:
     """Chat with the AI coach with usage tracking."""
 
@@ -112,11 +112,11 @@ async def chat_with_ai_coach(
 async def generate_ai_workout_plan(
     db: Session,
     user: UserProfile,
-    goals: Optional[List[str]] = None,
+    goals: Optional[list[str]] = None,
     equipment: Optional[str] = None,
     duration_minutes: int = 45,
-    focus_areas: Optional[List[str]] = None,
-) -> Dict[str, Any]:
+    focus_areas: Optional[list[str]] = None,
+) -> dict[str, Any]:
     """Generate a personalized workout plan using AI."""
 
     # Check if AI service is available
@@ -164,7 +164,7 @@ async def generate_ai_workout_plan(
 
 async def analyze_user_workout(
     db: Session, user: UserProfile, workout_log_id: str
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Analyze a user's workout and provide feedback."""
 
     if not settings.OPENAI_API_KEY:
@@ -202,7 +202,7 @@ async def analyze_user_workout(
 
 async def get_conversation_history(
     db: Session, user_id: str, limit: int = 20
-) -> List[AICoachMessage]:
+) -> list[AICoachMessage]:
     """Get user's conversation history with AI coach."""
     repo = SQLAlchemyAICoachMessageRepository(db)
     return await repo.list(user_id=user_id, limit=limit)

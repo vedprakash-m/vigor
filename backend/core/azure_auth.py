@@ -5,10 +5,10 @@ Handles authentication between the App Service and Function App
 
 import os
 import time
-from typing import Dict, List, Optional, Union
 
 import httpx
 from azure.identity import DefaultAzureCredential
+from typing import Optional
 
 
 class AzureServiceAuth:
@@ -26,13 +26,11 @@ class AzureServiceAuth:
         self.subscription_id = os.environ.get("AZURE_SUBSCRIPTION_ID")
 
         # Cache for Function keys
-        self._function_key_cache: Dict[str, Dict[str, str]] = {}
-        self._function_key_expiry: Dict[str, float] = {}
+        self._function_key_cache: dict[str, dict[str, str]] = {}
+        self._function_key_expiry: dict[str, float] = {}
         self._cache_duration = 3600  # 1 hour
 
-    async def get_function_key(
-        self, function_name: Optional[str] = None
-    ) -> Optional[str]:
+    async def get_function_key(self, function_name: Optional[str] = None) -> Optional[str]:
         """
         Get function key for a specific function or the default host key.
         Uses Azure managed identity when running in Azure, or falls back to environment variable.

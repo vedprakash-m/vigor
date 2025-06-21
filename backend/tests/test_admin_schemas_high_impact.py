@@ -65,17 +65,17 @@ class TestAdminSchemaStructure:
                 ):
                     # Pydantic model - try empty instantiation
                     try:
-                        instance = schema_class()
+                        schema_class()
                         successful_instantiations += 1
                     except Exception:
                         # Try with basic data
                         try:
-                            instance = schema_class(id=1)
+                            schema_class(id=1)
                             successful_instantiations += 1
                         except Exception:
                             # Try with other common fields
                             try:
-                                instance = schema_class(name="test")
+                                schema_class(name="test")
                                 successful_instantiations += 1
                             except Exception:
                                 pass

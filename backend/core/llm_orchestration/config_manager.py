@@ -3,13 +3,11 @@ Admin Configuration Manager
 Handles enterprise-grade configuration management for LLM orchestration
 """
 
-import asyncio
 import logging
-import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from .key_vault import SecretReference
 
@@ -239,7 +237,7 @@ class AdminConfigManager:
 
     async def get_routing_priority(
         self, priority: Optional[ModelPriority] = None
-    ) -> List[ModelConfiguration]:
+    ) -> list[ModelConfiguration]:
         """Get models filtered by priority"""
         models = self.get_active_models()
         if priority:

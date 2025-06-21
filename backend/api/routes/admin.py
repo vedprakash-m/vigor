@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel
@@ -14,6 +13,7 @@ from core.security import get_current_user
 from database.connection import get_db
 from database.models import AIProviderPriority, BudgetSettings, UserProfile
 from database.sql_models import AIProviderPriorityDB, AIUsageLogDB, BudgetSettingsDB
+from typing import Optional
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -43,8 +43,8 @@ class UsageStatsResponse(BaseModel):
     total_requests_today: int
     total_requests_week: int
     avg_cost_per_request: float
-    top_providers: List[Dict]
-    recent_usage: List[Dict]
+    top_providers: list[dict]
+    recent_usage: list[dict]
 
 
 # Admin Authentication Check
@@ -184,7 +184,7 @@ async def delete_ai_provider_priority(
 
 
 # Budget Management
-@router.get("/budget", response_model=Union[BudgetSettings, None])
+@router.get("/budget", response_model=Optional[BudgetSettings])
 async def get_budget_settings(
     db: Session = Depends(get_db), admin_user: UserProfile = Depends(verify_admin_user)
 ):

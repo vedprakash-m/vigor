@@ -9,7 +9,7 @@ import uuid
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 from .adapters import (
     AdapterFactory,
@@ -48,7 +48,7 @@ class GatewayRequest:
     temperature: Optional[float] = None
     stream: bool = False
     priority: int = 0  # Higher = more priority
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
 
 
 @dataclass
@@ -65,7 +65,7 @@ class GatewayResponse:
     cached: bool = False
     user_id: Optional[str] = None
     session_id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
 
 
 class LLMGateway:
@@ -94,7 +94,7 @@ class LLMGateway:
         self.analytics = AnalyticsCollector(db_session)
 
         # Runtime state
-        self.adapters: Dict[str, LLMServiceAdapter] = {}
+        self.adapters: dict[str, LLMServiceAdapter] = {}
         self.is_initialized = False
         self._health_check_interval = 60  # seconds
         self._last_health_check = 0.0
@@ -278,7 +278,7 @@ class LLMGateway:
                 self.circuit_breaker.record_failure(selected_adapter.model_id)
             raise
 
-    async def get_provider_status(self) -> Dict[str, Any]:
+    async def get_provider_status(self) -> dict[str, Any]:
         """Get current status of all providers"""
         if not self.is_initialized:
             return {"error": "Gateway not initialized"}
@@ -288,7 +288,7 @@ class LLMGateway:
         if current_time - self._last_health_check > self._health_check_interval:
             await self._perform_health_check()
 
-        status: Dict[str, Any] = {
+        status: dict[str, Any] = {
             "active_models": len([a for a in self.adapters.values() if a.is_healthy()]),
             "total_models": len(self.adapters),
             "circuit_breakers": self.circuit_breaker.get_status(),

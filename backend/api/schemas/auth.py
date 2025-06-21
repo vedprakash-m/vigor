@@ -1,10 +1,20 @@
 from datetime import datetime
-from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, EmailStr, Field
+from typing import Optional, Union, List
 
 
 class UserRegister(BaseModel):
+    email: EmailStr
+    username: str = Field(..., min_length=3, max_length=50)
+    password: str = Field(..., min_length=8)
+    fitness_level: str = Field(..., pattern="^(beginner|intermediate|advanced)$")
+    goals: List[str]
+    equipment: str = Field(..., pattern="^(none|minimal|moderate|full)$")
+
+
+class UserRegistration(BaseModel):
+    """Alias for UserRegister for backward compatibility"""
     email: EmailStr
     username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=8)

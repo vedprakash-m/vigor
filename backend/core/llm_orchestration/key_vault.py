@@ -8,7 +8,7 @@ import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class SecretReference:
         str  # e.g., "arn:aws:secretsmanager:...", "https://vault.azure.com/secrets/..."
     )
     version: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
 
 
 class BaseKeyVaultClient(ABC):
@@ -179,8 +179,8 @@ class KeyVaultClientService:
     """
 
     def __init__(self):
-        self._clients: Dict[KeyVaultProvider, BaseKeyVaultClient] = {}
-        self._cache: Dict[str, str] = {}  # Simple in-memory cache
+        self._clients: dict[KeyVaultProvider, BaseKeyVaultClient] = {}
+        self._cache: dict[str, str] = {}  # Simple in-memory cache
         self._cache_ttl = 300  # 5 minutes TTL
 
     def register_client(self, provider: KeyVaultProvider, client: BaseKeyVaultClient):
@@ -236,7 +236,7 @@ class KeyVaultClientService:
             )
             raise
 
-    async def health_check_all(self) -> Dict[KeyVaultProvider, bool]:
+    async def health_check_all(self) -> dict[KeyVaultProvider, bool]:
         """Check health of all registered Key Vault providers"""
         results = {}
         for provider, client in self._clients.items():
@@ -258,7 +258,7 @@ class KeyVaultClientService:
         provider: str,
         secret_identifier: str,
         version: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> SecretReference:
         """Helper method to create SecretReference objects"""
         provider_enum = KeyVaultProvider(provider)

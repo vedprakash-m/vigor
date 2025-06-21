@@ -5,7 +5,7 @@ Handles user registration, login, token management with comprehensive security m
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -13,12 +13,10 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from core.config import get_settings
 from core.security import (
-    create_access_token,
-    get_password_hash,
-    verify_password,
     verify_token,
 )
 from database.connection import get_db
@@ -46,7 +44,7 @@ class AuthService:
 
     async def register_user(
         self, email: str, username: str, password: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Register a new user with comprehensive validation and security
 
@@ -66,7 +64,7 @@ class AuthService:
             existing_user = (
                 self.db.query(UserProfile)
                 .filter(
-                    (UserProfile.email == email) | (UserProfile.username == username)
+                    or_(UserProfile.email == email, UserProfile.username == username)
                 )
                 .first()
             )
@@ -134,7 +132,7 @@ class AuthService:
                 status_code=500, detail="Registration failed due to server error"
             )
 
-    async def authenticate_user(self, email: str, password: str) -> Dict[str, Any]:
+    async def authenticate_user(self, email: str, password: str) -> dict[str, Any]:
         """
         Authenticate user with email and password
 
@@ -198,7 +196,7 @@ class AuthService:
                 status_code=500, detail="Authentication failed due to server error"
             )
 
-    async def refresh_access_token(self, refresh_token: str) -> Dict[str, Any]:
+    async def refresh_access_token(self, refresh_token: str) -> dict[str, Any]:
         """
         Refresh access token using refresh token
 
@@ -264,7 +262,7 @@ class AuthService:
                 status_code=500, detail="Token refresh failed due to server error"
             )
 
-    async def request_password_reset(self, email: str) -> Dict[str, Any]:
+    async def request_password_reset(self, email: str) -> dict[str, Any]:
         """
         Request password reset for user
 
@@ -315,7 +313,7 @@ class AuthService:
 
     async def reset_password(
         self, reset_token: str, new_password: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Reset user password using reset token
 
@@ -380,7 +378,7 @@ class AuthService:
                 status_code=500, detail="Password reset failed due to server error"
             )
 
-    async def verify_token(self, token: str) -> Dict[str, Any]:
+    async def verify_token(self, token: str) -> dict[str, Any]:
         """
         Verify if an access token is valid
 
@@ -433,7 +431,7 @@ class AuthService:
             logger.error(f"Unexpected error during token verification: {e}")
             raise HTTPException(status_code=500, detail="Token verification failed")
 
-    async def _create_user_tokens(self, user: UserProfile) -> Dict[str, str]:
+    async def _create_user_tokens(self, user: UserProfile) -> dict[str, str]:
         """
         Create access and refresh tokens for user
 
@@ -500,7 +498,7 @@ async def authenticate_user(
         return None
 
 
-async def create_user_token(user: UserProfile) -> Dict[str, str]:
+async def create_user_token(user: UserProfile) -> dict[str, str]:
     """Legacy function - use AuthService._create_user_tokens instead"""
     # This is a simplified version for compatibility
     access_payload = {

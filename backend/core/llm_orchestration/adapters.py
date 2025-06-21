@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 from .config_manager import ModelConfiguration
 from .key_vault import KeyVaultClientService
@@ -39,8 +39,8 @@ class LLMRequest:
     max_tokens: Optional[int] = None
     temperature: Optional[float] = None
     stream: bool = False
-    context: Optional[Dict[str, Any]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    context: Optional[dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
 
 
 @dataclass
@@ -55,7 +55,7 @@ class LLMResponse:
     latency_ms: int
     cached: bool = False
     request_id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
 
 
 @dataclass
@@ -535,7 +535,7 @@ class AdapterFactory:
             raise
 
     @classmethod
-    def get_supported_providers(cls) -> List[LLMProvider]:
+    def get_supported_providers(cls) -> list[LLMProvider]:
         """Get list of supported providers"""
         return list(cls._adapter_classes.keys())
 
@@ -544,8 +544,8 @@ class AdapterFactory:
 
 
 async def create_adapters_from_configs(
-    model_configs: List[ModelConfiguration], key_vault_service: KeyVaultClientService
-) -> Dict[str, LLMServiceAdapter]:
+    model_configs: list[ModelConfiguration], key_vault_service: KeyVaultClientService
+) -> dict[str, LLMServiceAdapter]:
     """Create adapters for a list of model configurations"""
     adapters = {}
 
@@ -561,8 +561,8 @@ async def create_adapters_from_configs(
 
 
 async def health_check_all_adapters(
-    adapters: Dict[str, LLMServiceAdapter],
-) -> Dict[str, HealthCheckResult]:
+    adapters: dict[str, LLMServiceAdapter],
+) -> dict[str, HealthCheckResult]:
     """Perform health check on all adapters"""
     results = {}
 

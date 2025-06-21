@@ -4,7 +4,7 @@ Provides admin and user-facing endpoints for the LLM orchestration layer
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -43,7 +43,7 @@ class LLMRequest(BaseModel):
         None, ge=0.0, le=2.0, description="Temperature for response generation"
     )
     stream: bool = Field(False, description="Whether to stream the response")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    metadata: Optional[dict[str, Any]] = Field(None, description="Additional metadata")
 
 
 class LLMResponse(BaseModel):
@@ -56,16 +56,16 @@ class LLMResponse(BaseModel):
     latency_ms: int
     cached: bool
     user_id: str
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
 
 
 class SystemStatusResponse(BaseModel):
     active_models: int
     total_models: int
-    circuit_breakers: Dict[str, Any]
-    cache_stats: Dict[str, Any]
-    budget_status: Dict[str, Any]
-    providers: Dict[str, Any]
+    circuit_breakers: dict[str, Any]
+    cache_stats: dict[str, Any]
+    budget_status: dict[str, Any]
+    providers: dict[str, Any]
 
 
 class ModelConfigRequest(BaseModel):
@@ -90,8 +90,8 @@ class ModelConfigRequest(BaseModel):
 class RoutingRuleRequest(BaseModel):
     rule_id: str = Field(..., description="Unique identifier for the rule")
     name: str = Field(..., description="Human-readable name")
-    conditions: Dict[str, Any] = Field(..., description="Conditions for rule matching")
-    target_models: List[str] = Field(
+    conditions: dict[str, Any] = Field(..., description="Conditions for rule matching")
+    target_models: list[str] = Field(
         ..., description="Target model IDs in priority order"
     )
     weight: float = Field(1.0, ge=0, description="Rule weight for prioritization")
@@ -104,13 +104,13 @@ class ABTestRequest(BaseModel):
     description: str = Field(..., description="Test description")
     start_date: datetime = Field(..., description="Test start date")
     end_date: datetime = Field(..., description="Test end date")
-    traffic_split: Dict[str, float] = Field(
+    traffic_split: dict[str, float] = Field(
         ..., description="Traffic split between variants"
     )
-    model_variants: Dict[str, List[str]] = Field(
+    model_variants: dict[str, list[str]] = Field(
         ..., description="Model variants for each test group"
     )
-    success_metrics: List[str] = Field(
+    success_metrics: list[str] = Field(
         default_factory=list, description="Metrics to track"
     )
 
@@ -122,13 +122,13 @@ class BudgetConfigRequest(BaseModel):
     reset_period: str = Field(
         ..., description="Budget reset period (daily, weekly, monthly, quarterly)"
     )
-    alert_thresholds: List[float] = Field(
+    alert_thresholds: list[float] = Field(
         default_factory=lambda: [0.5, 0.8, 0.95], description="Alert thresholds"
     )
     auto_disable_at_limit: bool = Field(
         True, description="Auto-disable when limit reached"
     )
-    user_groups: List[str] = Field(
+    user_groups: list[str] = Field(
         default_factory=list, description="User groups (empty = global)"
     )
 

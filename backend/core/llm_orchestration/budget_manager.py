@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +16,10 @@ class BudgetStatus(Enum):
     """Budget status enumeration"""
 
     ACTIVE = "active"
+    AVAILABLE = "available"  # Alias for ACTIVE
     WARNING = "warning"
     EXCEEDED = "exceeded"
+    BLOCKED = "blocked"  # Alias for EXCEEDED
     SUSPENDED = "suspended"
 
 
@@ -27,7 +29,7 @@ class BudgetUsage:
 
     budget_id: str
     user_id: Optional[str]
-    user_groups: List[str]
+    user_groups: list[str]
     current_usage: float
     budget_limit: float
     reset_period_start: datetime
@@ -44,7 +46,7 @@ class BudgetManager:
 
     def __init__(self, db_session=None):
         self.db = db_session
-        self._usage_cache: Dict[str, BudgetUsage] = {}
+        self._usage_cache: dict[str, BudgetUsage] = {}
         self._global_usage = 0.0
         self._global_limit = 10000.0  # Default global limit
 
@@ -148,7 +150,7 @@ class BudgetManager:
             logger.error(f"Failed to record usage for {user_id}: {e}")
 
     async def get_usage_summary(
-        self, user_id: Optional[str] = None, user_groups: Optional[List[str]] = None
+        self, user_id: Optional[str] = None, user_groups: Optional[list[str]] = None
     ) -> dict[str, Any]:
         """
         Get usage summary for a user or globally
@@ -237,7 +239,7 @@ class BudgetManager:
             logger.error(f"Failed to reset budgets: {e}")
 
     async def set_budget_alert_thresholds(
-        self, user_id: str, user_groups: List[str], thresholds: List[float]
+        self, user_id: str, user_groups: list[str], thresholds: list[float]
     ):
         """Set alert thresholds for budget monitoring"""
         try:
@@ -255,7 +257,7 @@ class BudgetManager:
         return projected_global <= self._global_limit
 
     async def _get_budget_usage(
-        self, user_id: str, user_groups: List[str]
+        self, user_id: str, user_groups: list[str]
     ) -> Optional[BudgetUsage]:
         """Get budget usage for user/groups"""
         try:
@@ -279,7 +281,7 @@ class BudgetManager:
             return None
 
     async def _load_user_budget_usage(
-        self, user_id: str, user_groups: List[str]
+        self, user_id: str, user_groups: list[str]
     ) -> Optional[BudgetUsage]:
         """Load user budget usage from database"""
         try:

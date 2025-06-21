@@ -6,7 +6,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Callable
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +16,11 @@ class FunctionPerformanceMonitor:
 
     def __init__(self):
         """Initialize the performance monitor."""
-        self.call_metrics: Dict[str, Dict[str, float]] = {}
-        self.cold_starts: Dict[str, bool] = {}
+        self.call_metrics: dict[str, dict[str, float]] = {}
+        self.cold_starts: dict[str, bool] = {}
 
         # Warmup status tracking
-        self.last_warmup: Dict[str, float] = {}
+        self.last_warmup: dict[str, float] = {}
         self.warmup_interval = 5 * 60  # 5 minutes
 
     async def monitor_call(
@@ -112,7 +112,7 @@ class FunctionPerformanceMonitor:
             # Wait for next interval
             await asyncio.sleep(warmup_interval)
 
-    def get_metrics(self, function_name: Optional[str] = None) -> Dict[str, Any]:
+    def get_metrics(self, function_name: Optional[str] = None) -> dict[str, Any]:
         """Get performance metrics for a specific function or all functions."""
         if function_name:
             if function_name in self.call_metrics:

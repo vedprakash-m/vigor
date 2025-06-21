@@ -363,7 +363,7 @@ class TestPerformanceAndLimits:
         """Test multiple requests to simulate load"""
         responses = []
 
-        for i in range(5):
+        for _i in range(5):
             response = client.get("/health")
             responses.append(response.status_code)
 

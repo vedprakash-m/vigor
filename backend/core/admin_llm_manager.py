@@ -1,13 +1,14 @@
 import logging
 import time
 from datetime import datetime, timedelta
-from typing import Optional
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database.connection import get_db
 from database.sql_models import AIProviderPriorityDB, AIUsageLogDB, BudgetSettingsDB
+
+from typing import Optional
 
 from .config import get_settings
 from .llm_providers import (

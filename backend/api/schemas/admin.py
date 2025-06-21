@@ -3,7 +3,7 @@ Admin-related schemas and data models
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -121,8 +121,8 @@ class UsageStatsResponse(BaseModel):
     total_requests_today: int
     total_requests_week: int
     avg_cost_per_request: float
-    top_providers: List[dict]
-    recent_usage: List[dict]
+    top_providers: list[dict]
+    recent_usage: list[dict]
 
 
 class ProviderStatsResponse(BaseModel):
@@ -139,9 +139,9 @@ class ProviderStatsResponse(BaseModel):
 
 
 class CostBreakdownResponse(BaseModel):
-    by_provider: List[Dict[str, float]]
-    by_day: List[Dict[str, float]]
-    by_user: List[Dict[str, float]]
+    by_provider: list[dict[str, float]]
+    by_day: list[dict[str, float]]
+    by_user: list[dict[str, float]]
     total_cost: float
     budget_remaining: float
     budget_usage_percentage: float
@@ -150,10 +150,10 @@ class CostBreakdownResponse(BaseModel):
 # System Health Schemas
 class SystemHealthResponse(BaseModel):
     status: str  # "healthy", "warning", "critical"
-    ai_providers_status: Dict[str, bool]
+    ai_providers_status: dict[str, bool]
     database_status: bool
     budget_status: str  # "ok", "warning", "exceeded"
-    recent_errors: List[str]
+    recent_errors: list[str]
     uptime_hours: float
     last_check: datetime
 
@@ -164,7 +164,7 @@ class AlertResponse(BaseModel):
     type: str  # "budget", "error", "performance"
     severity: str  # "info", "warning", "critical"
     message: str
-    data: Optional[Dict]
+    data: Optional[dict]
     acknowledged: bool
     created_at: datetime
     acknowledged_at: Optional[datetime]
@@ -190,7 +190,7 @@ class LLMProviderConfiguration(BaseModel):
     provider_name: str
     api_endpoint: Optional[str] = None
     is_active: bool = True
-    supported_models: List[str] = []
+    supported_models: list[str] = []
     default_model: Optional[str] = None
 
 
@@ -209,8 +209,8 @@ class SystemHealth(BaseModel):
 
     status: str
     timestamp: datetime
-    services: Dict[str, str]
-    performance_metrics: Dict[str, Any]
+    services: dict[str, str]
+    performance_metrics: dict[str, Any]
 
 
 class UserManagement(BaseModel):

@@ -351,7 +351,7 @@ def test_schema_validation_comprehensive():
 
     # Test that invalid data raises validation error
     try:
-        invalid_user = UserRegister(
+        UserRegister(
             email="invalid-email",  # Invalid email format
             username="",  # Empty username
             password="weak",  # Weak password

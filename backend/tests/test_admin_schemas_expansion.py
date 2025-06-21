@@ -106,7 +106,7 @@ class TestAdminSchemaFunctions:
 
     def test_admin_constants(self):
         """Test admin module constants"""
-        constants = [
+        [
             item
             for item in dir(admin)
             if item.isupper() and not callable(getattr(admin, item))

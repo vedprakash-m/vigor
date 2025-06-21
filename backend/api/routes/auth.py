@@ -1,25 +1,17 @@
-from datetime import datetime, timedelta
-from typing import Any, Optional, Union
-
 # Third-party imports
-from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import ExpiredSignatureError, JWTError, jwt
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from sqlalchemy.orm import Session
 
-from api.schemas.auth import Token, UserLogin, UserRegister
+from api.schemas.auth import Token, UserRegister
 from api.services.auth import (
     AuthService,
-    authenticate_user,
-    create_user_token,
-    register_user,
 )
 from core.config import get_settings
 from core.security import (
     SecurityAuditLogger,
     UserInputValidator,
-    auth_rate_limit,
     check_request_origin,
     get_current_active_user,
     limiter,
@@ -27,6 +19,7 @@ from core.security import (
 )
 from database.connection import get_db
 from database.models import UserProfile
+from typing import Optional
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -352,21 +345,16 @@ async def reset_password(
 
         # Validate new password strength
         try:
-            validated_input = UserInputValidator(
+            # Just validate the password meets requirements
+            UserInputValidator(
                 email="temp@example.com",  # Not used
                 username="temp",  # Not used
                 password=new_password,
             )
-        except Exception as validation_error:
-            await SecurityAuditLogger.log_suspicious_activity(
-                request,
-                "password_reset_weak_password",
-                {"error": str(validation_error)},
-            )
+        except ValidationError as e:
             raise HTTPException(
-                status_code=422,
-                detail=f"Password validation failed: {validation_error}",
-            )
+                status_code=400, detail=f"Password validation failed: {str(e)}"
+            ) from e
 
         auth_service = AuthService(db)
         await auth_service.reset_password(token, new_password)

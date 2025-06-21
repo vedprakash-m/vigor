@@ -4,11 +4,10 @@ Uses Optional instead of union syntax for better compatibility.
 """
 
 import logging
-import time
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple
 
 from .config import get_settings
+from typing import Optional
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -24,7 +23,7 @@ class LLMProvider(ABC):
         max_tokens: int = 500,
         temperature: float = 0.7,
         system_prompt: Optional[str] = None,
-    ) -> Tuple[str, int, int]:
+    ) -> tuple[str, int, int]:
         """Generate chat completion. Returns (response, input_tokens, output_tokens)."""
         pass
 
@@ -57,7 +56,7 @@ class OpenAIProvider(LLMProvider):
         max_tokens: int = 500,
         temperature: float = 0.7,
         system_prompt: Optional[str] = None,
-    ) -> Tuple[str, int, int]:
+    ) -> tuple[str, int, int]:
         """Generate OpenAI chat completion."""
         if self.client is None:
             raise RuntimeError("OpenAI client not available")
@@ -112,7 +111,7 @@ class GeminiProvider(LLMProvider):
         max_tokens: int = 500,
         temperature: float = 0.7,
         system_prompt: Optional[str] = None,
-    ) -> Tuple[str, int, int]:
+    ) -> tuple[str, int, int]:
         """Generate Gemini chat completion."""
         if self.client is None:
             raise RuntimeError("Gemini client not available")
@@ -178,7 +177,7 @@ class PerplexityProvider(LLMProvider):
         max_tokens: int = 500,
         temperature: float = 0.7,
         system_prompt: Optional[str] = None,
-    ) -> Tuple[str, int, int]:
+    ) -> tuple[str, int, int]:
         """Generate Perplexity chat completion."""
         if self.client is None:
             raise RuntimeError("Perplexity client not available")
@@ -222,7 +221,7 @@ class FallbackProvider(LLMProvider):
         max_tokens: int = 500,
         temperature: float = 0.7,
         system_prompt: Optional[str] = None,
-    ) -> Tuple[str, int, int]:
+    ) -> tuple[str, int, int]:
         """Generate fallback response."""
         # Basic fallback responses based on message content
         last_message = messages[-1].get("content", "").lower() if messages else ""

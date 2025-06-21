@@ -6,7 +6,7 @@ Comprehensive analytics and monitoring for LLM orchestration
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class AnalyticsCollector:
 
     def __init__(self, db_session=None):
         self.db = db_session
-        self._metrics_buffer: List[RequestMetrics] = []
+        self._metrics_buffer: list[RequestMetrics] = []
         self._buffer_size = 1000
 
     async def record_request(
@@ -70,7 +70,7 @@ class AnalyticsCollector:
 
     async def get_usage_report(
         self, start_date: datetime, end_date: datetime, user_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate usage report"""
         try:
             # Implementation would query database for metrics

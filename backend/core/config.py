@@ -5,7 +5,7 @@ Compatible with Python 3.9+ using Optional instead of Union syntax.
 
 import os
 from functools import lru_cache
-from typing import ClassVar, List, Optional
+from typing import ClassVar, Optional
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
@@ -56,7 +56,7 @@ class Settings(BaseSettings):
 
     # CORS settings
     _cors_origins_env: ClassVar[Optional[str]] = os.getenv("CORS_ORIGINS")
-    CORS_ORIGINS: List[str] = (
+    CORS_ORIGINS: list[str] = (
         _cors_origins_env.split(",") if _cors_origins_env else ["http://localhost:5173"]
     )
 

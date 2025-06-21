@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 # Import service modules to test
 from api.services import ai, auth, usage_tracking, users, workouts
 from database.models import UserProfile
+from typing import Union
 
 
 class TestAuthService:
@@ -85,7 +86,7 @@ class TestAIService:
         for class_name in classes:
             cls = getattr(ai, class_name)
             # Check if it's a class or callable, excluding constants
-            if not isinstance(cls, (bool, int, str, float)):
+            if not isinstance(cls, (Union[bool, int], Union[str, float])):
                 assert callable(cls) or hasattr(cls, "__class__")
 
     def test_ai_service_functions(self):

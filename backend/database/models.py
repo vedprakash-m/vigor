@@ -1,14 +1,14 @@
 """
 Enhanced Pydantic models for the Vigor fitness platform
-Compatible with Python 3.9+ using Union types instead of | syntax
+Compatible with Python 3.9+ using Union types instead Union[of, syntax]
 """
 
 from datetime import date, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Union, Optional
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 
 class UserTier(str, Enum):
@@ -17,13 +17,18 @@ class UserTier(str, Enum):
     FREE = "free"
     PREMIUM = "premium"
     UNLIMITED = "unlimited"
+    ENTERPRISE = "enterprise"
 
 
 class Equipment(str, Enum):
     """Available workout equipment"""
 
     NONE = "none"
+    MINIMAL = "minimal"
+    MODERATE = "moderate"
+    FULL = "full"
     DUMBBELLS = "dumbbells"
+    BARBELL = "barbell"
     RESISTANCE_BANDS = "resistance_bands"
     PULL_UP_BAR = "pull_up_bar"
     FULL_GYM = "full_gym"
@@ -67,8 +72,9 @@ class UserProfile(BaseModel):
 
     # Fitness profile
     fitness_level: FitnessLevel = Field(default=FitnessLevel.BEGINNER)
-    goals: List[Goal] = Field(default_factory=list)
-    equipment: List[Equipment] = Field(default_factory=list)
+    goals: list[Goal] = Field(default_factory=list)
+    equipment: list[Equipment] = Field(default_factory=list)
+    available_equipment: list[Equipment] = Field(default_factory=list)  # Alias for compatibility
 
 
 class WorkoutPlan(BaseModel):
@@ -78,10 +84,10 @@ class WorkoutPlan(BaseModel):
     user_id: str = Field(..., description="Owner of the workout plan")
     name: str = Field(..., description="Workout plan name")
     description: str = Field(..., description="Plan description")
-    exercises: List[Dict[str, Any]] = Field(default_factory=list)
+    exercises: list[dict[str, Any]] = Field(default_factory=list)
     duration_minutes: int = Field(..., ge=5, le=300)
     difficulty_level: FitnessLevel
-    equipment_needed: List[Equipment] = Field(default_factory=list)
+    equipment_needed: list[Equipment] = Field(default_factory=list)
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -99,7 +105,7 @@ class WorkoutLog(BaseModel):
     rating: Optional[int] = Field(None, ge=1, le=5)
 
     # Exercise tracking
-    exercises_completed: List[Dict[str, Any]] = Field(default_factory=list)
+    exercises_completed: list[dict[str, Any]] = Field(default_factory=list)
     total_duration_minutes: int = Field(..., ge=1)
 
 
@@ -180,8 +186,8 @@ class AIUsageLog(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Additional metadata for debugging and optimization
-    request_metadata: Optional[Dict[str, Any]] = None
-    response_metadata: Optional[Dict[str, Any]] = None
+    request_metadata: Optional[dict[str, Any]] = None
+    response_metadata: Optional[dict[str, Any]] = None
 
 
 class AdminSettings(BaseModel):
@@ -213,6 +219,27 @@ class BudgetUsage(BaseModel):
     is_over_daily_limit: bool = False
     is_over_weekly_limit: bool = False
     is_over_monthly_limit: bool = False
+
+
+class Exercise(BaseModel):
+    """Individual exercise definition"""
+
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    name: str = Field(..., description="Exercise name")
+    description: Optional[str] = None
+    muscle_groups: list[str] = Field(default_factory=list)
+    equipment_needed: list[Equipment] = Field(default_factory=list)
+    difficulty_level: FitnessLevel = Field(default=FitnessLevel.BEGINNER)
+    instructions: Optional[str] = None
+
+    # Exercise parameters
+    sets: Optional[int] = None
+    reps: Optional[int] = None
+    duration_seconds: Optional[int] = None
+    rest_seconds: Optional[int] = None
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class AIProviderPriority(BaseModel):

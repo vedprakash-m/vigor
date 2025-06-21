@@ -53,7 +53,7 @@ class TestApplicationStartup:
     def test_startup_functions(self):
         """Test startup functions exist"""
         # Check for startup-related functions
-        startup_items = [item for item in dir(main) if "startup" in item.lower()]
+        [item for item in dir(main) if "startup" in item.lower()]
         # May or may not have startup functions, but should have app
         assert hasattr(main, "app")
 
@@ -86,7 +86,7 @@ class TestApplicationUtilities:
     def test_module_constants(self):
         """Test module level constants"""
         # Check for constants
-        constants = [
+        [
             item
             for item in dir(main)
             if item.isupper() and not callable(getattr(main, item))
@@ -147,9 +147,7 @@ class TestApplicationSecurity:
         middleware_types = [
             str(type(middleware)) for middleware in getattr(app, "user_middleware", [])
         ]
-        cors_configured = any(
-            "cors" in middleware.lower() for middleware in middleware_types
-        )
+        any("cors" in middleware.lower() for middleware in middleware_types)
         # CORS might be configured, app should exist regardless
         assert app is not None
 
