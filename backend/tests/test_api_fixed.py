@@ -35,8 +35,8 @@ def test_auth_register_endpoint_structure():
     }
 
     response = client.post("/auth/register", json=data)
-    # Include 404 for unimplemented endpoints
-    assert response.status_code in [200, 201, 400, 404, 422, 500]
+    # Include 404 for unimplemented endpoints, 409 for already taken
+    assert response.status_code in [200, 201, 400, 404, 409, 422, 500]
 
 
 def test_auth_register_validation():

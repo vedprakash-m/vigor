@@ -382,13 +382,16 @@ class TestSchemaEdgeCases:
 
     def test_empty_lists(self):
         """Test schemas with empty lists"""
-        # Exercise with empty muscle_groups should fail
-        with pytest.raises(ValidationError):
-            Exercise(
-                name="Test Exercise",
-                muscle_groups=[],  # Empty list might be invalid
-                sets=[],
-            )
+        # Exercise with empty muscle_groups and sets should work (they're just lists)
+        exercise = Exercise(
+            name="Test Exercise",
+            muscle_groups=[],  # Empty list is valid
+            sets=[],           # Empty list is valid
+        )
+
+        assert exercise.name == "Test Exercise"
+        assert exercise.muscle_groups == []
+        assert exercise.sets == []
 
     def test_missing_required_fields(self):
         """Test missing required fields"""

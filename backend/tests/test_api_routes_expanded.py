@@ -221,14 +221,10 @@ class TestAIRoutes:
         # Should not return 404 (endpoint exists)
         assert response.status_code != 404
 
-    @patch("api.routes.ai.ai_service")
-    def test_chat_success_mock(self, mock_ai_service, client):
+    @patch("api.services.ai.chat_with_ai_coach")
+    def test_chat_success_mock(self, mock_chat_service, client):
         """Test successful AI chat with mocked service"""
-        mock_ai_service.generate_response.return_value = {
-            "response": "Great question! Here's a workout tip...",
-            "model_used": "gpt-3.5-turbo",
-            "tokens_used": 50,
-        }
+        mock_chat_service.return_value = "Great question! Here's a workout tip..."
 
         response = client.post("/ai/chat", json={"message": "Give me a workout tip"})
 

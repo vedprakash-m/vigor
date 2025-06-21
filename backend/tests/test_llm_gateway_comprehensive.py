@@ -22,6 +22,40 @@ from core.llm_orchestration.gateway import (
 )
 from core.llm_orchestration.key_vault import KeyVaultClientService, KeyVaultProvider, SecretReference
 
+# Module-level fixtures that can be used by all test classes
+@pytest.fixture
+def mock_config_manager():
+    """Mock AdminConfigManager"""
+    config_manager = Mock(spec=AdminConfigManager)
+    config_manager.load_configurations = AsyncMock()
+    config_manager.get_active_models = Mock(return_value=[])
+    return config_manager
+
+@pytest.fixture
+def mock_key_vault():
+    """Mock KeyVaultClientService"""
+    key_vault = Mock(spec=KeyVaultClientService)
+    return key_vault
+
+@pytest.fixture
+def mock_db_session():
+    """Mock database session"""
+    return Mock()
+
+@pytest.fixture
+def gateway(mock_config_manager, mock_key_vault, mock_db_session):
+    """Create LLMGateway instance with mocked dependencies"""
+    with patch('core.llm_orchestration.gateway.RoutingStrategyEngine'), \
+         patch('core.llm_orchestration.gateway.BudgetManager'), \
+         patch('core.llm_orchestration.gateway.UsageLogger'), \
+         patch('core.llm_orchestration.gateway.CostEstimator'), \
+         patch('core.llm_orchestration.gateway.CacheManager'), \
+         patch('core.llm_orchestration.gateway.CircuitBreakerManager'), \
+         patch('core.llm_orchestration.gateway.AnalyticsCollector'):
+
+        gateway = LLMGateway(mock_config_manager, mock_key_vault, mock_db_session)
+        return gateway
+
 
 class TestGatewayRequest:
     """Test GatewayRequest data structure"""
@@ -98,39 +132,6 @@ class TestGatewayResponse:
 
 class TestLLMGateway:
     """Comprehensive tests for LLMGateway class"""
-
-    @pytest.fixture
-    def mock_config_manager(self):
-        """Mock AdminConfigManager"""
-        config_manager = Mock(spec=AdminConfigManager)
-        config_manager.load_configurations = AsyncMock()
-        config_manager.get_active_models = Mock(return_value=[])
-        return config_manager
-
-    @pytest.fixture
-    def mock_key_vault(self):
-        """Mock KeyVaultClientService"""
-        key_vault = Mock(spec=KeyVaultClientService)
-        return key_vault
-
-    @pytest.fixture
-    def mock_db_session(self):
-        """Mock database session"""
-        return Mock()
-
-    @pytest.fixture
-    def gateway(self, mock_config_manager, mock_key_vault, mock_db_session):
-        """Create LLMGateway instance with mocked dependencies"""
-        with patch('core.llm_orchestration.gateway.RoutingStrategyEngine'), \
-             patch('core.llm_orchestration.gateway.BudgetManager'), \
-             patch('core.llm_orchestration.gateway.UsageLogger'), \
-             patch('core.llm_orchestration.gateway.CostEstimator'), \
-             patch('core.llm_orchestration.gateway.CacheManager'), \
-             patch('core.llm_orchestration.gateway.CircuitBreakerManager'), \
-             patch('core.llm_orchestration.gateway.AnalyticsCollector'):
-
-            gateway = LLMGateway(mock_config_manager, mock_key_vault, mock_db_session)
-            return gateway
 
     def test_gateway_initialization(self, gateway):
         """Test gateway constructor"""

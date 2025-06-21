@@ -34,14 +34,17 @@ class Settings(BaseSettings):
 
     # AI Provider APIs - all optional, fallback gracefully
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
+    OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "fallback")
 
     # Alternative AI providers
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
     ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
 
     # Perplexity AI
     PERPLEXITY_API_KEY: Optional[str] = os.getenv("PERPLEXITY_API_KEY")
+    PERPLEXITY_MODEL: str = os.getenv("PERPLEXITY_MODEL", "llama-3-sonar-large-32k-online")
 
     # Azure Functions
     AZURE_FUNCTIONS_BASE_URL: str = os.getenv(

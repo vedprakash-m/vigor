@@ -387,10 +387,27 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     """Custom rate limit exceeded handler"""
     await SecurityAuditLogger.log_rate_limit_exceeded(request, str(exc.detail))
 
+    # Calculate retry_after from the rate limit info
+    # Default to 60 seconds if we can't extract it
+    retry_after = 60
+
+    # Try to extract retry_after from exception details
+    if hasattr(exc, 'retry_after'):
+        retry_after = exc.retry_after
+    elif hasattr(exc, 'detail') and str(exc.detail):
+        # Try to parse from detail string like "5 per 1 minute"
+        detail_str = str(exc.detail)
+        if "minute" in detail_str:
+            retry_after = 60
+        elif "hour" in detail_str:
+            retry_after = 3600
+        elif "day" in detail_str:
+            retry_after = 86400
+
     response = Response(
-        content=f'{{"error": "rate_limit_exceeded", "message": "Too many requests", "retry_after": {exc.retry_after}}}',
+        content=f'{{"error": "rate_limit_exceeded", "message": "Too many requests", "retry_after": {retry_after}}}',
         status_code=429,
-        headers={"Retry-After": str(exc.retry_after)},
+        headers={"Retry-After": str(retry_after)},
     )
     return response
 
