@@ -408,12 +408,19 @@ else
         print_success "Azure Subscription ID: $SUBSCRIPTION_ID"
 
         # Check if required resources exist
-        print_step "Checking Azure resource group"
+        print_step "Checking Azure resource groups"
         if az group show --name vigor-rg &> /dev/null; then
-            print_success "Resource group 'vigor-rg' exists"
+            print_success "Main resource group 'vigor-rg' exists"
         else
-            print_warning "Resource group 'vigor-rg' not found"
+            print_warning "Main resource group 'vigor-rg' not found"
             print_warning "Run: az group create --name vigor-rg --location 'Central US'"
+        fi
+
+        if az group show --name vigor-db-rg &> /dev/null; then
+            print_success "Database resource group 'vigor-db-rg' exists"
+        else
+            print_warning "Database resource group 'vigor-db-rg' not found"
+            print_warning "Run: az group create --name vigor-db-rg --location 'Central US'"
         fi
 
         # Check App Service

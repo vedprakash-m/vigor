@@ -112,10 +112,12 @@ cd infrastructure/bicep && ./deploy.sh
 git push origin main
 ```
 
-### Cost-Optimized Architecture
+### Cost-Optimized Dual Resource Group Architecture
 
 - **Monthly Cost:** ~$43/month (Basic App Service + PostgreSQL + Key Vault)
+- **Pause Mode:** ~$30/month (delete compute resources, keep data)
 - **Single Environment:** Direct production deployment for cost efficiency
+- **Single Region:** Central US for cost optimization
 - **Scalable Design:** Pay-as-you-grow with tier-based usage limits
 
 ---

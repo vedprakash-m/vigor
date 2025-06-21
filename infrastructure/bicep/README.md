@@ -13,9 +13,9 @@ This directory contains the Azure Bicep templates for deploying the Vigor fitnes
 
 ### Infrastructure Components
 
-- **Resource Groups**:
-  - `vigor-rg` runtime stack (App Service, Static Web App, Key Vault, ACR, etc.)
-  - `vigor-db-rg` persistent layer (PostgreSQL + Storage Account)
+- **Resource Groups** (Dual-Group Architecture):
+  - `vigor-rg`: **Compute resources** (App Service, Static Web App, Application Insights, Log Analytics)
+  - `vigor-db-rg`: **Persistent resources** (PostgreSQL Database, Key Vault, Storage Account)
 - **App Service Plan**: Standard S1 tier for production workloads
 - **App Service**: Linux-based backend hosting with Python 3.11
 - **Static Web App**: Frontend hosting with global CDN
@@ -37,10 +37,14 @@ This directory contains the Azure Bicep templates for deploying the Vigor fitnes
 
 ### Cost Optimization
 
+- **Dual Resource Group Strategy**: Pause/resume by deleting compute resources
+- **Single Environment**: Production only (no staging costs)
+- **Single Slot**: No deployment slot overhead
+- **Single Region**: Central US to minimize data transfer costs
+- **Static Resource Naming**: Idempotent deployments prevent duplicate resources
 - Zone-redundant storage only in production
 - Conditional high availability features
 - Optimized SKUs for development vs production
-- Built-in budget monitoring
 
 ## Deployment
 

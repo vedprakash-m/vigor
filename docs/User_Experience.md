@@ -262,6 +262,17 @@ flowchart TD
   AP4 --> AP5[Save & Validate]
 ```
 
+#### 8.3.4 Infrastructure Cost Management
+
+```mermaid
+flowchart LR
+  CM1[Active Mode<br/>$43/month] --> CM2{Pause Decision}
+  CM2 --> CM3[Delete vigor-rg<br/>Keep vigor-db-rg]
+  CM3 --> CM4[Pause Mode<br/>$30/month]
+  CM4 --> CM5[Resume: Re-deploy vigor-rg]
+  CM5 --> CM1
+```
+
 #### 8.3.4 Support Console (Desktop)
 
 ```mermaid

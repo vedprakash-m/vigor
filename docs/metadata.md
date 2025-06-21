@@ -189,8 +189,9 @@ cd frontend && npm install && npm run dev
 | ADR-0007 | 2025-06-16 | **Local Validation**: Enhanced E2E validation matching CI/CD           | Fix validation gaps                                |
 | ADR-0006 | 2025-06-15 | **CI/CD**: Unified pipeline replacing separate workflows               | Proper orchestration, failure handling             |
 | ADR-0005 | 2025-06-15 | **Resources**: Static naming (vigor-backend, vigor-db, vigor-kv)       | Idempotency and clarity                            |
+| ADR-0010 | 2025-01-20 | **Resource Groups**: Dual RG architecture (vigor-rg + vigor-db-rg)     | Pause/resume capability for extended cost savings  |
 | ADR-0004 | 2025-06-15 | **Deployment**: Single environment, single slot strategy               | Keep costs under $50/month                         |
-| ADR-0003 | 2025-06-15 | **Infrastructure**: Single resource group vigor-rg                     | Cost control, simplified operations                |
+| ADR-0003 | 2025-06-15 | **Infrastructure**: Single region, static resource naming              | Cost control, idempotent deployments               |
 | ADR-0002 | 2025-06-15 | **Documentation**: Track via docs/metadata.md + ADRs                   | Single source of truth                             |
 | ADR-0001 | 2025-06-15 | **Architecture**: Clean/Hexagonal Architecture adoption                | Testability, scalability, modularity               |
 
@@ -223,28 +224,37 @@ cd frontend && npm install && npm run dev
 
 ## 💰 Infrastructure & Deployment
 
-### Cost-Optimized Azure Architecture
+### Cost-Optimized Dual Resource Group Architecture
 
-**Resource Groups:**
+**Resource Groups Architecture:**
 
-- `vigor-rg`: All compute and storage resources
+- `vigor-rg`: **Compute resources** (App Service, Static Web App, Application Insights, Log Analytics)
+- `vigor-db-rg`: **Persistent resources** (PostgreSQL Database, Key Vault, Storage Account)
+
+**💰 Pause/Resume Innovation:**
+
+- **PAUSE**: Delete `vigor-rg` to eliminate compute costs while preserving all data
+- **RESUME**: Re-deploy `vigor-rg` to restore full functionality with preserved data
 
 **Resources & Monthly Costs:**
 
-- **App Service Basic B1**: ~$13/month (backend API)
-- **PostgreSQL Flexible Basic**: ~$25/month (database)
-- **Key Vault Standard**: ~$3/month (secrets)
-- **Storage Account LRS**: ~$2/month (static assets)
-- **Static Web App**: Free tier (frontend)
+- **App Service Basic B1**: ~$13/month (backend API) - _in vigor-rg_
+- **PostgreSQL Flexible Basic**: ~$25/month (database) - _in vigor-db-rg_
+- **Key Vault Standard**: ~$3/month (secrets) - _in vigor-db-rg_
+- **Storage Account LRS**: ~$2/month (static assets) - _in vigor-db-rg_
+- **Static Web App**: Free tier (frontend) - _in vigor-rg_
 
 **Total: ~$43/month** (55% cost reduction from previous $96/month)
+**Pause Mode: ~$30/month** (only persistent resources - 70% cost reduction)
 
 ### Deployment Strategy
 
 - **Single Environment**: Production only (no staging)
 - **Single Slot**: No deployment slots for cost savings
+- **Single Region**: Central US for cost optimization
+- **Dual Resource Groups**: Pause/resume capability for extended cost savings
 - **Direct Deployment**: CI/CD deploys directly to production
-- **Infrastructure as Code**: Azure Bicep templates
+- **Infrastructure as Code**: Azure Bicep templates with static resource naming
 
 ### CI/CD Pipeline (Simplified)
 

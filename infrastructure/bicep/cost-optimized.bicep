@@ -34,10 +34,10 @@ param postgresqlSku string = 'B_Gen5_1'
 // Single resource group for cost optimization
 var resourceGroupName = 'vigor-rg'
 
-// Static resource names (no staging variants)
+// Static resource names (no staging variants) - consistent with main.bicep
 var appServicePlanName = 'vigor-app-plan'
 var backendWebAppName = 'vigor-backend'
-var postgresServerName = 'vigor-db'
+var postgresServerName = 'vigor-db' // Simplified for cost-optimized version
 var storageAccountName = 'vigorsa99'
 var keyVaultName = 'vigor-kv'
 

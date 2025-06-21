@@ -31,7 +31,8 @@ print_error() {
 
 # Configuration
 RESOURCE_GROUP="vigor-rg"
-LOCATION="Central US"  # Single region for simplicity and cost
+DATABASE_RESOURCE_GROUP="vigor-db-rg"
+LOCATION="Central US"  # Single region for cost optimization
 TEMPLATE_FILE="main.bicep"
 PARAMETERS_FILE="parameters.bicepparam"
 
@@ -120,13 +121,25 @@ fi
 print_success "Environment variables validated"
 echo ""
 
-# Create resource group
-print_status "Creating resource group: $RESOURCE_GROUP"
+# Create resource groups
+print_status "Creating resource groups for dual-group architecture..."
+
+# Create database resource group (persistent resources)
+print_status "Creating database resource group: $DATABASE_RESOURCE_GROUP"
+if az group show --name "$DATABASE_RESOURCE_GROUP" &> /dev/null; then
+    print_warning "Database resource group $DATABASE_RESOURCE_GROUP already exists"
+else
+    az group create --name "$DATABASE_RESOURCE_GROUP" --location "$LOCATION"
+    print_success "Created database resource group: $DATABASE_RESOURCE_GROUP"
+fi
+
+# Create main resource group (compute resources)
+print_status "Creating main resource group: $RESOURCE_GROUP"
 if az group show --name "$RESOURCE_GROUP" &> /dev/null; then
-    print_warning "Resource group $RESOURCE_GROUP already exists"
+    print_warning "Main resource group $RESOURCE_GROUP already exists"
 else
     az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
-    print_success "Created resource group: $RESOURCE_GROUP"
+    print_success "Created main resource group: $RESOURCE_GROUP"
 fi
 echo ""
 
@@ -206,12 +219,17 @@ KEY_VAULT_NAME=$(az deployment group show \
 echo ""
 print_success "🎉 Vigor infrastructure deployed successfully!"
 echo ""
-print_status "Deployment Summary:"
-echo "  ✅ Resource Group: $RESOURCE_GROUP"
+print_status "Deployment Summary - Dual Resource Group Architecture:"
+echo "  ✅ Main Resource Group: $RESOURCE_GROUP (compute resources)"
+echo "  ✅ Database Resource Group: $DATABASE_RESOURCE_GROUP (persistent resources)"
 echo "  ✅ Backend URL: $BACKEND_URL"
 echo "  ✅ Frontend URL: $FRONTEND_URL"
 echo "  ✅ Container Registry: $CONTAINER_REGISTRY"
-echo "  ✅ Key Vault: $KEY_VAULT_NAME"
+echo "  ✅ Key Vault: $KEY_VAULT_NAME (in $DATABASE_RESOURCE_GROUP)"
+echo ""
+print_status "🔥 Cost Optimization - Pause/Resume Operations:"
+echo "  💰 To PAUSE (save costs): Delete '$RESOURCE_GROUP' resource group"
+echo "  ▶️  To RESUME: Re-run this deployment script (data preserved in '$DATABASE_RESOURCE_GROUP')"
 echo ""
 print_status "Next Steps:"
 echo "  1. Update your GitHub Actions workflow to use Bicep deployment"

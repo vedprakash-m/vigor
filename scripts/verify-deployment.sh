@@ -6,10 +6,12 @@
 set -e
 
 RESOURCE_GROUP="vigor-rg"
+DATABASE_RESOURCE_GROUP="vigor-db-rg"
 ENVIRONMENT="prod"
 
 echo "🔍 Verifying Vigor deployment in Azure..."
-echo "Resource Group: $RESOURCE_GROUP"
+echo "Main Resource Group: $RESOURCE_GROUP"
+echo "Database Resource Group: $DATABASE_RESOURCE_GROUP"
 echo "Environment: $ENVIRONMENT"
 echo ""
 
@@ -59,13 +61,22 @@ get_url() {
 echo "📋 Resource Verification:"
 echo "========================"
 
-# Check Resource Group
-echo -n "Resource Group ($RESOURCE_GROUP)..."
+# Check Resource Groups
+echo -n "Main Resource Group ($RESOURCE_GROUP)..."
 if az group show --name $RESOURCE_GROUP > /dev/null 2>&1; then
     echo " ✅"
 else
     echo " ❌"
-    echo "❌ Resource group not found. Deployment failed."
+    echo "❌ Main resource group not found. Deployment failed."
+    exit 1
+fi
+
+echo -n "Database Resource Group ($DATABASE_RESOURCE_GROUP)..."
+if az group show --name $DATABASE_RESOURCE_GROUP > /dev/null 2>&1; then
+    echo " ✅"
+else
+    echo " ❌"
+    echo "❌ Database resource group not found. Deployment failed."
     exit 1
 fi
 

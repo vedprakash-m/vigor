@@ -147,13 +147,21 @@ fi
 print_step "Validating Azure resources"
 
 if command -v az &> /dev/null && az account show &> /dev/null; then
-    # Check resource group
+    # Check resource groups
     if az group show --name vigor-rg &> /dev/null; then
-        print_success "Resource group 'vigor-rg' exists"
+        print_success "Main resource group 'vigor-rg' exists"
     else
         VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
-        print_error "Resource group 'vigor-rg' not found"
+        print_error "Main resource group 'vigor-rg' not found"
         print_warning "Create with: az group create --name vigor-rg --location 'Central US'"
+    fi
+
+    if az group show --name vigor-db-rg &> /dev/null; then
+        print_success "Database resource group 'vigor-db-rg' exists"
+    else
+        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+        print_error "Database resource group 'vigor-db-rg' not found"
+        print_warning "Create with: az group create --name vigor-db-rg --location 'Central US'"
     fi
 
     # Check App Service
