@@ -1,8 +1,9 @@
-"""Basic core module tests"""
+"""Basic Core Module Tests"""
 
 import pytest
+from unittest.mock import Mock, patch
+from core.security import get_password_hash, verify_password
 from core.config import get_settings
-from core.security import hash_password, verify_password
 
 
 def test_settings_loading():
@@ -18,7 +19,7 @@ def test_password_hashing():
     password = "TestPassword123!"
 
     # Test hashing
-    hashed = hash_password(password)
+    hashed = get_password_hash(password)
     assert hashed is not None
     assert hashed != password
     assert len(hashed) > 0
@@ -33,8 +34,8 @@ def test_different_passwords_different_hashes():
     password1 = "Password123!"
     password2 = "DifferentPassword456!"
 
-    hash1 = hash_password(password1)
-    hash2 = hash_password(password2)
+    hash1 = get_password_hash(password1)
+    hash2 = get_password_hash(password2)
 
     assert hash1 != hash2
 
@@ -43,8 +44,8 @@ def test_same_password_different_hashes():
     """Test that same password produces different hashes (salt)"""
     password = "SamePassword123!"
 
-    hash1 = hash_password(password)
-    hash2 = hash_password(password)
+    hash1 = get_password_hash(password)
+    hash2 = get_password_hash(password)
 
     # Should be different due to salt
     assert hash1 != hash2
@@ -57,7 +58,7 @@ def test_same_password_different_hashes():
 def test_empty_password_handling():
     """Test handling of empty passwords"""
     try:
-        hashed = hash_password("")
+        hashed = get_password_hash("")
         # If it doesn't raise an error, verify it works
         assert verify_password("", hashed) is True
     except Exception:
@@ -68,7 +69,7 @@ def test_empty_password_handling():
 def test_none_password_handling():
     """Test handling of None passwords"""
     try:
-        hashed = hash_password(None)
+        hashed = get_password_hash(None)
         # If it doesn't raise an error, test behavior
         assert hashed is not None
     except Exception:
