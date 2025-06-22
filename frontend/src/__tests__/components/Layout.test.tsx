@@ -11,10 +11,11 @@ const mockUser: User = {
   id: '1',
   email: 'test@example.com',
   username: 'testuser',
-  user_tier: 'premium',
+  name: 'Test User',
   is_active: true,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
+  fitness_level: 'beginner',
 };
 
 const createMockAuthContext = (user: User | null = mockUser, logout = jest.fn()) => ({
@@ -28,7 +29,7 @@ const createMockAuthContext = (user: User | null = mockUser, logout = jest.fn())
 
 const TestWrapper: React.FC<{
   children: React.ReactNode;
-  authContext?: any;
+  authContext?: ReturnType<typeof createMockAuthContext>;
   initialRoute?: string;
 }> = ({
   children,
@@ -299,7 +300,7 @@ describe('Layout', () => {
       // Test with corrupted auth context
       const brokenAuthContext = {
         ...createMockAuthContext(),
-        user: undefined, // Invalid state
+        user: null, // Test null user state
       };
 
       expect(() => {

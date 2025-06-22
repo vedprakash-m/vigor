@@ -572,7 +572,48 @@ else
     print_warning "No .pre-commit-config.yaml found"
 fi
 
-# Step 9: Final Git Status Check
+# Step 9: FINAL CI/CD SIMULATION - Double-check everything
+print_step "Final CI/CD Simulation (Double-Check)"
+echo "====================================="
+
+cd backend
+
+print_step "Final Black formatting verification (exactly like CI/CD)"
+if ! black --check . >/dev/null 2>&1; then
+    print_error "CRITICAL: Black formatting issues detected after validation!"
+    print_error "This would cause CI/CD failure. Running black --check for details:"
+    black --check .
+    exit 1
+else
+    print_success "✅ Final Black check: All files properly formatted"
+fi
+
+print_step "Final isort verification (exactly like CI/CD)"
+if ! isort --check-only . >/dev/null 2>&1; then
+    print_error "CRITICAL: Import sorting issues detected after validation!"
+    print_error "This would cause CI/CD failure. Running isort --check-only for details:"
+    isort --check-only --diff .
+    exit 1
+else
+    print_success "✅ Final isort check: All imports properly sorted"
+fi
+
+print_step "Final Ruff verification (exactly like CI/CD)"
+if ! ruff check . >/dev/null 2>&1; then
+    print_error "CRITICAL: Ruff linting issues detected after validation!"
+    print_error "This would cause CI/CD failure. Running ruff check for details:"
+    ruff check .
+    exit 1
+else
+    print_success "✅ Final Ruff check: All linting rules satisfied"
+fi
+
+cd ..
+
+print_success "🎯 Final CI/CD simulation: ALL CHECKS PASSED"
+print_success "CI/CD pipeline will NOT fail on code quality issues"
+
+# Step 10: Final Git Status Check
 print_step "Checking Git Status"
 if [ -n "$(git status --porcelain)" ]; then
     print_warning "Files were modified during validation:"
@@ -583,7 +624,7 @@ else
     print_success "No files were modified"
 fi
 
-# Step 10: Final Summary
+# Step 11: Final Summary
 echo ""
 echo -e "${GREEN}🎉 Comprehensive Local E2E Validation Complete!${NC}"
 echo "=================================================="

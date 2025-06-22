@@ -25,6 +25,9 @@ const LLMStatus: React.FC = () => {
     const fetchStatus = async () => {
       try {
         const response = await fetch('http://localhost:8001/ai/provider-status');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         setStatus(data);
       } catch (error) {
@@ -57,14 +60,16 @@ const LLMStatus: React.FC = () => {
   }
 
   const getProviderColor = (providerName: string) => {
-    if (status.active_provider.toLowerCase().includes(providerName.toLowerCase())) {
+    if (!status || !status.provider_info) return 'gray';
+    if (status.active_provider?.toLowerCase().includes(providerName.toLowerCase())) {
       return 'green';
     }
     return status.provider_info[providerName as keyof typeof status.provider_info]?.configured ? 'blue' : 'gray';
   };
 
   const getStatusText = (providerName: string) => {
-    if (status.active_provider.toLowerCase().includes(providerName.toLowerCase())) {
+    if (!status || !status.provider_info) return 'Not Configured';
+    if (status.active_provider?.toLowerCase().includes(providerName.toLowerCase())) {
       return 'Active';
     }
     return status.provider_info[providerName as keyof typeof status.provider_info]?.configured ? 'Configured' : 'Not Configured';
@@ -117,4 +122,4 @@ const LLMStatus: React.FC = () => {
   );
 };
 
-export default LLMStatus; 
+export default LLMStatus;

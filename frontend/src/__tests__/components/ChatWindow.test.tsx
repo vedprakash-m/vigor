@@ -2,9 +2,7 @@
  * Comprehensive test suite for Chat components - Frontend coverage improvement
  */
 
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 
@@ -18,18 +16,8 @@ const mockAuthContext = {
   register: jest.fn()
 }
 
-jest.mock('../../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => mockAuthContext
-}))
-
-// Mock the API service
-const mockApiService = {
-  sendChatMessage: jest.fn(),
-  getChatHistory: jest.fn()
-}
-
-jest.mock('../../../services/api', () => ({
-  apiService: mockApiService
 }))
 
 // Simple Chat Window Mock Component for testing
@@ -77,72 +65,70 @@ describe('ChatWindow Component', () => {
   it('renders chat window with input field', () => {
     render(<MockChatWindow />, { wrapper: createWrapper() })
 
-    expect(screen.getByTestId('chat-window')).toBeInTheDocument()
-    expect(screen.getByTestId('chat-input')).toBeInTheDocument()
-    expect(screen.getByTestId('send-button')).toBeInTheDocument()
+    expect(screen.getByTestId('chat-window')).toBeDefined()
+    expect(screen.getByTestId('chat-input')).toBeDefined()
+    expect(screen.getByTestId('send-button')).toBeDefined()
   })
 
   it('displays chat input placeholder text', () => {
     render(<MockChatWindow />, { wrapper: createWrapper() })
 
-    expect(screen.getByPlaceholderText('Type your message here...')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Type your message here...')).toBeDefined()
   })
 
   it('shows chat history container', () => {
     render(<MockChatWindow />, { wrapper: createWrapper() })
 
-    expect(screen.getByTestId('chat-history')).toBeInTheDocument()
+    expect(screen.getByTestId('chat-history')).toBeDefined()
   })
 
   it('has typing indicator element', () => {
     render(<MockChatWindow />, { wrapper: createWrapper() })
 
-    expect(screen.getByTestId('typing-indicator')).toBeInTheDocument()
+    expect(screen.getByTestId('typing-indicator')).toBeDefined()
   })
 
   it('displays send button', () => {
     render(<MockChatWindow />, { wrapper: createWrapper() })
 
     const sendButton = screen.getByTestId('send-button')
-    expect(sendButton).toBeInTheDocument()
-    expect(sendButton).toHaveTextContent('Send')
+    expect(sendButton).toBeDefined()
+    expect(sendButton.textContent).toBe('Send')
   })
 
   it('has proper component structure', () => {
     render(<MockChatWindow />, { wrapper: createWrapper() })
 
     // Check that all major components are present
-    expect(screen.getByTestId('chat-window')).toBeInTheDocument()
-    expect(screen.getByTestId('chat-history')).toBeInTheDocument()
-    expect(screen.getByTestId('chat-input-container')).toBeInTheDocument()
+    expect(screen.getByTestId('chat-window')).toBeDefined()
+    expect(screen.getByTestId('chat-history')).toBeDefined()
+    expect(screen.getByTestId('chat-input-container')).toBeDefined()
   })
 
   it('has accessible input field', () => {
     render(<MockChatWindow />, { wrapper: createWrapper() })
 
     const input = screen.getByTestId('chat-input')
-    expect(input).toHaveAttribute('type', 'text')
-    expect(input).toHaveAttribute('placeholder', 'Type your message here...')
+    expect(input.getAttribute('type')).toBe('text')
+    expect(input.getAttribute('placeholder')).toBe('Type your message here...')
   })
 
   it('renders within query client provider', () => {
     render(<MockChatWindow />, { wrapper: createWrapper() })
 
     // If this test passes, it means the component rendered successfully with QueryClient
-    expect(screen.getByTestId('chat-window')).toBeInTheDocument()
+    expect(screen.getByTestId('chat-window')).toBeDefined()
   })
 
   it('mocks authentication context correctly', () => {
     render(<MockChatWindow />, { wrapper: createWrapper() })
 
     // Test passes if component renders without auth errors
-    expect(screen.getByTestId('chat-window')).toBeInTheDocument()
+    expect(screen.getByTestId('chat-window')).toBeDefined()
   })
 
   it('has proper test environment setup', () => {
     // Test that our mocking is working
-    expect(mockApiService.sendChatMessage).toBeDefined()
-    expect(mockApiService.getChatHistory).toBeDefined()
     expect(mockAuthContext.user).toBeDefined()
     expect(mockAuthContext.isAuthenticated).toBe(true)
   })

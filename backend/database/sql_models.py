@@ -6,6 +6,9 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
+)
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import (
     Float,
     ForeignKey,
     Index,
@@ -13,7 +16,6 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 

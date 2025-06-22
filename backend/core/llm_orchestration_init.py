@@ -10,10 +10,10 @@ import os
 from application.llm.facade import LLMGatewayFacade
 
 # Legacy gateway fallback
+from core.llm_orchestration import LLMGateway  # type: ignore
 from core.llm_orchestration import (
     AdminConfigManager,
     KeyVaultClientService,
-    LLMGateway,  # type: ignore
 )
 from core.llm_orchestration.config_manager import ModelPriority
 from core.llm_orchestration.key_vault import (

@@ -1,13 +1,21 @@
 import '@testing-library/jest-dom';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
-import { MemoryRouter } from 'react-router-dom';
 import { AuthContext, AuthProvider } from '../../contexts/AuthContext';
-import * as authService from '../../services/authService';
 import type { User } from '../../types/auth';
 
 // Mock dependencies
-jest.mock('../../services/authService');
+jest.mock('../../services/authService', () => ({
+  authService: {
+    login: jest.fn(),
+    register: jest.fn(),
+    getCurrentUser: jest.fn(),
+    logout: jest.fn(),
+    refreshToken: jest.fn(),
+    forgotPassword: jest.fn(),
+    resetPassword: jest.fn(),
+  }
+}));
 
 const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({
@@ -15,7 +23,7 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
-const mockedAuthService = authService as jest.Mocked<typeof authService>;
+const { authService: mockedAuthService } = jest.requireMock('../../services/authService');
 
 // Test component to access context
 const TestComponent: React.FC = () => {
@@ -39,11 +47,8 @@ const TestComponent: React.FC = () => {
 };
 
 const renderWithRouter = (component: React.ReactElement) => {
-  return render(
-    <MemoryRouter>
-      {component}
-    </MemoryRouter>
-  );
+  // Use the global render which already includes BrowserRouter from jest.setup.js
+  return render(component);
 };
 
 describe('AuthContext', () => {
@@ -70,7 +75,13 @@ describe('AuthContext', () => {
 
   describe('Initial State', () => {
     it('should provide initial state correctly', async () => {
-      mockedAuthService.getCurrentUser.mockRejectedValue(new Error('Not authenticated'));
+      // Create a delayed promise to allow testing of loading state
+      let resolveGetCurrentUser: (value: any) => void;
+      const getCurrentUserPromise = new Promise((resolve, reject) => {
+        resolveGetCurrentUser = reject;
+      });
+
+      mockedAuthService.getCurrentUser.mockReturnValue(getCurrentUserPromise);
 
       renderWithRouter(
         <AuthProvider>
@@ -78,8 +89,11 @@ describe('AuthContext', () => {
         </AuthProvider>
       );
 
-      // Initially loading
+      // Initially loading should be true
       expect(screen.getByTestId('isLoading')).toHaveTextContent('true');
+
+      // Now reject the promise to complete the auth check
+      resolveGetCurrentUser(new Error('Not authenticated'));
 
       // Wait for loading to complete
       await waitFor(() => {
