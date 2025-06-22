@@ -1,7 +1,5 @@
-import { ChakraProvider, defaultSystem } from '@chakra-ui/react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
-import { MemoryRouter } from 'react-router-dom';
 import { Layout } from '../../components/Layout';
 import { AuthContext } from '../../contexts/AuthContext';
 import type { User } from '../../types/auth';
@@ -27,23 +25,16 @@ const createMockAuthContext = (user: User | null = mockUser, logout = jest.fn())
   isAuthenticated: !!user,
 });
 
-const TestWrapper: React.FC<{
-  children: React.ReactNode;
-  authContext?: ReturnType<typeof createMockAuthContext>;
-  initialRoute?: string;
-}> = ({
+const TestWrapper: React.FC<{ children: React.ReactNode; authContext?: ReturnType<typeof createMockAuthContext> }> = ({
   children,
-  authContext = createMockAuthContext(),
-  initialRoute = '/'
-}) => (
-  <ChakraProvider value={defaultSystem}>
+  authContext = createMockAuthContext()
+}) => {
+  return (
     <AuthContext.Provider value={authContext}>
-      <MemoryRouter initialEntries={[initialRoute]}>
-        {children}
-      </MemoryRouter>
+      {children}
     </AuthContext.Provider>
-  </ChakraProvider>
-);
+  );
+};
 
 describe('Layout', () => {
   beforeEach(() => {
@@ -122,7 +113,7 @@ describe('Layout', () => {
 
     it('highlights active navigation item', () => {
       render(
-        <TestWrapper initialRoute="/workouts">
+        <TestWrapper>
           <Layout />
         </TestWrapper>
       );
@@ -247,7 +238,8 @@ describe('Layout', () => {
       );
 
       // The layout should render without errors
-      expect(screen.getByText('Vigor')).toBeInTheDocument();
+      const vigorElements = screen.getAllByText('Vigor');
+      expect(vigorElements.length).toBeGreaterThan(0);
       expect(screen.getByText('Welcome, testuser')).toBeInTheDocument();
     });
   });

@@ -3,18 +3,23 @@
 
 import { TextDecoder, TextEncoder } from 'util';
 
-// Override global render with Chakra/AuthProvider wrapper (no router)
+// Override global render with Chakra/AuthProvider/Router wrapper
 jest.mock('@testing-library/react', () => {
   const actual = jest.requireActual('@testing-library/react');
   const React = require('react');
   const { ChakraProvider, defaultSystem } = require('@chakra-ui/react');
   const { AuthProvider } = require('./src/contexts/AuthContext');
+  const { MemoryRouter } = require('react-router-dom');
 
   const AllProviders = ({ children }) =>
     React.createElement(
-      ChakraProvider,
-      { value: defaultSystem },
-      React.createElement(AuthProvider, null, children)
+      MemoryRouter,
+      null,
+      React.createElement(
+        ChakraProvider,
+        { value: defaultSystem },
+        React.createElement(AuthProvider, null, children)
+      )
     );
 
   return {
