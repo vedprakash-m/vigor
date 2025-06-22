@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 from database.models import UserProfile
 from database.sql_models import UserProfileDB
 from domain.repositories.base import BaseRepository as Repository
-from typing import Optional, List
 
 
 class SQLAlchemyUserRepository(Repository[UserProfile]):
@@ -16,7 +15,7 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
     def __init__(self, session: Session):  # noqa: D401
         self._session = session
 
-    async def get(self, entity_id: str) -> Optional[UserProfile]:
+    async def get(self, entity_id: str) -> UserProfile | None:
         record = (
             self._session.query(UserProfileDB)
             .filter(UserProfileDB.id == entity_id)
@@ -27,17 +26,19 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
 
         # Convert SQLAlchemy object to dict for Pydantic validation
         db_dict = {
-            'id': record.id,
-            'email': record.email,
-            'username': record.username,
-            'hashed_password': record.hashed_password,
-            'is_active': record.is_active,
-            'user_tier': record.user_tier,
-            'fitness_level': record.fitness_level,
-            'goals': record.goals or [],
-            'equipment': [record.equipment] if record.equipment else [],  # Convert single to list
-            'created_at': record.created_at,
-            'updated_at': record.updated_at,
+            "id": record.id,
+            "email": record.email,
+            "username": record.username,
+            "hashed_password": record.hashed_password,
+            "is_active": record.is_active,
+            "user_tier": record.user_tier,
+            "fitness_level": record.fitness_level,
+            "goals": record.goals or [],
+            "equipment": (
+                [record.equipment] if record.equipment else []
+            ),  # Convert single to list
+            "created_at": record.created_at,
+            "updated_at": record.updated_at,
         }
 
         return UserProfile(**db_dict)
@@ -46,12 +47,14 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
         # Get model data and exclude fields that don't exist in SQLAlchemy model
         model_data = entity.model_dump()
         # Remove available_equipment field as it doesn't exist in UserProfileDB
-        model_data.pop('available_equipment', None)
+        model_data.pop("available_equipment", None)
 
         # Convert equipment list to single value for SQLAlchemy
-        if 'equipment' in model_data and isinstance(model_data['equipment'], list):
+        if "equipment" in model_data and isinstance(model_data["equipment"], list):
             # Take first equipment item or default to 'none'
-            model_data['equipment'] = model_data['equipment'][0] if model_data['equipment'] else 'none'
+            model_data["equipment"] = (
+                model_data["equipment"][0] if model_data["equipment"] else "none"
+            )
 
         db_obj = UserProfileDB(**model_data)  # type: ignore[arg-type]
         self._session.add(db_obj)
@@ -60,17 +63,19 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
 
         # Convert SQLAlchemy object back to dict for Pydantic validation
         db_dict = {
-            'id': db_obj.id,
-            'email': db_obj.email,
-            'username': db_obj.username,
-            'hashed_password': db_obj.hashed_password,
-            'is_active': db_obj.is_active,
-            'user_tier': db_obj.user_tier,
-            'fitness_level': db_obj.fitness_level,
-            'goals': db_obj.goals or [],
-            'equipment': [db_obj.equipment] if db_obj.equipment else [],  # Convert single to list
-            'created_at': db_obj.created_at,
-            'updated_at': db_obj.updated_at,
+            "id": db_obj.id,
+            "email": db_obj.email,
+            "username": db_obj.username,
+            "hashed_password": db_obj.hashed_password,
+            "is_active": db_obj.is_active,
+            "user_tier": db_obj.user_tier,
+            "fitness_level": db_obj.fitness_level,
+            "goals": db_obj.goals or [],
+            "equipment": (
+                [db_obj.equipment] if db_obj.equipment else []
+            ),  # Convert single to list
+            "created_at": db_obj.created_at,
+            "updated_at": db_obj.updated_at,
         }
 
         return UserProfile(**db_dict)
@@ -86,12 +91,14 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
 
         # Get model data and exclude fields that don't exist in SQLAlchemy model
         model_data = entity.model_dump()
-        model_data.pop('available_equipment', None)
+        model_data.pop("available_equipment", None)
 
         # Convert equipment list to single value for SQLAlchemy
-        if 'equipment' in model_data and isinstance(model_data['equipment'], list):
+        if "equipment" in model_data and isinstance(model_data["equipment"], list):
             # Take first equipment item or default to 'none'
-            model_data['equipment'] = model_data['equipment'][0] if model_data['equipment'] else 'none'
+            model_data["equipment"] = (
+                model_data["equipment"][0] if model_data["equipment"] else "none"
+            )
 
         for field, value in model_data.items():
             if value is not None:
@@ -102,17 +109,19 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
 
         # Convert SQLAlchemy object back to dict for Pydantic validation
         db_dict = {
-            'id': record.id,
-            'email': record.email,
-            'username': record.username,
-            'hashed_password': record.hashed_password,
-            'is_active': record.is_active,
-            'user_tier': record.user_tier,
-            'fitness_level': record.fitness_level,
-            'goals': record.goals or [],
-            'equipment': [record.equipment] if record.equipment else [],  # Convert single to list
-            'created_at': record.created_at,
-            'updated_at': record.updated_at,
+            "id": record.id,
+            "email": record.email,
+            "username": record.username,
+            "hashed_password": record.hashed_password,
+            "is_active": record.is_active,
+            "user_tier": record.user_tier,
+            "fitness_level": record.fitness_level,
+            "goals": record.goals or [],
+            "equipment": (
+                [record.equipment] if record.equipment else []
+            ),  # Convert single to list
+            "created_at": record.created_at,
+            "updated_at": record.updated_at,
         }
 
         return UserProfile(**db_dict)
@@ -130,7 +139,7 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
         self._session.commit()
         return True
 
-    async def list(self, limit: int = 100, offset: int = 0) -> List[UserProfile]:
+    async def list(self, limit: int = 100, offset: int = 0) -> list[UserProfile]:
         query = self._session.query(UserProfileDB).offset(offset).limit(limit)
         records = query.all()
 
@@ -138,17 +147,19 @@ class SQLAlchemyUserRepository(Repository[UserProfile]):
         result = []
         for record in records:
             db_dict = {
-                'id': record.id,
-                'email': record.email,
-                'username': record.username,
-                'hashed_password': record.hashed_password,
-                'is_active': record.is_active,
-                'user_tier': record.user_tier,
-                'fitness_level': record.fitness_level,
-                'goals': record.goals or [],
-                'equipment': [record.equipment] if record.equipment else [],  # Convert single to list
-                'created_at': record.created_at,
-                'updated_at': record.updated_at,
+                "id": record.id,
+                "email": record.email,
+                "username": record.username,
+                "hashed_password": record.hashed_password,
+                "is_active": record.is_active,
+                "user_tier": record.user_tier,
+                "fitness_level": record.fitness_level,
+                "goals": record.goals or [],
+                "equipment": (
+                    [record.equipment] if record.equipment else []
+                ),  # Convert single to list
+                "created_at": record.created_at,
+                "updated_at": record.updated_at,
             }
             result.append(UserProfile(**db_dict))
 

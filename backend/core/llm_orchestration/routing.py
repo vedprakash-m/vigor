@@ -6,7 +6,7 @@ Implements intelligent model selection based on various strategies
 import hashlib
 import logging
 import secrets
-from typing import Any, Optional
+from typing import Any
 
 from .config_manager import AdminConfigManager
 
@@ -71,7 +71,7 @@ class RoutingStrategyEngine:
 
     async def _check_ab_tests(
         self, context: dict[str, Any], available_models: list[str]
-    ) -> Optional[str]:
+    ) -> str | None:
         """Check if user should be assigned to an A/B test variant"""
         try:
             active_tests = self.config_manager.get_active_ab_tests()
@@ -107,7 +107,7 @@ class RoutingStrategyEngine:
 
     def _get_ab_test_variant(
         self, user_id: str, test_id: str, traffic_split: dict[str, float]
-    ) -> Optional[str]:
+    ) -> str | None:
         """Determine which A/B test variant a user should see"""
         try:
             # Create consistent hash for user+test combination
@@ -132,7 +132,7 @@ class RoutingStrategyEngine:
 
     async def _apply_routing_rules(
         self, context: dict[str, Any], available_models: list[str]
-    ) -> Optional[str]:
+    ) -> str | None:
         """Apply custom routing rules"""
         try:
             matching_rules = self.config_manager.get_matching_routing_rules(context)
@@ -152,7 +152,7 @@ class RoutingStrategyEngine:
 
     async def _priority_based_selection(
         self, context: dict[str, Any], available_models: list[str]
-    ) -> Optional[str]:
+    ) -> str | None:
         """Select model based on priority and user tier"""
         try:
             # Get user tier configuration
@@ -253,7 +253,7 @@ class ContextAwareRouter:
 
     def route_by_task_type(
         self, task_type: str, available_models: list[str]
-    ) -> Optional[str]:
+    ) -> str | None:
         """Route based on task type (coding, chat, analysis, etc.)"""
 
         # Task-specific model preferences
@@ -276,7 +276,7 @@ class ContextAwareRouter:
 
     def route_by_complexity(
         self, prompt_length: int, available_models: list[str]
-    ) -> Optional[str]:
+    ) -> str | None:
         """Route based on prompt complexity/length"""
 
         if prompt_length < 100:
@@ -297,7 +297,7 @@ class ContextAwareRouter:
 
     def route_by_user_preference(
         self, user_id: str, available_models: list[str]
-    ) -> Optional[str]:
+    ) -> str | None:
         """Route based on user's historical preferences"""
 
         # In a real implementation, this would query user preference data

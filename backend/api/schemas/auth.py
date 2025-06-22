@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, Union, List
 
 
 class UserRegister(BaseModel):
@@ -9,17 +8,18 @@ class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=8)
     fitness_level: str = Field(..., pattern="^(beginner|intermediate|advanced)$")
-    goals: List[str]
+    goals: list[str]
     equipment: str = Field(..., pattern="^(none|minimal|moderate|full)$")
 
 
 class UserRegistration(BaseModel):
     """Alias for UserRegister for backward compatibility"""
+
     email: EmailStr
     username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=8)
     fitness_level: str = Field(..., pattern="^(beginner|intermediate|advanced)$")
-    goals: List[str]
+    goals: list[str]
     equipment: str = Field(..., pattern="^(none|minimal|moderate|full)$")
 
 
@@ -35,7 +35,7 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    user_id: Optional[str] = None
+    user_id: str | None = None
 
 
 class UserResponse(BaseModel):
@@ -43,7 +43,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     username: str
     fitness_level: str
-    goals: List[str]
+    goals: list[str]
     equipment: str
     user_tier: str = "free"
     monthly_budget: float = 5.0

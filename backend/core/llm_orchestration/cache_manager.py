@@ -7,7 +7,7 @@ import hashlib
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from .adapters import LLMRequest, LLMResponse
 
@@ -41,7 +41,7 @@ class CacheManager:
         """Initialize cache manager"""
         logger.info("Cache manager initialized")
 
-    async def get(self, request: LLMRequest) -> Optional[LLMResponse]:
+    async def get(self, request: LLMRequest) -> LLMResponse | None:
         """Get cached response if available"""
         try:
             cache_key = self._generate_cache_key(request)
@@ -73,7 +73,7 @@ class CacheManager:
             return None
 
     async def set(
-        self, request: LLMRequest, response: LLMResponse, ttl: Optional[int] = None
+        self, request: LLMRequest, response: LLMResponse, ttl: int | None = None
     ):
         """Cache a response"""
         try:

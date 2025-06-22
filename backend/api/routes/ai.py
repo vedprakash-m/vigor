@@ -148,9 +148,12 @@ async def analyze_workout_body(
             analysis = {
                 "overall_assessment": f"Analysis of workout: {request.workout_data[:100]}...",
                 "strengths": ["Good effort", "Consistent form"],
-                "areas_for_improvement": ["Could increase intensity", "Add more variety"],
+                "areas_for_improvement": [
+                    "Could increase intensity",
+                    "Add more variety",
+                ],
                 "recommendations": ["Try progressive overload", "Include rest days"],
-                "next_steps": "Continue with current routine and gradually increase difficulty"
+                "next_steps": "Continue with current routine and gradually increase difficulty",
             }
 
         return WorkoutAnalysis(**analysis)

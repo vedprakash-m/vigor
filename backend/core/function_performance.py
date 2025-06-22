@@ -6,7 +6,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class FunctionPerformanceMonitor:
             raise
 
     async def keep_warm(
-        self, warmup_func: Callable, function_name: str, interval: Optional[int] = None
+        self, warmup_func: Callable, function_name: str, interval: int | None = None
     ) -> None:
         """
         Keep a function warm by calling it periodically.
@@ -112,7 +112,7 @@ class FunctionPerformanceMonitor:
             # Wait for next interval
             await asyncio.sleep(warmup_interval)
 
-    def get_metrics(self, function_name: Optional[str] = None) -> dict[str, Any]:
+    def get_metrics(self, function_name: str | None = None) -> dict[str, Any]:
         """Get performance metrics for a specific function or all functions."""
         if function_name:
             if function_name in self.call_metrics:

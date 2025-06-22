@@ -1,12 +1,12 @@
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 
 class ChatMessage(BaseModel):
     message: str = Field(..., min_length=1, max_length=1000)
-    context: Optional[dict[str, Any]] = None
+    context: dict[str, Any] | None = None
 
 
 class ChatResponse(BaseModel):
@@ -22,34 +22,34 @@ class AICoachMessage(BaseModel):
     message: str
     is_user_message: bool
     timestamp: datetime
-    model_used: Optional[str] = None
-    tokens_used: Optional[int] = None
-    response_time_ms: Optional[int] = None
+    model_used: str | None = None
+    tokens_used: int | None = None
+    response_time_ms: int | None = None
 
 
 class LLMRequest(BaseModel):
     """LLM request schema for API endpoints"""
 
     prompt: str
-    user_id: Optional[str] = None
-    session_id: Optional[str] = None
-    task_type: Optional[str] = None
-    max_tokens: Optional[int] = None
-    temperature: Optional[float] = None
+    user_id: str | None = None
+    session_id: str | None = None
+    task_type: str | None = None
+    max_tokens: int | None = None
+    temperature: float | None = None
     stream: bool = False
-    context: Optional[dict[str, Any]] = None
-    metadata: Optional[dict[str, Any]] = None
+    context: dict[str, Any] | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class WorkoutRecommendationRequest(BaseModel):
     """Request for workout recommendations"""
 
     # Optional overrides - use user's profile if not provided
-    goals: Optional[list[str]] = None  # Use user's goals if not provided
-    fitness_level: Optional[str] = None  # Use user's fitness level if not provided
-    equipment: Optional[str] = None  # Use user's equipment if not provided
-    focus_areas: Optional[list[str]] = None
-    duration_minutes: Optional[int] = Field(None, ge=5, le=300)  # Workout duration
+    goals: list[str] | None = None  # Use user's goals if not provided
+    fitness_level: str | None = None  # Use user's fitness level if not provided
+    equipment: str | None = None  # Use user's equipment if not provided
+    focus_areas: list[str] | None = None
+    duration_minutes: int | None = Field(None, ge=5, le=300)  # Workout duration
 
 
 class WorkoutSessionRequest(BaseModel):
@@ -57,24 +57,32 @@ class WorkoutSessionRequest(BaseModel):
 
     workout_plan_id: str
     session_number: int
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ChatRequest(BaseModel):
     """Request for AI chat/coaching"""
 
     message: str
-    conversation_id: Optional[str] = None
-    context: Optional[dict[str, Any]] = None
+    conversation_id: str | None = None
+    context: dict[str, Any] | None = None
 
 
 class WorkoutAnalysisRequest(BaseModel):
     """Request for workout analysis with body data"""
 
-    workout_data: str = Field(..., min_length=1, max_length=5000, description="Workout data to analyze")
-    analysis_type: Optional[str] = Field("performance", description="Type of analysis to perform")
-    include_recommendations: bool = Field(True, description="Whether to include recommendations")
-    workout_log_id: Optional[str] = Field(None, description="Optional workout log ID if analyzing existing log")
+    workout_data: str = Field(
+        ..., min_length=1, max_length=5000, description="Workout data to analyze"
+    )
+    analysis_type: str | None = Field(
+        "performance", description="Type of analysis to perform"
+    )
+    include_recommendations: bool = Field(
+        True, description="Whether to include recommendations"
+    )
+    workout_log_id: str | None = Field(
+        None, description="Optional workout log ID if analyzing existing log"
+    )
 
 
 class GeneratedWorkoutPlan(BaseModel):
@@ -84,7 +92,7 @@ class GeneratedWorkoutPlan(BaseModel):
     duration_minutes: int
     difficulty: str
     equipment_needed: list[str]
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class WorkoutAnalysis(BaseModel):

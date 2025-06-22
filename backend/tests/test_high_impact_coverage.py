@@ -49,6 +49,7 @@ def test_config_settings_comprehensive():
 
 def test_database_models_comprehensive():
     """Test comprehensive database models functionality"""
+    from api.schemas.workouts import ExerciseSet  # Import from schemas, not models
     from database.models import (
         Equipment,
         Exercise,
@@ -58,7 +59,6 @@ def test_database_models_comprehensive():
         UserTier,
         WorkoutPlan,
     )
-    from api.schemas.workouts import ExerciseSet  # Import from schemas, not models
 
     # Test enum values
     assert UserTier.FREE.value == "free"
@@ -126,7 +126,7 @@ def test_schemas_comprehensive():
         name="Push-ups",
         muscle_groups=["chest", "arms"],
         sets=[exercise_set],
-        instructions="Standard push-up form"
+        instructions="Standard push-up form",
     )
     assert exercise.name == "Push-ups"
     assert len(exercise.sets) == 1
@@ -205,6 +205,7 @@ def test_core_llm_orchestration_modules():
 def test_api_services_basic():
     """Test basic API services functionality"""
     from unittest.mock import Mock
+
     from api.services.ai import AIService
     from api.services.auth import AuthService
     from api.services.usage_tracking import UsageTrackingService
@@ -226,14 +227,16 @@ def test_infrastructure_repositories():
         from infrastructure.repositories.sqlalchemy_aicoach_repository import (
             SQLAlchemyAICoachRepository,  # Try different capitalization
         )
+
         assert SQLAlchemyAICoachRepository is not None
     except ImportError:
         # If that doesn't exist, just test the module itself
         import infrastructure.repositories.sqlalchemy_aicoach_repository as repo_module
+
         assert repo_module is not None
 
         # Test that the module has some content
-        module_attrs = [attr for attr in dir(repo_module) if not attr.startswith('_')]
+        module_attrs = [attr for attr in dir(repo_module) if not attr.startswith("_")]
         assert len(module_attrs) > 0
 
 
@@ -253,26 +256,34 @@ def test_core_modules_comprehensive():
     # Try to import LLMProviderManager, fallback to module test
     try:
         from core.llm_providers import LLMProviderManager
+
         assert LLMProviderManager is not None
     except ImportError:
         # LLMProviderManager doesn't exist, test the module itself
         import core.llm_providers as llm_providers_module
+
         assert llm_providers_module is not None
 
         # Test that the module has some content
-        module_attrs = [attr for attr in dir(llm_providers_module) if not attr.startswith('_')]
+        module_attrs = [
+            attr for attr in dir(llm_providers_module) if not attr.startswith("_")
+        ]
         assert len(module_attrs) > 0
 
     try:
         from core.azure_auth import AzureAuthenticator
+
         assert AzureAuthenticator is not None
     except ImportError:
         # AzureAuthenticator doesn't exist, test the module itself
         import core.azure_auth as azure_auth_module
+
         assert azure_auth_module is not None
 
         # Test that the module has some content
-        module_attrs = [attr for attr in dir(azure_auth_module) if not attr.startswith('_')]
+        module_attrs = [
+            attr for attr in dir(azure_auth_module) if not attr.startswith("_")
+        ]
         assert len(module_attrs) > 0
 
 

@@ -7,7 +7,6 @@ import logging
 from abc import ABC, abstractmethod
 
 from .config import get_settings
-from typing import Optional
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -22,7 +21,7 @@ class LLMProvider(ABC):
         messages: list[dict[str, str]],
         max_tokens: int = 500,
         temperature: float = 0.7,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
     ) -> tuple[str, int, int]:
         """Generate chat completion. Returns (response, input_tokens, output_tokens)."""
         pass
@@ -55,7 +54,7 @@ class OpenAIProvider(LLMProvider):
         messages: list[dict[str, str]],
         max_tokens: int = 500,
         temperature: float = 0.7,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
     ) -> tuple[str, int, int]:
         """Generate OpenAI chat completion."""
         if self.client is None:
@@ -110,7 +109,7 @@ class GeminiProvider(LLMProvider):
         messages: list[dict[str, str]],
         max_tokens: int = 500,
         temperature: float = 0.7,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
     ) -> tuple[str, int, int]:
         """Generate Gemini chat completion."""
         if self.client is None:
@@ -176,7 +175,7 @@ class PerplexityProvider(LLMProvider):
         messages: list[dict[str, str]],
         max_tokens: int = 500,
         temperature: float = 0.7,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
     ) -> tuple[str, int, int]:
         """Generate Perplexity chat completion."""
         if self.client is None:
@@ -220,7 +219,7 @@ class FallbackProvider(LLMProvider):
         messages: list[dict[str, str]],
         max_tokens: int = 500,
         temperature: float = 0.7,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
     ) -> tuple[str, int, int]:
         """Generate fallback response."""
         # Basic fallback responses based on message content

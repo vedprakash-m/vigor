@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from .key_vault import SecretReference
 
@@ -129,7 +129,7 @@ class UserTierConfiguration:
     tier_id: str
     tier_name: str
     priority: int
-    budget_allocation: Optional[float] = None
+    budget_allocation: float | None = None
     rate_limit_requests_per_minute: int = 60
     model_access: list[str] = field(default_factory=list)
     priority_boost: int = 0  # Priority modifier
@@ -236,7 +236,7 @@ class AdminConfigManager:
         return [config for config in self.models.values() if config.is_active]
 
     async def get_routing_priority(
-        self, priority: Optional[ModelPriority] = None
+        self, priority: ModelPriority | None = None
     ) -> list[ModelConfiguration]:
         """Get models filtered by priority"""
         models = self.get_active_models()
@@ -344,7 +344,7 @@ class AdminConfigManager:
 
     def get_budget_for_user_group(
         self, user_groups: list[str]
-    ) -> Optional[BudgetConfiguration]:
+    ) -> BudgetConfiguration | None:
         """Get budget configuration for specific user groups"""
         # Find most specific budget (smallest user_groups list that matches)
         matching_budgets = []
@@ -376,7 +376,7 @@ class AdminConfigManager:
             logger.error(f"Failed to create user tier {tier_config.tier_id}: {e}")
             return False
 
-    def get_user_tier(self, tier_id: str) -> Optional[UserTierConfiguration]:
+    def get_user_tier(self, tier_id: str) -> UserTierConfiguration | None:
         """Get user tier configuration"""
         return self.user_tiers.get(tier_id)
 

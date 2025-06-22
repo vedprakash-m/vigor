@@ -8,7 +8,6 @@ import time
 
 import httpx
 from azure.identity import DefaultAzureCredential
-from typing import Optional
 
 
 class AzureServiceAuth:
@@ -30,7 +29,7 @@ class AzureServiceAuth:
         self._function_key_expiry: dict[str, float] = {}
         self._cache_duration = 3600  # 1 hour
 
-    async def get_function_key(self, function_name: Optional[str] = None) -> Optional[str]:
+    async def get_function_key(self, function_name: str | None = None) -> str | None:
         """
         Get function key for a specific function or the default host key.
         Uses Azure managed identity when running in Azure, or falls back to environment variable.

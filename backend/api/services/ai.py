@@ -1,7 +1,7 @@
 import os
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -35,7 +35,7 @@ async def chat_with_ai_coach(
     db: Session,
     user: UserProfile,
     message: str,
-    conversation_history: Optional[list[dict[str, str]]] = None,
+    conversation_history: list[dict[str, str]] | None = None,
 ) -> str:
     """Chat with the AI coach with usage tracking."""
 
@@ -112,10 +112,10 @@ async def chat_with_ai_coach(
 async def generate_ai_workout_plan(
     db: Session,
     user: UserProfile,
-    goals: Optional[list[str]] = None,
-    equipment: Optional[str] = None,
+    goals: list[str] | None = None,
+    equipment: str | None = None,
     duration_minutes: int = 45,
-    focus_areas: Optional[list[str]] = None,
+    focus_areas: list[str] | None = None,
 ) -> dict[str, Any]:
     """Generate a personalized workout plan using AI."""
 
@@ -218,7 +218,7 @@ class AIService:
         self,
         user: UserProfile,
         message: str,
-        conversation_history: Optional[list[dict[str, str]]] = None
+        conversation_history: list[dict[str, str]] | None = None,
     ) -> str:
         """Chat with AI coach."""
         return await chat_with_ai_coach(self.db, user, message, conversation_history)
@@ -226,10 +226,10 @@ class AIService:
     async def generate_workout_plan(
         self,
         user: UserProfile,
-        goals: Optional[list[str]] = None,
-        equipment: Optional[str] = None,
+        goals: list[str] | None = None,
+        equipment: str | None = None,
         duration_minutes: int = 45,
-        focus_areas: Optional[list[str]] = None,
+        focus_areas: list[str] | None = None,
     ) -> dict[str, Any]:
         """Generate AI workout plan."""
         return await generate_ai_workout_plan(

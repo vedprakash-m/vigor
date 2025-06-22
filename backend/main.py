@@ -171,7 +171,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             return {k: make_serializable(v) for k, v in obj.items()}
         elif isinstance(obj, list):
             return [make_serializable(item) for item in obj]
-        elif hasattr(obj, '__dict__'):
+        elif hasattr(obj, "__dict__"):
             return str(obj)
         else:
             return obj

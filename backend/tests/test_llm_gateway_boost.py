@@ -28,7 +28,7 @@ class TestGatewayDataStructures:
             temperature=0.7,
             stream=True,
             priority=5,
-            metadata={"source": "test"}
+            metadata={"source": "test"},
         )
 
         assert request.prompt == "Test prompt"
@@ -67,7 +67,7 @@ class TestGatewayDataStructures:
             cached=True,
             user_id="user123",
             session_id="session123",
-            metadata={"quality": "high"}
+            metadata={"quality": "high"},
         )
 
         assert response.content == "Test response"
@@ -89,22 +89,24 @@ class TestLLMGatewayCore:
     @pytest.fixture
     def mock_components(self):
         """Mock all gateway dependencies"""
-        with patch('core.llm_orchestration.gateway.RoutingStrategyEngine') as routing, \
-             patch('core.llm_orchestration.gateway.BudgetManager') as budget, \
-             patch('core.llm_orchestration.gateway.UsageLogger') as usage, \
-             patch('core.llm_orchestration.gateway.CostEstimator') as cost, \
-             patch('core.llm_orchestration.gateway.CacheManager') as cache, \
-             patch('core.llm_orchestration.gateway.CircuitBreakerManager') as circuit, \
-             patch('core.llm_orchestration.gateway.AnalyticsCollector') as analytics:
+        with (
+            patch("core.llm_orchestration.gateway.RoutingStrategyEngine") as routing,
+            patch("core.llm_orchestration.gateway.BudgetManager") as budget,
+            patch("core.llm_orchestration.gateway.UsageLogger") as usage,
+            patch("core.llm_orchestration.gateway.CostEstimator") as cost,
+            patch("core.llm_orchestration.gateway.CacheManager") as cache,
+            patch("core.llm_orchestration.gateway.CircuitBreakerManager") as circuit,
+            patch("core.llm_orchestration.gateway.AnalyticsCollector") as analytics,
+        ):
 
             yield {
-                'routing': routing,
-                'budget': budget,
-                'usage': usage,
-                'cost': cost,
-                'cache': cache,
-                'circuit': circuit,
-                'analytics': analytics
+                "routing": routing,
+                "budget": budget,
+                "usage": usage,
+                "cost": cost,
+                "cache": cache,
+                "circuit": circuit,
+                "analytics": analytics,
             }
 
     @pytest.fixture
@@ -139,7 +141,9 @@ class TestLLMGatewayCore:
         mock_adapter = Mock()
         mock_adapter.model_id = "fallback"
 
-        with patch('core.llm_orchestration.gateway.create_adapters_from_configs') as mock_create:
+        with patch(
+            "core.llm_orchestration.gateway.create_adapters_from_configs"
+        ) as mock_create:
             mock_create.return_value = {"fallback": mock_adapter}
 
             # Mock component initialization
@@ -192,21 +196,23 @@ class TestLLMGatewayCore:
             provider="test-provider",  # Added missing provider
             tokens_used=20,
             cost_estimate=0.0005,
-            latency_ms=5
+            latency_ms=5,
         )
 
         gateway._enrich_request = AsyncMock(return_value=Mock())
         gateway._check_cache = AsyncMock(return_value=cached_response)
-        gateway._create_gateway_response = AsyncMock(return_value=GatewayResponse(
-            content="Cached response",
-            model_used="test-model",
-            provider="test",
-            request_id="req123",
-            tokens_used=20,
-            cost_estimate=0.0005,
-            latency_ms=5,
-            cached=True
-        ))
+        gateway._create_gateway_response = AsyncMock(
+            return_value=GatewayResponse(
+                content="Cached response",
+                model_used="test-model",
+                provider="test",
+                request_id="req123",
+                tokens_used=20,
+                cost_estimate=0.0005,
+                latency_ms=5,
+                cached=True,
+            )
+        )
 
         result = await gateway.process_request(request)
 
@@ -223,7 +229,7 @@ class TestLLMGatewayCore:
             task_type="chat",
             max_tokens=100,
             temperature=0.7,
-            metadata={"source": "test"}
+            metadata={"source": "test"},
         )
 
         enriched = await gateway._enrich_request(request, "req123")
@@ -320,7 +326,7 @@ class TestLLMGatewayCore:
             provider="test-provider",  # Added missing provider
             tokens_used=50,
             cost_estimate=0.001,
-            latency_ms=200
+            latency_ms=200,
         )
 
         # FIX: Use generate_response method and AsyncMock
@@ -341,13 +347,11 @@ class TestLLMGatewayCore:
             provider="test-provider",  # Added missing provider
             tokens_used=50,
             cost_estimate=0.001,
-            latency_ms=100
+            latency_ms=100,
         )
 
         original_request = GatewayRequest(
-            prompt="Test",
-            user_id="user123",
-            session_id="session123"
+            prompt="Test", user_id="user123", session_id="session123"
         )
 
         start_time = time.time() - 0.2  # 200ms ago
@@ -396,12 +400,17 @@ class TestLLMGatewayCore:
         """Test health check performance - covers _perform_health_check"""
         gateway.adapters = {"model1": Mock(), "model2": Mock()}
 
-        with patch('core.llm_orchestration.gateway.health_check_all_adapters') as mock_health:
+        with patch(
+            "core.llm_orchestration.gateway.health_check_all_adapters"
+        ) as mock_health:
             # FIX: Return HealthCheckResult objects instead of booleans
             from core.llm_orchestration.adapters import HealthCheckResult
+
             mock_health.return_value = {
                 "model1": HealthCheckResult(is_healthy=True, latency_ms=100),
-                "model2": HealthCheckResult(is_healthy=False, error_message="API error")
+                "model2": HealthCheckResult(
+                    is_healthy=False, error_message="API error"
+                ),
             }
 
             initial_time = gateway._last_health_check
@@ -442,13 +451,15 @@ class TestGatewayAdvanced:
     @pytest.fixture
     def initialized_gateway(self):
         """Gateway that's already initialized"""
-        with patch('core.llm_orchestration.gateway.RoutingStrategyEngine'), \
-             patch('core.llm_orchestration.gateway.BudgetManager'), \
-             patch('core.llm_orchestration.gateway.UsageLogger'), \
-             patch('core.llm_orchestration.gateway.CostEstimator'), \
-             patch('core.llm_orchestration.gateway.CacheManager'), \
-             patch('core.llm_orchestration.gateway.CircuitBreakerManager'), \
-             patch('core.llm_orchestration.gateway.AnalyticsCollector'):
+        with (
+            patch("core.llm_orchestration.gateway.RoutingStrategyEngine"),
+            patch("core.llm_orchestration.gateway.BudgetManager"),
+            patch("core.llm_orchestration.gateway.UsageLogger"),
+            patch("core.llm_orchestration.gateway.CostEstimator"),
+            patch("core.llm_orchestration.gateway.CacheManager"),
+            patch("core.llm_orchestration.gateway.CircuitBreakerManager"),
+            patch("core.llm_orchestration.gateway.AnalyticsCollector"),
+        ):
 
             gateway = LLMGateway(Mock(), Mock(), Mock())
             gateway.is_initialized = True
@@ -463,15 +474,18 @@ class TestGatewayAdvanced:
         gateway._perform_health_check = AsyncMock()
 
         # Mock adapter statuses
-        from core.llm_orchestration.adapters import LLMProvider, HealthCheckResult
+        from core.llm_orchestration.adapters import HealthCheckResult, LLMProvider
+
         mock_adapter1 = Mock()
         mock_adapter1.model_id = "model1"
         mock_adapter1.provider = LLMProvider.OPENAI  # FIX: Use LLMProvider enum
         mock_adapter1.model_config = Mock()
         mock_adapter1.model_config.model_name = "gpt-4"
-        mock_adapter1.get_health_status = Mock(return_value=HealthCheckResult(
-            is_healthy=True, latency_ms=100, last_check=1234567890.0
-        ))
+        mock_adapter1.get_health_status = Mock(
+            return_value=HealthCheckResult(
+                is_healthy=True, latency_ms=100, last_check=1234567890.0
+            )
+        )
         mock_adapter1.is_healthy = Mock(return_value=True)
 
         mock_adapter2 = Mock()
@@ -479,15 +493,22 @@ class TestGatewayAdvanced:
         mock_adapter2.provider = LLMProvider.GEMINI  # FIX: Use LLMProvider enum
         mock_adapter2.model_config = Mock()
         mock_adapter2.model_config.model_name = "gemini-pro"
-        mock_adapter2.get_health_status = Mock(return_value=HealthCheckResult(
-            is_healthy=False, latency_ms=500, error_message="API error", last_check=1234567890.0
-        ))
+        mock_adapter2.get_health_status = Mock(
+            return_value=HealthCheckResult(
+                is_healthy=False,
+                latency_ms=500,
+                error_message="API error",
+                last_check=1234567890.0,
+            )
+        )
         mock_adapter2.is_healthy = Mock(return_value=False)
 
         gateway.adapters = {"model1": mock_adapter1, "model2": mock_adapter2}
 
         # FIX: Mock get_global_status as AsyncMock and match actual implementation
-        gateway.budget_manager.get_global_status = AsyncMock(return_value={"remaining_budget": 50.0})
+        gateway.budget_manager.get_global_status = AsyncMock(
+            return_value={"remaining_budget": 50.0}
+        )
         gateway.cache_manager.get_stats = Mock(return_value={"hit_rate": 0.85})
         gateway.circuit_breaker.get_status = Mock(return_value={"status": "healthy"})
 
@@ -496,7 +517,9 @@ class TestGatewayAdvanced:
         # Verify status structure (match actual implementation keys)
         assert "providers" in status
         assert "budget_status" in status
-        assert "cache_stats" in status  # Note: actual key is cache_stats not cache_status
+        assert (
+            "cache_stats" in status
+        )  # Note: actual key is cache_stats not cache_status
         assert "circuit_breakers" in status
         assert "active_models" in status
         assert "total_models" in status
@@ -538,7 +561,9 @@ class TestGatewayAdvanced:
         enriched_request = Mock()
         selected_adapter = Mock()
         selected_adapter.model_id = "stream-model"
-        selected_adapter.generate_stream = Mock(return_value=MockAsyncGenerator(["chunk1", "chunk2", "chunk3"]))
+        selected_adapter.generate_stream = Mock(
+            return_value=MockAsyncGenerator(["chunk1", "chunk2", "chunk3"])
+        )
 
         gateway._enrich_request = AsyncMock(return_value=enriched_request)
         gateway._enforce_budget = AsyncMock()
@@ -571,22 +596,25 @@ class TestModuleFunctions:
         key_vault = Mock()
         db_session = Mock()
 
-        with patch('core.llm_orchestration.gateway.LLMGateway') as mock_gateway_class:
+        with patch("core.llm_orchestration.gateway.LLMGateway") as mock_gateway_class:
             mock_gateway = Mock()
             mock_gateway.initialize = AsyncMock()
             mock_gateway_class.return_value = mock_gateway
 
             from core.llm_orchestration.gateway import initialize_gateway
+
             result = await initialize_gateway(config_manager, key_vault, db_session)
 
             assert result == mock_gateway
-            mock_gateway_class.assert_called_once_with(config_manager, key_vault, db_session)
+            mock_gateway_class.assert_called_once_with(
+                config_manager, key_vault, db_session
+            )
             mock_gateway.initialize.assert_called_once()
 
     def test_get_gateway_not_initialized(self):
         """Test get_gateway when not initialized"""
         # FIX: Patch the global gateway variable correctly
-        with patch('core.llm_orchestration.gateway.gateway', None):
+        with patch("core.llm_orchestration.gateway.gateway", None):
             from core.llm_orchestration.gateway import get_gateway
 
             with pytest.raises(RuntimeError, match="Gateway not initialized"):
@@ -599,13 +627,15 @@ class TestErrorScenarios:
     @pytest.fixture
     def error_gateway(self):
         """Gateway configured for error testing"""
-        with patch('core.llm_orchestration.gateway.RoutingStrategyEngine'), \
-             patch('core.llm_orchestration.gateway.BudgetManager'), \
-             patch('core.llm_orchestration.gateway.UsageLogger'), \
-             patch('core.llm_orchestration.gateway.CostEstimator'), \
-             patch('core.llm_orchestration.gateway.CacheManager'), \
-             patch('core.llm_orchestration.gateway.CircuitBreakerManager'), \
-             patch('core.llm_orchestration.gateway.AnalyticsCollector'):
+        with (
+            patch("core.llm_orchestration.gateway.RoutingStrategyEngine"),
+            patch("core.llm_orchestration.gateway.BudgetManager"),
+            patch("core.llm_orchestration.gateway.UsageLogger"),
+            patch("core.llm_orchestration.gateway.CostEstimator"),
+            patch("core.llm_orchestration.gateway.CacheManager"),
+            patch("core.llm_orchestration.gateway.CircuitBreakerManager"),
+            patch("core.llm_orchestration.gateway.AnalyticsCollector"),
+        ):
 
             gateway = LLMGateway(Mock(), Mock(), Mock())
             gateway.is_initialized = True
@@ -624,7 +654,7 @@ class TestErrorScenarios:
             provider="fallback-provider",  # Added missing provider
             tokens_used=30,
             cost_estimate=0.0005,
-            latency_ms=150
+            latency_ms=150,
         )
 
         # FIX: Mock the fallback adapter and add it to adapters
@@ -632,7 +662,9 @@ class TestErrorScenarios:
         fallback_adapter.generate_response = AsyncMock(return_value=fallback_response)
         error_gateway._enrich_request = AsyncMock(return_value=Mock())
 
-        result = await error_gateway._handle_error_fallback(request, "req123", "Original error")
+        result = await error_gateway._handle_error_fallback(
+            request, "req123", "Original error"
+        )
 
         assert result is not None
         assert "Service temporarily unavailable" in result.content
@@ -645,8 +677,12 @@ class TestErrorScenarios:
         request = GatewayRequest(prompt="Test", user_id="user123")
 
         # Mock fallback failure
-        error_gateway._select_fallback_model = AsyncMock(side_effect=Exception("Fallback failed"))
+        error_gateway._select_fallback_model = AsyncMock(
+            side_effect=Exception("Fallback failed")
+        )
 
-        result = await error_gateway._handle_error_fallback(request, "req123", "Original error")
+        result = await error_gateway._handle_error_fallback(
+            request, "req123", "Original error"
+        )
 
         assert result is None  # Should return None when fallback fails

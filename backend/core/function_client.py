@@ -5,7 +5,7 @@ This module handles the communication with the Azure Functions
 
 import logging
 import os
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 
@@ -32,7 +32,7 @@ perf_monitor = FunctionPerformanceMonitor()
 class FunctionsClient:
     """Client for interacting with Azure Functions."""
 
-    def __init__(self, base_url: Optional[str] = None):
+    def __init__(self, base_url: str | None = None):
         """Initialize the client."""
         self.base_url = base_url or FUNCTIONS_API_URL
         # Remove trailing slash if present
@@ -89,9 +89,9 @@ class FunctionsClient:
         self,
         fitness_level: str,
         goals: list[str],
-        equipment: Optional[str] = None,
+        equipment: str | None = None,
         duration_minutes: int = 45,
-        focus_areas: Optional[list[str]] = None,
+        focus_areas: list[str] | None = None,
     ) -> dict[str, Any]:
         """Call the GenerateWorkout function."""
         payload = {
@@ -115,7 +115,7 @@ class FunctionsClient:
         self,
         workout_data: dict[str, Any],
         user_fitness_level: str,
-        previous_workouts: Optional[list[dict[str, Any]]] = None,
+        previous_workouts: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """Call the AnalyzeWorkout function."""
         payload = {
@@ -138,7 +138,7 @@ class FunctionsClient:
         message: str,
         fitness_level: str,
         goals: list[str],
-        conversation_history: Optional[list[dict[str, str]]] = None,
+        conversation_history: list[dict[str, str]] | None = None,
     ) -> str:
         """Call the CoachChat function."""
         payload = {

@@ -13,7 +13,6 @@ from core.security import get_current_user
 from database.connection import get_db
 from database.models import AIProviderPriority, BudgetSettings, UserProfile
 from database.sql_models import AIProviderPriorityDB, AIUsageLogDB, BudgetSettingsDB
-from typing import Optional
 
 router = APIRouter()
 
@@ -24,9 +23,9 @@ class AIProviderPriorityRequest(BaseModel):
     model_name: str
     priority: int
     is_enabled: bool = True
-    max_daily_cost: Optional[float] = None
-    max_weekly_cost: Optional[float] = None
-    max_monthly_cost: Optional[float] = None
+    max_daily_cost: float | None = None
+    max_weekly_cost: float | None = None
+    max_monthly_cost: float | None = None
 
 
 class BudgetSettingsRequest(BaseModel):
@@ -184,7 +183,7 @@ async def delete_ai_provider_priority(
 
 
 # Budget Management
-@router.get("/budget", response_model=Optional[BudgetSettings])
+@router.get("/budget", response_model=BudgetSettings | None)
 async def get_budget_settings(
     db: Session = Depends(get_db), admin_user: UserProfile = Depends(verify_admin_user)
 ):

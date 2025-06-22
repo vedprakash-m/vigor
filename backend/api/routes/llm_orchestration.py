@@ -4,7 +4,7 @@ Provides admin and user-facing endpoints for the LLM orchestration layer
 """
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -33,17 +33,17 @@ class LLMRequest(BaseModel):
     prompt: str = Field(
         ..., min_length=1, max_length=50000, description="The prompt to send to the LLM"
     )
-    task_type: Optional[str] = Field(
+    task_type: str | None = Field(
         None, description="Type of task (chat, coding, analysis, etc.)"
     )
-    max_tokens: Optional[int] = Field(
+    max_tokens: int | None = Field(
         None, ge=1, le=32000, description="Maximum tokens to generate"
     )
-    temperature: Optional[float] = Field(
+    temperature: float | None = Field(
         None, ge=0.0, le=2.0, description="Temperature for response generation"
     )
     stream: bool = Field(False, description="Whether to stream the response")
-    metadata: Optional[dict[str, Any]] = Field(None, description="Additional metadata")
+    metadata: dict[str, Any] | None = Field(None, description="Additional metadata")
 
 
 class LLMResponse(BaseModel):
@@ -56,7 +56,7 @@ class LLMResponse(BaseModel):
     latency_ms: int
     cached: bool
     user_id: str
-    metadata: Optional[dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
 
 class SystemStatusResponse(BaseModel):
@@ -136,8 +136,8 @@ class BudgetConfigRequest(BaseModel):
 class UsageReportRequest(BaseModel):
     start_date: datetime
     end_date: datetime
-    user_id: Optional[str] = None
-    group_by: Optional[str] = Field(
+    user_id: str | None = None
+    group_by: str | None = Field(
         None, description="Group by: user, model, provider, day"
     )
 
@@ -472,7 +472,7 @@ async def create_budget_configuration(
 async def get_usage_report(
     start_date: datetime,
     end_date: datetime,
-    user_id: Optional[str] = None,
+    user_id: str | None = None,
     db: Session = Depends(get_db),
 ):
     """

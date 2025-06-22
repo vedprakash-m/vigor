@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class BudgetUsage:
     """Budget usage tracking"""
 
     budget_id: str
-    user_id: Optional[str]
+    user_id: str | None
     user_groups: list[str]
     current_usage: float
     budget_limit: float
@@ -150,7 +150,7 @@ class BudgetManager:
             logger.error(f"Failed to record usage for {user_id}: {e}")
 
     async def get_usage_summary(
-        self, user_id: Optional[str] = None, user_groups: Optional[list[str]] = None
+        self, user_id: str | None = None, user_groups: list[str] | None = None
     ) -> dict[str, Any]:
         """
         Get usage summary for a user or globally
@@ -258,7 +258,7 @@ class BudgetManager:
 
     async def _get_budget_usage(
         self, user_id: str, user_groups: list[str]
-    ) -> Optional[BudgetUsage]:
+    ) -> BudgetUsage | None:
         """Get budget usage for user/groups"""
         try:
             # Create cache key
@@ -282,7 +282,7 @@ class BudgetManager:
 
     async def _load_user_budget_usage(
         self, user_id: str, user_groups: list[str]
-    ) -> Optional[BudgetUsage]:
+    ) -> BudgetUsage | None:
         """Load user budget usage from database"""
         try:
             # Implementation would query database for existing budget usage

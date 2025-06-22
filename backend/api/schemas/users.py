@@ -3,7 +3,6 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr
 
 from database.models import Equipment, FitnessLevel, Goal
-from typing import Optional
 
 
 class UserProfileResponse(BaseModel):
@@ -22,26 +21,26 @@ class UserProfileResponse(BaseModel):
 class UserProfileUpdate(BaseModel):
     """User profile update model"""
 
-    fitness_level: Optional[FitnessLevel] = None
-    goals: Optional[list[Goal]] = None
-    equipment: Optional[Equipment] = None
-    injuries: Optional[list[str]] = None
-    preferences: Optional[dict] = None
+    fitness_level: FitnessLevel | None = None
+    goals: list[Goal] | None = None
+    equipment: Equipment | None = None
+    injuries: list[str] | None = None
+    preferences: dict | None = None
 
 
 class ProgressMetricCreate(BaseModel):
-    weight: Optional[float] = None
-    body_fat: Optional[float] = None
-    measurements: Optional[dict] = None
-    notes: Optional[str] = None
+    weight: float | None = None
+    body_fat: float | None = None
+    measurements: dict | None = None
+    notes: str | None = None
 
 
 class ProgressMetricResponse(BaseModel):
     id: str
     user_id: str
     date: datetime
-    weight: Optional[float]
-    body_fat: Optional[float]
-    measurements: Optional[dict]
-    notes: Optional[str]
+    weight: float | None
+    body_fat: float | None
+    measurements: dict | None
+    notes: str | None
     created_at: datetime

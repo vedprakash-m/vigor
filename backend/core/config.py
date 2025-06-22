@@ -5,7 +5,7 @@ Compatible with Python 3.9+ using Optional instead of Union syntax.
 
 import os
 from functools import lru_cache
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
@@ -33,18 +33,20 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # AI Provider APIs - all optional, fallback gracefully
-    OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
+    OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "fallback")
 
     # Alternative AI providers
-    GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
+    GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
     ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
 
     # Perplexity AI
-    PERPLEXITY_API_KEY: Optional[str] = os.getenv("PERPLEXITY_API_KEY")
-    PERPLEXITY_MODEL: str = os.getenv("PERPLEXITY_MODEL", "llama-3-sonar-large-32k-online")
+    PERPLEXITY_API_KEY: str | None = os.getenv("PERPLEXITY_API_KEY")
+    PERPLEXITY_MODEL: str = os.getenv(
+        "PERPLEXITY_MODEL", "llama-3-sonar-large-32k-online"
+    )
 
     # Azure Functions
     AZURE_FUNCTIONS_BASE_URL: str = os.getenv(
@@ -58,7 +60,7 @@ class Settings(BaseSettings):
     AZURE_KEY_VAULT_URL: str = os.getenv("AZURE_KEY_VAULT_URL", "")
 
     # CORS settings
-    _cors_origins_env: ClassVar[Optional[str]] = os.getenv("CORS_ORIGINS")
+    _cors_origins_env: ClassVar[str | None] = os.getenv("CORS_ORIGINS")
     CORS_ORIGINS: list[str] = (
         _cors_origins_env.split(",") if _cors_origins_env else ["http://localhost:5173"]
     )

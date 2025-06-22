@@ -284,7 +284,13 @@ class TestAdminRoutes:
     def test_update_provider_endpoint_exists(self, client):
         """Test update provider endpoint exists"""
         response = client.put(
-            "/admin/ai-providers/test-id", json={"provider_name": "openai", "model_name": "gpt-3.5-turbo", "priority": 1, "is_enabled": True}
+            "/admin/ai-providers/test-id",
+            json={
+                "provider_name": "openai",
+                "model_name": "gpt-3.5-turbo",
+                "priority": 1,
+                "is_enabled": True,
+            },
         )
         # Should not return 404 (endpoint exists)
         assert response.status_code != 404
@@ -297,7 +303,10 @@ class TestAdminRoutes:
 
     def test_update_budget_endpoint_exists(self, client):
         """Test update budget endpoint exists"""
-        response = client.post("/admin/budget", json={"total_weekly_budget": 1000.0, "total_monthly_budget": 4000.0})
+        response = client.post(
+            "/admin/budget",
+            json={"total_weekly_budget": 1000.0, "total_monthly_budget": 4000.0},
+        )
         # Should not return 404 (endpoint exists)
         assert response.status_code != 404
 

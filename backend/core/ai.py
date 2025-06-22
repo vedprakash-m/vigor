@@ -3,7 +3,7 @@ AI module for fitness coaching and workout plan generation.
 """
 
 import json
-from typing import Any, Optional
+from typing import Any
 
 from core.admin_llm_manager import AdminLLMManager
 from core.config import get_settings
@@ -15,10 +15,10 @@ settings = get_settings()
 
 async def generate_workout_plan(
     user_profile: UserProfile,
-    goals: Optional[list[str]] = None,
-    equipment: Optional[str] = None,
+    goals: list[str] | None = None,
+    equipment: str | None = None,
     duration_minutes: int = 45,
-    focus_areas: Optional[list[str]] = None,
+    focus_areas: list[str] | None = None,
 ) -> dict[str, Any]:
     """
     Generate personalized workout plan using AI.
@@ -119,7 +119,7 @@ Provide the workout plan in this exact JSON structure:
 async def get_ai_coach_response(
     user_profile: UserProfile,
     message: str,
-    conversation_history: Optional[list[dict[Any, Any]]] = None,
+    conversation_history: list[dict[Any, Any]] | None = None,
 ) -> str:
     """
     Get response from AI fitness coach.
@@ -240,10 +240,10 @@ class AIOrchestrator:
     async def generate_workout_plan(
         self,
         user_profile: UserProfile,
-        goals: Optional[list[str]] = None,
-        equipment: Optional[str] = None,
+        goals: list[str] | None = None,
+        equipment: str | None = None,
         duration_minutes: int = 45,
-        focus_areas: Optional[list[str]] = None,
+        focus_areas: list[str] | None = None,
     ) -> dict[str, Any]:
         """Generate workout plan."""
         return await generate_workout_plan(
@@ -254,7 +254,7 @@ class AIOrchestrator:
         self,
         user_profile: UserProfile,
         message: str,
-        conversation_history: Optional[list[dict[Any, Any]]] = None,
+        conversation_history: list[dict[Any, Any]] | None = None,
     ) -> str:
         """Get AI coach response."""
         return await get_ai_coach_response(user_profile, message, conversation_history)

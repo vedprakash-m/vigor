@@ -8,8 +8,6 @@ from sqlalchemy.orm import Session
 from database.connection import get_db
 from database.sql_models import AIProviderPriorityDB, AIUsageLogDB, BudgetSettingsDB
 
-from typing import Optional
-
 from .config import get_settings
 from .llm_providers import (
     FallbackProvider,
@@ -78,7 +76,7 @@ class BudgetMonitor:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_current_budget(self) -> Optional[BudgetSettingsDB]:
+    def get_current_budget(self) -> BudgetSettingsDB | None:
         """Get current budget settings."""
         return self.db.query(BudgetSettingsDB).first()
 
@@ -208,14 +206,14 @@ class AdminLLMManager:
         self,
         provider_name: str,
         model_name: str,
-        user_id: Optional[str],
+        user_id: str | None,
         endpoint: str,
         input_tokens: int,
         output_tokens: int,
         cost: float,
         response_time_ms: int,
         success: bool,
-        error_message: Optional[str] = None,
+        error_message: str | None = None,
     ):
         """Log AI usage for analytics and billing."""
         log_entry = AIUsageLogDB(
@@ -241,11 +239,11 @@ class AdminLLMManager:
     async def chat_completion(
         self,
         messages: list[dict[str, str]],
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         max_tokens: int = 500,
         temperature: float = 0.7,
         json_response: bool = False,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
         endpoint: str = "chat",
     ) -> tuple[str, float, str]:
         """
@@ -357,7 +355,7 @@ class AdminLLMManager:
         )
 
 
-def get_admin_llm_manager(db: Optional[Session] = None) -> AdminLLMManager:
+def get_admin_llm_manager(db: Session | None = None) -> AdminLLMManager:
     """Get admin LLM manager instance."""
     if db is None:
         db = next(get_db())

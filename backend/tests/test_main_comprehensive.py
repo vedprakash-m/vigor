@@ -189,6 +189,7 @@ class TestLifecycleManagement:
         # Create a proper async coroutine for keep_warm with correct signature
         async def mock_keep_warm(warmup_func=None, function_name=None, interval=None):
             return True
+
         mock_perf.keep_warm = mock_keep_warm
 
         async with lifespan(app):
@@ -209,9 +210,7 @@ class TestLifecycleManagement:
             # or the app should still function normally
             warmup_tasks = getattr(app, "warmup_tasks", [])
             # Test passes if either no warmup tasks or app functions normally
-            assert (
-                len(warmup_tasks) >= 0  # Allow any number of warmup tasks
-            )
+            assert len(warmup_tasks) >= 0  # Allow any number of warmup tasks
 
 
 class TestSecurityFeatures:

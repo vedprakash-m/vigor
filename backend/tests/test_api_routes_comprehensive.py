@@ -379,7 +379,13 @@ class TestPerformanceAndLimits:
 
         response = client.post("/ai/chat", json=data)
         # Should complete or timeout gracefully
-        assert response.status_code in [200, 401, 408, 422, 500]  # Auth required or timeout/validation error
+        assert response.status_code in [
+            200,
+            401,
+            408,
+            422,
+            500,
+        ]  # Auth required or timeout/validation error
 
 
 class TestSecurityHeaders:
@@ -423,7 +429,14 @@ class TestDataIntegrity:
 
             response = client.post("/auth/register", json=data)
             # Should accept valid fitness levels
-            assert response.status_code in [200, 201, 400, 409, 422, 429]  # Add rate limit
+            assert response.status_code in [
+                200,
+                201,
+                400,
+                409,
+                422,
+                429,
+            ]  # Add rate limit
 
     def test_goal_enum_consistency(self):
         """Test goal enum values are consistent"""
@@ -448,4 +461,11 @@ class TestDataIntegrity:
 
             response = client.post("/auth/register", json=data)
             # Should accept valid goal combinations
-            assert response.status_code in [200, 201, 400, 409, 422, 429]  # Add rate limit
+            assert response.status_code in [
+                200,
+                201,
+                400,
+                409,
+                422,
+                429,
+            ]  # Add rate limit

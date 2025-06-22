@@ -382,7 +382,7 @@ class TestSchemaEdgeCases:
         exercise = Exercise(
             name="Test Exercise",
             muscle_groups=[],  # Empty list is valid
-            sets=[],           # Empty list is valid
+            sets=[],  # Empty list is valid
         )
 
         assert exercise.name == "Test Exercise"

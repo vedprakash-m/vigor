@@ -7,16 +7,15 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from database.models import FitnessLevel
-from typing import Optional, Union
 
 
 class ExerciseSet(BaseModel):
     """Individual exercise set"""
 
-    reps: Optional[str] = None  # Can be "8-12" or "30 seconds"
-    weight: Optional[float] = None  # Weight in lbs/kg
-    rest: Optional[str] = None  # e.g., "60 seconds"
-    notes: Optional[str] = None
+    reps: str | None = None  # Can be "8-12" or "30 seconds"
+    weight: float | None = None  # Weight in lbs/kg
+    rest: str | None = None  # e.g., "60 seconds"
+    notes: str | None = None
 
 
 class Exercise(BaseModel):
@@ -25,7 +24,7 @@ class Exercise(BaseModel):
     name: str
     muscle_groups: list[str]
     sets: list[ExerciseSet]
-    instructions: Optional[str] = None
+    instructions: str | None = None
 
 
 class WorkoutPlan(BaseModel):
@@ -37,7 +36,7 @@ class WorkoutPlan(BaseModel):
     estimated_duration_minutes: int = Field(..., gt=0)
     difficulty_level: str = Field(..., pattern="^(beginner|intermediate|advanced)$")
     equipment_needed: list[str] = []
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class WorkoutSession(BaseModel):
@@ -47,7 +46,7 @@ class WorkoutSession(BaseModel):
     date: datetime
     duration_minutes: int
     exercises_completed: list[Exercise]
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class WorkoutPlanRequest(BaseModel):
@@ -57,8 +56,8 @@ class WorkoutPlanRequest(BaseModel):
     fitness_level: str
     available_equipment: list[str]
     duration_minutes: int = Field(default=45, ge=15, le=120)
-    focus_areas: Optional[list[str]] = None
-    notes: Optional[str] = None
+    focus_areas: list[str] | None = None
+    notes: str | None = None
 
 
 class WorkoutPlanCreate(BaseModel):
@@ -86,8 +85,8 @@ class WorkoutLogCreate(BaseModel):
     plan_id: str
     duration_minutes: int = Field(..., gt=0)
     exercises: list[Exercise]
-    notes: Optional[str] = None
-    rating: Optional[int] = Field(None, ge=1, le=5)
+    notes: str | None = None
+    rating: int | None = Field(None, ge=1, le=5)
 
 
 class WorkoutLogResponse(BaseModel):
@@ -97,8 +96,8 @@ class WorkoutLogResponse(BaseModel):
     completed_at: datetime
     duration_minutes: int
     exercises: list[dict]
-    notes: Optional[str]
-    rating: Optional[int]
+    notes: str | None
+    rating: int | None
     created_at: datetime
 
 
@@ -106,4 +105,4 @@ class AIWorkoutRequest(BaseModel):
     goals: list[str]
     equipment: str
     duration_minutes: int = Field(default=45, ge=15, le=120)
-    focus_areas: Optional[list[str]] = None
+    focus_areas: list[str] | None = None

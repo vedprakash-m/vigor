@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from sqlalchemy.orm import Session
-from typing import Optional, List
 
 from database.models import WorkoutPlan
 from database.sql_models import WorkoutPlanDB
@@ -14,7 +13,7 @@ class SQLAlchemyWorkoutPlanRepository(Repository[WorkoutPlan]):
     def __init__(self, session: Session):
         self.session = session
 
-    async def get(self, entity_id: str) -> Optional[WorkoutPlan]:
+    async def get(self, entity_id: str) -> WorkoutPlan | None:
         record = (
             self.session.query(WorkoutPlanDB)
             .filter(WorkoutPlanDB.id == entity_id)
@@ -59,7 +58,7 @@ class SQLAlchemyWorkoutPlanRepository(Repository[WorkoutPlan]):
         self.session.commit()
         return True
 
-    async def list(self, limit: int = 100, offset: int = 0) -> List[WorkoutPlan]:
+    async def list(self, limit: int = 100, offset: int = 0) -> list[WorkoutPlan]:
         query = self.session.query(WorkoutPlanDB)
         records = query.offset(offset).limit(limit).all()
         return [WorkoutPlan.model_validate(r) for r in records]

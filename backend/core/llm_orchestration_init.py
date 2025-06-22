@@ -22,12 +22,11 @@ from core.llm_orchestration.key_vault import (
     initialize_key_vault_service,
 )
 from database.connection import SessionLocal
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 # Global gateway instance
-_gateway: Optional[LLMGateway] = None
+_gateway: LLMGateway | None = None
 
 
 async def initialize_llm_orchestration():

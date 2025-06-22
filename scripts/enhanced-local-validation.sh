@@ -114,6 +114,38 @@ print_success "Dependency validation complete - CI/CD will not fail on dependenc
 
 cd ..
 
+# CRITICAL: Pre-commit validation to catch CI/CD failures
+print_step "Pre-commit CI/CD Simulation"
+echo "============================="
+
+# Check if there are any staged changes that would trigger CI/CD
+if git diff --cached --quiet; then
+    print_success "No staged changes - CI/CD validation not needed"
+else
+    print_warning "Staged changes detected - simulating CI/CD formatting checks"
+
+    # Check if staged files would pass CI/CD formatting
+    cd backend
+    print_step "Simulating CI/CD Black formatting check on staged files"
+
+    # Get list of staged Python files
+    STAGED_PY_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$' | grep '^backend/' | sed 's|^backend/||' || true)
+
+    if [ -n "$STAGED_PY_FILES" ]; then
+        print_step "Checking formatting on staged Python files..."
+        for file in $STAGED_PY_FILES; do
+            if [ -f "$file" ]; then
+                if ! black --check "$file" >/dev/null 2>&1; then
+                    print_error "Staged file $file would fail CI/CD formatting check!"
+                    print_warning "Run 'black $file' to fix before committing"
+                fi
+            fi
+        done
+    fi
+
+    cd ..
+fi
+
 # Step 1: Backend Formatting and Quality
 print_step "Backend Code Quality Checks"
 
@@ -133,21 +165,48 @@ print_step "Installing backend dependencies (matching CI/CD)"
 pip install --quiet -r requirements.txt
 pip install --quiet -r requirements-dev.txt
 
-# Apply formatting fixes
-if [ "$FIX_MODE" = true ]; then
-    print_step "Applying Black formatting"
-    black .
-    print_success "Black formatting applied"
+# CRITICAL: Always check formatting first to catch CI/CD issues early
+print_step "Pre-validation: Checking code formatting (like CI/CD)"
+FORMATTING_ISSUES=false
 
-    print_step "Applying isort import sorting"
-    isort .
-    print_success "Import sorting applied"
+# Check Black formatting first (this is what CI/CD does)
+if ! black --check . >/dev/null 2>&1; then
+    FORMATTING_ISSUES=true
+    print_warning "Black formatting issues detected (this would fail CI/CD)"
+    if [ "$FIX_MODE" = true ]; then
+        print_step "Auto-fixing Black formatting issues"
+        black .
+        print_success "Black formatting applied"
+    else
+        print_error "Black formatting check failed - run without --check-only to fix"
+        black --check --diff .
+        exit 1
+    fi
 else
-    print_step "Checking Black formatting (check-only mode)"
-    black --check --diff .
+    print_success "Black formatting check passed"
+fi
 
-    print_step "Checking isort import sorting (check-only mode)"
-    isort --check-only --diff .
+# Check isort import sorting
+if ! isort --check-only . >/dev/null 2>&1; then
+    FORMATTING_ISSUES=true
+    print_warning "Import sorting issues detected (this would fail CI/CD)"
+    if [ "$FIX_MODE" = true ]; then
+        print_step "Auto-fixing import sorting issues"
+        isort .
+        print_success "Import sorting applied"
+    else
+        print_error "Import sorting check failed - run without --check-only to fix"
+        isort --check-only --diff .
+        exit 1
+    fi
+else
+    print_success "Import sorting check passed"
+fi
+
+# Report if formatting issues were found and fixed
+if [ "$FORMATTING_ISSUES" = true ] && [ "$FIX_MODE" = true ]; then
+    print_warning "Formatting issues were detected and fixed - commit these changes!"
+    print_warning "This prevents CI/CD failures due to formatting"
 fi
 
 # Run quality checks

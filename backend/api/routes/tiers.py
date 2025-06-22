@@ -29,7 +29,7 @@ async def get_available_tiers():
                 "monthly_limit": 200,
                 "monthly_budget": 5.0,
                 "features": ["Basic AI coaching", "Simple workouts", "Basic analytics"],
-                "description": "Perfect for getting started with AI fitness coaching"
+                "description": "Perfect for getting started with AI fitness coaching",
             },
             "premium": {
                 "name": "Premium",
@@ -44,7 +44,7 @@ async def get_available_tiers():
                     "Progress tracking",
                     "Nutrition advice",
                 ],
-                "description": "Enhanced features for serious fitness enthusiasts"
+                "description": "Enhanced features for serious fitness enthusiasts",
             },
             "unlimited": {
                 "name": "Unlimited",
@@ -58,23 +58,19 @@ async def get_available_tiers():
                     "Premium workouts",
                     "Advanced analytics",
                     "Personal trainer mode",
-                    "Priority support"
+                    "Priority support",
                 ],
-                "description": "Ultimate fitness experience with unlimited access"
+                "description": "Ultimate fitness experience with unlimited access",
             },
         },
         "comparison": {
-            "ai_requests_per_month": {
-                "free": 200,
-                "premium": 1000,
-                "unlimited": 20000
-            },
+            "ai_requests_per_month": {"free": 200, "premium": 1000, "unlimited": 20000},
             "support_level": {
                 "free": "Community",
                 "premium": "Email",
-                "unlimited": "Priority"
-            }
-        }
+                "unlimited": "Priority",
+            },
+        },
     }
 
 

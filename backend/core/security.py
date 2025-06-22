@@ -7,7 +7,7 @@ import logging
 import re
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Optional, Union
+from typing import Any
 
 import redis.asyncio as redis
 from fastapi import Depends, HTTPException, Request, Response, status
@@ -164,9 +164,9 @@ class UserInputValidator(BaseInputValidator):
 class WorkoutInputValidator(BaseInputValidator):
     """Validator for workout-related inputs"""
 
-    duration: Optional[int] = None
-    fitness_level: Optional[str] = None
-    goals: Optional[list[str]] = None
+    duration: int | None = None
+    fitness_level: str | None = None
+    goals: list[str] | None = None
 
     @validator("duration")
     def validate_duration(cls, v):
@@ -205,8 +205,8 @@ class WorkoutInputValidator(BaseInputValidator):
 class AIInputValidator(BaseInputValidator):
     """Validator for AI/LLM inputs"""
 
-    message: Optional[str] = None
-    max_tokens: Optional[int] = None
+    message: str | None = None
+    max_tokens: int | None = None
 
     @validator("message")
     def validate_message(cls, v):
@@ -272,8 +272,13 @@ async def check_request_origin(request: Request):
 
     # Use get_settings() to allow for mocking in tests
     from core.config import get_settings
+
     current_settings = get_settings()
-    allowed_origins = getattr(current_settings, 'ALLOWED_ORIGINS', getattr(current_settings, 'CORS_ORIGINS', []))
+    allowed_origins = getattr(
+        current_settings,
+        "ALLOWED_ORIGINS",
+        getattr(current_settings, "CORS_ORIGINS", []),
+    )
     if origin and origin not in allowed_origins:
         logger.warning(f"Suspicious origin: {origin} from {request.client.host}")
         raise HTTPException(status_code=403, detail="Origin not allowed")
@@ -282,7 +287,7 @@ async def check_request_origin(request: Request):
 class InputValidationError(HTTPException):
     """Custom exception for input validation errors"""
 
-    def __init__(self, detail: str, field: Optional[str] = None):
+    def __init__(self, detail: str, field: str | None = None):
         self.field = field
         super().__init__(
             status_code=400,
@@ -332,9 +337,9 @@ class SecurityAuditLogger:
     @staticmethod
     async def log_auth_attempt(
         request: Request,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
         success: bool = False,
-        reason: Optional[str] = None,
+        reason: str | None = None,
     ):
         """Log authentication attempts"""
         event = {
@@ -392,9 +397,9 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     retry_after = 60
 
     # Try to extract retry_after from exception details
-    if hasattr(exc, 'retry_after'):
+    if hasattr(exc, "retry_after"):
         retry_after = exc.retry_after
-    elif hasattr(exc, 'detail') and str(exc.detail):
+    elif hasattr(exc, "detail") and str(exc.detail):
         # Try to parse from detail string like "5 per 1 minute"
         detail_str = str(exc.detail)
         if "minute" in detail_str:
@@ -431,7 +436,7 @@ async def secure_health_check() -> dict[str, Any]:
     return {
         "status": status,
         "timestamp": datetime.utcnow().isoformat(),
-        "version": getattr(settings, 'APP_VERSION', '1.0.0'),
+        "version": getattr(settings, "APP_VERSION", "1.0.0"),
         "environment": settings.ENVIRONMENT,
         # Don't expose detailed system information in production
         "checks": checks,
@@ -509,7 +514,7 @@ def get_password_hash(password: str) -> str:
     return str(pwd_context.hash(password))
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """Create JWT access token."""
     to_encode = data.copy()
     if expires_delta:

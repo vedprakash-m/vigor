@@ -58,32 +58,22 @@ async def test_user_repository_crud(session):
     from database.models import UserProfile
 
     # Convert SQLAlchemy object to dict first for proper validation
-    user_dict = {
-        "id": user_obj.id,
-        "email": user_obj.email,
-        "username": user_obj.username,
-        "hashed_password": user_obj.hashed_password,
-        "is_active": True,
-        "user_tier": user_obj.user_tier,
-        "fitness_level": user_obj.fitness_level,
-        "goals": user_obj.goals,
-        "equipment": ["none"],
-        "created_at": user_obj.created_at,
-        "updated_at": user_obj.updated_at,
-    }
+    # (user_dict removed as it was unused - direct object creation below)
 
-    added = await repo.add(UserProfile(
-        id=user_obj.id,
-        email=user_obj.email,
-        username=user_obj.username,
-        hashed_password=user_obj.hashed_password,
-        user_tier=user_obj.user_tier,
-        fitness_level=user_obj.fitness_level,
-        goals=user_obj.goals,
-        equipment=["none"],
-        created_at=user_obj.created_at,
-        updated_at=user_obj.updated_at,
-    ))
+    added = await repo.add(
+        UserProfile(
+            id=user_obj.id,
+            email=user_obj.email,
+            username=user_obj.username,
+            hashed_password=user_obj.hashed_password,
+            user_tier=user_obj.user_tier,
+            fitness_level=user_obj.fitness_level,
+            goals=user_obj.goals,
+            equipment=["none"],
+            created_at=user_obj.created_at,
+            updated_at=user_obj.updated_at,
+        )
+    )
     assert added.id == user_id
 
     fetched = await repo.get(user_id)

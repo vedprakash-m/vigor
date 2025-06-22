@@ -5,7 +5,7 @@ Compatible with Python 3.9+ using Union types instead Union[of, syntax]
 
 from datetime import date, datetime
 from enum import Enum
-from typing import Any, Union, Optional
+from typing import Any
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -64,17 +64,19 @@ class UserProfile(BaseModel):
     hashed_password: str = Field(..., description="Hashed password")
     is_active: bool = Field(default=True, description="Account status")
     user_tier: UserTier = Field(default=UserTier.FREE, description="Subscription tier")
-    tier_updated_at: Optional[datetime] = None
+    tier_updated_at: datetime | None = None
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    last_login: Optional[datetime] = None
+    last_login: datetime | None = None
 
     # Fitness profile
     fitness_level: FitnessLevel = Field(default=FitnessLevel.BEGINNER)
     goals: list[Goal] = Field(default_factory=list)
     equipment: list[Equipment] = Field(default_factory=list)
-    available_equipment: list[Equipment] = Field(default_factory=list)  # Alias for compatibility
+    available_equipment: list[Equipment] = Field(
+        default_factory=list
+    )  # Alias for compatibility
 
 
 class WorkoutPlan(BaseModel):
@@ -98,11 +100,11 @@ class WorkoutLog(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid4()))
     user_id: str = Field(..., description="User who completed the workout")
-    plan_id: Optional[str] = None
+    plan_id: str | None = None
     workout_name: str = Field(..., description="Name of the workout")
     completed_at: datetime = Field(default_factory=datetime.utcnow)
-    notes: Optional[str] = None
-    rating: Optional[int] = Field(None, ge=1, le=5)
+    notes: str | None = None
+    rating: int | None = Field(None, ge=1, le=5)
 
     # Exercise tracking
     exercises_completed: list[dict[str, Any]] = Field(default_factory=list)
@@ -119,7 +121,7 @@ class ProgressMetrics(BaseModel):
     # Workout metrics
     workouts_completed: int = Field(default=0, ge=0)
     total_workout_time_minutes: int = Field(default=0, ge=0)
-    average_workout_rating: Optional[float] = Field(None, ge=1.0, le=5.0)
+    average_workout_rating: float | None = Field(None, ge=1.0, le=5.0)
 
     # Streak tracking
     current_streak_days: int = Field(default=0, ge=0)
@@ -141,9 +143,9 @@ class AICoachMessage(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
     # AI metadata
-    model_used: Optional[str] = None
-    tokens_used: Optional[int] = None
-    response_time_ms: Optional[int] = None
+    model_used: str | None = None
+    tokens_used: int | None = None
+    response_time_ms: int | None = None
 
 
 class BudgetSettings(BaseModel):
@@ -153,9 +155,9 @@ class BudgetSettings(BaseModel):
     user_id: str = Field(..., description="User this budget applies to")
 
     # Budget limits (in USD)
-    max_daily_cost: Optional[float] = None
-    max_weekly_cost: Optional[float] = None
-    max_monthly_cost: Optional[float] = None
+    max_daily_cost: float | None = None
+    max_weekly_cost: float | None = None
+    max_monthly_cost: float | None = None
 
     # Current usage tracking
     daily_cost_used: float = Field(default=0.0, ge=0)
@@ -172,7 +174,7 @@ class AIUsageLog(BaseModel):
     """Track AI/LLM API usage for cost management and analytics"""
 
     id: str = Field(default_factory=lambda: str(uuid4()))
-    user_id: Optional[str] = None  # Track per-user usage
+    user_id: str | None = None  # Track per-user usage
     provider: str = Field(..., description="AI provider used (openai, gemini, etc.)")
     model: str = Field(..., description="Specific model used")
     endpoint: str = Field(..., description="API endpoint called")
@@ -182,12 +184,12 @@ class AIUsageLog(BaseModel):
         ..., ge=0, description="Response time in milliseconds"
     )
     success: bool = Field(..., description="Whether the request was successful")
-    error_message: Optional[str] = None
+    error_message: str | None = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Additional metadata for debugging and optimization
-    request_metadata: Optional[dict[str, Any]] = None
-    response_metadata: Optional[dict[str, Any]] = None
+    request_metadata: dict[str, Any] | None = None
+    response_metadata: dict[str, Any] | None = None
 
 
 class AdminSettings(BaseModel):
@@ -196,7 +198,7 @@ class AdminSettings(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     setting_key: str = Field(..., description="Configuration key")
     setting_value: str = Field(..., description="Configuration value")
-    description: Optional[str] = None
+    description: str | None = None
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -210,11 +212,11 @@ class BudgetUsage(BaseModel):
     daily_cost_used: float = 0.0
     weekly_cost_used: float = 0.0
     monthly_cost_used: float = 0.0
-    last_reset_date: Optional[date] = None
+    last_reset_date: date | None = None
 
-    daily_limit: Optional[float] = None
-    weekly_limit: Optional[float] = None
-    monthly_limit: Optional[float] = None
+    daily_limit: float | None = None
+    weekly_limit: float | None = None
+    monthly_limit: float | None = None
 
     is_over_daily_limit: bool = False
     is_over_weekly_limit: bool = False
@@ -226,17 +228,17 @@ class Exercise(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str = Field(..., description="Exercise name")
-    description: Optional[str] = None
+    description: str | None = None
     muscle_groups: list[str] = Field(default_factory=list)
     equipment_needed: list[Equipment] = Field(default_factory=list)
     difficulty_level: FitnessLevel = Field(default=FitnessLevel.BEGINNER)
-    instructions: Optional[str] = None
+    instructions: str | None = None
 
     # Exercise parameters
-    sets: Optional[int] = None
-    reps: Optional[int] = None
-    duration_seconds: Optional[int] = None
-    rest_seconds: Optional[int] = None
+    sets: int | None = None
+    reps: int | None = None
+    duration_seconds: int | None = None
+    rest_seconds: int | None = None
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -252,9 +254,9 @@ class AIProviderPriority(BaseModel):
     is_enabled: bool = Field(default=True, description="Whether provider is enabled")
 
     # Cost limits
-    max_daily_cost: Optional[float] = None
-    max_weekly_cost: Optional[float] = None
-    max_monthly_cost: Optional[float] = None
+    max_daily_cost: float | None = None
+    max_weekly_cost: float | None = None
+    max_monthly_cost: float | None = None
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

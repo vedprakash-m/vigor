@@ -295,10 +295,16 @@ class TestCoverageBoostIntegration:
                 # Access basic properties - but handle None gracefully
                 # Some attributes might legitimately be None
                 if attr_name.isupper() or callable(attr) or hasattr(attr, "__module__"):
-                    assert attr is not None, f"{attr_name} in {module.__name__} should not be None"
+                    assert (
+                        attr is not None
+                    ), f"{attr_name} in {module.__name__} should not be None"
 
                 # For classes, access class metadata
-                if attr is not None and hasattr(attr, "__name__") and attr_name[0].isupper():
+                if (
+                    attr is not None
+                    and hasattr(attr, "__name__")
+                    and attr_name[0].isupper()
+                ):
                     assert hasattr(attr, "__module__")
 
                 # For functions, verify they're callable

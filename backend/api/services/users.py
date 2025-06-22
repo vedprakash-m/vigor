@@ -77,11 +77,15 @@ class UserService:
         """Update user profile."""
         return await update_user_profile(self.db, user_id, update_data)
 
-    async def create_progress_metric(self, user_id: str, metric_data: dict) -> ProgressMetrics:
+    async def create_progress_metric(
+        self, user_id: str, metric_data: dict
+    ) -> ProgressMetrics:
         """Create progress metric."""
         return await create_progress_metric(self.db, user_id, metric_data)
 
-    async def get_progress(self, user_id: str, limit: int = 50) -> list[ProgressMetrics]:
+    async def get_progress(
+        self, user_id: str, limit: int = 50
+    ) -> list[ProgressMetrics]:
         """Get user progress."""
         return await get_user_progress(self.db, user_id, limit)
 

@@ -1,4 +1,5 @@
 # Third-party imports
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, ValidationError
@@ -19,7 +20,6 @@ from core.security import (
 )
 from database.connection import get_db
 from database.models import UserProfile
-from typing import Optional
 
 router = APIRouter()
 
@@ -198,7 +198,7 @@ async def login(
 
 
 class RefreshRequest(BaseModel):
-    refresh_token: Optional[str] = None
+    refresh_token: str | None = None
 
 
 @router.post("/refresh", response_model=Token, summary="Refresh Access Token")

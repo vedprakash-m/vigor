@@ -5,22 +5,22 @@ Handles user registration, login, token management with comprehensive security m
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
 
 from core.config import get_settings
 from core.security import (
     verify_token,
 )
 from database.connection import get_db
-from database.models import UserProfile, UserTier
+from database.models import UserProfile
 from database.sql_models import UserProfileDB
 
 settings = get_settings()
@@ -64,7 +64,9 @@ class AuthService:
             existing_user = (
                 self.db.query(UserProfileDB)
                 .filter(
-                    or_(UserProfileDB.email == email, UserProfileDB.username == username)
+                    or_(
+                        UserProfileDB.email == email, UserProfileDB.username == username
+                    )
                 )
                 .first()
             )
@@ -146,7 +148,11 @@ class AuthService:
         """
         try:
             # Find user by email
-            user = self.db.query(UserProfileDB).filter(UserProfileDB.email == email).first()
+            user = (
+                self.db.query(UserProfileDB)
+                .filter(UserProfileDB.email == email)
+                .first()
+            )
 
             if not user:
                 # Don't reveal whether email exists or not
@@ -220,7 +226,9 @@ class AuthService:
                 raise HTTPException(status_code=401, detail="Invalid token type")
 
             # Find user
-            user = self.db.query(UserProfileDB).filter(UserProfileDB.id == user_id).first()
+            user = (
+                self.db.query(UserProfileDB).filter(UserProfileDB.id == user_id).first()
+            )
 
             if not user:
                 raise HTTPException(status_code=401, detail="User not found")
@@ -271,7 +279,11 @@ class AuthService:
             Dict with success message (same regardless of user existence)
         """
         try:
-            user = self.db.query(UserProfileDB).filter(UserProfileDB.email == email).first()
+            user = (
+                self.db.query(UserProfileDB)
+                .filter(UserProfileDB.email == email)
+                .first()
+            )
 
             if user and user.is_active:
                 # Generate reset token
@@ -336,7 +348,9 @@ class AuthService:
                 raise HTTPException(status_code=400, detail="Invalid token type")
 
             # Find user
-            user = self.db.query(UserProfileDB).filter(UserProfileDB.id == user_id).first()
+            user = (
+                self.db.query(UserProfileDB).filter(UserProfileDB.id == user_id).first()
+            )
 
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
@@ -400,7 +414,9 @@ class AuthService:
                 raise HTTPException(status_code=401, detail="Invalid token type")
 
             # Find user
-            user = self.db.query(UserProfileDB).filter(UserProfileDB.id == user_id).first()
+            user = (
+                self.db.query(UserProfileDB).filter(UserProfileDB.id == user_id).first()
+            )
 
             if not user:
                 raise HTTPException(status_code=401, detail="User not found")
@@ -484,7 +500,7 @@ async def register_user(db: Session, user_data: dict) -> UserProfile:
 
 async def authenticate_user(
     db: Session, email: str, password: str
-) -> Optional[UserProfile]:
+) -> UserProfile | None:
     """Legacy function - use AuthService.authenticate_user instead"""
     try:
         auth_service = AuthService(db)

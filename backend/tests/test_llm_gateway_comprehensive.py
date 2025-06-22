@@ -11,7 +11,13 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from core.llm_orchestration.adapters import LLMRequest, LLMResponse, LLMServiceAdapter, LLMProvider, HealthCheckResult
+from core.llm_orchestration.adapters import (
+    HealthCheckResult,
+    LLMProvider,
+    LLMRequest,
+    LLMResponse,
+    LLMServiceAdapter,
+)
 from core.llm_orchestration.config_manager import AdminConfigManager, ModelConfiguration
 from core.llm_orchestration.gateway import (
     GatewayRequest,
@@ -20,7 +26,12 @@ from core.llm_orchestration.gateway import (
     get_gateway,
     initialize_gateway,
 )
-from core.llm_orchestration.key_vault import KeyVaultClientService, KeyVaultProvider, SecretReference
+from core.llm_orchestration.key_vault import (
+    KeyVaultClientService,
+    KeyVaultProvider,
+    SecretReference,
+)
+
 
 # Module-level fixtures that can be used by all test classes
 @pytest.fixture
@@ -31,34 +42,41 @@ def mock_config_manager():
     config_manager.get_active_models = Mock(return_value=[])
     return config_manager
 
+
 @pytest.fixture
 def mock_key_vault():
     """Mock KeyVaultClientService"""
     key_vault = Mock(spec=KeyVaultClientService)
     return key_vault
 
+
 @pytest.fixture
 def mock_db_session():
     """Mock database session"""
     return Mock()
 
+
 @pytest.fixture
 def gateway(mock_config_manager, mock_key_vault, mock_db_session):
     """Create LLMGateway instance with mocked dependencies"""
-    with patch('core.llm_orchestration.gateway.RoutingStrategyEngine') as mock_routing, \
-         patch('core.llm_orchestration.gateway.BudgetManager') as mock_budget, \
-         patch('core.llm_orchestration.gateway.UsageLogger') as mock_usage, \
-         patch('core.llm_orchestration.gateway.CostEstimator') as mock_cost, \
-         patch('core.llm_orchestration.gateway.CacheManager') as mock_cache, \
-         patch('core.llm_orchestration.gateway.CircuitBreakerManager') as mock_circuit, \
-         patch('core.llm_orchestration.gateway.AnalyticsCollector') as mock_analytics:
+    with (
+        patch("core.llm_orchestration.gateway.RoutingStrategyEngine") as mock_routing,
+        patch("core.llm_orchestration.gateway.BudgetManager") as mock_budget,
+        patch("core.llm_orchestration.gateway.UsageLogger") as mock_usage,
+        patch("core.llm_orchestration.gateway.CostEstimator"),
+        patch("core.llm_orchestration.gateway.CacheManager") as mock_cache,
+        patch("core.llm_orchestration.gateway.CircuitBreakerManager") as mock_circuit,
+        patch("core.llm_orchestration.gateway.AnalyticsCollector") as mock_analytics,
+    ):
 
         # Set up AsyncMock for all async methods
         mock_budget_instance = mock_budget.return_value
         mock_budget_instance.initialize = AsyncMock()
         mock_budget_instance.check_budget = AsyncMock(return_value=True)
         mock_budget_instance.can_proceed = AsyncMock(return_value=True)
-        mock_budget_instance.get_global_status = AsyncMock(return_value={"budget": "ok"})
+        mock_budget_instance.get_global_status = AsyncMock(
+            return_value={"budget": "ok"}
+        )
         mock_budget_instance.get_status = AsyncMock(return_value={"budget": "ok"})
         mock_budget_instance.record_usage = AsyncMock()
         mock_budget_instance.shutdown = AsyncMock()
@@ -109,7 +127,7 @@ class TestGatewayRequest:
             temperature=0.7,
             stream=True,
             priority=5,
-            metadata={"source": "test"}
+            metadata={"source": "test"},
         )
 
         assert request.prompt == "Test prompt"
@@ -152,7 +170,7 @@ class TestGatewayResponse:
             cached=True,
             user_id="user123",
             session_id="session123",
-            metadata={"quality": "high"}
+            metadata={"quality": "high"},
         )
 
         assert response.content == "Test response"
@@ -186,14 +204,13 @@ class TestLLMGateway:
         """Test gateway initialization with active models"""
         # Setup mock active models
         secret_ref = SecretReference(
-            provider=KeyVaultProvider.LOCAL_ENV,
-            secret_identifier="TEST_KEY"
+            provider=KeyVaultProvider.LOCAL_ENV, secret_identifier="TEST_KEY"
         )
         model_config = ModelConfiguration(
             model_id="test-model",
             provider="test-provider",
             model_name="test",
-            api_key_secret_ref=secret_ref
+            api_key_secret_ref=secret_ref,
         )
         mock_config_manager.get_active_models.return_value = [model_config]
 
@@ -201,7 +218,9 @@ class TestLLMGateway:
         mock_adapter = Mock(spec=LLMServiceAdapter)
         mock_adapter.model_id = "test-model"
 
-        with patch('core.llm_orchestration.gateway.create_adapters_from_configs') as mock_create:
+        with patch(
+            "core.llm_orchestration.gateway.create_adapters_from_configs"
+        ) as mock_create:
             mock_create.return_value = {"test-model": mock_adapter}
 
             # Mock component initialization
@@ -221,14 +240,18 @@ class TestLLMGateway:
             gateway._perform_health_check.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_initialize_no_active_models_fallback(self, gateway, mock_config_manager):
+    async def test_initialize_no_active_models_fallback(
+        self, gateway, mock_config_manager
+    ):
         """Test gateway initialization creates fallback when no active models"""
         mock_config_manager.get_active_models.return_value = []
 
         mock_adapter = Mock(spec=LLMServiceAdapter)
         mock_adapter.model_id = "fallback"
 
-        with patch('core.llm_orchestration.gateway.create_adapters_from_configs') as mock_create:
+        with patch(
+            "core.llm_orchestration.gateway.create_adapters_from_configs"
+        ) as mock_create:
             mock_create.return_value = {"fallback": mock_adapter}
 
             # Mock component initialization
@@ -248,7 +271,9 @@ class TestLLMGateway:
     @pytest.mark.asyncio
     async def test_initialize_failure_handling(self, gateway):
         """Test gateway initialization failure handling"""
-        gateway.config_manager.load_configurations = AsyncMock(side_effect=Exception("Config error"))
+        gateway.config_manager.load_configurations = AsyncMock(
+            side_effect=Exception("Config error")
+        )
 
         with pytest.raises(Exception, match="Config error"):
             await gateway.initialize()
@@ -276,7 +301,7 @@ class TestLLMGateway:
             provider="test-provider",
             tokens_used=20,
             cost_estimate=0.01,
-            latency_ms=5
+            latency_ms=5,
         )
 
         # Mock cache hit
@@ -308,7 +333,7 @@ class TestLLMGateway:
             provider="test-provider",
             tokens_used=50,
             cost_estimate=0.001,
-            latency_ms=200
+            latency_ms=200,
         )
 
         gateway._enrich_request = AsyncMock(return_value=enriched_request)
@@ -318,15 +343,17 @@ class TestLLMGateway:
         gateway._select_model = AsyncMock(return_value=selected_adapter)
         gateway.circuit_breaker.can_proceed = Mock(return_value=True)
         gateway._execute_llm_request = AsyncMock(return_value=llm_response)
-        gateway._create_gateway_response = AsyncMock(return_value=GatewayResponse(
-            content="Generated response",
-            model_used="test-model",
-            provider="test",
-            request_id="req123",
-            tokens_used=50,
-            cost_estimate=0.001,
-            latency_ms=200
-        ))
+        gateway._create_gateway_response = AsyncMock(
+            return_value=GatewayResponse(
+                content="Generated response",
+                model_used="test-model",
+                provider="test",
+                request_id="req123",
+                tokens_used=50,
+                cost_estimate=0.001,
+                latency_ms=200,
+            )
+        )
         gateway._cache_response = AsyncMock()
         gateway._log_usage = AsyncMock()
         gateway.analytics.record_request = AsyncMock()
@@ -363,7 +390,9 @@ class TestLLMGateway:
         gateway._enforce_budget = AsyncMock()
         gateway._check_rate_limits = AsyncMock()
         gateway._select_model = AsyncMock(return_value=primary_adapter)
-        gateway.circuit_breaker.can_proceed = Mock(return_value=False)  # Circuit breaker open
+        gateway.circuit_breaker.can_proceed = Mock(
+            return_value=False
+        )  # Circuit breaker open
         gateway._select_fallback_model = AsyncMock(return_value=fallback_adapter)
         gateway._execute_llm_request = AsyncMock(return_value=Mock())
         gateway._create_gateway_response = AsyncMock(return_value=Mock())
@@ -417,17 +446,14 @@ class TestLLMGateway:
 
         # Create proper mock health status using HealthCheckResult
         mock_health_status1 = HealthCheckResult(
-            is_healthy=True,
-            latency_ms=100,
-            last_check=time.time(),
-            error_message=None
+            is_healthy=True, latency_ms=100, last_check=time.time(), error_message=None
         )
 
         mock_health_status2 = HealthCheckResult(
             is_healthy=False,
             latency_ms=500,
             last_check=time.time(),
-            error_message="Connection timeout"
+            error_message="Connection timeout",
         )
 
         # Create proper mock model config
@@ -477,8 +503,7 @@ class TestLLMGateway:
     async def test_admin_add_model(self, gateway):
         """Test admin model addition"""
         secret_ref = SecretReference(
-            provider=KeyVaultProvider.LOCAL_ENV,
-            secret_identifier="NEW_KEY"
+            provider=KeyVaultProvider.LOCAL_ENV, secret_identifier="NEW_KEY"
         )
 
         # Mock successful addition - use correct method name
@@ -488,14 +513,14 @@ class TestLLMGateway:
         # Mock circuit breaker add_model method
         gateway.circuit_breaker.add_model = Mock()
 
-        with patch('core.llm_orchestration.gateway.AdapterFactory') as mock_factory:
+        with patch("core.llm_orchestration.gateway.AdapterFactory") as mock_factory:
             mock_factory.create_adapter = Mock(return_value=mock_adapter)  # Not async
 
             result = await gateway.admin_add_model(
                 model_id="new-model",
                 provider="new-provider",
                 model_name="new-model-name",
-                api_key_secret_ref=secret_ref
+                api_key_secret_ref=secret_ref,
             )
 
             assert result is True
@@ -507,8 +532,7 @@ class TestLLMGateway:
     async def test_admin_add_model_failure(self, gateway):
         """Test admin model addition failure"""
         secret_ref = SecretReference(
-            provider=KeyVaultProvider.LOCAL_ENV,
-            secret_identifier="INVALID_KEY"
+            provider=KeyVaultProvider.LOCAL_ENV, secret_identifier="INVALID_KEY"
         )
 
         # Mock config addition failure
@@ -518,7 +542,7 @@ class TestLLMGateway:
             model_id="invalid-model",
             provider="provider",
             model_name="model",
-            api_key_secret_ref=secret_ref
+            api_key_secret_ref=secret_ref,
         )
 
         assert result is False
@@ -540,8 +564,12 @@ class TestLLMGateway:
         result = await gateway.admin_toggle_model("test-model", False)
 
         assert result is True
-        assert "test-model" not in gateway.adapters  # Should be removed when deactivated
-        gateway.config_manager.toggle_model_activation.assert_called_once_with("test-model", False)
+        assert (
+            "test-model" not in gateway.adapters
+        )  # Should be removed when deactivated
+        gateway.config_manager.toggle_model_activation.assert_called_once_with(
+            "test-model", False
+        )
         gateway.circuit_breaker.remove_model.assert_called_once_with("test-model")
 
     @pytest.mark.asyncio
@@ -561,7 +589,7 @@ class TestLLMGateway:
             user_id="user123",
             task_type="chat",
             max_tokens=100,
-            temperature=0.7
+            temperature=0.7,
         )
 
         enriched = await gateway._enrich_request(request, "req123")
@@ -571,7 +599,9 @@ class TestLLMGateway:
         assert enriched.user_id == "user123"
         assert enriched.max_tokens == 100
         assert enriched.temperature == 0.7
-        assert enriched.context["request_id"] == "req123"  # request_id is in context, not direct attribute
+        assert (
+            enriched.context["request_id"] == "req123"
+        )  # request_id is in context, not direct attribute
 
     @pytest.mark.asyncio
     async def test_check_cache(self, gateway):
@@ -581,7 +611,7 @@ class TestLLMGateway:
         # Mock cache hit
         gateway.cache_manager.get = AsyncMock(return_value={"content": "cached"})
 
-        result = await gateway._check_cache(request)
+        await gateway._check_cache(request)
 
         gateway.cache_manager.get.assert_called_once()
 
@@ -613,7 +643,7 @@ class TestLLMGateway:
         request = LLMRequest(
             prompt="Test prompt",
             user_id="user123",
-            context={"user_tier": "premium", "priority": 5}
+            context={"user_tier": "premium", "priority": 5},
         )
 
         # Set up adapters dictionary
@@ -667,13 +697,11 @@ class TestLLMGateway:
             provider="test-provider",
             tokens_used=50,
             cost_estimate=0.02,
-            latency_ms=200
+            latency_ms=200,
         )
 
         original_request = GatewayRequest(
-            prompt="Test",
-            user_id="user123",
-            session_id="session123"
+            prompt="Test", user_id="user123", session_id="session123"
         )
 
         start_time = time.time() - 0.2  # 200ms ago
@@ -745,11 +773,23 @@ class TestLLMGateway:
         """Test health check performance"""
         gateway.adapters = {"model1": Mock(), "model2": Mock()}
 
-        with patch('core.llm_orchestration.gateway.health_check_all_adapters') as mock_health:
+        with patch(
+            "core.llm_orchestration.gateway.health_check_all_adapters"
+        ) as mock_health:
             # Return proper HealthCheckResult objects instead of booleans
             mock_health.return_value = {
-                "model1": HealthCheckResult(is_healthy=True, latency_ms=100, last_check=time.time(), error_message=None),
-                "model2": HealthCheckResult(is_healthy=False, latency_ms=500, last_check=time.time(), error_message="Error")
+                "model1": HealthCheckResult(
+                    is_healthy=True,
+                    latency_ms=100,
+                    last_check=time.time(),
+                    error_message=None,
+                ),
+                "model2": HealthCheckResult(
+                    is_healthy=False,
+                    latency_ms=500,
+                    last_check=time.time(),
+                    error_message="Error",
+                ),
             }
 
             await gateway._perform_health_check()
@@ -793,7 +833,7 @@ class TestGatewayFunctions:
         key_vault = Mock()
         db_session = Mock()
 
-        with patch('core.llm_orchestration.gateway.LLMGateway') as mock_gateway_class:
+        with patch("core.llm_orchestration.gateway.LLMGateway") as mock_gateway_class:
             mock_gateway = Mock()
             mock_gateway.initialize = AsyncMock()
             mock_gateway_class.return_value = mock_gateway
@@ -805,7 +845,7 @@ class TestGatewayFunctions:
 
     def test_get_gateway(self):
         """Test get_gateway function"""
-        with patch('core.llm_orchestration.gateway.gateway', None):
+        with patch("core.llm_orchestration.gateway.gateway", None):
             with pytest.raises(RuntimeError, match="Gateway not initialized"):
                 get_gateway()
 
@@ -816,13 +856,15 @@ class TestErrorHandling:
     @pytest.fixture
     def gateway_with_error(self, mock_config_manager, mock_key_vault, mock_db_session):
         """Gateway configured to trigger errors"""
-        with patch('core.llm_orchestration.gateway.RoutingStrategyEngine'), \
-             patch('core.llm_orchestration.gateway.BudgetManager'), \
-             patch('core.llm_orchestration.gateway.UsageLogger'), \
-             patch('core.llm_orchestration.gateway.CostEstimator'), \
-             patch('core.llm_orchestration.gateway.CacheManager'), \
-             patch('core.llm_orchestration.gateway.CircuitBreakerManager'), \
-             patch('core.llm_orchestration.gateway.AnalyticsCollector'):
+        with (
+            patch("core.llm_orchestration.gateway.RoutingStrategyEngine"),
+            patch("core.llm_orchestration.gateway.BudgetManager"),
+            patch("core.llm_orchestration.gateway.UsageLogger"),
+            patch("core.llm_orchestration.gateway.CostEstimator"),
+            patch("core.llm_orchestration.gateway.CacheManager"),
+            patch("core.llm_orchestration.gateway.CircuitBreakerManager"),
+            patch("core.llm_orchestration.gateway.AnalyticsCollector"),
+        ):
 
             return LLMGateway(mock_config_manager, mock_key_vault, mock_db_session)
 
@@ -835,7 +877,9 @@ class TestErrorHandling:
         # Mock error in main pipeline
         gateway_with_error._enrich_request = AsyncMock(return_value=Mock())
         gateway_with_error._check_cache = AsyncMock(return_value=None)
-        gateway_with_error._enforce_budget = AsyncMock(side_effect=Exception("Budget error"))
+        gateway_with_error._enforce_budget = AsyncMock(
+            side_effect=Exception("Budget error")
+        )
         gateway_with_error._handle_error_fallback = AsyncMock(return_value=Mock())
 
         await gateway_with_error.process_request(request)
@@ -848,7 +892,9 @@ class TestErrorHandling:
         """Test admin_add_model with exception"""
         secret_ref = Mock()
 
-        gateway_with_error.config_manager.add_model_configuration = AsyncMock(side_effect=Exception("Config error"))
+        gateway_with_error.config_manager.add_model_configuration = AsyncMock(
+            side_effect=Exception("Config error")
+        )
 
         result = await gateway_with_error.admin_add_model(
             "model", "provider", "name", secret_ref
@@ -860,7 +906,9 @@ class TestErrorHandling:
     async def test_admin_toggle_model_exception(self, gateway_with_error):
         """Test admin_toggle_model with exception"""
         gateway_with_error.adapters = {"test-model": Mock()}
-        gateway_with_error.config_manager.toggle_model = AsyncMock(side_effect=Exception("Toggle error"))
+        gateway_with_error.config_manager.toggle_model = AsyncMock(
+            side_effect=Exception("Toggle error")
+        )
 
         result = await gateway_with_error.admin_toggle_model("test-model", True)
 
