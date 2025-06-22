@@ -186,21 +186,21 @@ else
     print_success "Black formatting check passed"
 fi
 
-# Check isort import sorting
-if ! isort --check-only . >/dev/null 2>&1; then
+# Check ruff import sorting (I001 rule - matching CI/CD exactly)
+if ! ruff check --select I001 . >/dev/null 2>&1; then
     FORMATTING_ISSUES=true
     print_warning "Import sorting issues detected (this would fail CI/CD)"
     if [ "$FIX_MODE" = true ]; then
-        print_step "Auto-fixing import sorting issues"
-        isort .
-        print_success "Import sorting applied"
+        print_step "Auto-fixing import sorting issues with ruff"
+        ruff check --fix --select I001 .
+        print_success "Import sorting applied with ruff"
     else
         print_error "Import sorting check failed - run without --check-only to fix"
-        isort --check-only --diff .
+        ruff check --select I001 .
         exit 1
     fi
 else
-    print_success "Import sorting check passed"
+    print_success "Import sorting check passed (ruff I001)"
 fi
 
 # Report if formatting issues were found and fixed
@@ -588,14 +588,14 @@ else
     print_success "✅ Final Black check: All files properly formatted"
 fi
 
-print_step "Final isort verification (exactly like CI/CD)"
-if ! isort --check-only . >/dev/null 2>&1; then
+print_step "Final ruff import sorting verification (exactly like CI/CD)"
+if ! ruff check --select I001 . >/dev/null 2>&1; then
     print_error "CRITICAL: Import sorting issues detected after validation!"
-    print_error "This would cause CI/CD failure. Running isort --check-only for details:"
-    isort --check-only --diff .
+    print_error "This would cause CI/CD failure. Running ruff check --select I001 for details:"
+    ruff check --select I001 .
     exit 1
 else
-    print_success "✅ Final isort check: All imports properly sorted"
+    print_success "✅ Final ruff import sorting check: All imports properly sorted"
 fi
 
 print_step "Final Ruff verification (exactly like CI/CD)"
