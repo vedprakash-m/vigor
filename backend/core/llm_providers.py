@@ -5,6 +5,7 @@ Uses Optional instead of union syntax for better compatibility.
 
 import logging
 from abc import ABC, abstractmethod
+from typing import Dict, List, Optional
 
 from .config import get_settings
 
@@ -18,10 +19,10 @@ class LLMProvider(ABC):
     @abstractmethod
     async def chat_completion(
         self,
-        messages: list[dict[str, str]],
+        messages: List[Dict[str, str]],
         max_tokens: int = 500,
         temperature: float = 0.7,
-        system_prompt: str | None = None,
+        system_prompt: Optional[str] = None,
     ) -> tuple[str, int, int]:
         """Generate chat completion. Returns (response, input_tokens, output_tokens)."""
         pass
@@ -51,10 +52,10 @@ class OpenAIProvider(LLMProvider):
 
     async def chat_completion(
         self,
-        messages: list[dict[str, str]],
+        messages: List[Dict[str, str]],
         max_tokens: int = 500,
         temperature: float = 0.7,
-        system_prompt: str | None = None,
+        system_prompt: Optional[str] = None,
     ) -> tuple[str, int, int]:
         """Generate OpenAI chat completion."""
         if self.client is None:
@@ -106,10 +107,10 @@ class GeminiProvider(LLMProvider):
 
     async def chat_completion(
         self,
-        messages: list[dict[str, str]],
+        messages: List[Dict[str, str]],
         max_tokens: int = 500,
         temperature: float = 0.7,
-        system_prompt: str | None = None,
+        system_prompt: Optional[str] = None,
     ) -> tuple[str, int, int]:
         """Generate Gemini chat completion."""
         if self.client is None:
@@ -172,10 +173,10 @@ class PerplexityProvider(LLMProvider):
 
     async def chat_completion(
         self,
-        messages: list[dict[str, str]],
+        messages: List[Dict[str, str]],
         max_tokens: int = 500,
         temperature: float = 0.7,
-        system_prompt: str | None = None,
+        system_prompt: Optional[str] = None,
     ) -> tuple[str, int, int]:
         """Generate Perplexity chat completion."""
         if self.client is None:
@@ -216,10 +217,10 @@ class FallbackProvider(LLMProvider):
 
     async def chat_completion(
         self,
-        messages: list[dict[str, str]],
+        messages: List[Dict[str, str]],
         max_tokens: int = 500,
         temperature: float = 0.7,
-        system_prompt: str | None = None,
+        system_prompt: Optional[str] = None,
     ) -> tuple[str, int, int]:
         """Generate fallback response."""
         # Basic fallback responses based on message content

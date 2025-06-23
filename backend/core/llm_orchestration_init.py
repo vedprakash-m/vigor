@@ -3,6 +3,7 @@ LLM Orchestration Layer Initialization
 Sets up the enterprise LLM gateway with all required components
 """
 
+from typing import Dict, List, Optional
 import logging
 import os
 
@@ -26,7 +27,7 @@ from database.connection import SessionLocal
 logger = logging.getLogger(__name__)
 
 # Global gateway instance
-_gateway: LLMGateway | None = None
+_gateway: Optional[LLMGateway] = None
 
 
 async def initialize_llm_orchestration():

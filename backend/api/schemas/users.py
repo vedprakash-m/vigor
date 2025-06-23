@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr
 
 from database.models import Equipment, FitnessLevel, Goal
+from typing import Dict, List, Optional
 
 
 class UserProfileResponse(BaseModel):
@@ -10,9 +11,9 @@ class UserProfileResponse(BaseModel):
     email: EmailStr
     username: str
     fitness_level: FitnessLevel
-    goals: list[Goal]
+    goals: List[Goal]
     equipment: Equipment
-    injuries: list[str] = []
+    injuries: List[str] = []
     preferences: dict = {}
     created_at: datetime
     updated_at: datetime
@@ -21,26 +22,26 @@ class UserProfileResponse(BaseModel):
 class UserProfileUpdate(BaseModel):
     """User profile update model"""
 
-    fitness_level: FitnessLevel | None = None
-    goals: list[Goal] | None = None
-    equipment: Equipment | None = None
-    injuries: list[str] | None = None
-    preferences: dict | None = None
+    fitness_level: Optional[FitnessLevel] = None
+    goals: Optional[List[Goal]] = None
+    equipment: Optional[Equipment] = None
+    injuries: Optional[List[str]] = None
+    preferences: Optional[dict] = None
 
 
 class ProgressMetricCreate(BaseModel):
-    weight: float | None = None
-    body_fat: float | None = None
-    measurements: dict | None = None
-    notes: str | None = None
+    weight: Optional[float] = None
+    body_fat: Optional[float] = None
+    measurements: Optional[dict] = None
+    notes: Optional[str] = None
 
 
 class ProgressMetricResponse(BaseModel):
     id: str
     user_id: str
     date: datetime
-    weight: float | None
-    body_fat: float | None
-    measurements: dict | None
-    notes: str | None
+    weight: Optional[float]
+    body_fat: Optional[float]
+    measurements: Optional[dict]
+    notes: Optional[str]
     created_at: datetime

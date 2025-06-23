@@ -7,7 +7,7 @@ import logging
 import re
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any
+from typing import Any, Optional, Union, List, Dict
 
 import redis.asyncio as redis
 from fastapi import Depends, HTTPException, Request, Response, status
@@ -164,9 +164,9 @@ class UserInputValidator(BaseInputValidator):
 class WorkoutInputValidator(BaseInputValidator):
     """Validator for workout-related inputs"""
 
-    duration: int | None = None
-    fitness_level: str | None = None
-    goals: list[str] | None = None
+    duration: Optional[int] = None
+    fitness_level: Optional[str] = None
+    goals: Optional[List[str]] = None
 
     @validator("duration")
     def validate_duration(cls, v):
@@ -205,8 +205,8 @@ class WorkoutInputValidator(BaseInputValidator):
 class AIInputValidator(BaseInputValidator):
     """Validator for AI/LLM inputs"""
 
-    message: str | None = None
-    max_tokens: int | None = None
+    message: Optional[str] = None
+    max_tokens: Optional[int] = None
 
     @validator("message")
     def validate_message(cls, v):
@@ -287,7 +287,7 @@ async def check_request_origin(request: Request):
 class InputValidationError(HTTPException):
     """Custom exception for input validation errors"""
 
-    def __init__(self, detail: str, field: str | None = None):
+    def __init__(self, detail: str, field: Optional[str] = None):
         self.field = field
         super().__init__(
             status_code=400,
@@ -337,9 +337,9 @@ class SecurityAuditLogger:
     @staticmethod
     async def log_auth_attempt(
         request: Request,
-        user_id: str | None = None,
+        user_id: Optional[str] = None,
         success: bool = False,
-        reason: str | None = None,
+        reason: Optional[str] = None,
     ):
         """Log authentication attempts"""
         event = {
@@ -359,7 +359,7 @@ class SecurityAuditLogger:
 
     @staticmethod
     async def log_suspicious_activity(
-        request: Request, activity_type: str, details: dict[str, Any]
+        request: Request, activity_type: str, details: Dict[str, Any]
     ):
         """Log suspicious security events"""
         event = {
@@ -418,7 +418,7 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 
 # Health Check Security
-async def secure_health_check() -> dict[str, Any]:
+async def secure_health_check() -> Dict[str, Any]:
     """Secure health check that doesn't expose sensitive information"""
     checks = {
         "database": await _check_database_health(),
@@ -514,7 +514,7 @@ def get_password_hash(password: str) -> str:
     return str(pwd_context.hash(password))
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create JWT access token."""
     to_encode = data.copy()
     if expires_delta:
@@ -531,7 +531,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     return str(encoded_jwt)
 
 
-def verify_token(token: str) -> dict[Any, Any]:
+def verify_token(token: str) -> Dict[Any, Any]:
     """Verify and decode JWT token."""
     try:
         payload = jwt.decode(

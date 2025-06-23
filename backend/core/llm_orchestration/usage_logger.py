@@ -3,6 +3,7 @@ Usage Logger
 Comprehensive logging system for LLM usage analytics and billing
 """
 
+from typing import Dict, List, Optional
 import logging
 from dataclasses import dataclass
 from datetime import datetime
@@ -22,11 +23,11 @@ class UsageRecord:
     cost_estimate: float
     latency_ms: int
     cached: bool
-    task_type: str | None
-    session_id: str | None
+    task_type: Optional[str]
+    session_id: Optional[str]
     timestamp: datetime
     success: bool = True
-    error_message: str | None = None
+    error_message: Optional[str] = None
 
 
 class UsageLogger:
@@ -49,10 +50,10 @@ class UsageLogger:
         cost_estimate: float,
         latency_ms: int,
         cached: bool = False,
-        task_type: str | None = None,
-        session_id: str | None = None,
+        task_type: Optional[str] = None,
+        session_id: Optional[str] = None,
         success: bool = True,
-        error_message: str | None = None,
+        error_message: Optional[str] = None,
     ):
         """Log a usage record"""
         try:

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from typing import Dict, List, Optional
 
 from api.schemas.workouts import (
     WorkoutLogCreate,

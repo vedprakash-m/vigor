@@ -42,7 +42,11 @@ class TestAdminSchemasHighImpact:
 
     def test_admin_schema_classes_comprehensive(self):
         """Comprehensive test of admin schema classes"""
-        classes = [item for item in dir(admin) if item[0].isupper()]
+        classes = [
+            item for item in dir(admin)
+            if item[0].isupper() and hasattr(getattr(admin, item), "__name__")
+            and not item.startswith("_")
+        ]
 
         for class_name in classes:
             schema_class = getattr(admin, class_name)

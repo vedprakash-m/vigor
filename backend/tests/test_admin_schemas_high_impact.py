@@ -35,7 +35,11 @@ class TestAdminSchemaStructure:
 
     def test_admin_schemas_accessible(self):
         """Test admin schemas are accessible"""
-        classes = [item for item in dir(admin) if item[0].isupper()]
+        classes = [
+            item for item in dir(admin)
+            if item[0].isupper() and hasattr(getattr(admin, item), "__name__")
+            and not item.startswith("_")
+        ]
 
         for class_name in classes:
             schema_class = getattr(admin, class_name)
@@ -115,7 +119,11 @@ class TestAdminSchemaFunctionality:
 
     def test_admin_schema_attributes(self):
         """Test admin schema class attributes"""
-        classes = [getattr(admin, item) for item in dir(admin) if item[0].isupper()]
+        classes = [
+            getattr(admin, item) for item in dir(admin)
+            if item[0].isupper() and hasattr(getattr(admin, item), "__name__")
+            and not item.startswith("_")
+        ]
 
         for schema_class in classes:
             # Each schema should have basic class attributes

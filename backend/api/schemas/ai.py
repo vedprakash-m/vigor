@@ -1,12 +1,12 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Union, List, Dict, Optional
 
 from pydantic import BaseModel, Field
 
 
 class ChatMessage(BaseModel):
     message: str = Field(..., min_length=1, max_length=1000)
-    context: dict[str, Any] | None = None
+    context: Optional[Dict[str, Any]] = None
 
 
 class ChatResponse(BaseModel):
@@ -22,34 +22,34 @@ class AICoachMessage(BaseModel):
     message: str
     is_user_message: bool
     timestamp: datetime
-    model_used: str | None = None
-    tokens_used: int | None = None
-    response_time_ms: int | None = None
+    model_used: Optional[str] = None
+    tokens_used: Optional[int] = None
+    response_time_ms: Optional[int] = None
 
 
 class LLMRequest(BaseModel):
     """LLM request schema for API endpoints"""
 
     prompt: str
-    user_id: str | None = None
-    session_id: str | None = None
-    task_type: str | None = None
-    max_tokens: int | None = None
-    temperature: float | None = None
+    user_id: Optional[str] = None
+    session_id: Optional[str] = None
+    task_type: Optional[str] = None
+    max_tokens: Optional[int] = None
+    temperature: Optional[float] = None
     stream: bool = False
-    context: dict[str, Any] | None = None
-    metadata: dict[str, Any] | None = None
+    context: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class WorkoutRecommendationRequest(BaseModel):
     """Request for workout recommendations"""
 
     # Optional overrides - use user's profile if not provided
-    goals: list[str] | None = None  # Use user's goals if not provided
-    fitness_level: str | None = None  # Use user's fitness level if not provided
-    equipment: str | None = None  # Use user's equipment if not provided
-    focus_areas: list[str] | None = None
-    duration_minutes: int | None = Field(None, ge=5, le=300)  # Workout duration
+    goals: Optional[List[str]] = None  # Use user's goals if not provided
+    fitness_level: Optional[str] = None  # Use user's fitness level if not provided
+    equipment: Optional[str] = None  # Use user's equipment if not provided
+    focus_areas: Optional[List[str]] = None
+    duration_minutes: Optional[int] = Field(None, ge=5, le=300)  # Workout duration
 
 
 class WorkoutSessionRequest(BaseModel):
@@ -57,15 +57,15 @@ class WorkoutSessionRequest(BaseModel):
 
     workout_plan_id: str
     session_number: int
-    notes: str | None = None
+    notes: Optional[str] = None
 
 
 class ChatRequest(BaseModel):
     """Request for AI chat/coaching"""
 
     message: str
-    conversation_id: str | None = None
-    context: dict[str, Any] | None = None
+    conversation_id: Optional[str] = None
+    context: Optional[Dict[str, Any]] = None
 
 
 class WorkoutAnalysisRequest(BaseModel):
@@ -74,13 +74,13 @@ class WorkoutAnalysisRequest(BaseModel):
     workout_data: str = Field(
         ..., min_length=1, max_length=5000, description="Workout data to analyze"
     )
-    analysis_type: str | None = Field(
+    analysis_type: Optional[str] = Field(
         "performance", description="Type of analysis to perform"
     )
     include_recommendations: bool = Field(
         True, description="Whether to include recommendations"
     )
-    workout_log_id: str | None = Field(
+    workout_log_id: Optional[str] = Field(
         None, description="Optional workout log ID if analyzing existing log"
     )
 
@@ -88,16 +88,16 @@ class WorkoutAnalysisRequest(BaseModel):
 class GeneratedWorkoutPlan(BaseModel):
     name: str
     description: str
-    exercises: list[dict]
+    exercises: List[dict]
     duration_minutes: int
     difficulty: str
-    equipment_needed: list[str]
-    notes: str | None = None
+    equipment_needed: List[str]
+    notes: Optional[str] = None
 
 
 class WorkoutAnalysis(BaseModel):
     overall_assessment: str
-    strengths: list[str]
-    areas_for_improvement: list[str]
-    recommendations: list[str]
+    strengths: List[str]
+    areas_for_improvement: List[str]
+    recommendations: List[str]
     next_steps: str

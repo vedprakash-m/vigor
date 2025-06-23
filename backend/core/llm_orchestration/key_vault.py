@@ -8,7 +8,7 @@ import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, Optional, Union, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +30,8 @@ class SecretReference:
     secret_identifier: (
         str  # e.g., "arn:aws:secretsmanager:...", "https://vault.azure.com/secrets/..."
     )
-    version: str | None = None
-    metadata: dict[str, Any] | None = None
+    version: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class BaseKeyVaultClient(ABC):
@@ -39,7 +39,7 @@ class BaseKeyVaultClient(ABC):
 
     @abstractmethod
     async def get_secret(
-        self, secret_identifier: str, version: str | None = None
+        self, secret_identifier: str, version: Optional[str] = None
     ) -> str:
         """Retrieve a secret value from the Key Vault"""
         pass
@@ -59,7 +59,7 @@ class AzureKeyVaultClient(BaseKeyVaultClient):
         # In production, would use Azure SDK: from azure.keyvault.secrets import SecretClient
 
     async def get_secret(
-        self, secret_identifier: str, version: str | None = None
+        self, secret_identifier: str, version: Optional[str] = None
     ) -> str:
         """Retrieve secret from Azure Key Vault"""
         try:
@@ -91,7 +91,7 @@ class AWSSecretsManagerClient(BaseKeyVaultClient):
         # In production: import boto3
 
     async def get_secret(
-        self, secret_identifier: str, version: str | None = None
+        self, secret_identifier: str, version: Optional[str] = None
     ) -> str:
         """Retrieve secret from AWS Secrets Manager"""
         try:
@@ -127,7 +127,7 @@ class HashiCorpVaultClient(BaseKeyVaultClient):
         # In production: import hvac
 
     async def get_secret(
-        self, secret_identifier: str, version: str | None = None
+        self, secret_identifier: str, version: Optional[str] = None
     ) -> str:
         """Retrieve secret from HashiCorp Vault"""
         try:
@@ -155,7 +155,7 @@ class LocalEnvClient(BaseKeyVaultClient):
     """Local environment client for development"""
 
     async def get_secret(
-        self, secret_identifier: str, version: str | None = None
+        self, secret_identifier: str, version: Optional[str] = None
     ) -> str:
         """Retrieve secret from environment variables"""
         try:
@@ -179,8 +179,8 @@ class KeyVaultClientService:
     """
 
     def __init__(self):
-        self._clients: dict[KeyVaultProvider, BaseKeyVaultClient] = {}
-        self._cache: dict[str, str] = {}  # Simple in-memory cache
+        self._clients: Dict[KeyVaultProvider, BaseKeyVaultClient] = {}
+        self._cache: Dict[str, str] = {}  # Simple in-memory cache
         self._cache_ttl = 300  # 5 minutes TTL
 
     def register_client(self, provider: KeyVaultProvider, client: BaseKeyVaultClient):
@@ -236,7 +236,7 @@ class KeyVaultClientService:
             )
             raise
 
-    async def health_check_all(self) -> dict[KeyVaultProvider, bool]:
+    async def health_check_all(self) -> Dict[KeyVaultProvider, bool]:
         """Check health of all registered Key Vault providers"""
         results = {}
         for provider, client in self._clients.items():
@@ -257,8 +257,8 @@ class KeyVaultClientService:
         cls,
         provider: str,
         secret_identifier: str,
-        version: str | None = None,
-        metadata: dict[str, Any] | None = None,
+        version: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> SecretReference:
         """Helper method to create SecretReference objects"""
         provider_enum = KeyVaultProvider(provider)
@@ -279,7 +279,7 @@ async def initialize_key_vault_service():
     try:
         # Initialize based on environment configuration
         provider = os.getenv("KEY_VAULT_PROVIDER", "local").lower()
-        client: BaseKeyVaultClient | None = None
+        client: Optional[BaseKeyVaultClient] = None
 
         if provider == "azure":
             vault_url = os.getenv("AZURE_KEY_VAULT_URL")

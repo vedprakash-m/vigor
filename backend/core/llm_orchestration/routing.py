@@ -6,7 +6,7 @@ Implements intelligent model selection based on various strategies
 import hashlib
 import logging
 import secrets
-from typing import Any
+from typing import Any, Optional, Union, Dict, List
 
 from .config_manager import AdminConfigManager
 
@@ -23,7 +23,7 @@ class RoutingStrategyEngine:
         self.config_manager = config_manager
 
     async def select_model(
-        self, context: dict[str, Any], available_models: list[str]
+        self, context: Dict[str, Any], available_models: List[str]
     ) -> str:
         """
         Select the best model based on context and available models
@@ -70,8 +70,8 @@ class RoutingStrategyEngine:
             raise
 
     async def _check_ab_tests(
-        self, context: dict[str, Any], available_models: list[str]
-    ) -> str | None:
+        self, context: Dict[str, Any], available_models: List[str]
+    ) -> Optional[str]:
         """Check if user should be assigned to an A/B test variant"""
         try:
             active_tests = self.config_manager.get_active_ab_tests()
@@ -106,8 +106,8 @@ class RoutingStrategyEngine:
             return None
 
     def _get_ab_test_variant(
-        self, user_id: str, test_id: str, traffic_split: dict[str, float]
-    ) -> str | None:
+        self, user_id: str, test_id: str, traffic_split: Dict[str, float]
+    ) -> Optional[str]:
         """Determine which A/B test variant a user should see"""
         try:
             # Create consistent hash for user+test combination
@@ -131,8 +131,8 @@ class RoutingStrategyEngine:
             return None
 
     async def _apply_routing_rules(
-        self, context: dict[str, Any], available_models: list[str]
-    ) -> str | None:
+        self, context: Dict[str, Any], available_models: List[str]
+    ) -> Optional[str]:
         """Apply custom routing rules"""
         try:
             matching_rules = self.config_manager.get_matching_routing_rules(context)
@@ -151,8 +151,8 @@ class RoutingStrategyEngine:
             return None
 
     async def _priority_based_selection(
-        self, context: dict[str, Any], available_models: list[str]
-    ) -> str | None:
+        self, context: Dict[str, Any], available_models: List[str]
+    ) -> Optional[str]:
         """Select model based on priority and user tier"""
         try:
             # Get user tier configuration
@@ -204,14 +204,14 @@ class LoadBalancingStrategy:
     """Load balancing strategies for model selection"""
 
     @staticmethod
-    def round_robin(models: list[str], request_count: int) -> str:
+    def round_robin(models: List[str], request_count: int) -> str:
         """Round-robin selection"""
         if not models:
             raise ValueError("No models available")
         return models[request_count % len(models)]
 
     @staticmethod
-    def weighted_random(model_weights: dict[str, float]) -> str:
+    def weighted_random(model_weights: Dict[str, float]) -> str:
         """Weighted random selection"""
         if not model_weights:
             raise ValueError("No models with weights")
@@ -229,7 +229,7 @@ class LoadBalancingStrategy:
         return list(model_weights.keys())[0]
 
     @staticmethod
-    def least_latency(model_latencies: dict[str, float]) -> str:
+    def least_latency(model_latencies: Dict[str, float]) -> str:
         """Select model with lowest latency"""
         if not model_latencies:
             raise ValueError("No models with latency data")
@@ -237,7 +237,7 @@ class LoadBalancingStrategy:
         return min(model_latencies.items(), key=lambda x: x[1])[0]
 
     @staticmethod
-    def cost_optimized(model_costs: dict[str, float]) -> str:
+    def cost_optimized(model_costs: Dict[str, float]) -> str:
         """Select model with lowest cost"""
         if not model_costs:
             raise ValueError("No models with cost data")
@@ -252,8 +252,8 @@ class ContextAwareRouter:
         self.config_manager = config_manager
 
     def route_by_task_type(
-        self, task_type: str, available_models: list[str]
-    ) -> str | None:
+        self, task_type: str, available_models: List[str]
+    ) -> Optional[str]:
         """Route based on task type (coding, chat, analysis, etc.)"""
 
         # Task-specific model preferences
@@ -275,8 +275,8 @@ class ContextAwareRouter:
         return None
 
     def route_by_complexity(
-        self, prompt_length: int, available_models: list[str]
-    ) -> str | None:
+        self, prompt_length: int, available_models: List[str]
+    ) -> Optional[str]:
         """Route based on prompt complexity/length"""
 
         if prompt_length < 100:
@@ -296,8 +296,8 @@ class ContextAwareRouter:
         return None
 
     def route_by_user_preference(
-        self, user_id: str, available_models: list[str]
-    ) -> str | None:
+        self, user_id: str, available_models: List[str]
+    ) -> Optional[str]:
         """Route based on user's historical preferences"""
 
         # In a real implementation, this would query user preference data
@@ -324,8 +324,8 @@ class RoutingStrategyFactory:
 # Utility functions for routing
 def calculate_model_score(
     model_config: Any,  # ModelConfiguration
-    context: dict[str, Any],
-    current_metrics: dict[str, float],
+    context: Dict[str, Any],
+    current_metrics: Dict[str, float],
 ) -> float:
     """
     Calculate a score for model selection based on multiple factors

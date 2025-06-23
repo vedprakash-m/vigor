@@ -1,3 +1,4 @@
+from typing import Dict, List, Optional
 # Third-party imports
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -198,7 +199,7 @@ async def login(
 
 
 class RefreshRequest(BaseModel):
-    refresh_token: str | None = None
+    refresh_token: Optional[str] = None
 
 
 @router.post("/refresh", response_model=Token, summary="Refresh Access Token")

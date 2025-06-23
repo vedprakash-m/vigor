@@ -14,7 +14,7 @@ class SQLAlchemyProgressRepository(Repository[ProgressMetrics]):
     def __init__(self, session: Session):
         self._session = session
 
-    async def get(self, entity_id: str) -> ProgressMetrics | None:
+    async def get(self, entity_id: str) -> Optional[ProgressMetrics]:
         record = (
             self._session.query(ProgressMetricsDB)
             .filter(ProgressMetricsDB.id == entity_id)
@@ -91,7 +91,7 @@ class SQLAlchemyProgressRepository(Repository[ProgressMetrics]):
         self._session.commit()
         return True
 
-    async def list(self, limit: int = 100, offset: int = 0) -> list[ProgressMetrics]:
+    async def list(self, limit: int = 100, offset: int = 0) -> List[ProgressMetrics]:
         query = self._session.query(ProgressMetricsDB).order_by(
             desc(ProgressMetricsDB.date)
         )

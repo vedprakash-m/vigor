@@ -27,11 +27,15 @@ class TestAdminSchemas:
     def test_admin_schema_structure(self):
         """Test admin schemas have expected structure"""
         schema_classes = [
-            getattr(admin, item) for item in dir(admin) if item[0].isupper()
+            getattr(admin, item) for item in dir(admin)
+            if item[0].isupper() and hasattr(getattr(admin, item), "__name__")
+            and not item.startswith("_")
         ]
 
         for schema_class in schema_classes:
             assert hasattr(schema_class, "__name__")
+            # Verify it's actually a class, not just any object
+            assert isinstance(schema_class, type) or callable(schema_class)
 
     def test_admin_schema_instantiation(self):
         """Test admin schemas can be instantiated with valid data"""
@@ -129,8 +133,12 @@ class TestAdminSchemaIntegration:
 
     def test_admin_schema_types(self):
         """Test admin schema type definitions"""
-        # Get all classes from admin module
-        classes = [getattr(admin, item) for item in dir(admin) if item[0].isupper()]
+        # Get all classes from admin module, filtering out typing imports
+        classes = [
+            getattr(admin, item) for item in dir(admin)
+            if item[0].isupper() and hasattr(getattr(admin, item), "__name__")
+            and not item.startswith("_")
+        ]
 
         for cls in classes:
             # Each class should have a proper name
@@ -165,7 +173,11 @@ class TestAdminSchemaEdgeCases:
     def test_admin_schema_documentation(self):
         """Test admin schemas have proper documentation structure"""
         # Test that classes have docstrings or are properly structured
-        classes = [getattr(admin, item) for item in dir(admin) if item[0].isupper()]
+        classes = [
+            getattr(admin, item) for item in dir(admin)
+            if item[0].isupper() and hasattr(getattr(admin, item), "__name__")
+            and not item.startswith("_")
+        ]
 
         for cls in classes:
             # Class should have basic Python class characteristics

@@ -6,6 +6,13 @@ set -e
 
 echo "🔧 Enhanced Local E2E Validation for Vigor Project"
 echo "=================================================="
+echo ""
+echo "🐳 DOCKER VALIDATION AVAILABLE!"
+echo "For PERFECT CI/CD parity, use: bash scripts/docker-ci-validation.sh"
+echo "This runs in the exact same environment as GitHub Actions"
+echo ""
+echo "Continuing with native validation..."
+echo ""
 
 # Colors for output
 RED='\033[0;31m'
@@ -59,7 +66,42 @@ for arg in "$@"; do
     esac
 done
 
-# Step 0: CRITICAL DEPENDENCY VALIDATION (NEW - prevents CI/CD failures)
+# Step 0: CI/CD PARITY VALIDATION (CRITICAL - prevents CI/CD failures)
+print_step "CI/CD Parity Validation - Ensuring Exact Match"
+echo "==============================================="
+
+# This section validates that our local environment matches CI/CD exactly
+# Based on CI/CD failure analysis, we must ensure:
+# 1. isort is used for import sorting (NOT ruff)
+# 2. Black is used for code formatting
+# 3. Dependencies are installed exactly as CI/CD does
+
+print_step "Validating CI/CD tool parity..."
+
+# Check that we have the exact same tools as CI/CD
+PARITY_ISSUES=false
+
+# Ensure isort is available (CI/CD uses isort, not ruff for imports)
+if ! command -v isort >/dev/null 2>&1; then
+    print_error "isort not found - CI/CD will fail! Installing..."
+    pip install isort
+fi
+
+# Ensure black is available
+if ! command -v black >/dev/null 2>&1; then
+    print_error "black not found - CI/CD will fail! Installing..."
+    pip install black
+fi
+
+# Ensure ruff is available for other linting
+if ! command -v ruff >/dev/null 2>&1; then
+    print_error "ruff not found - CI/CD will fail! Installing..."
+    pip install ruff
+fi
+
+print_success "CI/CD tool parity validated - all required tools available"
+
+# Step 1: CRITICAL DEPENDENCY VALIDATION (prevents CI/CD failures)
 print_step "Critical Dependency Installation Validation"
 echo "============================================="
 
@@ -186,21 +228,21 @@ else
     print_success "Black formatting check passed"
 fi
 
-# Check ruff import sorting (I001 rule - matching CI/CD exactly)
-if ! ruff check --select I001 . >/dev/null 2>&1; then
+# Check isort import sorting (CRITICAL: matching CI/CD exactly)
+if ! isort --check-only . >/dev/null 2>&1; then
     FORMATTING_ISSUES=true
     print_warning "Import sorting issues detected (this would fail CI/CD)"
     if [ "$FIX_MODE" = true ]; then
-        print_step "Auto-fixing import sorting issues with ruff"
-        ruff check --fix --select I001 .
-        print_success "Import sorting applied with ruff"
+        print_step "Auto-fixing import sorting issues with isort"
+        isort .
+        print_success "Import sorting applied with isort"
     else
         print_error "Import sorting check failed - run without --check-only to fix"
-        ruff check --select I001 .
+        isort --check-only --diff .
         exit 1
     fi
 else
-    print_success "Import sorting check passed (ruff I001)"
+    print_success "Import sorting check passed (isort)"
 fi
 
 # Report if formatting issues were found and fixed
