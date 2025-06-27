@@ -79,6 +79,7 @@ class LLMGateway:
         config_manager: AdminConfigManager,
         key_vault_service: KeyVaultClientService,
         db_session=None,
+        azure_cost_service=None,
     ):
         self.config_manager = config_manager
         self.key_vault_service = key_vault_service
@@ -86,7 +87,7 @@ class LLMGateway:
 
         # Core components
         self.routing_engine = RoutingStrategyEngine(config_manager)
-        self.budget_manager = BudgetManager(db_session)
+        self.budget_manager = BudgetManager(db_session, azure_cost_service)
         self.usage_logger = UsageLogger(db_session)
         self.cost_estimator = CostEstimator()
         self.cache_manager = CacheManager()
@@ -402,11 +403,22 @@ class LLMGateway:
             return None
 
     async def _enforce_budget(self, request: GatewayRequest):
-        """Enforce budget limits"""
+        """Enforce budget limits with Azure Cost Management integration"""
         user_groups = [request.user_tier] if request.user_tier else []
 
-        if not await self.budget_manager.can_proceed(request.user_id, user_groups):
+        # Estimate cost for this request
+        estimated_cost = await self.cost_estimator.estimate_cost(
+            request.prompt,
+            request.max_tokens or 1000
+        )
+
+        # Check local budget
+        if not await self.budget_manager.can_proceed(request.user_id, user_groups, estimated_cost):
             raise Exception("Budget limit exceeded")
+
+        # Validate with Azure Cost Management
+        if not await self.budget_manager.validate_budget_with_azure(estimated_cost):
+            raise Exception("Azure budget limit exceeded")
 
     async def _check_rate_limits(self, request: GatewayRequest):
         """Check rate limiting"""
@@ -597,14 +609,15 @@ async def initialize_gateway(
     config_manager: AdminConfigManager,
     key_vault_service: KeyVaultClientService,
     db_session=None,
+    azure_cost_service=None,
 ) -> LLMGateway:
     """Initialize the global gateway instance"""
     global gateway
 
     try:
-        gateway = LLMGateway(config_manager, key_vault_service, db_session)
+        gateway = LLMGateway(config_manager, key_vault_service, db_session, azure_cost_service)
         await gateway.initialize()
-        logger.info("Global LLM Gateway initialized")
+        logger.info("Global LLM Gateway initialized with Azure Cost Management")
         return gateway
 
     except Exception as e:

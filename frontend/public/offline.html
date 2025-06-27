@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vigor - Offline Mode</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+        color: #ffffff;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .offline-container {
+        max-width: 500px;
+        padding: 40px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .offline-icon {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 30px;
+        background: #1c7ef2;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.05);
+          opacity: 0.8;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      .offline-title {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: #ffffff;
+      }
+
+      .offline-subtitle {
+        font-size: 18px;
+        margin-bottom: 30px;
+        color: #a0aec0;
+        line-height: 1.6;
+      }
+
+      .offline-features {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 24px;
+        margin: 30px 0;
+        text-align: left;
+      }
+
+      .offline-features h3 {
+        font-size: 20px;
+        margin-bottom: 16px;
+        color: #79a9ff;
+      }
+
+      .feature-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .feature-list li {
+        padding: 8px 0;
+        color: #e2e8f0;
+        display: flex;
+        align-items: center;
+      }
+
+      .feature-list li::before {
+        content: "💪";
+        margin-right: 12px;
+        font-size: 16px;
+      }
+
+      .retry-button {
+        background: #1c7ef2;
+        color: white;
+        border: none;
+        padding: 16px 32px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 24px;
+      }
+
+      .retry-button:hover {
+        background: #2b6cb0;
+        transform: translateY(-2px);
+      }
+
+      .offline-footer {
+        margin-top: 40px;
+        font-size: 14px;
+        color: #718096;
+      }
+
+      .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 20px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        background: rgba(239, 68, 68, 0.2);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #fca5a5;
+        font-size: 14px;
+      }
+
+      .status-indicator::before {
+        content: "📡";
+        margin-right: 8px;
+      }
+
+      .online .status-indicator {
+        background: rgba(34, 197, 94, 0.2);
+        border-color: rgba(34, 197, 94, 0.3);
+        color: #86efac;
+      }
+
+      .online .status-indicator::before {
+        content: "✅";
+      }
+
+      @media (max-width: 480px) {
+        .offline-container {
+          padding: 24px;
+          margin: 20px;
+        }
+
+        .offline-icon {
+          width: 80px;
+          height: 80px;
+          font-size: 32px;
+        }
+
+        .offline-title {
+          font-size: 24px;
+        }
+
+        .offline-subtitle {
+          font-size: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="offline-container">
+      <div class="offline-icon">💪</div>
+
+      <h1 class="offline-title">You're Offline</h1>
+      <p class="offline-subtitle">
+        No internet connection detected, but your fitness journey continues!
+        Vigor works offline to keep you moving.
+      </p>
+
+      <div class="offline-features">
+        <h3>Available Offline:</h3>
+        <ul class="feature-list">
+          <li>View cached workout plans</li>
+          <li>Log completed workouts</li>
+          <li>Access exercise instructions</li>
+          <li>Use workout timer and tracker</li>
+          <li>Browse previous workout history</li>
+        </ul>
+      </div>
+
+      <div class="status-indicator" id="connectionStatus">
+        Connection lost - working offline
+      </div>
+
+      <button class="retry-button" onclick="checkConnection()">
+        Check Connection
+      </button>
+
+      <div class="offline-footer">
+        <p>
+          Your workout data will sync automatically when you're back online.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      // Check online status and update UI
+      function updateConnectionStatus() {
+        const statusEl = document.getElementById("connectionStatus");
+        const container = document.querySelector(".offline-container");
+
+        if (navigator.onLine) {
+          statusEl.textContent = "Connection restored!";
+          container.classList.add("online");
+
+          // Auto-redirect to app after 2 seconds
+          setTimeout(() => {
+            window.location.href = "/app/dashboard";
+          }, 2000);
+        } else {
+          statusEl.textContent = "Connection lost - working offline";
+          container.classList.remove("online");
+        }
+      }
+
+      function checkConnection() {
+        updateConnectionStatus();
+
+        if (navigator.onLine) {
+          // Try to fetch a small resource to verify connection
+          fetch("/api/health", {
+            method: "GET",
+            cache: "no-cache",
+            headers: {
+              "Cache-Control": "no-cache",
+            },
+          })
+            .then((response) => {
+              if (response.ok) {
+                window.location.href = "/app/dashboard";
+              }
+            })
+            .catch(() => {
+              // Still offline, update status
+              updateConnectionStatus();
+            });
+        }
+      }
+
+      // Listen for online/offline events
+      window.addEventListener("online", updateConnectionStatus);
+      window.addEventListener("offline", updateConnectionStatus);
+
+      // Initial status check
+      updateConnectionStatus();
+
+      // Periodic connection check every 10 seconds
+      setInterval(checkConnection, 10000);
+
+      // Service worker messaging for offline functionality
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          // Request cached workouts for offline mode
+          const messageChannel = new MessageChannel();
+          messageChannel.port1.onmessage = (event) => {
+            if (event.data.type === "CACHED_WORKOUTS") {
+              console.log("Cached workouts available:", event.data.data.length);
+            }
+          };
+
+          registration.active.postMessage(
+            {
+              type: "GET_CACHED_WORKOUTS",
+            },
+            [messageChannel.port2]
+          );
+        });
+      }
+    </script>
+  </body>
+</html>

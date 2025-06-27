@@ -9,6 +9,8 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Optional, Union, List, Dict
 
+from ..azure_cost_management import AzureCostManagementService
+
 logger = logging.getLogger(__name__)
 
 
@@ -44,8 +46,9 @@ class BudgetManager:
     Tracks usage, enforces limits, and provides cost analytics
     """
 
-    def __init__(self, db_session=None):
+    def __init__(self, db_session=None, azure_cost_service: Optional[AzureCostManagementService] = None):
         self.db = db_session
+        self.azure_cost_service = azure_cost_service
         self._usage_cache: Dict[str, BudgetUsage] = {}
         self._global_usage = 0.0
         self._global_limit = 10000.0  # Default global limit
@@ -248,6 +251,132 @@ class BudgetManager:
             pass
         except Exception as e:
             logger.error(f"Failed to set alert thresholds: {e}")
+
+    async def sync_with_azure_costs(self) -> Dict[str, Any]:
+        """
+        Synchronize budget usage with Azure Cost Management
+
+        Returns:
+            Dictionary with sync results and current cost data
+        """
+        if not self.azure_cost_service:
+            logger.warning("Azure Cost Management service not configured")
+            return {"status": "skipped", "reason": "service_not_configured"}
+
+        try:
+            # Get current costs from Azure
+            current_costs = await self.azure_cost_service.get_current_costs()
+
+            # Update global usage with actual Azure costs
+            if current_costs and "total_cost" in current_costs:
+                self._global_usage = current_costs["total_cost"]
+                logger.info(f"Updated global usage from Azure: ${self._global_usage:.4f}")
+
+            # Check for budget alerts
+            if current_costs and "budget_alerts" in current_costs:
+                await self._process_azure_budget_alerts(current_costs["budget_alerts"])
+
+            return {
+                "status": "success",
+                "global_usage": self._global_usage,
+                "azure_costs": current_costs,
+                "last_sync": datetime.utcnow().isoformat(),
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to sync with Azure costs: {e}")
+            return {"status": "error", "error": str(e)}
+
+    async def validate_budget_with_azure(self, estimated_cost: float) -> bool:
+        """
+        Validate budget against Azure Cost Management quotas
+
+        Args:
+            estimated_cost: Estimated cost for the operation
+
+        Returns:
+            True if within budget, False otherwise
+        """
+        if not self.azure_cost_service:
+            return True  # Allow if Azure service not configured
+
+        try:
+            # Get current Azure budget status
+            budget_status = await self.azure_cost_service.validate_budget(estimated_cost)
+
+            if not budget_status.get("within_budget", True):
+                logger.warning(
+                    f"Azure budget validation failed: {budget_status.get('reason', 'Unknown')}"
+                )
+                return False
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Azure budget validation failed: {e}")
+            # Allow on validation failure to prevent blocking
+            return True
+
+    async def get_real_time_cost_analytics(self) -> Dict[str, Any]:
+        """
+        Get real-time cost analytics from Azure Cost Management
+
+        Returns:
+            Dictionary with current cost analytics
+        """
+        analytics = {
+            "global_usage": self._global_usage,
+            "global_limit": self._global_limit,
+            "usage_percentage": (self._global_usage / self._global_limit) * 100,
+            "cached_budgets": len(self._usage_cache),
+            "last_updated": datetime.utcnow().isoformat(),
+        }
+
+        if self.azure_cost_service:
+            try:
+                azure_analytics = await self.azure_cost_service.get_cost_analytics()
+                analytics.update(
+                    {
+                        "azure_costs": azure_analytics,
+                        "data_source": "azure_real_time",
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Failed to get Azure analytics: {e}")
+                analytics["azure_error"] = str(e)
+        else:
+            analytics["data_source"] = "local_cache"
+
+        return analytics
+
+    async def _process_azure_budget_alerts(self, alerts: List[Dict[str, Any]]):
+        """Process budget alerts from Azure Cost Management"""
+        try:
+            for alert in alerts:
+                alert_level = alert.get("alert_level", "info")
+                message = alert.get("message", "Budget alert")
+
+                logger.warning(f"Azure budget alert [{alert_level}]: {message}")
+
+                # Update local budget status if critical
+                if alert_level in ["critical", "warning"]:
+                    await self._update_budget_status_from_alert(alert)
+
+        except Exception as e:
+            logger.error(f"Failed to process Azure budget alerts: {e}")
+
+    async def _update_budget_status_from_alert(self, alert: Dict[str, Any]):
+        """Update local budget status based on Azure alert"""
+        try:
+            alert_level = alert.get("alert_level", "info")
+
+            if alert_level == "critical":
+                # Update global status to blocked
+                self._global_usage = self._global_limit  # Force limit
+                logger.critical("Global budget blocked due to Azure critical alert")
+
+        except Exception as e:
+            logger.error(f"Failed to update budget status from alert: {e}")
 
     # Private helper methods
 

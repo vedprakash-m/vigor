@@ -141,3 +141,9 @@ anthropic==0.7.8
 slowapi==0.1.9
 limits==4.2
 deprecated==1.2.18
+pyotp==2.8.0  # For TOTP MFA support
+qrcode==7.4.2  # For QR code generation for MFA setup
+
+# Azure Cost Management (Phase 2)
+azure-mgmt-costmanagement==4.0.1
+azure-mgmt-consumption==10.0.0

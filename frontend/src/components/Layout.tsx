@@ -1,6 +1,7 @@
 import { Box, Flex, Heading, Text } from '@chakra-ui/react'
 import { Outlet, Link as RouterLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/useAuth'
+import PushNotificationSetup from './PushNotificationSetup'
 
 const Links = [
   { name: 'Dashboard', path: '/' },
@@ -28,7 +29,7 @@ export const Layout = () => {
         <Heading size="lg" color="blue.500" mb={8}>
           Vigor
         </Heading>
-        
+
         <Box>
           {Links.map((link) => (
             <Box key={link.name} mb={2}>
@@ -48,7 +49,7 @@ export const Layout = () => {
             </Box>
           ))}
         </Box>
-        
+
         <Box mt={8} pt={4} borderTop="1px" borderTopColor="gray.200">
           <Text
             as="button"
@@ -80,12 +81,13 @@ export const Layout = () => {
           <Heading size="md" display={{ base: 'block', md: 'none' }}>
             Vigor
           </Heading>
-          
+
           <Text>Welcome, {user?.username}</Text>
         </Flex>
 
         {/* Page content */}
         <Box p={6}>
+          <PushNotificationSetup />
           <Outlet />
         </Box>
       </Box>

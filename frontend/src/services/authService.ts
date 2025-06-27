@@ -1,5 +1,11 @@
 import axios from 'axios'
-import type { AuthResponse, TokenRefreshResponse, User } from '../types/auth'
+import type {
+    AuthResponse,
+    OAuthAuthorizationResponse,
+    OAuthProvidersResponse,
+    TokenRefreshResponse,
+    User
+} from '../types/auth'
 
 const API_BASE_URL = 'http://localhost:8000'
 
@@ -87,19 +93,60 @@ export const authService = {
     await api.post('/auth/logout')
   },
 
-  async forgotPassword(email: string) {
-    return fetch('/api/auth/forgot', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(email)
-    }).then(r => r.json())
+  // OAuth2 Methods
+  async getOAuthProviders(): Promise<OAuthProvidersResponse> {
+    const response = await api.get<OAuthProvidersResponse>('/auth/oauth/providers')
+    return response.data
   },
 
-  async resetPassword(token: string, newPassword: string) {
-    return fetch('/api/auth/reset', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, new_password: newPassword })
-    }).then(r => r.json())
-  }
+  async getOAuthAuthorizationUrl(provider: string): Promise<OAuthAuthorizationResponse> {
+    const response = await api.get<OAuthAuthorizationResponse>(`/auth/oauth/${provider}`)
+    return response.data
+  },
+
+  async handleOAuthCallback(provider: string, code: string, state: string): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>(`/auth/oauth/${provider}/token`, {
+      code,
+      state,
+    })
+    return response.data
+  },
+
+  initiateOAuthLogin(provider: string): void {
+    // Store current URL for redirect after OAuth
+    localStorage.setItem('oauth_redirect_url', window.location.pathname)
+
+    // Get authorization URL and redirect
+    this.getOAuthAuthorizationUrl(provider)
+      .then(({ authorization_url }) => {
+        window.location.href = authorization_url
+      })
+      .catch((error) => {
+        console.error(`OAuth login failed for ${provider}:`, error)
+        throw new Error(`Failed to initiate ${provider} login`)
+      })
+  },
+
+  // Token storage and management
+  storeTokens(authResponse: AuthResponse): void {
+    localStorage.setItem('accessToken', authResponse.access_token)
+    localStorage.setItem('refreshToken', authResponse.refresh_token)
+    localStorage.setItem('user', JSON.stringify(authResponse.user))
+  },
+
+  clearTokens(): void {
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('user')
+    localStorage.removeItem('oauth_redirect_url')
+  },
+
+  getStoredUser(): User | null {
+    const userJson = localStorage.getItem('user')
+    return userJson ? JSON.parse(userJson) : null
+  },
+
+  isAuthenticated(): boolean {
+    return !!localStorage.getItem('accessToken')
+  },
 }

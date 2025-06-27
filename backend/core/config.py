@@ -32,6 +32,30 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"  # JWT algorithm
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # Microsoft Entra External ID (OAuth2)
+    MICROSOFT_CLIENT_ID: Optional[str] = os.getenv("MICROSOFT_CLIENT_ID")
+    MICROSOFT_CLIENT_SECRET: Optional[str] = os.getenv("MICROSOFT_CLIENT_SECRET")
+    MICROSOFT_TENANT_ID: Optional[str] = os.getenv("MICROSOFT_TENANT_ID")
+    MICROSOFT_REDIRECT_URI: str = os.getenv("MICROSOFT_REDIRECT_URI", "http://localhost:5173/auth/callback/microsoft")
+
+    # Social Login Providers
+    GOOGLE_CLIENT_ID: Optional[str] = os.getenv("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET: Optional[str] = os.getenv("GOOGLE_CLIENT_SECRET")
+    GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:5173/auth/callback/google")
+
+    GITHUB_CLIENT_ID: Optional[str] = os.getenv("GITHUB_CLIENT_ID")
+    GITHUB_CLIENT_SECRET: Optional[str] = os.getenv("GITHUB_CLIENT_SECRET")
+    GITHUB_REDIRECT_URI: str = os.getenv("GITHUB_REDIRECT_URI", "http://localhost:5173/auth/callback/github")
+
+    # OAuth2 Configuration
+    OAUTH_STATE_SECRET: str = os.getenv("OAUTH_STATE_SECRET", "your-oauth-state-secret-change-in-production")
+    OAUTH_PKCE_CHALLENGE_METHOD: str = "S256"
+
+    # Frontend URLs for OAuth flows
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    LOGIN_SUCCESS_REDIRECT: str = os.getenv("LOGIN_SUCCESS_REDIRECT", "http://localhost:5173/dashboard")
+    LOGIN_ERROR_REDIRECT: str = os.getenv("LOGIN_ERROR_REDIRECT", "http://localhost:5173/login?error=oauth_error")
+
     # AI Provider APIs - all optional, fallback gracefully
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")

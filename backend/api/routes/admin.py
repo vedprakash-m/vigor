@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 from core.admin_llm_manager import (
     BudgetMonitor,
 )
+from core.azure_cost_management import AzureCostManagementService
+from core.llm_orchestration import LLMGateway
 from core.security import get_current_user
 from database.connection import get_db
 from database.models import AIProviderPriority, BudgetSettings, UserProfile
@@ -45,6 +47,24 @@ class UsageStatsResponse(BaseModel):
     avg_cost_per_request: float
     top_providers: List[dict]
     recent_usage: List[dict]
+
+
+# Azure Cost Management Response Models
+class AzureCostAnalyticsResponse(BaseModel):
+    current_costs: Dict
+    budget_status: Dict
+    cost_breakdown: List[Dict]
+    alerts: List[Dict]
+    usage_trends: Dict
+    last_updated: str
+
+
+class BudgetSyncResponse(BaseModel):
+    status: str
+    global_usage: float
+    azure_costs: Optional[Dict]
+    last_sync: str
+    error: Optional[str] = None
 
 
 # Admin Authentication Check
@@ -408,3 +428,215 @@ async def export_logs_csv(user_id: str, db: Session = Depends(get_db)):
             ]
         )
     return Response(content=buffer.getvalue(), media_type="text/csv")
+
+
+# Azure Cost Management Endpoints
+
+@router.get("/azure-cost-analytics", response_model=AzureCostAnalyticsResponse)
+async def get_azure_cost_analytics(
+    current_user: UserProfile = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get real-time cost analytics from Azure Cost Management"""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+
+    try:
+        # Initialize Azure Cost Management service
+        azure_cost_service = AzureCostManagementService()
+
+        # Get comprehensive cost analytics
+        current_costs = await azure_cost_service.get_current_costs()
+        budget_status = await azure_cost_service.get_budget_status()
+        cost_breakdown = await azure_cost_service.get_cost_breakdown()
+        alerts = await azure_cost_service.get_budget_alerts()
+        analytics = await azure_cost_service.get_cost_analytics()
+
+        return AzureCostAnalyticsResponse(
+            current_costs=current_costs or {},
+            budget_status=budget_status or {},
+            cost_breakdown=cost_breakdown or [],
+            alerts=alerts or [],
+            usage_trends=analytics or {},
+            last_updated=datetime.utcnow().isoformat()
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get Azure cost analytics: {str(e)}"
+        )
+
+
+@router.post("/azure-budget-sync", response_model=BudgetSyncResponse)
+async def sync_azure_budget(
+    current_user: UserProfile = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Synchronize budget with Azure Cost Management"""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+
+    try:
+        # Get global gateway instance (assuming it's available)
+        from core.llm_orchestration import gateway
+
+        if not gateway:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="LLM Gateway not initialized"
+            )
+
+        # Sync with Azure costs
+        sync_result = await gateway.budget_manager.sync_with_azure_costs()
+
+        return BudgetSyncResponse(
+            status=sync_result.get("status", "unknown"),
+            global_usage=sync_result.get("global_usage", 0.0),
+            azure_costs=sync_result.get("azure_costs"),
+            last_sync=sync_result.get("last_sync", datetime.utcnow().isoformat()),
+            error=sync_result.get("error")
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to sync Azure budget: {str(e)}"
+        )
+
+
+@router.get("/real-time-cost-analytics", response_model=dict)
+async def get_real_time_cost_analytics(
+    current_user: UserProfile = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get real-time cost analytics combining local and Azure data"""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+
+    try:
+        # Get global gateway instance
+        from core.llm_orchestration import gateway
+
+        if not gateway:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="LLM Gateway not initialized"
+            )
+
+        # Get real-time analytics
+        analytics = await gateway.budget_manager.get_real_time_cost_analytics()
+
+        return analytics
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get real-time analytics: {str(e)}"
+        )
+
+
+@router.post("/azure-budget-alert", response_model=dict)
+async def create_azure_budget_alert(
+    budget_name: str,
+    threshold_percentage: float,
+    email_contacts: List[str],
+    current_user: UserProfile = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create or update Azure budget alert"""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+
+    try:
+        azure_cost_service = AzureCostManagementService()
+
+        result = await azure_cost_service.create_budget_alert(
+            budget_name=budget_name,
+            threshold_percentage=threshold_percentage,
+            email_contacts=email_contacts
+        )
+
+        return {
+            "status": "success",
+            "alert_id": result.get("alert_id"),
+            "message": "Budget alert created/updated successfully"
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create budget alert: {str(e)}"
+        )
+
+
+@router.delete("/azure-budget-alert/{alert_id}")
+async def delete_azure_budget_alert(
+    alert_id: str,
+    current_user: UserProfile = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete Azure budget alert"""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+
+    try:
+        azure_cost_service = AzureCostManagementService()
+
+        await azure_cost_service.delete_budget_alert(alert_id)
+
+        return {
+            "status": "success",
+            "message": "Budget alert deleted successfully"
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete budget alert: {str(e)}"
+        )
+
+
+@router.get("/cost-optimization-recommendations", response_model=dict)
+async def get_cost_optimization_recommendations(
+    current_user: UserProfile = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get AI-powered cost optimization recommendations"""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+
+    try:
+        azure_cost_service = AzureCostManagementService()
+
+        recommendations = await azure_cost_service.get_cost_optimization_recommendations()
+
+        return {
+            "recommendations": recommendations,
+            "generated_at": datetime.utcnow().isoformat(),
+            "status": "success"
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get recommendations: {str(e)}"
+        )

@@ -23,6 +23,7 @@ from core.llm_orchestration.key_vault import (
     initialize_key_vault_service,
 )
 from database.connection import SessionLocal
+from core.azure_cost_management import AzureCostManagementService
 
 logger = logging.getLogger(__name__)
 
@@ -57,10 +58,18 @@ async def initialize_llm_orchestration():
         # 2. Initialize admin configuration manager
         config_manager = AdminConfigManager()
 
-        # 3. Set up default model configurations if none exist
+        # 3. Initialize Azure Cost Management service
+        azure_cost_service = None
+        try:
+            azure_cost_service = AzureCostManagementService()
+            logger.info("✅ Azure Cost Management service initialized")
+        except Exception as e:
+            logger.warning(f"Azure Cost Management service not available: {e}")
+
+        # 4. Set up default model configurations if none exist
         await setup_default_configurations(config_manager, key_vault_service)
 
-        # 4. Initialize gateway with all components
+        # 5. Initialize gateway with all components
         db_session = SessionLocal()
 
         # Prefer new facade; fall back to legacy if instantiation fails
@@ -69,6 +78,7 @@ async def initialize_llm_orchestration():
                 config_manager=config_manager,
                 key_vault_service=key_vault_service,
                 db_session=db_session,
+                azure_cost_service=azure_cost_service,
             )
             await facade.initialize()
             _gateway = facade  # type: ignore
@@ -84,6 +94,7 @@ async def initialize_llm_orchestration():
                 config_manager=config_manager,
                 key_vault_service=key_vault_service,
                 db_session=db_session,
+                azure_cost_service=azure_cost_service,
             )
 
         logger.info("✅ LLM Orchestration Layer initialized successfully")

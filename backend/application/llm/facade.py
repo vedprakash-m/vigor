@@ -39,6 +39,7 @@ class LLMGatewayFacade:
         config_manager: AdminConfigManager,
         key_vault_service: KeyVaultClientService,
         db_session=None,
+        azure_cost_service=None,
     ) -> None:
         # Dependencies
         self._config_manager = config_manager
@@ -46,7 +47,7 @@ class LLMGatewayFacade:
         self._db = db_session
 
         # Instantiate cross-cutting services from legacy infra (to be replaced later)
-        self._budget_manager = BudgetManager(db_session)
+        self._budget_manager = BudgetManager(db_session, azure_cost_service)
         self._cache_manager = CacheManager()
         self._analytics = AnalyticsCollector(db_session)
         self._usage_logger = UsageLogger(db_session)

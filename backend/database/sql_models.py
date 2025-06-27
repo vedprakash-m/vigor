@@ -27,7 +27,7 @@ class UserProfileDB(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     email = Column(String, unique=True, index=True)
     username = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
+    hashed_password = Column(String, nullable=True)  # Made nullable for OAuth users
     is_active = Column(Boolean, default=True)
     last_login = Column(DateTime, nullable=True)
     fitness_level: Column[FitnessLevel] = Column(SQLEnum(FitnessLevel))
@@ -39,6 +39,19 @@ class UserProfileDB(Base):
     tier_updated_at = Column(DateTime, nullable=True)
     monthly_budget = Column(Float, default=5.0)
     current_month_usage = Column(Float, default=0.0)
+
+    # OAuth2 provider fields
+    oauth_provider = Column(String, nullable=True)  # 'microsoft', 'google', 'github', etc.
+    oauth_provider_id = Column(String, nullable=True)  # Provider-specific user ID
+    oauth_access_token = Column(Text, nullable=True)  # Encrypted access token (if needed)
+    oauth_refresh_token = Column(Text, nullable=True)  # Encrypted refresh token (if needed)
+    oauth_token_expires_at = Column(DateTime, nullable=True)  # Token expiration
+
+    # MFA settings
+    mfa_enabled = Column(Boolean, default=False)
+    mfa_secret = Column(String, nullable=True)  # TOTP secret (encrypted)
+    mfa_backup_codes = Column(JSON, nullable=True)  # Encrypted backup codes
+
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 

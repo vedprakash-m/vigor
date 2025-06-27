@@ -1,0 +1,150 @@
+{
+  "name": "Vigor Fitness - AI-Powered Personal Trainer",
+  "short_name": "Vigor",
+  "description": "AI-powered fitness platform with personalized workouts, intelligent coaching, and progress tracking. Professional-grade fitness guidance at consumer prices.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a202c",
+  "theme_color": "#1C7EF2",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "categories": ["health", "fitness", "lifestyle", "sports"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/vigor-icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/vigor-icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/vigor-icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/vigor-icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/vigor-icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/vigor-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/vigor-icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/vigor-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/vigor-dashboard-mobile.png",
+      "sizes": "640x1136",
+      "type": "image/png",
+      "platform": "mobile",
+      "label": "Vigor Dashboard - Personalized workout recommendations and AI coach"
+    },
+    {
+      "src": "/screenshots/vigor-workout-mobile.png",
+      "sizes": "640x1136",
+      "type": "image/png",
+      "platform": "mobile",
+      "label": "Workout Session - Real-time guidance and progress tracking"
+    },
+    {
+      "src": "/screenshots/vigor-coach-mobile.png",
+      "sizes": "640x1136",
+      "type": "image/png",
+      "platform": "mobile",
+      "label": "AI Coach - 24/7 fitness guidance and motivation"
+    },
+    {
+      "src": "/screenshots/vigor-dashboard-desktop.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Vigor Desktop - Comprehensive fitness management dashboard"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Generate Workout",
+      "short_name": "New Workout",
+      "description": "Generate a personalized workout plan with AI",
+      "url": "/workouts/generate",
+      "icons": [
+        {
+          "src": "/icons/shortcut-workout.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "AI Coach Chat",
+      "short_name": "Chat Coach",
+      "description": "Get instant fitness guidance from AI coach",
+      "url": "/coach",
+      "icons": [
+        {
+          "src": "/icons/shortcut-coach.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Progress Tracking",
+      "short_name": "Progress",
+      "description": "View your fitness progress and analytics",
+      "url": "/progress",
+      "icons": [
+        {
+          "src": "/icons/shortcut-progress.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "handle_links": "preferred",
+  "protocol_handlers": [
+    {
+      "protocol": "vigor",
+      "url": "/app/share?data=%s"
+    }
+  ]
+}

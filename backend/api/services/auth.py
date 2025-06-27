@@ -162,6 +162,13 @@ class AuthService:
             if not user.is_active:
                 raise HTTPException(status_code=401, detail="Account is disabled")
 
+            # For OAuth users, verify they have a hashed password for traditional login
+            if user.oauth_provider and not user.hashed_password:
+                raise HTTPException(
+                    status_code=401,
+                    detail=f"Please sign in using {user.oauth_provider.title()}"
+                )
+
             # Verify password
             if not pwd_context.verify(password, user.hashed_password):
                 raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -460,10 +467,11 @@ class AuthService:
             "sub": user.id,
             "email": user.email,
             "username": user.username,
-            "tier": user.user_tier.value,
+            "tier": user.user_tier,  # Changed from user.user_tier.value
             "type": "access",
             "iat": datetime.utcnow(),
             "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+            "oauth_provider": user.oauth_provider,  # Include OAuth provider info
         }
 
         # Refresh token payload (fewer claims for security)
