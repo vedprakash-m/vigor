@@ -23,13 +23,13 @@ This document is the **single source of truth** for all User-Experience (UX) and
 
 ## 2. User Roles & Responsibilities
 
-| Role              | Description                                                                              | Key Responsibilities                                                                                                                           | Critical Journeys | Tier Access |
-| ----------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ----------- |
-| **Free User**     | Fitness enthusiast using Vigor's basic features with limitations per PRD specifications. | • Maintain profile & preferences<br/>• Generate limited workout plans (5/month)<br/>• Limited AI chat (10/month)<br/>• Basic progress tracking | 1, 2, 3           | FREE        |
-| **Premium User**  | Paid subscriber with unlimited access to all core features and advanced analytics.       | • Unlimited workout generation<br/>• Unlimited AI coaching<br/>• Advanced analytics<br/>• Priority support<br/>• Enhanced gamification         | 1, 2, 3, 8        | PREMIUM     |
-| **Administrator** | Ops / Product personnel who configure AI providers, budgets, and oversee system health.  | • Configure LLM providers & routing<br/>• Manage budgets & cost alerts<br/>• Monitor system health<br/>• User tier management                  | 4, 6              | ADMIN       |
-| **Support Staff** | Customer-success agents with read-only access to user data for troubleshooting.          | • View user profiles & logs (read-only)<br/>• Access support console<br/>• Create tickets<br/>• Escalate incidents                             | 5, 7              | SUPPORT     |
-| **Guest User**    | Unregistered visitor experiencing demo functionality before signup (limited demo mode).  | • Browse sample workout plan<br/>• Experience AI coach demo<br/>• View synthetic progress data<br/>• Convert to registered account             | 1                 | GUEST       |
+| Role              | Description                                                                                   | Key Responsibilities                                                                                                                           | Critical Journeys | Tier Access        |
+| ----------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------------------ |
+| **Free User**     | Fitness enthusiast using Vigor's basic features with limitations per PRD specifications.      | • Maintain profile & preferences<br/>• Generate limited workout plans (5/month)<br/>• Limited AI chat (10/month)<br/>• Basic progress tracking | 1, 2, 3           | FREE               |
+| **Premium User**  | Paid subscriber with unlimited access to all core features and advanced analytics (POST-MVP). | • Unlimited workout generation<br/>• Unlimited AI coaching<br/>• Advanced analytics<br/>• Priority support<br/>• Enhanced gamification         | 1, 2, 3, 8        | PREMIUM (POST-MVP) |
+| **Administrator** | Ops / Product personnel who configure AI providers, budgets, and oversee system health.       | • Configure LLM providers & routing<br/>• Manage budgets & cost alerts<br/>• Monitor system health<br/>• User tier management                  | 4, 6              | ADMIN              |
+| **Support Staff** | Customer-success agents with read-only access to user data for troubleshooting.               | • View user profiles & logs (read-only)<br/>• Access support console<br/>• Create tickets<br/>• Escalate incidents                             | 5, 7              | SUPPORT            |
+| **Guest User**    | Unregistered visitor experiencing demo functionality before signup (limited demo mode).       | • Browse sample workout plan<br/>• Experience AI coach demo<br/>• View synthetic progress data<br/>• Convert to registered account             | 1                 | GUEST              |
 
 Journey IDs map to §4 and align with PRD user scenarios:
 • 1 – Guest Demo Flow & User Onboarding
@@ -66,23 +66,25 @@ Journey IDs map to §4 and align with PRD user scenarios:
 
 #### P0 - MVP Core Features (Launch Ready)
 
-- **User Authentication**: Register, login, password reset, profile management
-- **Workout Generation**: AI-powered workout creation with customization options
+- **User Authentication**: Microsoft Entra ID sole authentication, profile management
+- **Workout Generation**: AI-powered workout creation with multi-provider fallback
 - **Workout Execution**: Real-time session tracking, timer, exercise guidance
 - **Basic Progress Tracking**: Workout history, basic metrics dashboard
 - **AI Chat Coach**: Conversational coaching and exercise guidance
-- **Responsive PWA**: Mobile-optimized experience with offline basics
+- **Responsive Web App**: Mobile-optimized experience (PWA post-MVP)
+- **Single Tier**: Free tier only (no premium features in MVP)
 
 #### P1 - Enhanced Features (Post-MVP)
 
+- **Premium Tier Implementation**: Unlimited features, advanced analytics, priority support
+- **Progressive Web App (PWA)**: Native app-like experience with offline capabilities
 - **Advanced Analytics**: Detailed progress charts, trend analysis, performance insights
-- **Community Features**: Workout sharing, friend connections, leaderboards
-- **Premium Tier Features**: Advanced customization, priority support, detailed analytics
-- **Gamification**: Achievement badges, streaks, challenges, rewards system
+- **Enhanced Gamification**: Achievement badges, streaks, challenges, rewards system
 - **Video Guidance**: Exercise demonstrations, form analysis
 
 #### P2 - Future Enhancements
 
+- **Social & Community Features**: Workout sharing, friend connections, leaderboards
 - **Nutrition Integration**: Meal planning, calorie tracking, dietary recommendations
 - **Wearable Integration**: Heart rate monitoring, step tracking, sleep analysis
 - **Social Commerce**: Equipment recommendations, affiliate partnerships
@@ -93,8 +95,11 @@ Journey IDs map to §4 and align with PRD user scenarios:
 - **Service Worker**: Workbox-based caching for offline workout access
 - **Push Notifications**: Web Push API for workout reminders and streaks
 - **Add to Home Screen**: Native app-like installation after first workout completion
-- **Offline Support**: Critical UI components work without connectivity
-- **Background Sync**: Queue workout logs when offline, sync when connected
+- **Offline Support**: Critical UI components work without connectivity **including**:
+  - Viewing previously generated workout plans
+  - Accessing cached profile data and streak counters
+  - Following any workout session that was saved while online
+- **Background Sync**: Queue workout logs and AI chats when offline; auto-sync when re-connected
 
 ### 3.4 Dark-Mode Color Tokens (updated for Chakra UI v3)
 
@@ -167,28 +172,26 @@ flowchart TD
 
 **Success Metrics**: 4+ workouts/week despite travel, 15+ weekly AI interactions, <3min workout generation
 
-### 4.3 Enhanced Authentication Journey: Microsoft Entra External ID
+### 4.3 Enhanced Authentication Journey: Microsoft Entra ID (Vedprakash Domain)
 
 ```mermaid
 flowchart TD
   A[Landing Page] --> B[Sign Up/Sign In]
-  B --> C{Choose Auth Method}
-  C -->|Email/Password| D[Entra External ID Flow]
-  C -->|Social Login| E[OAuth via Entra External ID]
-  E --> F{Provider Selection}
-  F -->|Google| G[Google OAuth → Entra External ID]
-  F -->|Apple| H[Apple OAuth → Entra External ID]
-  F -->|Microsoft| I[Microsoft Account → Entra External ID]
-  D --> J[Optional MFA Challenge]
-  G --> J
-  H --> J
-  I --> J
-  J --> K[Security Validation]
-  K --> L[Profile Creation/Update]
-  L --> M[Dashboard Access]
+  B --> C[Microsoft Entra ID Flow]
+  C --> D{Authentication Method}
+  D -->|Work/School Account| E[Microsoft Account Login]
+  D -->|Personal Account| F[Microsoft Personal Account]
+  D -->|Guest Access| G[Guest Demo Mode]
+  E --> H[MFA Challenge if Required]
+  F --> H
+  H --> I[Entra ID Token Validation]
+  I --> J[VedUser Profile Creation/Update]
+  J --> K[Cross-App SSO Enabled]
+  K --> L[Dashboard Access]
+  G --> M[Limited Demo Experience]
 ```
 
-**Success Metrics**: <2s authentication flow completion, >95% OAuth success rate, MFA adoption >60%
+**Success Metrics**: <2s authentication flow completion, >95% SSO success rate across `.vedprakash.net`, MFA adoption >60%
 
 ### 4.4 Tier Upgrade Journey: Free to Premium
 
@@ -266,14 +269,16 @@ flowchart TD
 | Social Proof             | Testimonials & Stats        | Horizontal scroll user testimonials         | Grid layout with success metrics  |
 | Cost Comparison          | vs Competitors              | "Professional guidance at consumer prices"  | Feature comparison table          |
 
-### 5.2 Register & Authentication (`/auth`) - Microsoft Entra External ID Integration
+### 5.2 Register & Authentication (`/auth`) - Microsoft Entra ID Integration
 
-**Authentication Method**: Microsoft Entra External ID for enterprise-grade security
-**OAuth Integration**: Google, Apple, Microsoft social login via Entra External ID
-**Security Features**: Multi-factor authentication (MFA), rate limiting (5 registrations/min), advanced threat protection
+**Authentication Method**: Microsoft Entra ID (`vedid.onmicrosoft.com`) as SOLE authentication provider
+**Domain Structure**: vigor.vedprakash.net subdomain with shared authentication infrastructure
+**SSO Integration**: Single Sign-On across all `.vedprakash.net` applications
+**Resource Separation**: Vigor resources (vigor-rg, vigor-db-rg) independent from shared domain (ved-domain-rg) and auth (ved-id-rg) resources
+**Security Features**: Enterprise-grade MFA, conditional access, rate limiting (5 registrations/min)
 **Guest Option**: "Continue as guest" launches demo with synthetic data
-**Mobile**: OAuth redirect optimization, biometric integration, accessible tap targets (44px minimum)
-**Enterprise Features**: Single sign-on (SSO), conditional access policies, identity protection
+**Mobile**: MSAL-optimized redirects, biometric integration, accessible tap targets (44px minimum)
+**Enterprise Features**: Cross-app user profiles, unified permissions, VedUser interface compliance
 
 ### 5.3 Progressive Onboarding Wizard (`/onboarding`) - PRD Profile Requirements
 
@@ -289,13 +294,13 @@ flowchart TD
 
 ### 5.4 Dashboard (`/app/dashboard`) - Central Hub per PRD Navigation
 
-| Section                 | Component                                    | Free Tier                      | Premium Tier                     |
-| ----------------------- | -------------------------------------------- | ------------------------------ | -------------------------------- |
-| **Today's Focus**       | Next workout card + "Generate New" CTA       | 5 plans/month limit shown      | Unlimited generation             |
-| **AI Coach Preview**    | Last conversation snippet + unread indicator | 10 chats/month limit shown     | Unlimited coaching               |
-| **Streak & Motivation** | Current streak, weekly consistency           | Basic streak counter           | Enhanced badges + social sharing |
-| **Quick Stats**         | This week: workouts, AI interactions         | Basic metrics                  | Advanced analytics preview       |
-| **Upgrade Prompt**      | Contextual premium feature highlights        | Visible when limits approached | Hidden for premium users         |
+| Section                 | Component                                    | Free Tier                      | Premium Tier                                |
+| ----------------------- | -------------------------------------------- | ------------------------------ | ------------------------------------------- |
+| **Today's Focus**       | Next workout card + "Generate New" CTA       | 5 plans/month limit shown      | Unlimited generation (POST-MVP)             |
+| **AI Coach Preview**    | Last conversation snippet + unread indicator | 10 chats/month limit shown     | Unlimited coaching (POST-MVP)               |
+| **Streak & Motivation** | Current streak, weekly consistency           | Basic streak counter           | Enhanced badges + social sharing (POST-MVP) |
+| **Quick Stats**         | This week: workouts, AI interactions         | Basic metrics                  | Advanced analytics preview (POST-MVP)       |
+| **Upgrade Prompt**      | Contextual premium feature highlights        | Visible when limits approached | Hidden for premium users (POST-MVP)         |
 
 **Mobile**: Bottom tab navigation (Dashboard, Workouts, Coach, Profile)
 **Desktop**: Sidebar navigation with 3-column dashboard layout
@@ -398,6 +403,7 @@ flowchart TD
 **AI Cost Management Dashboard**:
 
 - **Real-time Cost Monitoring**: Live budget utilization with visual indicators (green/yellow/red)
+- **Usage Breakdown**: Separate tabs for _Count_ metrics (workout plans, AI chats) and _Cost_ metrics (monthly $ per user)
 - **Budget Alerts**: Configurable thresholds with Azure Cost Management API integration
 - **Cost Forecasting**: Predictive analytics for monthly cost projection
 - **Per-User Cost Breakdown**: Detailed usage analytics by tier (Free/Premium)
@@ -418,6 +424,7 @@ flowchart TD
 - Monthly spend tracking by provider with trend analysis
 - Cost per user metrics with tier-based limits enforcement
 - **Budget Validation Engine**: Pre-operation cost checking with approval workflows
+- **Limit Overrides**: Admins can adjust or temporarily bypass any rate limit, quota, or budget cap directly from the dashboard
 - Pause/resume infrastructure controls with cost impact preview
 
 **User Management**:
@@ -492,16 +499,16 @@ flowchart TD
 - **Endurance Improvements**: Cardio performance and recovery metrics
 - **Consistency Rewards**: Weekly/monthly streaks unlock premium trial features
 
-### 6.2 Free vs Premium Gamification
+### 6.2 MVP vs Post-MVP Gamification
 
-| Feature           | Free Tier                 | Premium Tier                            |
-| ----------------- | ------------------------- | --------------------------------------- |
-| Basic Badges      | ✅ All achievement badges | ✅ Enhanced badge animations            |
-| Streak Tracking   | ✅ Daily/weekly streaks   | ✅ Advanced streak analytics            |
-| Progress Charts   | ✅ Basic line charts      | ✅ Interactive charts with drill-down   |
-| Social Features   | ❌ Future implementation  | ✅ Shareable achievement cards          |
-| Custom Challenges | ❌ Limited to monthly AI  | ✅ Personalized AI-generated challenges |
-| Leaderboards      | ❌ Not available          | ✅ Anonymous competitive features       |
+| Feature           | MVP (Free Tier)            | Post-MVP (Premium Tier)                 |
+| ----------------- | -------------------------- | --------------------------------------- |
+| Basic Badges      | ✅ All achievement badges  | ✅ Enhanced badge animations            |
+| Streak Tracking   | ✅ Daily/weekly streaks    | ✅ Advanced streak analytics            |
+| Progress Charts   | ✅ Basic line charts       | ✅ Interactive charts with drill-down   |
+| Social Features   | ❌ Post-MVP implementation | ✅ Shareable achievement cards          |
+| Custom Challenges | ❌ Limited to monthly AI   | ✅ Personalized AI-generated challenges |
+| Leaderboards      | ❌ Post-MVP feature        | ✅ Anonymous competitive features       |
 
 ### 6.3 AI-Driven Motivation
 
@@ -550,7 +557,7 @@ flowchart TD
 - Token cost display for transparency (optional advanced setting)
 - Efficient caching reduces repeat AI calls for similar requests
 
-### 7.3 Progressive Web App (PWA) Implementation
+### 7.3 Progressive Web App (PWA) Implementation (POST-MVP)
 
 **Installation Experience**:
 
@@ -563,6 +570,8 @@ flowchart TD
 - Service Worker caching for instant page loads
 - Background sync for workout logs and AI conversations
 - Push notifications for workout reminders and streak milestones
+
+**MVP Note**: MVP implements responsive web app only. PWA features (offline capabilities, push notifications, native app-like behavior) are implemented post-MVP.
 
 ### 7.4 Real-Time Features
 
@@ -605,14 +614,14 @@ flowchart TD
 | P2       | **Enhanced Gamification**        | Increase engagement and retention | Achievement levels, social sharing, leaderboards |
 | P2       | **Injury/Limitation Support**    | Safety and inclusivity            | Medical history integration, adaptive workouts   |
 
-### 8.2 Scale Phase Features (v2.0+) - P3 Priority
+### 8.2 Scale Phase Features (v2.0+) - P2 Priority
 
 | Priority | Feature                         | User Need Addressed               | UX Considerations                                 |
 | -------- | ------------------------------- | --------------------------------- | ------------------------------------------------- |
-| P3       | **Social & Community Features** | Community building and motivation | Anonymous leaderboards, workout sharing           |
-| P3       | **Premium Tier Monetization**   | Business model implementation     | Payment integration, feature gating UI            |
-| P3       | **Wearable Integration**        | Ecosystem expansion               | Apple Health, Google Fit, fitness tracker sync    |
-| P3       | **Corporate B2B Features**      | Team challenges and enterprise    | Admin dashboards, team analytics, bulk management |
+| P2       | **Social & Community Features** | Community building and motivation | Anonymous leaderboards, workout sharing           |
+| P2       | **Premium Tier Monetization**   | Business model implementation     | Payment integration, feature gating UI            |
+| P2       | **Wearable Integration**        | Ecosystem expansion               | Apple Health, Google Fit, fitness tracker sync    |
+| P2       | **Corporate B2B Features**      | Team challenges and enterprise    | Admin dashboards, team analytics, bulk management |
 
 ### 8.3 Advanced AI Features (Future)
 
@@ -776,7 +785,7 @@ flowchart LR
 | -------------- | ---------------------- | ------ | ------------------------- |
 | Set logging    | Time to log a set      | <3 s   | `workout_log_submitted`   |
 | Dashboard load | First Contentful Paint | <1 s   | `dashboard_loaded`        |
-| AI response    | Plan generation time   | <3 s   | `ai_plan_generated`       |
+| AI response    | Plan generation time   | <10 s  | `ai_plan_generated`       |
 | Password reset | Success rate           | ≥95 %  | `password_reset_complete` |
 
 ---
@@ -832,12 +841,13 @@ jobs:
 ### 12.1 PRD Requirements Implementation Status
 
 - [x] **Multi-Provider AI UX**: Transparent provider display and failover
-- [x] **User Tier Management**: Free, Premium, Admin tier differentiation
-- [x] **Gamification System**: Streaks, badges, achievements per PRD Section 2.6
+- [x] **User Tier Management**: Free tier MVP (Premium and Admin post-MVP)
+- [x] **Gamification System**: Basic streaks, badges, achievements per PRD Section 2.6
 - [x] **Core User Journeys**: Beginner, Professional, Enthusiast scenarios
 - [x] **Success Metrics**: KPI tracking aligned with PRD Section 1.3
-- [x] **Mobile-First Design**: PWA implementation with offline capabilities
+- [x] **Mobile-First Design**: Responsive web app (PWA post-MVP)
 - [x] **Cost Optimization UX**: Infrastructure pause/resume user experience
+- [x] **MVP Scope**: Single authentication (Microsoft Entra ID), Free tier only
 
 ### 12.2 Tech Spec Alignment Verification
 
@@ -860,10 +870,11 @@ jobs:
 ### 12.4 Performance & Quality Gates
 
 - [x] **Core Web Vitals**: Performance targets defined
-- [x] **PWA Requirements**: Service worker and manifest specifications
+- [x] **PWA Requirements**: Service worker and manifest specifications (POST-MVP)
 - [x] **Cross-Browser**: Chrome, Safari, Firefox, Edge compatibility
 - [x] **Responsive Design**: Mobile-first with desktop enhancement
 - [x] **Error Handling**: Graceful degradation and error states
+- [x] **MVP Limitations**: Single tier, no PWA, no social features
 
 ---
 

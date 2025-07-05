@@ -7,7 +7,7 @@
 export interface EngagementEvent {
   id: string;
   userId: string;
-  eventType: 'page_view' | 'workout_start' | 'workout_complete' | 'ai_interaction' | 'feature_use' | 'session_start' | 'session_end';
+  eventType: 'page_view' | 'workout_start' | 'workout_complete' | 'ai_interaction' | 'feature_use' | 'session_start' | 'session_end' | 'session_pause' | 'session_resume';
   eventData: Record<string, any>;
   timestamp: string;
   sessionId: string;

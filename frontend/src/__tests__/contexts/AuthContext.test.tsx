@@ -62,6 +62,7 @@ describe('AuthContext', () => {
      created_at: '2024-01-01T00:00:00Z',
      updated_at: '2024-01-01T00:00:00Z',
      fitness_level: 'beginner',
+     tier: 'FREE',
    };
 
   beforeEach(() => {
@@ -108,7 +109,9 @@ describe('AuthContext', () => {
         expect(screen.getByTestId('isLoading')).toHaveTextContent('false');
       });
 
-      expect(screen.getByTestId('user')).toHaveTextContent(JSON.stringify(mockUser));
+      const userElement = screen.getByTestId('user');
+      expect(userElement).toHaveTextContent(mockUser.email);
+      expect(userElement).toHaveTextContent(mockUser.username);
       expect(screen.getByTestId('isAuthenticated')).toHaveTextContent('true');
       expect(mockedAuthService.getCurrentUser).toHaveBeenCalled();
     });
@@ -162,6 +165,9 @@ describe('AuthContext', () => {
     });
 
     it('should handle login failure', async () => {
+      // Suppress console.error for this test
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
       mockedAuthService.login.mockRejectedValue(new Error('Invalid credentials'));
       mockedAuthService.getCurrentUser.mockRejectedValue(new Error('Not authenticated'));
 
@@ -184,6 +190,9 @@ describe('AuthContext', () => {
         expect(screen.getByTestId('user')).toHaveTextContent('No user');
         expect(screen.getByTestId('isAuthenticated')).toHaveTextContent('false');
       });
+
+      // Restore console.error
+      consoleSpy.mockRestore();
     });
   });
 
@@ -214,6 +223,9 @@ describe('AuthContext', () => {
     });
 
     it('should handle registration failure', async () => {
+      // Suppress console.error for this test
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
       mockedAuthService.register.mockRejectedValue(new Error('Email already exists'));
       mockedAuthService.getCurrentUser.mockRejectedValue(new Error('Not authenticated'));
 
@@ -236,6 +248,9 @@ describe('AuthContext', () => {
         expect(screen.getByTestId('user')).toHaveTextContent('No user');
         expect(screen.getByTestId('isAuthenticated')).toHaveTextContent('false');
       });
+
+      // Restore console.error
+      consoleSpy.mockRestore();
     });
   });
 

@@ -25,11 +25,26 @@ class UserProfileDB(Base):
     __tablename__ = "user_profiles"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+
+    # Microsoft Entra ID fields (required for Vedprakash domain compliance)
+    entra_id = Column(String, unique=True, index=True, nullable=True)  # Microsoft Entra subject/object ID
+
     email = Column(String, unique=True, index=True)
-    username = Column(String, unique=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=True)  # Made nullable for Entra ID users
+    name = Column(String, nullable=True)  # Full name from Entra ID
+    given_name = Column(String, nullable=True)  # First name from Entra ID
+    family_name = Column(String, nullable=True)  # Last name from Entra ID
+
     hashed_password = Column(String, nullable=True)  # Made nullable for OAuth users
     is_active = Column(Boolean, default=True)
     last_login = Column(DateTime, nullable=True)
+
+    # VedUser profile fields
+    subscription_tier = Column(String, default="free")  # free, premium, enterprise
+    permissions = Column(JSON, default=list)  # List of permissions/roles
+    ved_profile = Column(JSON, default=dict)  # VedProfile object as JSON
+
+    # Fitness profile
     fitness_level: Column[FitnessLevel] = Column(SQLEnum(FitnessLevel))
     goals = Column(JSON)  # Store as JSON array
     equipment: Column[Equipment] = Column(SQLEnum(Equipment))
@@ -40,7 +55,7 @@ class UserProfileDB(Base):
     monthly_budget = Column(Float, default=5.0)
     current_month_usage = Column(Float, default=0.0)
 
-    # OAuth2 provider fields
+    # Legacy OAuth2 provider fields (deprecated - will be removed)
     oauth_provider = Column(String, nullable=True)  # 'microsoft', 'google', 'github', etc.
     oauth_provider_id = Column(String, nullable=True)  # Provider-specific user ID
     oauth_access_token = Column(Text, nullable=True)  # Encrypted access token (if needed)

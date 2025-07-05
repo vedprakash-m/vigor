@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This Technical Specification defines the implementation details for Vigor, an AI-powered fitness platform built with cost-optimized architecture. The system implements Clean/Hexagonal Architecture with a dual resource group strategy for Azure deployment, enabling pause/resume functionality to maintain ultra-low operational costs (~$100/month, pausable to ~$70/month).
+This Technical Specification defines the implementation details for Vigor, an AI-powered fitness platform built with cost-optimized architecture. The system implements Clean/Hexagonal Architecture with a dual resource group strategy for Azure deployment, enabling pause/resume functionality to maintain operational costs within budget ceiling (≤$100/month, pausable to ≤$70/month).
 
 **Key Architectural Decisions:**
 
@@ -121,11 +121,13 @@ backend/
 
 #### Security & Authentication
 
-- **Microsoft Entra External ID**: Enterprise-grade identity and access management
-- **MSAL (Microsoft Authentication Library)**: OAuth 2.0/OpenID Connect integration
+- **Microsoft Entra ID**: Sole identity provider for Vedprakash domain (`vedid.onmicrosoft.com`)
+- **MSAL (Microsoft Authentication Library)**: Enterprise SSO integration for cross-app authentication
+- **JWKS Validation**: Microsoft Entra ID JWT token validation with caching
 - **SlowAPI**: Rate limiting with Redis/memory backend
 - **CORS middleware**: Cross-origin request handling
-- **Azure Identity**: Seamless integration with Azure services
+- **VedUser Standard**: Unified user object interface across Vedprakash applications
+- **Domain Structure**: vigor.vedprakash.net subdomain with shared auth infrastructure (ved-id-rg) and domain resources (ved-domain-rg)
 
 ### 2.3 LLM Orchestration System
 
@@ -151,12 +153,12 @@ class LLMGatewayFacade:
 
 #### Multi-Provider Strategy
 
-| Provider        | Primary Use Case         | Fallback Order                | Cost/1M Tokens |
-| --------------- | ------------------------ | ----------------------------- | -------------- |
-| OpenAI GPT-4    | Complex workout planning | Primary → Gemini → Perplexity | $20-60         |
-| Google Gemini   | Conversational coaching  | Primary → OpenAI → Perplexity | $1.5-15        |
-| Perplexity Pro  | Research-backed insights | Primary → OpenAI → Local      | $20            |
-| Fallback System | Service continuity       | Local templates + rules       | $0             |
+| Provider        | Primary Use Case         | Fallback Order                                   | Cost/1M Tokens |
+| --------------- | ------------------------ | ------------------------------------------------ | -------------- |
+| OpenAI GPT-4    | Complex workout planning | Primary → Gemini → Perplexity                    | $20-60         |
+| Google Gemini   | Conversational coaching  | Primary → OpenAI → Perplexity                    | $1.5-15        |
+| Perplexity Pro  | Research-backed insights | Primary → OpenAI → Local                         | $20            |
+| Fallback System | Service continuity       | Local workout templates + rules-based generation | $0             |
 
 #### Key Features
 
@@ -179,7 +181,7 @@ class UserProfile:
     fitness_level: FitnessLevel       # BEGINNER, INTERMEDIATE, ADVANCED
     goals: List[FitnessGoal]         # Multiple fitness objectives
     equipment: Equipment              # Available equipment level
-    tier: UserTier                   # FREE, PREMIUM, ADMIN
+    tier: UserTier                   # FREE (MVP), ADMIN (PREMIUM post-MVP)
     created_at: datetime
     updated_at: datetime
 
@@ -253,27 +255,26 @@ CREATE INDEX idx_workout_plans_user ON workout_plans(user_id);
 #### Authentication & Security
 
 ```python
-# Microsoft Entra External ID Authentication
+# Microsoft Entra ID Authentication (Vedprakash Domain Standard)
 @router.post("/auth/login")
 @limiter.limit("10/minute")
 async def login(credentials: LoginRequest) -> TokenResponse:
-    """Authenticate user via Microsoft Entra External ID"""
+    """Authenticate user via Microsoft Entra ID for Vedprakash domain SSO"""
 
-@router.get("/auth/oauth/{provider}")
-async def oauth_login(provider: str) -> RedirectResponse:
-    """Initiate OAuth flow via Entra External ID (google/apple/microsoft)"""
-
-@router.post("/auth/register")
-@limiter.limit("5/minute")
-async def register(user_data: RegisterRequest) -> UserResponse:
-    """Create new user account with Entra External ID integration"""
-
-# Protected endpoints with OAuth token validation
-@router.get("/users/me")
+@router.get("/auth/me")
 async def get_current_user(
-    current_user: UserResponse = Depends(get_current_user_entra)
-) -> UserResponse:
-    """Get current user profile"""
+    current_user: VedUser = Depends(get_current_user_entra_id)
+) -> VedUser:
+    """Get current user profile using VedUser standard interface"""
+
+@router.post("/auth/logout")
+async def logout(current_user: VedUser = Depends(get_current_user_entra_id)):
+    """Logout user (stateless - handled client-side)"""
+
+# JWKS token validation for Microsoft Entra ID
+async def validate_entra_id_token(token: str) -> VedUser:
+    """Validate Microsoft Entra ID JWT token using JWKS endpoint"""
+    # Implementation with JWKS caching and VedUser extraction
 ```
 
 #### Enhanced AI Cost Management Endpoints
@@ -380,6 +381,17 @@ async def configure_model(
 @limiter.limit("100/minute")
 async def health_check() -> HealthResponse:
     """System health check with dependency validation"""
+```
+
+#### Admin Extensions
+
+```python
+@router.post("/admin/limits/override")
+async def override_limits(
+    override: LimitOverrideRequest,
+    admin_user: UserResponse = Depends(require_admin)
+) -> OverrideResponse:
+    """Temporarily adjust or bypass any quota/budget for troubleshooting or VIP support."""
 ```
 
 ---
@@ -609,7 +621,7 @@ export default defineConfig({
 
 ### 4.1 Real-Time Cost Tracking Architecture
 
-The AI Cost Management system implements comprehensive cost tracking, budget validation, and automated optimization to maintain operational costs within target limits (~$100/month).
+The AI Cost Management system implements comprehensive cost tracking, budget validation, and automated optimization to maintain operational costs within budget ceiling (≤$100/month).
 
 #### Core Components:
 
@@ -639,8 +651,7 @@ class AICostManager:
             subscription_id=os.getenv("AZURE_SUBSCRIPTION_ID")
         )
         self.budget_limits = {
-            "monthly_total": 200.00,
-            "daily_limit": 10.00,
+            "monthly_total": 100.00,
             "per_user_free": 0.10,
             "per_user_premium": 2.00
         }
@@ -655,6 +666,77 @@ class AICostManager:
         """Intelligent caching layer for AI responses"""
         # Implementation details in next section
         pass
+```
+
+### 4.1 Budget-Enforcement Flow (illustrative)
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Gateway as LLMGatewayFacade
+    participant CostMgr as AICostManager
+    Client->>Gateway: generate_workout(request)
+    Gateway->>CostMgr: validate_budget_before_operation(user, tokens)
+    alt limits exceeded or count quota hit
+        CostMgr-->>Gateway: reject(operation="fallback")
+        Gateway-->>Client: degraded template response (HTTP 200 + notice)
+    else within limits
+        CostMgr-->>Gateway: ok(cost_estimate)
+        Gateway->>Provider: call LLM
+        Provider-->>Gateway: workout JSON
+        Gateway-->>Client: workout JSON
+    end
+```
+
+#### Implementation snippet (illustrative)
+
+```python
+class BudgetDecision(Enum):
+    OK = "ok"              # proceed as-is
+    DOWNGRADE = "downgrade"  # switch to cheaper model
+    DENY = "deny"            # use local template / fallback
+
+async def validate_budget_before_operation(user: VedUser, tokens: int) -> BudgetDecision:
+    if exceeds_count_quota(user):
+        return BudgetDecision.DENY
+    if exceeds_dollar_budget(tokens):
+        return BudgetDecision.DOWNGRADE
+    return BudgetDecision.OK
+
+# In LLMGatewayFacade
+result = await cost_mgr.validate_budget_before_operation(user, est_tokens)
+if result == BudgetDecision.OK:
+    response = call_primary_provider()
+elif result == BudgetDecision.DOWNGRADE:
+    response = call_cheaper_provider()
+else:  # DENY
+    response = generate_local_template()
+return response
+```
+
+### 4.2 API Request/Response Schemas
+
+#### Cost Management Configuration
+
+```python
+class OffPeakScaling(BaseModel):
+    enabled: bool = True
+    hours: str = "02:00-06:00 UTC"
+    model_downgrade: bool = True
+
+class PerUserLimits(BaseModel):
+    """Count-based quotas; None = unlimited (e.g. premium tier)."""
+    free_tier_monthly_chats: int = 10
+    free_tier_monthly_workout_plans: int = 5
+    premium_tier_monthly_chats: Optional[int] = None
+    premium_tier_monthly_workout_plans: Optional[int] = None
+
+class CostManagementConfig(BaseModel):
+    auto_throttling_enabled: bool = True
+    budget_threshold_alert: int = 80
+    auto_fallback_threshold: int = 90
+    off_peak_scaling: OffPeakScaling
+    per_user_limits: PerUserLimits
 ```
 
 ---
@@ -681,7 +763,7 @@ vigor-db-rg: # Persistent resources (permanent)
   - Storage Account (LRS) # ~$2/month
 ```
 
-**Total Monthly Cost**: ~$100/month
+**Total Monthly Budget Ceiling**: ≤$100/month
 **Pause Mode Cost**: ~$70/month (delete vigor-rg, keep vigor-db-rg)
 
 #### Bicep Infrastructure as Code
@@ -719,10 +801,8 @@ module db './db.bicep' = {
 ```bash
 # Microsoft Entra ID Configuration
 AZURE_TENANT_ID=VED
-AZURE_DOMAIN_ID=VedID.onmicrosoft.com
-AZURE_RESOURCE_GROUP_ID=ved-id-rg
-AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
-AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
+AZURE_DOMAIN_ID=vedid.onmicrosoft.com
+AZURE_MAX_CONCURRENT_USERS=100
 
 # Database Configuration
 DATABASE_URL=${DATABASE_URL}
@@ -857,6 +937,9 @@ async def health_check():
     return health_status
 ```
 
+- **Concurrency Limit**: System designed for up to 100 simultaneous users (matches PRD)
+- **Admin Override**: All rate limits and usage quotas are configurable; Admin role can disable or adjust them in real time via `/admin/*` endpoints
+
 ---
 
 ## 6. Data Models & API Contracts
@@ -937,105 +1020,31 @@ class ChatResponse(BaseModel):
     created_at: datetime
 ```
 
-### 6.2 Error Response Standards
+#### Cost Management Configuration
 
 ```python
-class ErrorResponse(BaseModel):
-    error: ErrorDetail
+class OffPeakScaling(BaseModel):
+    enabled: bool = True
+    hours: str = "02:00-06:00 UTC"
+    model_downgrade: bool = True
 
-class ErrorDetail(BaseModel):
-    code: str
-    message: str
-    details: Optional[Dict[str, Any]]
-    timestamp: datetime
-    request_id: str
+class PerUserLimits(BaseModel):
+    """Count-based quotas; None = unlimited (e.g. premium tier)."""
+    free_tier_monthly_chats: int = 10
+    free_tier_monthly_workout_plans: int = 5
+    premium_tier_monthly_chats: Optional[int] = None
+    premium_tier_monthly_workout_plans: Optional[int] = None
 
-# Example error responses
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid input parameters",
-    "details": {
-      "field": "duration_minutes",
-      "constraint": "Must be between 15 and 120 minutes"
-    },
-    "timestamp": "2025-06-26T10:30:00Z",
-    "request_id": "req_abc123"
-  }
-}
-
-{
-  "error": {
-    "code": "AI_SERVICE_UNAVAILABLE",
-    "message": "AI service temporarily unavailable",
-    "details": {
-      "fallback_used": true,
-      "retry_after": 30,
-      "degraded_mode": "basic_workout_templates"
-    },
-    "timestamp": "2025-06-26T10:30:00Z",
-    "request_id": "req_def456"
-  }
-}
+class CostManagementConfig(BaseModel):
+    auto_throttling_enabled: bool = True
+    budget_threshold_alert: int = 80
+    auto_fallback_threshold: int = 90
+    off_peak_scaling: OffPeakScaling
+    per_user_limits: PerUserLimits
 ```
 
----
+### 6.2 Error Response Standards
 
-## 7. Security Implementation
+```
 
-### 7.1 Authentication & Authorization
-
-#### Microsoft Entra External ID Integration
-
-```python
-from msal import ConfidentialClientApplication
-from azure.identity import DefaultAzureCredential
-
-class EntraAuthService:
-    def __init__(self, tenant_id: str, client_id: str, client_secret: str):
-        self.tenant_id = tenant_id
-        self.client_id = client_id
-        self.app = ConfidentialClientApplication(
-            client_id=client_id,
-            client_credential=client_secret,
-            authority=f"https://login.microsoftonline.com/{tenant_id}"
-        )
-        self.credential = DefaultAzureCredential()
-
-    async def initiate_oauth_flow(self, provider: str) -> str:
-        """Initiate OAuth flow for social login providers"""
-        auth_url = self.app.get_authorization_request_url(
-            scopes=["openid", "profile", "email"],
-            redirect_uri=f"/auth/callback/{provider}"
-        )
-        return auth_url
-
-    async def validate_token(self, token: str) -> Dict[str, Any]:
-        """Validate OAuth token from Entra External ID"""
-        try:
-            # Validate token with Microsoft Graph API
-            headers = {"Authorization": f"Bearer {token}"}
-            # Token validation logic with Entra External ID
-            return await self._validate_with_entra(token)
-        except Exception as e:
-            raise HTTPException(status_code=401, detail="Invalid token")
-
-    async def get_user_profile(self, token: str) -> Dict[str, Any]:
-        """Get user profile from Entra External ID"""
-        headers = {"Authorization": f"Bearer {token}"}
-        # Profile retrieval logic
-        return profile_data
-
-# Dependency for protected routes
-async def get_current_user_entra(
-    authorization: str = Header(..., description="Bearer token from Entra External ID")
-) -> UserResponse:
-    """Extract and validate user from Entra External ID token"""
-    try:
-        token = authorization.replace("Bearer ", "")
-        auth_service = EntraAuthService()
-        user_data = await auth_service.validate_token(token)
-        return UserResponse(**user_data)
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid authentication")
 ```

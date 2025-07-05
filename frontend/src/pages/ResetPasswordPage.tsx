@@ -1,47 +1,48 @@
-import { Box, Button, Heading, Input, Text, VStack } from '@chakra-ui/react'
-import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { authService } from '../services/authService'
+import { Box, Button, Heading, Text, VStack } from '@chakra-ui/react'
+import { useNavigate } from 'react-router-dom'
 
 export const ResetPasswordPage = () => {
-  const [params] = useSearchParams()
   const navigate = useNavigate()
-  const token = params.get('token') || ''
-  const [password, setPassword] = useState('')
-  const [done, setDone] = useState(false)
-  const [err, setErr] = useState('')
 
-  const submit = async () => {
-    try {
-      const res = await authService.resetPassword(token, password)
-      if (res.message) {
-        setDone(true)
-        setTimeout(() => navigate('/login'), 2000)
-      }
-    } catch {
-      setErr('Failed reset')
-    }
-  }
-
-  if (!token) return <Text>Invalid or missing token.</Text>
-
-  if (done) {
-    return (
-      <Box p={8} maxW="md" mx="auto">
-        <Heading size="md" mb={4}>Password Reset!</Heading>
-        <Text>Redirecting to login...</Text>
-      </Box>
-    )
+  // With Microsoft Entra ID, password reset is handled by Microsoft
+  const handleNavigateToLogin = () => {
+    navigate('/login')
   }
 
   return (
-    <Box p={8} maxW="md" mx="auto">
-      <Heading size="lg" mb={6}>Set New Password</Heading>
-      <VStack gap={4}>
-        <Input type="password" placeholder="New Password" value={password} onChange={e=>setPassword(e.target.value)} />
-        {err && <Text color="red.500">{err}</Text>}
-        <Button colorScheme="blue" w="full" onClick={submit}>Reset Password</Button>
-      </VStack>
+    <Box
+      minH="100vh"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      bg="gray.50"
+    >
+      <Box
+        maxW="md"
+        w="full"
+        bg="white"
+        rounded="lg"
+        boxShadow="lg"
+        p={8}
+        textAlign="center"
+      >
+        <VStack gap={6}>
+          <Heading size="lg">Password Reset</Heading>
+          <Text color="gray.600">
+            Password reset is handled by Microsoft Entra ID.
+            Please return to the login page and use the "Forgot Password"
+            link on the Microsoft login screen.
+          </Text>
+          <Button
+            colorScheme="blue"
+            size="lg"
+            onClick={handleNavigateToLogin}
+            w="full"
+          >
+            Go to Login
+          </Button>
+        </VStack>
+      </Box>
     </Box>
   )
 }

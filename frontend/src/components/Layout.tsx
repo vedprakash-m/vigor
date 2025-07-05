@@ -1,18 +1,22 @@
-import { Box, Flex, Heading, Text } from '@chakra-ui/react'
+import { Box, Flex, Heading, HStack, Text } from '@chakra-ui/react'
 import { Outlet, Link as RouterLink, useLocation } from 'react-router-dom'
-import { useAuth } from '../contexts/useAuth'
+import { useVedAuth } from '../contexts/useVedAuth'
+import AccessibilityPanel from './AccessibilityPanel'
 import PushNotificationSetup from './PushNotificationSetup'
 
 const Links = [
   { name: 'Dashboard', path: '/' },
+  { name: 'Analytics', path: '/app/analytics' },
+  { name: 'Progress', path: '/app/progress' },
+  { name: 'Community', path: '/app/community' },
   { name: 'Workouts', path: '/workouts' },
   { name: 'AI Coach', path: '/coach' },
-  { name: 'Tier Management', path: '/tiers' },
+  { name: 'Premium', path: '/app/premium' },
   { name: 'Profile', path: '/profile' },
 ]
 
 export const Layout = () => {
-  const { user, logout } = useAuth()
+  const { user, logout } = useVedAuth()
   const location = useLocation()
 
   return (
@@ -39,8 +43,8 @@ export const Layout = () => {
                   display: 'block',
                   padding: '12px',
                   borderRadius: '8px',
-                  backgroundColor: location.pathname === link.path ? 'blue.500' : 'transparent',
-                  color: location.pathname === link.path ? 'white' : 'gray.700',
+                  backgroundColor: location.pathname === link.path ? '#3182CE' : 'transparent',
+                  color: location.pathname === link.path ? 'white' : '#2D3748',
                   textDecoration: 'none',
                 }}
               >
@@ -82,7 +86,10 @@ export const Layout = () => {
             Vigor
           </Heading>
 
-          <Text>Welcome, {user?.username}</Text>
+          <HStack gap={4}>
+            <AccessibilityPanel />
+            <Text>Welcome, {user?.name || user?.email}</Text>
+          </HStack>
         </Flex>
 
         {/* Page content */}

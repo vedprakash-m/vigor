@@ -13,7 +13,7 @@ import {
     VStack
 } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/useAuth';
+import { useVedAuth } from '../contexts/useVedAuth';
 
 // Define missing types
 interface User {
@@ -52,7 +52,7 @@ interface SystemStatus {
 }
 
 export const LLMOrchestration: React.FC = () => {
-  const { user }: { user: User | null } = useAuth();
+  const { user } = useVedAuth();
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState<LLMResponse | null>(null);
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);

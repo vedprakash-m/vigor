@@ -1,0 +1,82 @@
+# Vigor Platform - Production Environment Configuration
+# Azure-specific configuration for production deployment
+
+environment:
+  name: "prod"
+  region: "East US"
+  secondary_region: "West US 2" # For disaster recovery
+
+resources:
+  # Resource naming convention: vigor-{environment}-{resource-type}
+  resource_group: "vigor-prod-rg"
+  app_service_plan: "vigor-prod-asp"
+  app_service: "vigor-prod-app"
+  container_registry: "vigorprodacr"
+  storage_account: "vigorprodstorage"
+  key_vault: "vigor-prod-kv"
+  postgresql: "vigor-prod-postgres"
+  application_insights: "vigor-prod-insights"
+  cdn_profile: "vigor-prod-cdn"
+  traffic_manager: "vigor-prod-tm"
+
+database:
+  tier: "GeneralPurpose"
+  capacity: 4
+  storage_mb: 51200 # 50GB
+  backup_retention_days: 35
+  geo_redundant_backup: true
+  auto_grow: true
+  ssl_enforcement: true
+  point_in_time_restore: true
+
+app_service:
+  sku: "P1V2" # Premium tier for production
+  capacity: 3
+  auto_scale_enabled: true
+  always_on: true
+
+storage:
+  tier: "Premium"
+  replication: "RA-GRS" # Read-access geo-redundant
+
+monitoring:
+  log_retention_days: 365
+  metrics_retention_days: 365
+  alert_rules_enabled: true
+  uptime_monitoring: true
+  performance_monitoring: true
+
+security:
+  managed_identity_enabled: true
+  key_vault_access_enabled: true
+  https_only: true
+  ftps_state: "Disabled"
+  ip_restrictions_enabled: true
+  waf_enabled: true
+
+scaling:
+  min_instances: 3
+  max_instances: 10
+  scale_up_threshold: 60
+  scale_down_threshold: 40
+
+costs:
+  daily_budget_usd: 100
+  monthly_budget_usd: 3000
+  auto_shutdown_enabled: false
+
+features:
+  custom_domain_enabled: true
+  ssl_certificate_enabled: true
+  cdn_enabled: true
+  backup_enabled: true
+  high_availability: true
+  disaster_recovery: true
+  load_balancing: true
+
+compliance:
+  data_residency_required: true
+  encryption_at_rest: true
+  encryption_in_transit: true
+  audit_logging: true
+  compliance_monitoring: true

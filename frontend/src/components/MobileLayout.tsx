@@ -38,7 +38,7 @@ import {
     FiUsers,
 } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/useAuth';
+import { useVedAuth } from '../contexts/useVedAuth';
 import { type UserGamificationStats } from '../services/gamificationService';
 
 interface MobileLayoutProps {
@@ -59,7 +59,7 @@ interface NavigationItem {
 export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, gamificationStats }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout } = useVedAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const isMobile = useBreakpointValue({ base: true, md: false });

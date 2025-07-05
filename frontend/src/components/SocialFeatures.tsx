@@ -4,44 +4,25 @@ import {
     Box,
     Button,
     Card,
-    CardBody,
     Container,
-    FormControl,
-    FormLabel,
     Grid,
     Heading,
     HStack,
     IconButton,
-    Menu,
-    MenuButton,
-    MenuItem,
-    MenuList,
-    Modal,
-    ModalBody,
-    ModalCloseButton,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
-    ModalOverlay,
-    Select,
     Stat,
-    StatHelpText,
-    StatLabel,
-    StatNumber,
-    Tab,
-    TabList,
-    TabPanel,
-    TabPanels,
-    Tabs,
     Text,
     Textarea,
-    useDisclosure,
-    useToast,
-    VStack,
+    VStack
 } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
-import { FiHeart, FiMoreHorizontal, FiShare2, FiTrophy, FiUsers } from 'react-icons/fi';
-import { useAuth } from '../contexts/useAuth';
+import {
+    FiHeart,
+    FiMoreHorizontal,
+    FiShare2,
+    FiTrophy,
+    FiUsers
+} from 'react-icons/fi';
+import { useVedAuth } from '../contexts/useVedAuth';
 
 interface LeaderboardEntry {
   id: string;
@@ -78,7 +59,7 @@ interface CommunityStats {
 }
 
 export const SocialFeatures: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useVedAuth();
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
 

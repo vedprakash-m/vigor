@@ -1,0 +1,66 @@
+# Vigor Platform - Staging Environment Configuration
+# Azure-specific configuration for staging deployment
+
+environment:
+  name: "staging"
+  region: "East US"
+
+resources:
+  # Resource naming convention: vigor-{environment}-{resource-type}
+  resource_group: "vigor-staging-rg"
+  app_service_plan: "vigor-staging-asp"
+  app_service: "vigor-staging-app"
+  container_registry: "vigorstagingacr"
+  storage_account: "vigorstagingstorage"
+  key_vault: "vigor-staging-kv"
+  postgresql: "vigor-staging-postgres"
+  application_insights: "vigor-staging-insights"
+  cdn_profile: "vigor-staging-cdn"
+
+database:
+  tier: "GeneralPurpose"
+  capacity: 2
+  storage_mb: 10240
+  backup_retention_days: 14
+  geo_redundant_backup: true
+  auto_grow: true
+  ssl_enforcement: true
+
+app_service:
+  sku: "S1" # Standard tier for staging
+  capacity: 2
+  auto_scale_enabled: true
+  always_on: true
+
+storage:
+  tier: "Standard"
+  replication: "GRS" # Geo-redundant for staging
+
+monitoring:
+  log_retention_days: 60
+  metrics_retention_days: 60
+  alert_rules_enabled: true
+
+security:
+  managed_identity_enabled: true
+  key_vault_access_enabled: true
+  https_only: true
+  ftps_state: "Disabled"
+
+scaling:
+  min_instances: 2
+  max_instances: 5
+  scale_up_threshold: 70
+  scale_down_threshold: 30
+
+costs:
+  daily_budget_usd: 25
+  monthly_budget_usd: 750
+  auto_shutdown_enabled: false
+
+features:
+  custom_domain_enabled: true
+  ssl_certificate_enabled: true
+  cdn_enabled: true
+  backup_enabled: true
+  high_availability: true

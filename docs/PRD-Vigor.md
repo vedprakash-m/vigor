@@ -14,7 +14,7 @@
 
 **The Market Problem:** Existing fitness apps offer static content or basic customization (Nike Training Club, Fitbit Coach), while AI-powered alternatives depend on single providers creating reliability risks and cost $60-80/year. Traditional personal training is prohibitively expensive for regular use, creating a significant market gap for accessible, intelligent fitness guidance.
 
-**Vigor's Solution:** Multi-provider AI resilience ensures 99.9% uptime, conversational coaching provides real-time form guidance and motivation, and cost-optimized infrastructure ($100/month operational costs, pausable to $70/month) enables professional-grade features at consumer prices. The platform combines reliability, personalization, and affordability in a single solution.
+**Vigor's Solution:** Multi-provider AI resilience ensures 99.9% uptime, conversational coaching provides real-time form guidance and motivation, and cost-optimized infrastructure (≤$100/month operational budget ceiling, pausable to ≤$70/month) enables professional-grade features at consumer prices. The platform combines reliability, personalization, and affordability in a single solution.
 
 Vigor's unique multi-provider AI architecture (OpenAI, Google Gemini, Perplexity, and fallback systems) delivers personalized workout generation, intelligent coaching conversations, and comprehensive progress tracking while maintaining industry-leading reliability and cost efficiency.
 
@@ -47,7 +47,7 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 - **AI Effectiveness**: 4.5+ star average rating for AI responses, <10% negative feedback
 - **Platform Reliability**: 99.9% uptime, <2s average response time, <1% error rate
-- **Cost Efficiency**: <$100/month operational costs (pausable to $70/month) with Azure pause/resume capability
+- **Cost Efficiency**: ≤$100/month operational budget ceiling (pausable to ≤$70/month) with Azure pause/resume capability
 - **User Growth**: 20%+ month-over-month user acquisition, 50%+ organic referrals
 
 #### Business Metrics
@@ -86,17 +86,19 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 ### 2.2 User Tiers
 
-#### Free Tier
+#### Free Tier (MVP)
 
 - **Features**: Basic workout generation, limited AI interactions, basic progress tracking
 - **Limitations**: 10 AI chats/month, 5 workout plans/month
 - **Target**: Trial users, casual fitness enthusiasts
+- **MVP Scope**: Only tier implemented in MVP
 
-#### Premium Tier
+#### Premium Tier (Post-MVP)
 
 - **Features**: Unlimited AI coaching, advanced analytics, priority support
-- **Pricing**: Monthly subscription model
+- **Pricing**: Monthly subscription model (post-beta implementation)
 - **Target**: Serious fitness users, regular platform users
+- **Status**: Post-beta feature, not included in MVP
 
 #### Admin Tier
 
@@ -256,27 +258,31 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 **Requirements:**
 
-- Secure user registration and login with Microsoft Entra External ID integration
-- OAuth 2.0/OpenID Connect authentication with enterprise-grade security
+- **Microsoft Entra ID** (`vedid.onmicrosoft.com`) as the SOLE authentication provider for Vedprakash domain compliance
+- **Single Sign-On (SSO)** across all `.vedprakash.net` applications
 - User profile management including:
   - Fitness level (Beginner, Intermediate, Advanced)
   - Fitness goals (Weight Loss, Muscle Gain, Strength, Endurance, General Fitness)
   - Available equipment (None, Basic, Moderate, Full Gym)
   - Injury history and limitations
   - Personal preferences
+  - **Cross-app Vedprakash profile integration**
 
 **Technical Implementation:**
 
-- Microsoft Entra External ID for authentication and identity management
-  - **Tenant**: VED (ved-id-rg resource group)
-  - **Domain**: VedID.onmicrosoft.com
-  - **Authority**: https://VedID.b2clogin.com/VedID.onmicrosoft.com
-- OAuth 2.0 flows with PKCE for secure authentication
+- **Microsoft Entra ID**: Sole identity provider (`vedid.onmicrosoft.com`)
+  - **Authority**: https://login.microsoftonline.com/vedid.onmicrosoft.com
+  - **Token Format**: JWT tokens from Microsoft Entra ID
+  - **Session Management**: Stateless authentication via JWT
+  - **Domain**: vigor.vedprakash.net with shared authentication infrastructure
 - Rate-limited endpoints (5 registrations/min, 10 logins/min)
+- Admin users can adjust or temporarily bypass all rate limits and quotas via the Admin API
 - Security audit logging for all authentication events
-- Multi-factor authentication (MFA) support via Entra External ID
+- Multi-factor authentication (MFA) support via Entra ID
 - Account verification and password reset functionality
-- Social login integration (Google, Apple, Microsoft) through Entra External ID
+- **VedUser Interface**: Standardized user object across Vedprakash domain
+  - Cross-app permissions and profile synchronization
+  - Resource separation: vigor resources (vigor-rg, vigor-db-rg) independent from shared domain (ved-domain-rg) and auth (ved-id-rg) resources
 
 #### 3.1.2 AI-Powered Workout Generation
 
@@ -354,20 +360,38 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 **Priority: P0 (Must Have)**
 
-1. **User Authentication & Profiles** - Essential foundation
-2. **AI Workout Generation** - Core differentiated value
+1. **User Authentication & Profiles** - Microsoft Entra ID sole authentication
+2. **AI Workout Generation** - Core differentiated value with multi-provider fallback
 3. **Basic Progress Tracking** - User retention essential
-4. **Multi-Provider AI Architecture** - Reliability advantage
+4. **AI Coaching Chat** - Engagement and support
+5. **Workout History** - User data retention
+6. **Basic Gamification** (streaks only) - Motivation
+7. **Responsive Web App** - Mobile-optimized but not PWA
 
-**Priority: P1 (Should Have)** 5. **AI Coaching Chat** - Engagement and support 6. **Workout History** - User data retention 7. **Basic Gamification** (streaks only) - Motivation
+**MVP Limitations:**
+
+- **Single Tier**: Free tier only (no premium features)
+- **No PWA**: Basic responsive web app only
+- **No Social Features**: Individual user experience only
 
 #### Growth Release (v1.1-1.3) - Enhanced Experience
 
-**Priority: P2 (Could Have)** 8. **Advanced Analytics** - User insights 9. **Equipment Management** - Practical utility 10. **Injury/Limitation Support** - Safety and inclusivity 11. **Enhanced Gamification** (achievements, levels) - Engagement
+**Priority: P1 (Post-MVP)**
+
+1. **Premium Tier Implementation** - Monetization and unlimited features
+2. **Progressive Web App (PWA)** - Native app-like experience with offline capabilities
+3. **Advanced Analytics** - User insights and detailed progress tracking
+4. **Equipment Management** - Practical utility and customization
+5. **Enhanced Gamification** (achievements, levels) - Engagement
 
 #### Scale Release (v2.0+) - Market Expansion
 
-**Priority: P3 (Won't Have Initially)** 12. **Social Features** - Community building 13. **Premium Tiers** - Monetization 14. **Wearable Integration** - Ecosystem expansion 15. **Corporate Features** - B2B opportunities
+**Priority: P2 (Future Features)**
+
+1. **Social Features** - Community building and workout sharing
+2. **Injury/Limitation Support** - Safety and inclusivity
+3. **Wearable Integration** - Ecosystem expansion
+4. **Corporate Features** - B2B opportunities and team challenges
 
 **Rationale**: This prioritization focuses on demonstrating core AI value and reliability first, then adding features that increase engagement and retention, finally expanding to capture additional market segments.
 
@@ -598,8 +622,10 @@ Body: {
     "model_downgrade": true
   },
   "per_user_limits": {
-    "free_tier_monthly": 5.00,
-    "premium_tier_monthly": 25.00
+    "free_tier_monthly_chats": 10,
+    "free_tier_monthly_workouts": 5,
+    "premium_tier_monthly_chats": null,
+    "premium_tier_monthly_workouts": null
   }
 }
 ```
@@ -618,6 +644,24 @@ Response: {
   "switch_executed": true,
   "cost_savings_percent": 90,
   "quality_impact": "minimal"
+}
+```
+
+#### 6.2.5 Limit Override (Admin)
+
+```
+POST /admin/limits/override
+Headers: Authorization: Bearer <token>
+Body: {
+  "limit_type": "chat|workout_plan|budget",
+  "scope": "user|tenant|global",
+  "user_id": "optional user id",
+  "new_value": 20,
+  "duration_minutes": 60
+}
+Response: {
+  "override_applied": true,
+  "expires_at": "2025-06-30T12:00:00Z"
 }
 ```
 
@@ -900,7 +944,7 @@ class WorkoutAnalysis(BaseModel):
 - **Key Vault**: Secrets management (~$3/month)
 - **Application Insights**: Monitoring and analytics (~$2/month)
 
-**Total Infrastructure Cost**: ~$100/month with pause capability to ~$70/month
+**Total Infrastructure Budget Ceiling**: ≤$100/month with pause capability to ≤$70/month
 
 ### 8.2 Deployment Pipeline
 
@@ -1028,7 +1072,7 @@ VITE_APP_VERSION=1.0.0
 
 - **Microsoft Entra External ID**: Enterprise-grade identity and access management
   - **Tenant ID**: VED
-  - **Domain ID**: VedID.onmicrosoft.com
+  - **Domain ID**: vedid.onmicrosoft.com
   - **Resource Group**: ved-id-rg
 - **OAuth 2.0/OpenID Connect**: Industry-standard authentication protocols with PKCE
 - **Multi-Factor Authentication**: Built-in MFA support through Entra External ID
@@ -1081,7 +1125,7 @@ VITE_APP_VERSION=1.0.0
 
 #### System Performance
 
-- **Concurrent Users**: Support 100+ simultaneous users without degradation
+- **Concurrent Users**: Support up to 100 simultaneous users without degradation
 - **AI Provider Failover**: <5s automatic provider switching with transparent user experience
 - **Database Connections**: Maximum 50 concurrent connections with efficient pooling
 - **Resource Utilization**: <80% CPU/memory under normal load, <90% under peak load
@@ -1217,8 +1261,8 @@ VITE_APP_VERSION=1.0.0
 
 ### 13.4 AI Cost Management & Efficiency Metrics
 
-- **Budget Adherence**: 100% compliance with monthly AI spending limits ($100/month total budget)
-- **Cost per User**: <$0.50/month per active user in AI costs (Free tier: <$0.10, Premium: <$2.00)
+- **Budget Adherence**: 100% compliance with monthly operational budget ceiling (≤$100/month total)
+- **Cost per User**: <$0.50/month per active user in AI costs (Free tier: <$0.10, future Premium: <$2.00)
 - **Token Efficiency**: >30% reduction in token usage through intelligent caching
 - **Model Switching Success**: 95%+ successful automatic fallbacks during budget constraints
 - **Real-time Cost Tracking**: <1s latency for budget validation checks
@@ -1240,7 +1284,7 @@ VITE_APP_VERSION=1.0.0
 
 ### 13.6 Business Metrics
 
-- **Operational Efficiency**: <$100/month infrastructure costs (up to 10,000 users)
+- **Operational Efficiency**: ≤$100/month infrastructure budget ceiling (up to 10,000 users)
 - **Cost Per User**: <$0.50/month per active user in AI and infrastructure costs
 - **User Satisfaction**: Net Promoter Score (NPS) >50 target
 - **Feature Adoption**: 80%+ of users try workout generation within first week
@@ -1345,7 +1389,7 @@ The implementation roadmap, security measures, and operational strategies outlin
 
 **Rate Limiting**: A technique for controlling the number of requests a client can make to an API within a specific time window.
 
-**Fallback System**: A backup mechanism that provides basic functionality when primary systems (like AI providers) are unavailable.
+**Fallback System**: A backup mechanism using local workout templates with rules-based generation that provides basic functionality when all AI providers are unavailable, ensuring service continuity at zero additional cost.
 
 **Progressive Web App (PWA)**: A web application that uses modern web technologies to provide a native app-like experience.
 

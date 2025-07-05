@@ -27,7 +27,7 @@ import AnalyticsDashboard from '../components/AnalyticsDashboard';
 import { BadgeGrid, QuickStats, StreakDisplay } from '../components/GamificationComponentsV2';
 import MobileLayout from '../components/MobileLayout';
 import SocialFeatures from '../components/SocialFeatures';
-import { useAuth } from '../contexts/useAuth';
+import { useVedAuth } from '../contexts/useVedAuth';
 import { engagementTracker, type UserEngagementProfile } from '../services/engagementTracker';
 import { gamificationService, type UserGamificationStats } from '../services/gamificationService';
 import { workoutService } from '../services/workoutService';
@@ -50,7 +50,7 @@ interface PersonalizationData {
 }
 
 const PersonalizedDashboardPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useVedAuth();
   const [gamificationStats, setGamificationStats] = useState<UserGamificationStats | null>(null);
   const [engagementProfile, setEngagementProfile] = useState<UserEngagementProfile | null>(null);
   const [weeklyGoals, setWeeklyGoals] = useState<WeeklyGoal[]>([]);

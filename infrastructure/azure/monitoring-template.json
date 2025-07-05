@@ -1,0 +1,338 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Vigor Platform - Monitoring and Alerting Infrastructure",
+    "author": "Vigor Development Team"
+  },
+  "parameters": {
+    "environment": {
+      "type": "string",
+      "allowedValues": ["dev", "staging", "prod"],
+      "metadata": {
+        "description": "Environment name"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "appServiceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the App Service to monitor"
+      }
+    },
+    "databaseServerName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the PostgreSQL server to monitor"
+      }
+    },
+    "alertEmailAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "Email address for alert notifications"
+      }
+    }
+  },
+  "variables": {
+    "applicationInsightsName": "[concat('vigor-', parameters('environment'), '-insights')]",
+    "logAnalyticsWorkspaceName": "[concat('vigor-', parameters('environment'), '-logs')]",
+    "actionGroupName": "[concat('vigor-', parameters('environment'), '-alerts')]",
+    "alertRules": [
+      {
+        "name": "HighCPUUsage",
+        "description": "Alert when CPU usage is above 80%",
+        "threshold": 80,
+        "operator": "GreaterThan",
+        "metric": "CpuPercentage",
+        "severity": 2
+      },
+      {
+        "name": "HighMemoryUsage",
+        "description": "Alert when memory usage is above 85%",
+        "threshold": 85,
+        "operator": "GreaterThan",
+        "metric": "MemoryPercentage",
+        "severity": 2
+      },
+      {
+        "name": "HighResponseTime",
+        "description": "Alert when average response time exceeds 5 seconds",
+        "threshold": 5,
+        "operator": "GreaterThan",
+        "metric": "AverageResponseTime",
+        "severity": 1
+      },
+      {
+        "name": "HighErrorRate",
+        "description": "Alert when error rate exceeds 5%",
+        "threshold": 5,
+        "operator": "GreaterThan",
+        "metric": "Http5xx",
+        "severity": 0
+      },
+      {
+        "name": "DatabaseConnectionFailures",
+        "description": "Alert when database connections fail",
+        "threshold": 1,
+        "operator": "GreaterThan",
+        "metric": "connection_failed",
+        "severity": 0
+      }
+    ]
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2021-06-01",
+      "name": "[variables('logAnalyticsWorkspaceName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "[if(equals(parameters('environment'), 'prod'), 'PerGB2018', 'Free')]"
+        },
+        "retentionInDays": "[if(equals(parameters('environment'), 'prod'), 365, if(equals(parameters('environment'), 'staging'), 90, 30))]",
+        "features": {
+          "enableLogAccessUsingOnlyResourcePermissions": true
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[variables('applicationInsightsName')]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]",
+        "IngestionMode": "LogAnalytics",
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/actionGroups",
+      "apiVersion": "2021-09-01",
+      "name": "[variables('actionGroupName')]",
+      "location": "Global",
+      "properties": {
+        "groupShortName": "[take(concat('vigor', parameters('environment')), 12)]",
+        "enabled": true,
+        "emailReceivers": [
+          {
+            "name": "PrimaryAdmin",
+            "emailAddress": "[parameters('alertEmailAddress')]",
+            "useCommonAlertSchema": true
+          }
+        ],
+        "webhookReceivers": [
+          {
+            "name": "SlackWebhook",
+            "serviceUri": "https://hooks.slack.com/services/placeholder",
+            "useCommonAlertSchema": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat('vigor-', parameters('environment'), '-cpu-alert')]",
+      "location": "Global",
+      "properties": {
+        "description": "Alert when CPU usage is high",
+        "severity": 2,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
+        ],
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT15M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "HighCPU",
+              "metricName": "CpuPercentage",
+              "operator": "GreaterThan",
+              "threshold": 80,
+              "timeAggregation": "Average"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat('vigor-', parameters('environment'), '-memory-alert')]",
+      "location": "Global",
+      "properties": {
+        "description": "Alert when memory usage is high",
+        "severity": 2,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
+        ],
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT15M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "HighMemory",
+              "metricName": "MemoryPercentage",
+              "operator": "GreaterThan",
+              "threshold": 85,
+              "timeAggregation": "Average"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat('vigor-', parameters('environment'), '-response-time-alert')]",
+      "location": "Global",
+      "properties": {
+        "description": "Alert when response time is high",
+        "severity": 1,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
+        ],
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT15M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "HighResponseTime",
+              "metricName": "AverageResponseTime",
+              "operator": "GreaterThan",
+              "threshold": 5,
+              "timeAggregation": "Average"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat('vigor-', parameters('environment'), '-error-rate-alert')]",
+      "location": "Global",
+      "properties": {
+        "description": "Alert when error rate is high",
+        "severity": 0,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "HighErrorRate",
+              "metricName": "Http5xx",
+              "operator": "GreaterThan",
+              "threshold": 5,
+              "timeAggregation": "Total"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat('vigor-', parameters('environment'), '-db-connection-alert')]",
+      "location": "Global",
+      "properties": {
+        "description": "Alert when database connections fail",
+        "severity": 0,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.DBforPostgreSQL/servers', parameters('databaseServerName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "ConnectionFailures",
+              "metricName": "connection_failed",
+              "operator": "GreaterThan",
+              "threshold": 1,
+              "timeAggregation": "Total"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "applicationInsightsKey": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Insights/components', variables('applicationInsightsName'))).InstrumentationKey]"
+    },
+    "logAnalyticsWorkspaceId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))).customerId]"
+    },
+    "actionGroupId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+    }
+  }
+}

@@ -1,14 +1,14 @@
-import { Box, Button, Card, CardBody, Container, Grid, Heading, HStack, Text, VStack } from '@chakra-ui/react'
+import { Box, Button, Container, Grid, Heading, HStack, Text, VStack } from '@chakra-ui/react'
 import React, { useEffect, useState } from 'react'
 import { BadgeGrid, QuickStats, StreakDisplay } from '../components/GamificationComponentsV2'
 import LLMStatus from '../components/LLMStatus'
-import { useAuth } from '../contexts/useAuth'
+import { useVedAuth } from '../contexts/useVedAuth'
 import { gamificationService, type UserGamificationStats } from '../services/gamificationService'
 import { workoutService } from '../services/workoutService'
 import { computeStreakUtc } from '../utils/streak'
 
 const DashboardPage: React.FC = () => {
-  const { user } = useAuth()
+  const { user } = useVedAuth()
   const [streak, setStreak] = useState<number>(0)
   const [gamificationStats, setGamificationStats] = useState<UserGamificationStats | null>(null)
   const [weeklyWorkouts, setWeeklyWorkouts] = useState(0)
@@ -112,12 +112,11 @@ const DashboardPage: React.FC = () => {
         </Grid>
 
         {/* Today's Focus Section - PRD Navigation */}
-        <Card bg="blue.50" borderColor="blue.200">
-          <CardBody>
-            <VStack align="start" gap={4}>
-              <Heading size="md" color="blue.700">Today's Focus</Heading>
-              <Text color="blue.600">
-                Ready to continue your fitness journey? Generate a personalized workout or get guidance from your AI coach.
+        <Box bg="blue.50" borderColor="blue.200" p={6} borderRadius="lg" borderWidth={1}>
+          <VStack align="start" gap={4}>
+            <Heading size="md" color="blue.700">Today's Focus</Heading>
+            <Text color="blue.600">
+              Ready to continue your fitness journey? Generate a personalized workout or get guidance from your AI coach.
               </Text>
               <HStack gap={4}>
                 <Button
@@ -137,12 +136,11 @@ const DashboardPage: React.FC = () => {
               </HStack>
               {user?.tier === 'free' && (
                 <Text fontSize="sm" color="blue.500">
-                  Free tier: {5 - (user?.workouts_generated_this_month || 0)} workout generations remaining this month
+                  Free tier: {5 - (weeklyWorkouts || 0)} workout generations remaining this month
                 </Text>
               )}
             </VStack>
-          </CardBody>
-        </Card>
+          </Box>
 
         {/* Badges Section */}
         {gamificationStats && gamificationStats.badges.length > 0 && (
@@ -158,18 +156,17 @@ const DashboardPage: React.FC = () => {
         )}
 
         {/* AI Coach Preview - PRD Navigation */}
-        <Card bg="purple.50" borderColor="purple.200" cursor="pointer" onClick={() => window.location.href='/coach'}>
-          <CardBody>
-            <VStack align="start" gap={2}>
-              <HStack>
-                <Text fontSize="2xl">💬</Text>
-                <Heading size="md" color="purple.700">AI Coach Preview</Heading>
-              </HStack>
-              <Text color="purple.600" fontSize="sm">
-                "Great job on your consistency! Ready for today's workout? I can help you target specific muscle groups or adjust intensity based on how you're feeling."
-              </Text>
-              <HStack justify="space-between" w="full">
-                <Text fontSize="xs" color="purple.500">
+        <Box bg="purple.50" borderColor="purple.200" cursor="pointer" onClick={() => window.location.href='/coach'} p={6} borderRadius="lg" borderWidth={1}>
+          <VStack align="start" gap={2}>
+            <HStack>
+              <Text fontSize="2xl">💬</Text>
+              <Heading size="md" color="purple.700">AI Coach Preview</Heading>
+            </HStack>
+            <Text color="purple.600" fontSize="sm">
+              "Great job on your consistency! Ready for today's workout? I can help you target specific muscle groups or adjust intensity based on how you're feeling."
+            </Text>
+            <HStack justify="space-between" w="full">
+              <Text fontSize="xs" color="purple.500">
                   {user?.tier === 'free'
                     ? `${Math.max(0, 10 - aiInteractions)} AI chats remaining this month`
                     : 'Unlimited AI coaching'
@@ -178,28 +175,25 @@ const DashboardPage: React.FC = () => {
                 <Text fontSize="xs" color="purple.500">Tap to chat →</Text>
               </HStack>
             </VStack>
-          </CardBody>
-        </Card>
+          </Box>
 
         {/* Tier Upgrade Prompt for Free Users */}
         {user?.tier === 'free' && (weeklyWorkouts >= 3 || aiInteractions >= 8) && (
-          <Card bg="gradient-to-r from-yellow.50 to-orange.50" borderColor="orange.200">
-            <CardBody>
-              <VStack align="start" gap={3}>
-                <HStack>
-                  <Text fontSize="2xl">⭐</Text>
-                  <Heading size="md" color="orange.700">Upgrade to Premium</Heading>
-                </HStack>
-                <Text color="orange.600">
-                  You're making great progress! Upgrade to Premium for unlimited workouts,
-                  unlimited AI coaching, and advanced analytics.
-                </Text>
-                <Button colorScheme="orange" onClick={() => window.location.href='/tiers'}>
-                  View Premium Features
-                </Button>
-              </VStack>
-            </CardBody>
-          </Card>
+          <Box bg="gradient-to-r from-yellow.50 to-orange.50" borderColor="orange.200" p={6} borderRadius="lg" borderWidth={1}>
+            <VStack align="start" gap={3}>
+              <HStack>
+                <Text fontSize="2xl">⭐</Text>
+                <Heading size="md" color="orange.700">Upgrade to Premium</Heading>
+              </HStack>
+              <Text color="orange.600">
+                You're making great progress! Upgrade to Premium for unlimited workouts,
+                unlimited AI coaching, and advanced analytics.
+              </Text>
+              <Button colorScheme="orange" onClick={() => window.location.href='/tiers'}>
+                View Premium Features
+              </Button>
+            </VStack>
+          </Box>
         )}
       </VStack>
     </Container>

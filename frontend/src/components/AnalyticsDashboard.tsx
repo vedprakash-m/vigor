@@ -1,13 +1,21 @@
 import {
     Box,
-    Card,
-    CardBody,
     Container,
     Grid,
     Heading,
     HStack,
-    Progress,
     SimpleGrid,
+    Text,
+    VStack,
+} from '@chakra-ui/react';
+import React, { useEffect, useState } from 'react';
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { type UserGamificationStats } from '../services/gamificationService';
+import { workoutService } from '../services/workoutService';
+import {
+    Card,
+    CardBody,
+    Progress,
     Stat,
     StatArrow,
     StatHelpText,
@@ -17,14 +25,8 @@ import {
     TabList,
     TabPanel,
     TabPanels,
-    Tabs,
-    Text,
-    VStack,
-} from '@chakra-ui/react';
-import React, { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { type UserGamificationStats } from '../services/gamificationService';
-import { workoutService } from '../services/workoutService';
+    Tabs
+} from './chakra-compat';
 
 interface AnalyticsData {
   weeklyProgress: Array<{
@@ -163,7 +165,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ gamifica
         </Box>
 
         {/* Key Performance Metrics */}
-        <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+        <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
           <Stat bg="white" p={4} borderRadius="lg" boxShadow="sm">
             <StatLabel>Completion Rate</StatLabel>
             <StatNumber>{performanceMetrics.completionRate}%</StatNumber>

@@ -83,6 +83,11 @@ class Settings(BaseSettings):
     # Azure Key Vault
     AZURE_KEY_VAULT_URL: str = os.getenv("AZURE_KEY_VAULT_URL", "")
 
+    # Microsoft Entra ID Authentication (Vedprakash Domain Standard)
+    AZURE_AD_CLIENT_ID: Optional[str] = os.getenv("AZURE_AD_CLIENT_ID")
+    AZURE_AD_TENANT_ID: str = os.getenv("AZURE_AD_TENANT_ID", "vedid.onmicrosoft.com")
+    AZURE_AD_AUTHORITY: str = f"https://login.microsoftonline.com/{os.getenv('AZURE_AD_TENANT_ID', 'vedid.onmicrosoft.com')}"
+
     # CORS settings
     _cors_origins_env: ClassVar[Optional[str]] = os.getenv("CORS_ORIGINS")
     CORS_ORIGINS: List[str] = (

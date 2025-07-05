@@ -1,14 +1,14 @@
 import { Center, Spinner } from '@chakra-ui/react'
 import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { useAuth } from '../contexts/useAuth'
+import { useVedAuth } from '../contexts/useVedAuth'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading } = useVedAuth()
   const location = useLocation()
 
   if (isLoading) {
