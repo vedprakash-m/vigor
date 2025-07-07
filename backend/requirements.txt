@@ -137,7 +137,7 @@ yamllint==1.37.1
 yarl==1.20.0
 zipp==3.23.0
 google-generativeai==0.3.2
-anthropic==0.7.8
+anthropic==0.57.1
 slowapi==0.1.9
 limits==4.2
 deprecated==1.2.18
