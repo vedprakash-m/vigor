@@ -104,4 +104,41 @@ New architectural decisions → add a numbered ADR under `docs/adr/` and update 
 
 ---
 
-_Last updated: {{DATE}}_
+## 10. Production Deployment Plan (2025-07-24)
+
+### 10.1 Current Status: Pre-Production Validation Phase
+
+**Deployment Timeline**: 5-8 days (Started: 2025-07-24)
+
+| Phase       | Status         | Duration | Key Activities                     | Completion |
+| ----------- | -------------- | -------- | ---------------------------------- | ---------- |
+| **Phase 1** | 🔄 In Progress | 1-2 days | Infrastructure setup, Azure config | 0%         |
+| **Phase 2** | ⏳ Pending     | 2-3 days | Environment validation, testing    | 0%         |
+| **Phase 3** | ⏳ Pending     | 1 day    | Production deployment              | 0%         |
+| **Phase 4** | ⏳ Pending     | 1-2 days | Verification, monitoring           | 0%         |
+
+### 10.2 Pre-Flight System Assessment
+
+**Critical Dependencies Identified:**
+
+- Azure subscription and authentication setup required
+- GitHub secrets configuration for CI/CD pipeline
+- Database URL configuration (currently using SQLite fallback)
+- Virtual environment activation needed for proper testing
+- Test coverage improvement needed (Backend: 50%, Frontend: 31%)
+
+**Risk Mitigation Strategy:**
+
+- Dual resource group architecture maintains data persistence during compute pause/resume
+- Multi-provider AI fallback ensures service continuity
+- Clean architecture enables modular testing and deployment
+- Comprehensive validation scripts mirror CI/CD pipeline
+
+### 10.3 Decision Log
+
+**2025-07-24**: Initiated systematic production deployment with metadata tracking
+**2025-07-24**: Identified current system state - local validation required before cloud deployment
+
+---
+
+_Last updated: 2025-07-24_
