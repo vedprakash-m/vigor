@@ -30,7 +30,6 @@ from database.models import UserProfile
 # Third-party imports
 
 
-
 router = APIRouter()
 
 settings = get_settings()
