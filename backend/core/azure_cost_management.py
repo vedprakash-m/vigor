@@ -7,8 +7,8 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union
 from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 
 import httpx
 from azure.identity import DefaultAzureCredential
@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CostAlert:
     """Cost alert configuration"""
+
     alert_id: str
     threshold_percentage: float
     budget_amount: float
@@ -35,6 +36,7 @@ class CostAlert:
 @dataclass
 class RealTimeCostMetrics:
     """Real-time cost metrics"""
+
     current_month_spend: float
     budget_limit: float
     utilization_percentage: float
@@ -48,6 +50,7 @@ class RealTimeCostMetrics:
 
 class BudgetStatus(Enum):
     """Budget status enumeration"""
+
     ACTIVE = "active"
     AVAILABLE = "available"  # Alias for ACTIVE
     WARNING = "warning"
@@ -64,10 +67,18 @@ class AzureCostManagementService:
 
     def __init__(self, db_session=None):
         self.db = db_session
-        self.subscription_id = settings.AZURE_SUBSCRIPTION_ID if hasattr(settings, 'AZURE_SUBSCRIPTION_ID') else None
-        self.resource_group = settings.AZURE_RESOURCE_GROUP if hasattr(settings, 'AZURE_RESOURCE_GROUP') else 'vigor-rg'
-        self.monthly_budget = getattr(settings, 'AZURE_MONTHLY_BUDGET', 100.0)
-        self.cost_threshold = getattr(settings, 'AI_COST_THRESHOLD', 85.0)
+        self.subscription_id = (
+            settings.AZURE_SUBSCRIPTION_ID
+            if hasattr(settings, "AZURE_SUBSCRIPTION_ID")
+            else None
+        )
+        self.resource_group = (
+            settings.AZURE_RESOURCE_GROUP
+            if hasattr(settings, "AZURE_RESOURCE_GROUP")
+            else "vigor-rg"
+        )
+        self.monthly_budget = getattr(settings, "AZURE_MONTHLY_BUDGET", 100.0)
+        self.cost_threshold = getattr(settings, "AI_COST_THRESHOLD", 85.0)
 
         # Initialize Azure clients
         self.credential = None
@@ -85,16 +96,19 @@ class AzureCostManagementService:
             if self.subscription_id:
                 self.credential = DefaultAzureCredential()
                 self.consumption_client = ConsumptionManagementClient(
-                    credential=self.credential,
-                    subscription_id=self.subscription_id
+                    credential=self.credential, subscription_id=self.subscription_id
                 )
                 logger.info("Azure Cost Management client initialized")
             else:
-                logger.warning("Azure subscription ID not configured - using local cost tracking only")
+                logger.warning(
+                    "Azure subscription ID not configured - using local cost tracking only"
+                )
         except Exception as e:
             logger.error(f"Failed to initialize Azure clients: {e}")
 
-    async def get_real_time_costs(self, force_refresh: bool = False) -> RealTimeCostMetrics:
+    async def get_real_time_costs(
+        self, force_refresh: bool = False
+    ) -> RealTimeCostMetrics:
         """
         Get real-time cost metrics with Azure API integration
 
@@ -133,7 +147,9 @@ class AzureCostManagementService:
 
             # Calculate metrics
             utilization = (current_spend / self.monthly_budget) * 100
-            projected_spend = self._calculate_projected_spend(current_spend, daily_trend)
+            projected_spend = self._calculate_projected_spend(
+                current_spend, daily_trend
+            )
             alert_status = self._determine_alert_status(utilization)
 
             # Get per-user and per-model costs
@@ -149,7 +165,7 @@ class AzureCostManagementService:
                 cost_per_user=cost_per_user,
                 cost_per_model=cost_per_model,
                 alert_status=alert_status,
-                last_updated=datetime.utcnow()
+                last_updated=datetime.utcnow(),
             )
 
             # Cache the results
@@ -172,14 +188,11 @@ class AzureCostManagementService:
                 cost_per_user={},
                 cost_per_model={},
                 alert_status="unknown",
-                last_updated=datetime.utcnow()
+                last_updated=datetime.utcnow(),
             )
 
     async def validate_budget_before_operation(
-        self,
-        user_id: str,
-        estimated_cost: float,
-        operation_type: str = "ai_request"
+        self, user_id: str, estimated_cost: float, operation_type: str = "ai_request"
     ) -> Dict[str, Any]:
         """
         Validate budget before expensive AI operation
@@ -204,7 +217,11 @@ class AzureCostManagementService:
             user_current_cost = current_metrics.cost_per_user.get(user_id, 0.0)
             user_budget_limit = await self._get_user_budget_limit(user_id)
             user_projected = user_current_cost + estimated_cost
-            user_utilization = (user_projected / user_budget_limit) * 100 if user_budget_limit > 0 else 0
+            user_utilization = (
+                (user_projected / user_budget_limit) * 100
+                if user_budget_limit > 0
+                else 0
+            )
 
             # Determine approval
             approved = True
@@ -212,15 +229,23 @@ class AzureCostManagementService:
 
             if global_utilization > 95:
                 approved = False
-                reasons.append(f"Global budget exceeded: {global_utilization:.1f}% utilization")
+                reasons.append(
+                    f"Global budget exceeded: {global_utilization:.1f}% utilization"
+                )
             elif global_utilization > self.cost_threshold:
-                reasons.append(f"Warning: High global utilization ({global_utilization:.1f}%)")
+                reasons.append(
+                    f"Warning: High global utilization ({global_utilization:.1f}%)"
+                )
 
             if user_utilization > 100:
                 approved = False
-                reasons.append(f"User budget exceeded: {user_utilization:.1f}% utilization")
+                reasons.append(
+                    f"User budget exceeded: {user_utilization:.1f}% utilization"
+                )
             elif user_utilization > 80:
-                reasons.append(f"Warning: High user utilization ({user_utilization:.1f}%)")
+                reasons.append(
+                    f"Warning: High user utilization ({user_utilization:.1f}%)"
+                )
 
             # Model switching recommendation
             recommended_model = None
@@ -237,8 +262,8 @@ class AzureCostManagementService:
                 "cost_metrics": {
                     "current_spend": current_metrics.current_month_spend,
                     "budget_limit": current_metrics.budget_limit,
-                    "projected_spend": current_metrics.projected_monthly_spend
-                }
+                    "projected_spend": current_metrics.projected_monthly_spend,
+                },
             }
 
         except Exception as e:
@@ -250,12 +275,11 @@ class AzureCostManagementService:
                 "user_utilization": 0.0,
                 "reasons": [f"Budget validation error: {str(e)}"],
                 "recommended_model": None,
-                "cost_metrics": {}
+                "cost_metrics": {},
             }
 
     async def configure_automated_alerts(
-        self,
-        alert_configs: List[Dict[str, Any]]
+        self, alert_configs: List[Dict[str, Any]]
     ) -> Dict[str, str]:
         """
         Configure automated cost alerts
@@ -280,7 +304,7 @@ class AzureCostManagementService:
                     budget_amount=self.monthly_budget,
                     current_spend=0.0,
                     alert_type=alert_type,
-                    created_at=datetime.utcnow()
+                    created_at=datetime.utcnow(),
                 )
 
                 self._alerts[alert_id] = alert
@@ -299,9 +323,7 @@ class AzureCostManagementService:
             return {"error": str(e)}
 
     async def get_cost_analytics(
-        self,
-        time_range: str = "30d",
-        include_forecast: bool = True
+        self, time_range: str = "30d", include_forecast: bool = True
     ) -> Dict[str, Any]:
         """
         Get detailed cost analytics and forecasting
@@ -315,7 +337,7 @@ class AzureCostManagementService:
         """
         try:
             # Parse time range
-            days = int(time_range.replace('d', ''))
+            days = int(time_range.replace("d", ""))
             start_date = datetime.utcnow() - timedelta(days=days)
             end_date = datetime.utcnow()
 
@@ -340,15 +362,19 @@ class AzureCostManagementService:
                 "time_range": time_range,
                 "period": {
                     "start": start_date.isoformat(),
-                    "end": end_date.isoformat()
+                    "end": end_date.isoformat(),
                 },
                 "total_cost": sum(historical_costs),
-                "average_daily_cost": sum(historical_costs) / len(historical_costs) if historical_costs else 0,
+                "average_daily_cost": (
+                    sum(historical_costs) / len(historical_costs)
+                    if historical_costs
+                    else 0
+                ),
                 "cost_trend": cost_trend,
                 "forecast": forecast,
                 "breakdown": cost_breakdown,
                 "optimization_recommendations": optimization_tips,
-                "alert_summary": await self._get_alert_summary()
+                "alert_summary": await self._get_alert_summary(),
             }
 
         except Exception as e:
@@ -370,8 +396,12 @@ class AzureCostManagementService:
                 "current_spend": metrics.get("total_cost", 0.0),
                 "budget_limit": self.monthly_budget,
                 "percentage_used": metrics.get("utilization_percentage", 0.0),
-                "status": "active" if metrics.get("utilization_percentage", 0) < 80 else "warning",
-                "alerts_enabled": True
+                "status": (
+                    "active"
+                    if metrics.get("utilization_percentage", 0) < 80
+                    else "warning"
+                ),
+                "alerts_enabled": True,
             }
 
         except Exception as e:
@@ -383,7 +413,7 @@ class AzureCostManagementService:
                 "percentage_used": 0.0,
                 "status": "active",
                 "alerts_enabled": True,
-                "error": str(e)
+                "error": str(e),
             }
 
     async def get_cost_breakdown(self) -> List[Dict[str, Any]]:
@@ -403,12 +433,14 @@ class AzureCostManagementService:
 
                     for resource, cost in cost_by_resource.items():
                         percentage = (cost / total_cost * 100) if total_cost > 0 else 0
-                        breakdown.append({
-                            "service_name": resource,
-                            "cost": cost,
-                            "percentage": percentage,
-                            "trend": "stable"  # Could be enhanced with historical data
-                        })
+                        breakdown.append(
+                            {
+                                "service_name": resource,
+                                "cost": cost,
+                                "percentage": percentage,
+                                "trend": "stable",  # Could be enhanced with historical data
+                            }
+                        )
 
                 except Exception as e:
                     logger.warning(f"Azure cost breakdown failed: {e}")
@@ -421,12 +453,14 @@ class AzureCostManagementService:
 
                 for model, cost in local_costs.items():
                     percentage = (cost / total_local * 100) if total_local > 0 else 0
-                    breakdown.append({
-                        "service_name": f"LLM-{model}",
-                        "cost": cost,
-                        "percentage": percentage,
-                        "trend": "stable"
-                    })
+                    breakdown.append(
+                        {
+                            "service_name": f"LLM-{model}",
+                            "cost": cost,
+                            "percentage": percentage,
+                            "trend": "stable",
+                        }
+                    )
 
             return breakdown
 
@@ -448,29 +482,35 @@ class AzureCostManagementService:
 
             # Generate alerts based on utilization thresholds
             if utilization >= 100:
-                alerts.append({
-                    "alert_id": "budget-exceeded",
-                    "alert_level": "critical",
-                    "message": f"Budget exceeded! Current usage: {utilization:.1f}%",
-                    "threshold_percentage": 100,
-                    "triggered_at": datetime.utcnow().isoformat()
-                })
+                alerts.append(
+                    {
+                        "alert_id": "budget-exceeded",
+                        "alert_level": "critical",
+                        "message": f"Budget exceeded! Current usage: {utilization:.1f}%",
+                        "threshold_percentage": 100,
+                        "triggered_at": datetime.utcnow().isoformat(),
+                    }
+                )
             elif utilization >= 90:
-                alerts.append({
-                    "alert_id": "budget-critical",
-                    "alert_level": "warning",
-                    "message": f"Budget usage critical: {utilization:.1f}%",
-                    "threshold_percentage": 90,
-                    "triggered_at": datetime.utcnow().isoformat()
-                })
+                alerts.append(
+                    {
+                        "alert_id": "budget-critical",
+                        "alert_level": "warning",
+                        "message": f"Budget usage critical: {utilization:.1f}%",
+                        "threshold_percentage": 90,
+                        "triggered_at": datetime.utcnow().isoformat(),
+                    }
+                )
             elif utilization >= 80:
-                alerts.append({
-                    "alert_id": "budget-warning",
-                    "alert_level": "info",
-                    "message": f"Budget usage high: {utilization:.1f}%",
-                    "threshold_percentage": 80,
-                    "triggered_at": datetime.utcnow().isoformat()
-                })
+                alerts.append(
+                    {
+                        "alert_id": "budget-warning",
+                        "alert_level": "info",
+                        "message": f"Budget usage high: {utilization:.1f}%",
+                        "threshold_percentage": 80,
+                        "triggered_at": datetime.utcnow().isoformat(),
+                    }
+                )
 
             return alerts
 
@@ -479,10 +519,7 @@ class AzureCostManagementService:
             return []
 
     async def create_budget_alert(
-        self,
-        budget_name: str,
-        threshold_percentage: float,
-        email_contacts: List[str]
+        self, budget_name: str, threshold_percentage: float, email_contacts: List[str]
     ) -> Dict[str, Any]:
         """
         Create or update a budget alert
@@ -499,7 +536,9 @@ class AzureCostManagementService:
             # In a real implementation, this would create alerts in Azure
             # For now, we'll simulate the creation and store locally
 
-            alert_id = f"alert-{budget_name}-{threshold_percentage}".lower().replace(" ", "-")
+            alert_id = f"alert-{budget_name}-{threshold_percentage}".lower().replace(
+                " ", "-"
+            )
 
             # Store alert configuration (could be in database)
             alert_config = {
@@ -508,7 +547,7 @@ class AzureCostManagementService:
                 "threshold_percentage": threshold_percentage,
                 "email_contacts": email_contacts,
                 "created_at": datetime.utcnow().isoformat(),
-                "enabled": True
+                "enabled": True,
             }
 
             # In production, save to database
@@ -517,7 +556,7 @@ class AzureCostManagementService:
             return {
                 "alert_id": alert_id,
                 "status": "created",
-                "message": f"Budget alert created for {threshold_percentage}% threshold"
+                "message": f"Budget alert created for {threshold_percentage}% threshold",
             }
 
         except Exception as e:
@@ -542,7 +581,7 @@ class AzureCostManagementService:
 
             return {
                 "status": "deleted",
-                "message": f"Budget alert {alert_id} deleted successfully"
+                "message": f"Budget alert {alert_id} deleted successfully",
             }
 
         except Exception as e:
@@ -569,59 +608,74 @@ class AzureCostManagementService:
 
             # 1. Budget optimization
             if utilization > 80:
-                recommendations.append({
-                    "title": "Increase Budget Monitoring",
-                    "description": "Your current usage is approaching budget limits. Consider implementing more granular cost controls or increasing budget allocation.",
-                    "potential_savings": 0,
-                    "impact": "High",
-                    "effort": "Low",
-                    "category": "budget"
-                })
+                recommendations.append(
+                    {
+                        "title": "Increase Budget Monitoring",
+                        "description": "Your current usage is approaching budget limits. Consider implementing more granular cost controls or increasing budget allocation.",
+                        "potential_savings": 0,
+                        "impact": "High",
+                        "effort": "Low",
+                        "category": "budget",
+                    }
+                )
 
             # 2. Model optimization
             if cost_breakdown:
-                expensive_models = [item for item in cost_breakdown if item["percentage"] > 50]
+                expensive_models = [
+                    item for item in cost_breakdown if item["percentage"] > 50
+                ]
                 if expensive_models:
-                    recommendations.append({
-                        "title": "Optimize Model Usage",
-                        "description": f"Consider using more cost-effective models for some tasks. {expensive_models[0]['service_name']} accounts for {expensive_models[0]['percentage']:.1f}% of costs.",
-                        "potential_savings": current_spend * 0.3,  # Estimate 30% savings
-                        "impact": "Medium",
-                        "effort": "Medium",
-                        "category": "model"
-                    })
+                    recommendations.append(
+                        {
+                            "title": "Optimize Model Usage",
+                            "description": f"Consider using more cost-effective models for some tasks. {expensive_models[0]['service_name']} accounts for {expensive_models[0]['percentage']:.1f}% of costs.",
+                            "potential_savings": current_spend
+                            * 0.3,  # Estimate 30% savings
+                            "impact": "Medium",
+                            "effort": "Medium",
+                            "category": "model",
+                        }
+                    )
 
             # 3. Caching recommendations
             if current_spend > 10:  # If spending more than $10
-                recommendations.append({
-                    "title": "Implement Response Caching",
-                    "description": "Enable response caching for similar queries to reduce redundant API calls and save costs.",
-                    "potential_savings": current_spend * 0.2,  # Estimate 20% savings
-                    "impact": "Medium",
-                    "effort": "Low",
-                    "category": "caching"
-                })
+                recommendations.append(
+                    {
+                        "title": "Implement Response Caching",
+                        "description": "Enable response caching for similar queries to reduce redundant API calls and save costs.",
+                        "potential_savings": current_spend
+                        * 0.2,  # Estimate 20% savings
+                        "impact": "Medium",
+                        "effort": "Low",
+                        "category": "caching",
+                    }
+                )
 
             # 4. Batch processing
-            recommendations.append({
-                "title": "Batch Similar Requests",
-                "description": "Group similar requests together to optimize token usage and reduce per-request overhead.",
-                "potential_savings": current_spend * 0.15,  # Estimate 15% savings
-                "impact": "Low",
-                "effort": "Medium",
-                "category": "batching"
-            })
+            recommendations.append(
+                {
+                    "title": "Batch Similar Requests",
+                    "description": "Group similar requests together to optimize token usage and reduce per-request overhead.",
+                    "potential_savings": current_spend * 0.15,  # Estimate 15% savings
+                    "impact": "Low",
+                    "effort": "Medium",
+                    "category": "batching",
+                }
+            )
 
             # 5. Usage patterns
             if utilization < 30:
-                recommendations.append({
-                    "title": "Consider Reducing Budget",
-                    "description": "Your current usage is low compared to allocated budget. You could reduce budget allocation and reallocate resources.",
-                    "potential_savings": (self.monthly_budget - current_spend) * 0.5,
-                    "impact": "Low",
-                    "effort": "Low",
-                    "category": "budget"
-                })
+                recommendations.append(
+                    {
+                        "title": "Consider Reducing Budget",
+                        "description": "Your current usage is low compared to allocated budget. You could reduce budget allocation and reallocate resources.",
+                        "potential_savings": (self.monthly_budget - current_spend)
+                        * 0.5,
+                        "impact": "Low",
+                        "effort": "Low",
+                        "category": "budget",
+                    }
+                )
 
             return recommendations
 
@@ -634,7 +688,7 @@ class AzureCostManagementService:
                     "potential_savings": 0,
                     "impact": "High",
                     "effort": "Medium",
-                    "category": "setup"
+                    "category": "setup",
                 }
             ]
 
@@ -646,7 +700,9 @@ class AzureCostManagementService:
             # Use Azure Consumption API to get current costs
             # This is a simplified implementation - real implementation would use proper Azure SDK
             end_date = datetime.utcnow()
-            start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            start_date = end_date.replace(
+                day=1, hour=0, minute=0, second=0, microsecond=0
+            )
 
             # Mock implementation - replace with actual Azure API call
             return 45.50  # Example current spend
@@ -662,16 +718,21 @@ class AzureCostManagementService:
                 return 0.0
 
             # Query local AI usage logs for current month
+            from sqlalchemy import extract, func
+
             from database.sql_models import AIUsageLogDB
-            from sqlalchemy import func, extract
 
             current_month = datetime.utcnow().month
             current_year = datetime.utcnow().year
 
-            result = self.db.query(func.sum(AIUsageLogDB.cost)).filter(
-                extract('month', AIUsageLogDB.created_at) == current_month,
-                extract('year', AIUsageLogDB.created_at) == current_year
-            ).scalar()
+            result = (
+                self.db.query(func.sum(AIUsageLogDB.cost))
+                .filter(
+                    extract("month", AIUsageLogDB.created_at) == current_month,
+                    extract("year", AIUsageLogDB.created_at) == current_year,
+                )
+                .scalar()
+            )
 
             return float(result or 0.0)
 
@@ -687,7 +748,9 @@ class AzureCostManagementService:
 
             from database.sql_models import UserProfileDB
 
-            user = self.db.query(UserProfileDB).filter(UserProfileDB.id == user_id).first()
+            user = (
+                self.db.query(UserProfileDB).filter(UserProfileDB.id == user_id).first()
+            )
             if user:
                 return float(user.monthly_budget or 5.0)
 
@@ -705,10 +768,12 @@ class AzureCostManagementService:
                 "chat": "gemini-pro",  # Lower cost than GPT-4
                 "generation": "claude-3-haiku",  # Fastest and cheapest
                 "analysis": "gpt-3.5-turbo",  # Good balance
-                "default": "gemini-pro"
+                "default": "gemini-pro",
             }
 
-            return cost_efficient_models.get(operation_type, cost_efficient_models["default"])
+            return cost_efficient_models.get(
+                operation_type, cost_efficient_models["default"]
+            )
 
         except Exception as e:
             logger.error(f"Failed to get model recommendation: {e}")
@@ -756,19 +821,25 @@ class AzureCostManagementService:
             if not self.db:
                 return {}
 
+            from sqlalchemy import extract, func
+
             from database.sql_models import AIUsageLogDB
-            from sqlalchemy import func, extract
 
             current_month = datetime.utcnow().month
             current_year = datetime.utcnow().year
 
-            results = self.db.query(
-                AIUsageLogDB.user_id,
-                func.sum(AIUsageLogDB.cost).label('total_cost')
-            ).filter(
-                extract('month', AIUsageLogDB.created_at) == current_month,
-                extract('year', AIUsageLogDB.created_at) == current_year
-            ).group_by(AIUsageLogDB.user_id).all()
+            results = (
+                self.db.query(
+                    AIUsageLogDB.user_id,
+                    func.sum(AIUsageLogDB.cost).label("total_cost"),
+                )
+                .filter(
+                    extract("month", AIUsageLogDB.created_at) == current_month,
+                    extract("year", AIUsageLogDB.created_at) == current_year,
+                )
+                .group_by(AIUsageLogDB.user_id)
+                .all()
+            )
 
             return {result.user_id: float(result.total_cost) for result in results}
 
@@ -782,19 +853,25 @@ class AzureCostManagementService:
             if not self.db:
                 return {}
 
+            from sqlalchemy import extract, func
+
             from database.sql_models import AIUsageLogDB
-            from sqlalchemy import func, extract
 
             current_month = datetime.utcnow().month
             current_year = datetime.utcnow().year
 
-            results = self.db.query(
-                AIUsageLogDB.model_name,
-                func.sum(AIUsageLogDB.cost).label('total_cost')
-            ).filter(
-                extract('month', AIUsageLogDB.created_at) == current_month,
-                extract('year', AIUsageLogDB.created_at) == current_year
-            ).group_by(AIUsageLogDB.model_name).all()
+            results = (
+                self.db.query(
+                    AIUsageLogDB.model_name,
+                    func.sum(AIUsageLogDB.cost).label("total_cost"),
+                )
+                .filter(
+                    extract("month", AIUsageLogDB.created_at) == current_month,
+                    extract("year", AIUsageLogDB.created_at) == current_year,
+                )
+                .group_by(AIUsageLogDB.model_name)
+                .all()
+            )
 
             return {result.model_name: float(result.total_cost) for result in results}
 
@@ -813,8 +890,9 @@ class AzureCostManagementService:
             if not self.db:
                 return []
 
-            from database.sql_models import AIUsageLogDB
             from sqlalchemy import func
+
+            from database.sql_models import AIUsageLogDB
 
             # Get last 7 days of costs
             trends = []
@@ -823,10 +901,14 @@ class AzureCostManagementService:
                 day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
                 day_end = day_start + timedelta(days=1)
 
-                result = self.db.query(func.sum(AIUsageLogDB.cost)).filter(
-                    AIUsageLogDB.created_at >= day_start,
-                    AIUsageLogDB.created_at < day_end
-                ).scalar()
+                result = (
+                    self.db.query(func.sum(AIUsageLogDB.cost))
+                    .filter(
+                        AIUsageLogDB.created_at >= day_start,
+                        AIUsageLogDB.created_at < day_end,
+                    )
+                    .scalar()
+                )
 
                 trends.append(float(result or 0.0))
 
@@ -836,7 +918,9 @@ class AzureCostManagementService:
             logger.error(f"Failed to get daily trend: {e}")
             return []
 
-    def _calculate_projected_spend(self, current_spend: float, daily_trend: List[float]) -> float:
+    def _calculate_projected_spend(
+        self, current_spend: float, daily_trend: List[float]
+    ) -> float:
         """Calculate projected monthly spend based on trends"""
         try:
             if not daily_trend:
@@ -877,7 +961,9 @@ class AzureCostManagementService:
             logger.error(f"Azure alert creation failed: {e}")
             return "azure_alert_failed"
 
-    async def _get_historical_costs(self, start_date: datetime, end_date: datetime) -> List[float]:
+    async def _get_historical_costs(
+        self, start_date: datetime, end_date: datetime
+    ) -> List[float]:
         """Get historical cost data"""
         # Mock implementation - replace with actual data queries
         return [1.2, 1.5, 1.8, 1.6, 2.1, 1.9, 2.3, 2.0, 1.8, 2.2]
@@ -887,8 +973,16 @@ class AzureCostManagementService:
         if len(historical_costs) < 2:
             return "insufficient_data"
 
-        recent_avg = sum(historical_costs[-3:]) / 3 if len(historical_costs) >= 3 else historical_costs[-1]
-        older_avg = sum(historical_costs[:3]) / 3 if len(historical_costs) >= 6 else historical_costs[0]
+        recent_avg = (
+            sum(historical_costs[-3:]) / 3
+            if len(historical_costs) >= 3
+            else historical_costs[-1]
+        )
+        older_avg = (
+            sum(historical_costs[:3]) / 3
+            if len(historical_costs) >= 6
+            else historical_costs[0]
+        )
 
         if recent_avg > older_avg * 1.1:
             return "increasing"
@@ -897,7 +991,9 @@ class AzureCostManagementService:
         else:
             return "stable"
 
-    async def _generate_cost_forecast(self, historical_costs: List[float]) -> Dict[str, Any]:
+    async def _generate_cost_forecast(
+        self, historical_costs: List[float]
+    ) -> Dict[str, Any]:
         """Generate cost forecast"""
         if not historical_costs:
             return {"error": "insufficient_data"}
@@ -909,22 +1005,20 @@ class AzureCostManagementService:
             "next_7_days": avg_cost * 7,
             "next_30_days": avg_cost * 30,
             "confidence": "medium",
-            "method": "linear_projection"
+            "method": "linear_projection",
         }
 
-    async def _get_cost_breakdown(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+    async def _get_cost_breakdown(
+        self, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
         """Get detailed cost breakdown"""
         return {
             "by_service": {
                 "openai": 45.20,
                 "google_ai": 12.30,
-                "azure_functions": 8.50
+                "azure_functions": 8.50,
             },
-            "by_model": {
-                "gpt-4": 35.00,
-                "gemini-pro": 15.50,
-                "claude-3": 10.00
-            }
+            "by_model": {"gpt-4": 35.00, "gemini-pro": 15.50, "claude-3": 10.00},
         }
 
     async def _get_optimization_recommendations(self) -> List[Dict[str, str]]:
@@ -933,24 +1027,26 @@ class AzureCostManagementService:
             {
                 "type": "model_optimization",
                 "recommendation": "Consider using Gemini Pro for chat requests to reduce costs by 30%",
-                "potential_savings": "15.00"
+                "potential_savings": "15.00",
             },
             {
                 "type": "caching",
                 "recommendation": "Enable response caching to reduce duplicate requests",
-                "potential_savings": "8.50"
+                "potential_savings": "8.50",
             },
             {
                 "type": "batch_processing",
                 "recommendation": "Batch similar requests to improve efficiency",
-                "potential_savings": "5.20"
-            }
+                "potential_savings": "5.20",
+            },
         ]
 
     async def _get_alert_summary(self) -> Dict[str, Any]:
         """Get summary of configured alerts"""
         return {
             "total_alerts": len(self._alerts),
-            "active_alerts": len([a for a in self._alerts.values() if a.last_triggered]),
-            "alert_types": list(set(a.alert_type for a in self._alerts.values()))
+            "active_alerts": len(
+                [a for a in self._alerts.values() if a.last_triggered]
+            ),
+            "alert_types": list(set(a.alert_type for a in self._alerts.values())),
         }

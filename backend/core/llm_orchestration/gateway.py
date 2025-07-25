@@ -9,7 +9,7 @@ import uuid
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional, Union, Dict
+from typing import Any, Dict, Optional, Union
 
 from .adapters import (
     AdapterFactory,
@@ -408,12 +408,13 @@ class LLMGateway:
 
         # Estimate cost for this request
         estimated_cost = await self.cost_estimator.estimate_cost(
-            request.prompt,
-            request.max_tokens or 1000
+            request.prompt, request.max_tokens or 1000
         )
 
         # Check local budget
-        if not await self.budget_manager.can_proceed(request.user_id, user_groups, estimated_cost):
+        if not await self.budget_manager.can_proceed(
+            request.user_id, user_groups, estimated_cost
+        ):
             raise Exception("Budget limit exceeded")
 
         # Validate with Azure Cost Management
@@ -615,7 +616,9 @@ async def initialize_gateway(
     global gateway
 
     try:
-        gateway = LLMGateway(config_manager, key_vault_service, db_session, azure_cost_service)
+        gateway = LLMGateway(
+            config_manager, key_vault_service, db_session, azure_cost_service
+        )
         await gateway.initialize()
         logger.info("Global LLM Gateway initialized with Azure Cost Management")
         return gateway

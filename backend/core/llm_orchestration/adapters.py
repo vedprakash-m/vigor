@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional, Union, List, Dict
+from typing import Any, Dict, List, Optional, Union
 
 from .config_manager import ModelConfiguration
 from .key_vault import KeyVaultClientService

@@ -432,16 +432,15 @@ async def export_logs_csv(user_id: str, db: Session = Depends(get_db)):
 
 # Azure Cost Management Endpoints
 
+
 @router.get("/azure-cost-analytics", response_model=AzureCostAnalyticsResponse)
 async def get_azure_cost_analytics(
-    current_user: UserProfile = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Get real-time cost analytics from Azure Cost Management"""
     if not current_user.is_admin:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
         )
 
     try:
@@ -461,26 +460,24 @@ async def get_azure_cost_analytics(
             cost_breakdown=cost_breakdown or [],
             alerts=alerts or [],
             usage_trends=analytics or {},
-            last_updated=datetime.utcnow().isoformat()
+            last_updated=datetime.utcnow().isoformat(),
         )
 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get Azure cost analytics: {str(e)}"
+            detail=f"Failed to get Azure cost analytics: {str(e)}",
         )
 
 
 @router.post("/azure-budget-sync", response_model=BudgetSyncResponse)
 async def sync_azure_budget(
-    current_user: UserProfile = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Synchronize budget with Azure Cost Management"""
     if not current_user.is_admin:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
         )
 
     try:
@@ -490,7 +487,7 @@ async def sync_azure_budget(
         if not gateway:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="LLM Gateway not initialized"
+                detail="LLM Gateway not initialized",
             )
 
         # Sync with Azure costs
@@ -501,26 +498,24 @@ async def sync_azure_budget(
             global_usage=sync_result.get("global_usage", 0.0),
             azure_costs=sync_result.get("azure_costs"),
             last_sync=sync_result.get("last_sync", datetime.utcnow().isoformat()),
-            error=sync_result.get("error")
+            error=sync_result.get("error"),
         )
 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to sync Azure budget: {str(e)}"
+            detail=f"Failed to sync Azure budget: {str(e)}",
         )
 
 
 @router.get("/real-time-cost-analytics", response_model=dict)
 async def get_real_time_cost_analytics(
-    current_user: UserProfile = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Get real-time cost analytics combining local and Azure data"""
     if not current_user.is_admin:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
         )
 
     try:
@@ -530,7 +525,7 @@ async def get_real_time_cost_analytics(
         if not gateway:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="LLM Gateway not initialized"
+                detail="LLM Gateway not initialized",
             )
 
         # Get real-time analytics
@@ -541,7 +536,7 @@ async def get_real_time_cost_analytics(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get real-time analytics: {str(e)}"
+            detail=f"Failed to get real-time analytics: {str(e)}",
         )
 
 
@@ -551,13 +546,12 @@ async def create_azure_budget_alert(
     threshold_percentage: float,
     email_contacts: List[str],
     current_user: UserProfile = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Create or update Azure budget alert"""
     if not current_user.is_admin:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
         )
 
     try:
@@ -566,19 +560,19 @@ async def create_azure_budget_alert(
         result = await azure_cost_service.create_budget_alert(
             budget_name=budget_name,
             threshold_percentage=threshold_percentage,
-            email_contacts=email_contacts
+            email_contacts=email_contacts,
         )
 
         return {
             "status": "success",
             "alert_id": result.get("alert_id"),
-            "message": "Budget alert created/updated successfully"
+            "message": "Budget alert created/updated successfully",
         }
 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create budget alert: {str(e)}"
+            detail=f"Failed to create budget alert: {str(e)}",
         )
 
 
@@ -586,13 +580,12 @@ async def create_azure_budget_alert(
 async def delete_azure_budget_alert(
     alert_id: str,
     current_user: UserProfile = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Delete Azure budget alert"""
     if not current_user.is_admin:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
         )
 
     try:
@@ -600,43 +593,40 @@ async def delete_azure_budget_alert(
 
         await azure_cost_service.delete_budget_alert(alert_id)
 
-        return {
-            "status": "success",
-            "message": "Budget alert deleted successfully"
-        }
+        return {"status": "success", "message": "Budget alert deleted successfully"}
 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete budget alert: {str(e)}"
+            detail=f"Failed to delete budget alert: {str(e)}",
         )
 
 
 @router.get("/cost-optimization-recommendations", response_model=dict)
 async def get_cost_optimization_recommendations(
-    current_user: UserProfile = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Get AI-powered cost optimization recommendations"""
     if not current_user.is_admin:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
         )
 
     try:
         azure_cost_service = AzureCostManagementService()
 
-        recommendations = await azure_cost_service.get_cost_optimization_recommendations()
+        recommendations = (
+            await azure_cost_service.get_cost_optimization_recommendations()
+        )
 
         return {
             "recommendations": recommendations,
             "generated_at": datetime.utcnow().isoformat(),
-            "status": "success"
+            "status": "success",
         }
 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get recommendations: {str(e)}"
+            detail=f"Failed to get recommendations: {str(e)}",
         )

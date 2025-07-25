@@ -128,8 +128,10 @@ class TestAdminSchemas:
     def test_admin_schemas_instantiation(self):
         """Test admin schemas can be accessed"""
         schema_classes = [
-            getattr(admin, item) for item in dir(admin)
-            if item[0].isupper() and hasattr(getattr(admin, item), "__name__")
+            getattr(admin, item)
+            for item in dir(admin)
+            if item[0].isupper()
+            and hasattr(getattr(admin, item), "__name__")
             and not item.startswith("_")
         ]
 

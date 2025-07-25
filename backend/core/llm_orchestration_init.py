@@ -3,18 +3,19 @@ LLM Orchestration Layer Initialization
 Sets up the enterprise LLM gateway with all required components
 """
 
-from typing import Dict, List, Optional
 import logging
 import os
+from typing import Dict, List, Optional
 
 # New facade
 from application.llm.facade import LLMGatewayFacade
+from core.azure_cost_management import AzureCostManagementService
 
 # Legacy gateway fallback
+from core.llm_orchestration import LLMGateway  # type: ignore
 from core.llm_orchestration import (
     AdminConfigManager,
     KeyVaultClientService,
-    LLMGateway,  # type: ignore
 )
 from core.llm_orchestration.config_manager import ModelPriority
 from core.llm_orchestration.key_vault import (
@@ -23,7 +24,6 @@ from core.llm_orchestration.key_vault import (
     initialize_key_vault_service,
 )
 from database.connection import SessionLocal
-from core.azure_cost_management import AzureCostManagementService
 
 logger = logging.getLogger(__name__)
 

@@ -6,7 +6,7 @@ Comprehensive analytics and monitoring for LLM orchestration
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional, Union, List, Dict
+from typing import Any, Dict, List, Optional, Union
 
 logger = logging.getLogger(__name__)
 

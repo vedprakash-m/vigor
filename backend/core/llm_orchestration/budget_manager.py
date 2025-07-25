@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional, Union, List, Dict
+from typing import Any, Dict, List, Optional, Union
 
 from ..azure_cost_management import AzureCostManagementService
 
@@ -46,7 +46,11 @@ class BudgetManager:
     Tracks usage, enforces limits, and provides cost analytics
     """
 
-    def __init__(self, db_session=None, azure_cost_service: Optional[AzureCostManagementService] = None):
+    def __init__(
+        self,
+        db_session=None,
+        azure_cost_service: Optional[AzureCostManagementService] = None,
+    ):
         self.db = db_session
         self.azure_cost_service = azure_cost_service
         self._usage_cache: Dict[str, BudgetUsage] = {}
@@ -270,7 +274,9 @@ class BudgetManager:
             # Update global usage with actual Azure costs
             if current_costs and "total_cost" in current_costs:
                 self._global_usage = current_costs["total_cost"]
-                logger.info(f"Updated global usage from Azure: ${self._global_usage:.4f}")
+                logger.info(
+                    f"Updated global usage from Azure: ${self._global_usage:.4f}"
+                )
 
             # Check for budget alerts
             if current_costs and "budget_alerts" in current_costs:
@@ -302,7 +308,9 @@ class BudgetManager:
 
         try:
             # Get current Azure budget status
-            budget_status = await self.azure_cost_service.validate_budget(estimated_cost)
+            budget_status = await self.azure_cost_service.validate_budget(
+                estimated_cost
+            )
 
             if not budget_status.get("within_budget", True):
                 logger.warning(

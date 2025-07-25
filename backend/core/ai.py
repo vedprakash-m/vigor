@@ -3,7 +3,7 @@ AI module for fitness coaching and workout plan generation.
 """
 
 import json
-from typing import Any, Optional, Union, List, Dict
+from typing import Any, Dict, List, Optional, Union
 
 from core.admin_llm_manager import AdminLLMManager
 from core.config import get_settings

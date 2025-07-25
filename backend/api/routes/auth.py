@@ -3,11 +3,10 @@ Enhanced Authentication API with OAuth2 and Microsoft Entra External ID support
 """
 
 from typing import Dict, List, Optional
-# Third-party imports
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import RedirectResponse
+from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, ValidationError
 from sqlalchemy.orm import Session
 
@@ -27,6 +26,10 @@ from core.security import (
 )
 from database.connection import get_db
 from database.models import UserProfile
+
+# Third-party imports
+
+
 
 router = APIRouter()
 
@@ -394,9 +397,7 @@ async def reset_password(
 @router.get("/oauth/{provider}", summary="Get OAuth2 Authorization URL")
 @limiter.limit("10/minute")
 async def get_oauth_authorization_url(
-    request: Request,
-    provider: str,
-    db: Session = Depends(get_db)
+    request: Request, provider: str, db: Session = Depends(get_db)
 ):
     """
     Get authorization URL for OAuth2 provider (Microsoft, Google, GitHub)
@@ -421,7 +422,9 @@ async def get_oauth_authorization_url(
         raise
     except Exception as e:
         await SecurityAuditLogger.log_suspicious_activity(
-            request, "oauth_authorization_error", {"provider": provider, "error": str(e)[:100]}
+            request,
+            "oauth_authorization_error",
+            {"provider": provider, "error": str(e)[:100]},
         )
         raise HTTPException(status_code=500, detail="OAuth authorization failed")
 
@@ -434,7 +437,7 @@ async def oauth_callback(
     code: str,
     state: str,
     error: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Handle OAuth2 callback from provider
@@ -451,39 +454,52 @@ async def oauth_callback(
                 request, "oauth_callback_error", {"provider": provider, "error": error}
             )
             # Redirect to frontend with error
-            return RedirectResponse(url=f"{settings.LOGIN_ERROR_REDIRECT}&oauth_error={error}")
+            return RedirectResponse(
+                url=f"{settings.LOGIN_ERROR_REDIRECT}&oauth_error={error}"
+            )
 
         if not code or not state:
-            raise HTTPException(status_code=400, detail="Missing authorization code or state")
+            raise HTTPException(
+                status_code=400, detail="Missing authorization code or state"
+            )
 
         oauth_service = OAuth2Service(db)
         result = await oauth_service.handle_oauth_callback(provider, code, state)
 
         await SecurityAuditLogger.log_security_event(
-            request, "oauth_login_success",
-            {"provider": provider, "user_id": result["user"]["id"]}
+            request,
+            "oauth_login_success",
+            {"provider": provider, "user_id": result["user"]["id"]},
         )
 
         # For web flow, redirect to frontend with tokens
-        redirect_url = f"{settings.LOGIN_SUCCESS_REDIRECT}?" + \
-                      f"access_token={result['access_token']}&" + \
-                      f"refresh_token={result['refresh_token']}&" + \
-                      f"provider={provider}"
+        redirect_url = (
+            f"{settings.LOGIN_SUCCESS_REDIRECT}?"
+            + f"access_token={result['access_token']}&"
+            + f"refresh_token={result['refresh_token']}&"
+            + f"provider={provider}"
+        )
 
         return RedirectResponse(url=redirect_url)
 
     except HTTPException:
         await SecurityAuditLogger.log_suspicious_activity(
-            request, "oauth_callback_failed",
-            {"provider": provider, "error": "authentication_failed"}
+            request,
+            "oauth_callback_failed",
+            {"provider": provider, "error": "authentication_failed"},
         )
-        return RedirectResponse(url=f"{settings.LOGIN_ERROR_REDIRECT}&oauth_error=authentication_failed")
+        return RedirectResponse(
+            url=f"{settings.LOGIN_ERROR_REDIRECT}&oauth_error=authentication_failed"
+        )
     except Exception as e:
         await SecurityAuditLogger.log_suspicious_activity(
-            request, "oauth_callback_error",
-            {"provider": provider, "error": str(e)[:100]}
+            request,
+            "oauth_callback_error",
+            {"provider": provider, "error": str(e)[:100]},
         )
-        return RedirectResponse(url=f"{settings.LOGIN_ERROR_REDIRECT}&oauth_error=server_error")
+        return RedirectResponse(
+            url=f"{settings.LOGIN_ERROR_REDIRECT}&oauth_error=server_error"
+        )
 
 
 @router.post("/oauth/{provider}/token", summary="OAuth2 Token Exchange (API)")
@@ -492,7 +508,7 @@ async def oauth_token_exchange(
     provider: str,
     code: str,
     state: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Exchange OAuth2 authorization code for JWT tokens (API endpoint)
@@ -505,14 +521,17 @@ async def oauth_token_exchange(
         await check_request_origin(request)
 
         if not code or not state:
-            raise HTTPException(status_code=400, detail="Missing authorization code or state")
+            raise HTTPException(
+                status_code=400, detail="Missing authorization code or state"
+            )
 
         oauth_service = OAuth2Service(db)
         result = await oauth_service.handle_oauth_callback(provider, code, state)
 
         await SecurityAuditLogger.log_security_event(
-            request, "oauth_api_login_success",
-            {"provider": provider, "user_id": result["user"]["id"]}
+            request,
+            "oauth_api_login_success",
+            {"provider": provider, "user_id": result["user"]["id"]},
         )
 
         return result
@@ -521,8 +540,9 @@ async def oauth_token_exchange(
         raise
     except Exception as e:
         await SecurityAuditLogger.log_suspicious_activity(
-            request, "oauth_api_token_error",
-            {"provider": provider, "error": str(e)[:100]}
+            request,
+            "oauth_api_token_error",
+            {"provider": provider, "error": str(e)[:100]},
         )
         raise HTTPException(status_code=500, detail="OAuth token exchange failed")
 
@@ -537,5 +557,5 @@ async def get_oauth_providers(db: Session = Depends(get_db)):
     oauth_service = OAuth2Service(db)
     return {
         "providers": list(oauth_service.get_available_providers().keys()),
-        "configuration": oauth_service.get_available_providers()
+        "configuration": oauth_service.get_available_providers(),
     }

@@ -14,7 +14,9 @@ from slowapi.errors import RateLimitExceeded
 from api.routes.admin import router as admin_router
 from api.routes.ai import router as ai_router
 from api.routes.auth import router as auth_router
-from api.routes.entra_auth import router as entra_auth_router  # New Microsoft Entra ID routes
+from api.routes.entra_auth import (
+    router as entra_auth_router,  # New Microsoft Entra ID routes
+)
 from api.routes.health import router as health_router
 from api.routes.llm_health import router as llm_health_router
 from api.routes.llm_orchestration import router as llm_router
@@ -304,7 +306,9 @@ async def root(request: Request):
 
 
 # Include routers with rate limiting applied
-app.include_router(health_router, tags=["Health"])  # No prefix for standard health endpoints
+app.include_router(
+    health_router, tags=["Health"]
+)  # No prefix for standard health endpoints
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(users_router, prefix="/users", tags=["Users"])
 app.include_router(workouts_router, prefix="/workouts", tags=["Workouts"])
@@ -314,7 +318,9 @@ app.include_router(llm_router, prefix="/llm", tags=["LLM Orchestration"])
 app.include_router(llm_health_router, prefix="/api", tags=["LLM Health"])
 app.include_router(tiers_router, prefix="/tiers", tags=["User Tiers"])
 app.include_router(push_router, prefix="/api", tags=["Push Notifications"])
-app.include_router(entra_auth_router, prefix="/entra", tags=["Microsoft Entra ID"])  # New Entra ID routes
+app.include_router(
+    entra_auth_router, prefix="/entra", tags=["Microsoft Entra ID"]
+)  # New Entra ID routes
 
 if __name__ == "__main__":
     # Binding to 0.0.0.0 is required for containerized applications

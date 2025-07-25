@@ -37,7 +37,9 @@ class OAuth2Provider:
         """Get authorization URL for the provider"""
         raise NotImplementedError
 
-    async def exchange_code_for_token(self, code: str, code_verifier: str) -> Dict[str, Any]:
+    async def exchange_code_for_token(
+        self, code: str, code_verifier: str
+    ) -> Dict[str, Any]:
         """Exchange authorization code for access token"""
         raise NotImplementedError
 
@@ -49,7 +51,9 @@ class OAuth2Provider:
 class MicrosoftEntraProvider(OAuth2Provider):
     """Microsoft Entra External ID OAuth2 provider"""
 
-    def __init__(self, client_id: str, client_secret: str, redirect_uri: str, tenant_id: str):
+    def __init__(
+        self, client_id: str, client_secret: str, redirect_uri: str, tenant_id: str
+    ):
         super().__init__(client_id, client_secret, redirect_uri)
         self.tenant_id = tenant_id
         self.authority_url = f"https://login.microsoftonline.com/{tenant_id}"
@@ -65,11 +69,15 @@ class MicrosoftEntraProvider(OAuth2Provider):
             "state": state,
             "code_challenge": code_challenge,
             "code_challenge_method": settings.OAUTH_PKCE_CHALLENGE_METHOD,
-            "prompt": "select_account"
+            "prompt": "select_account",
         }
-        return f"{self.authority_url}/oauth2/v2.0/authorize?" + urllib.parse.urlencode(params)
+        return f"{self.authority_url}/oauth2/v2.0/authorize?" + urllib.parse.urlencode(
+            params
+        )
 
-    async def exchange_code_for_token(self, code: str, code_verifier: str) -> Dict[str, Any]:
+    async def exchange_code_for_token(
+        self, code: str, code_verifier: str
+    ) -> Dict[str, Any]:
         """Exchange authorization code for access token"""
         token_url = f"{self.authority_url}/oauth2/v2.0/token"
 
@@ -79,7 +87,7 @@ class MicrosoftEntraProvider(OAuth2Provider):
             "code": code,
             "redirect_uri": self.redirect_uri,
             "grant_type": "authorization_code",
-            "code_verifier": code_verifier
+            "code_verifier": code_verifier,
         }
 
         async with httpx.AsyncClient() as client:
@@ -110,11 +118,15 @@ class GoogleOAuthProvider(OAuth2Provider):
             "state": state,
             "code_challenge": code_challenge,
             "code_challenge_method": settings.OAUTH_PKCE_CHALLENGE_METHOD,
-            "access_type": "offline"
+            "access_type": "offline",
         }
-        return "https://accounts.google.com/o/oauth2/auth?" + urllib.parse.urlencode(params)
+        return "https://accounts.google.com/o/oauth2/auth?" + urllib.parse.urlencode(
+            params
+        )
 
-    async def exchange_code_for_token(self, code: str, code_verifier: str) -> Dict[str, Any]:
+    async def exchange_code_for_token(
+        self, code: str, code_verifier: str
+    ) -> Dict[str, Any]:
         """Exchange authorization code for access token"""
         token_url = "https://oauth2.googleapis.com/token"
 
@@ -124,7 +136,7 @@ class GoogleOAuthProvider(OAuth2Provider):
             "code": code,
             "redirect_uri": self.redirect_uri,
             "grant_type": "authorization_code",
-            "code_verifier": code_verifier
+            "code_verifier": code_verifier,
         }
 
         async with httpx.AsyncClient() as client:
@@ -137,7 +149,9 @@ class GoogleOAuthProvider(OAuth2Provider):
         headers = {"Authorization": f"Bearer {access_token}"}
 
         async with httpx.AsyncClient() as client:
-            response = await client.get("https://www.googleapis.com/oauth2/v2/userinfo", headers=headers)
+            response = await client.get(
+                "https://www.googleapis.com/oauth2/v2/userinfo", headers=headers
+            )
             response.raise_for_status()
             return response.json()
 
@@ -153,11 +167,15 @@ class GitHubOAuthProvider(OAuth2Provider):
             "scope": "user:email",
             "state": state,
             "code_challenge": code_challenge,
-            "code_challenge_method": settings.OAUTH_PKCE_CHALLENGE_METHOD
+            "code_challenge_method": settings.OAUTH_PKCE_CHALLENGE_METHOD,
         }
-        return "https://github.com/login/oauth/authorize?" + urllib.parse.urlencode(params)
+        return "https://github.com/login/oauth/authorize?" + urllib.parse.urlencode(
+            params
+        )
 
-    async def exchange_code_for_token(self, code: str, code_verifier: str) -> Dict[str, Any]:
+    async def exchange_code_for_token(
+        self, code: str, code_verifier: str
+    ) -> Dict[str, Any]:
         """Exchange authorization code for access token"""
         token_url = "https://github.com/login/oauth/access_token"
 
@@ -166,7 +184,7 @@ class GitHubOAuthProvider(OAuth2Provider):
             "client_secret": self.client_secret,
             "code": code,
             "redirect_uri": self.redirect_uri,
-            "code_verifier": code_verifier
+            "code_verifier": code_verifier,
         }
 
         headers = {"Accept": "application/json"}
@@ -180,22 +198,28 @@ class GitHubOAuthProvider(OAuth2Provider):
         """Get user information from GitHub"""
         headers = {
             "Authorization": f"Bearer {access_token}",
-            "Accept": "application/vnd.github.v3+json"
+            "Accept": "application/vnd.github.v3+json",
         }
 
         async with httpx.AsyncClient() as client:
             # Get user info
-            user_response = await client.get("https://api.github.com/user", headers=headers)
+            user_response = await client.get(
+                "https://api.github.com/user", headers=headers
+            )
             user_response.raise_for_status()
             user_data = user_response.json()
 
             # Get user email (might be private)
-            email_response = await client.get("https://api.github.com/user/emails", headers=headers)
+            email_response = await client.get(
+                "https://api.github.com/user/emails", headers=headers
+            )
             email_response.raise_for_status()
             emails = email_response.json()
 
             # Find primary email
-            primary_email = next((email["email"] for email in emails if email["primary"]), None)
+            primary_email = next(
+                (email["email"] for email in emails if email["primary"]), None
+            )
             user_data["email"] = primary_email
 
             return user_data
@@ -213,12 +237,16 @@ class OAuth2Service:
         providers = {}
 
         # Microsoft Entra External ID
-        if settings.MICROSOFT_CLIENT_ID and settings.MICROSOFT_CLIENT_SECRET and settings.MICROSOFT_TENANT_ID:
+        if (
+            settings.MICROSOFT_CLIENT_ID
+            and settings.MICROSOFT_CLIENT_SECRET
+            and settings.MICROSOFT_TENANT_ID
+        ):
             providers["microsoft"] = MicrosoftEntraProvider(
                 client_id=settings.MICROSOFT_CLIENT_ID,
                 client_secret=settings.MICROSOFT_CLIENT_SECRET,
                 redirect_uri=settings.MICROSOFT_REDIRECT_URI,
-                tenant_id=settings.MICROSOFT_TENANT_ID
+                tenant_id=settings.MICROSOFT_TENANT_ID,
             )
 
         # Google OAuth
@@ -226,7 +254,7 @@ class OAuth2Service:
             providers["google"] = GoogleOAuthProvider(
                 client_id=settings.GOOGLE_CLIENT_ID,
                 client_secret=settings.GOOGLE_CLIENT_SECRET,
-                redirect_uri=settings.GOOGLE_REDIRECT_URI
+                redirect_uri=settings.GOOGLE_REDIRECT_URI,
             )
 
         # GitHub OAuth
@@ -234,17 +262,25 @@ class OAuth2Service:
             providers["github"] = GitHubOAuthProvider(
                 client_id=settings.GITHUB_CLIENT_ID,
                 client_secret=settings.GITHUB_CLIENT_SECRET,
-                redirect_uri=settings.GITHUB_REDIRECT_URI
+                redirect_uri=settings.GITHUB_REDIRECT_URI,
             )
 
         return providers
 
     def generate_pkce_pair(self) -> Tuple[str, str]:
         """Generate PKCE code verifier and challenge"""
-        code_verifier = base64.urlsafe_b64encode(secrets.token_bytes(32)).decode("utf-8").rstrip("=")
-        code_challenge = base64.urlsafe_b64encode(
-            hashlib.sha256(code_verifier.encode("utf-8")).digest()
-        ).decode("utf-8").rstrip("=")
+        code_verifier = (
+            base64.urlsafe_b64encode(secrets.token_bytes(32))
+            .decode("utf-8")
+            .rstrip("=")
+        )
+        code_challenge = (
+            base64.urlsafe_b64encode(
+                hashlib.sha256(code_verifier.encode("utf-8")).digest()
+            )
+            .decode("utf-8")
+            .rstrip("=")
+        )
         return code_verifier, code_challenge
 
     def generate_state_token(self, provider: str, code_verifier: str) -> str:
@@ -253,14 +289,20 @@ class OAuth2Service:
             "provider": provider,
             "code_verifier": code_verifier,
             "timestamp": datetime.utcnow().isoformat(),
-            "nonce": secrets.token_urlsafe(16)
+            "nonce": secrets.token_urlsafe(16),
         }
-        return jwt.encode(payload, settings.OAUTH_STATE_SECRET, algorithm=settings.ALGORITHM)
+        return jwt.encode(
+            payload, settings.OAUTH_STATE_SECRET, algorithm=settings.ALGORITHM
+        )
 
     def verify_state_token(self, state_token: str) -> Dict[str, Any]:
         """Verify and decode state token"""
         try:
-            payload = jwt.decode(state_token, settings.OAUTH_STATE_SECRET, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(
+                state_token,
+                settings.OAUTH_STATE_SECRET,
+                algorithms=[settings.ALGORITHM],
+            )
 
             # Check if token is not too old (30 minutes max)
             timestamp = datetime.fromisoformat(payload["timestamp"])
@@ -274,7 +316,10 @@ class OAuth2Service:
     def get_authorization_url(self, provider_name: str) -> Dict[str, str]:
         """Get authorization URL for OAuth provider"""
         if provider_name not in self.providers:
-            raise HTTPException(status_code=400, detail=f"OAuth provider '{provider_name}' not configured")
+            raise HTTPException(
+                status_code=400,
+                detail=f"OAuth provider '{provider_name}' not configured",
+            )
 
         provider = self.providers[provider_name]
         code_verifier, code_challenge = self.generate_pkce_pair()
@@ -282,15 +327,17 @@ class OAuth2Service:
 
         authorization_url = provider.get_authorization_url(state_token, code_challenge)
 
-        return {
-            "authorization_url": authorization_url,
-            "state": state_token
-        }
+        return {"authorization_url": authorization_url, "state": state_token}
 
-    async def handle_oauth_callback(self, provider_name: str, code: str, state: str) -> Dict[str, Any]:
+    async def handle_oauth_callback(
+        self, provider_name: str, code: str, state: str
+    ) -> Dict[str, Any]:
         """Handle OAuth callback and authenticate user"""
         if provider_name not in self.providers:
-            raise HTTPException(status_code=400, detail=f"OAuth provider '{provider_name}' not configured")
+            raise HTTPException(
+                status_code=400,
+                detail=f"OAuth provider '{provider_name}' not configured",
+            )
 
         # Verify state token
         state_payload = self.verify_state_token(state)
@@ -306,7 +353,9 @@ class OAuth2Service:
             access_token = token_response.get("access_token")
 
             if not access_token:
-                raise HTTPException(status_code=400, detail="Failed to obtain access token")
+                raise HTTPException(
+                    status_code=400, detail="Failed to obtain access token"
+                )
 
             # Get user information
             user_info = await provider.get_user_info(access_token)
@@ -316,6 +365,7 @@ class OAuth2Service:
 
             # Generate application tokens
             from api.services.auth import AuthService
+
             auth_service = AuthService(self.db)
             tokens = await auth_service._create_user_tokens(user)
 
@@ -331,8 +381,8 @@ class OAuth2Service:
                     "email": user.email,
                     "username": user.username,
                     "tier": user.user_tier.upper(),
-                    "oauth_provider": provider_name
-                }
+                    "oauth_provider": provider_name,
+                },
             }
 
         except HTTPException:
@@ -341,21 +391,29 @@ class OAuth2Service:
             logger.error(f"OAuth callback error for {provider_name}: {e}")
             raise HTTPException(status_code=500, detail="OAuth authentication failed")
 
-    async def _find_or_create_oauth_user(self, provider: str, user_info: Dict[str, Any]) -> UserProfileDB:
+    async def _find_or_create_oauth_user(
+        self, provider: str, user_info: Dict[str, Any]
+    ) -> UserProfileDB:
         """Find existing user or create new OAuth user"""
         # Extract email from provider-specific user info
         email = self._extract_email(provider, user_info)
         if not email:
-            raise HTTPException(status_code=400, detail="Email not provided by OAuth provider")
+            raise HTTPException(
+                status_code=400, detail="Email not provided by OAuth provider"
+            )
 
         # Check if user exists
-        existing_user = self.db.query(UserProfileDB).filter(UserProfileDB.email == email).first()
+        existing_user = (
+            self.db.query(UserProfileDB).filter(UserProfileDB.email == email).first()
+        )
 
         if existing_user:
             # Update OAuth provider info if needed
             if not existing_user.oauth_provider:
                 existing_user.oauth_provider = provider
-                existing_user.oauth_provider_id = self._extract_provider_id(provider, user_info)
+                existing_user.oauth_provider_id = self._extract_provider_id(
+                    provider, user_info
+                )
                 existing_user.last_login = datetime.utcnow()
                 self.db.commit()
             return existing_user
@@ -371,7 +429,7 @@ class OAuth2Service:
             oauth_provider=provider,
             oauth_provider_id=self._extract_provider_id(provider, user_info),
             created_at=datetime.utcnow(),
-            last_login=datetime.utcnow()
+            last_login=datetime.utcnow(),
         )
 
         self.db.add(new_user)
@@ -390,7 +448,9 @@ class OAuth2Service:
             return user_info.get("email")
         return None
 
-    def _extract_provider_id(self, provider: str, user_info: Dict[str, Any]) -> Optional[str]:
+    def _extract_provider_id(
+        self, provider: str, user_info: Dict[str, Any]
+    ) -> Optional[str]:
         """Extract provider-specific user ID"""
         if provider == "microsoft":
             return user_info.get("id")
@@ -400,7 +460,9 @@ class OAuth2Service:
             return str(user_info.get("id"))
         return None
 
-    def _generate_username(self, provider: str, user_info: Dict[str, Any], email: str) -> str:
+    def _generate_username(
+        self, provider: str, user_info: Dict[str, Any], email: str
+    ) -> str:
         """Generate username from provider info"""
         # Try to get name from provider
         name = None
@@ -421,7 +483,11 @@ class OAuth2Service:
         # Ensure username is unique
         base_username = username
         counter = 1
-        while self.db.query(UserProfileDB).filter(UserProfileDB.username == username).first():
+        while (
+            self.db.query(UserProfileDB)
+            .filter(UserProfileDB.username == username)
+            .first()
+        ):
             username = f"{base_username}{counter}"
             counter += 1
 

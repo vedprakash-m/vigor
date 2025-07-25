@@ -7,7 +7,7 @@ import hashlib
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any, Optional, Union, Dict
+from typing import Any, Dict, Optional, Union
 
 from .adapters import LLMRequest, LLMResponse
 

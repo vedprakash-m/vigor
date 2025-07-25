@@ -6,6 +6,9 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
+)
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import (
     Float,
     ForeignKey,
     Index,
@@ -13,7 +16,6 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -27,10 +29,14 @@ class UserProfileDB(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
 
     # Microsoft Entra ID fields (required for Vedprakash domain compliance)
-    entra_id = Column(String, unique=True, index=True, nullable=True)  # Microsoft Entra subject/object ID
+    entra_id = Column(
+        String, unique=True, index=True, nullable=True
+    )  # Microsoft Entra subject/object ID
 
     email = Column(String, unique=True, index=True)
-    username = Column(String, unique=True, index=True, nullable=True)  # Made nullable for Entra ID users
+    username = Column(
+        String, unique=True, index=True, nullable=True
+    )  # Made nullable for Entra ID users
     name = Column(String, nullable=True)  # Full name from Entra ID
     given_name = Column(String, nullable=True)  # First name from Entra ID
     family_name = Column(String, nullable=True)  # Last name from Entra ID
@@ -56,10 +62,16 @@ class UserProfileDB(Base):
     current_month_usage = Column(Float, default=0.0)
 
     # Legacy OAuth2 provider fields (deprecated - will be removed)
-    oauth_provider = Column(String, nullable=True)  # 'microsoft', 'google', 'github', etc.
+    oauth_provider = Column(
+        String, nullable=True
+    )  # 'microsoft', 'google', 'github', etc.
     oauth_provider_id = Column(String, nullable=True)  # Provider-specific user ID
-    oauth_access_token = Column(Text, nullable=True)  # Encrypted access token (if needed)
-    oauth_refresh_token = Column(Text, nullable=True)  # Encrypted refresh token (if needed)
+    oauth_access_token = Column(
+        Text, nullable=True
+    )  # Encrypted access token (if needed)
+    oauth_refresh_token = Column(
+        Text, nullable=True
+    )  # Encrypted refresh token (if needed)
     oauth_token_expires_at = Column(DateTime, nullable=True)  # Token expiration
 
     # MFA settings

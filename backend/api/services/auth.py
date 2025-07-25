@@ -5,7 +5,7 @@ Handles user registration, login, token management with comprehensive security m
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Optional, Union, Dict
+from typing import Any, Dict, Optional, Union
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -166,7 +166,7 @@ class AuthService:
             if user.oauth_provider and not user.hashed_password:
                 raise HTTPException(
                     status_code=401,
-                    detail=f"Please sign in using {user.oauth_provider.title()}"
+                    detail=f"Please sign in using {user.oauth_provider.title()}",
                 )
 
             # Verify password

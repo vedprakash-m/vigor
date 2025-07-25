@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional
+
 """
 Workout-related schemas and data models
 """

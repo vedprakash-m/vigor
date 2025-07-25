@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TypeVar, Optional, Union, List, Generic
+from typing import Generic, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel
 

@@ -27,8 +27,10 @@ class TestAdminSchemas:
     def test_admin_schema_structure(self):
         """Test admin schemas have expected structure"""
         schema_classes = [
-            getattr(admin, item) for item in dir(admin)
-            if item[0].isupper() and hasattr(getattr(admin, item), "__name__")
+            getattr(admin, item)
+            for item in dir(admin)
+            if item[0].isupper()
+            and hasattr(getattr(admin, item), "__name__")
             and not item.startswith("_")
         ]
 
@@ -135,8 +137,10 @@ class TestAdminSchemaIntegration:
         """Test admin schema type definitions"""
         # Get all classes from admin module, filtering out typing imports
         classes = [
-            getattr(admin, item) for item in dir(admin)
-            if item[0].isupper() and hasattr(getattr(admin, item), "__name__")
+            getattr(admin, item)
+            for item in dir(admin)
+            if item[0].isupper()
+            and hasattr(getattr(admin, item), "__name__")
             and not item.startswith("_")
         ]
 
@@ -174,8 +178,10 @@ class TestAdminSchemaEdgeCases:
         """Test admin schemas have proper documentation structure"""
         # Test that classes have docstrings or are properly structured
         classes = [
-            getattr(admin, item) for item in dir(admin)
-            if item[0].isupper() and hasattr(getattr(admin, item), "__name__")
+            getattr(admin, item)
+            for item in dir(admin)
+            if item[0].isupper()
+            and hasattr(getattr(admin, item), "__name__")
             and not item.startswith("_")
         ]
 

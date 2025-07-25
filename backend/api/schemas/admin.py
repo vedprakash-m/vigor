@@ -3,7 +3,7 @@ Admin-related schemas and data models
 """
 
 from datetime import datetime
-from typing import Any, Optional, Union, List, Dict
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 

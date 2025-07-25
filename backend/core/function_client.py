@@ -5,7 +5,7 @@ This module handles the communication with the Azure Functions
 
 import logging
 import os
-from typing import Any, Optional, Union, List, Dict
+from typing import Any, Dict, List, Optional, Union
 
 import httpx
 

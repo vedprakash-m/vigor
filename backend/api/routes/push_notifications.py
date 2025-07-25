@@ -5,16 +5,17 @@ Handles push subscription management and notification delivery.
 
 from datetime import datetime
 from typing import Dict, List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import get_current_user
 from api.schemas.user import UserResponse
-from database.repositories import user_repository
 from database.database import get_db_session
-from sqlalchemy.ext.asyncio import AsyncSession
+from database.repositories import user_repository
 
 # Rate limiting
 limiter = Limiter(key_func=get_remote_address)
@@ -82,7 +83,8 @@ async def subscribe_to_push_notifications(
 
         # Remove any existing subscription with same endpoint
         push_subscriptions[user_id] = [
-            sub for sub in push_subscriptions[user_id]
+            sub
+            for sub in push_subscriptions[user_id]
             if sub["endpoint"] != subscription_data.subscription.endpoint
         ]
 
@@ -106,7 +108,7 @@ async def subscribe_to_push_notifications(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to save push subscription: {str(e)}"
+            detail=f"Failed to save push subscription: {str(e)}",
         )
 
 
@@ -136,7 +138,7 @@ async def unsubscribe_from_push_notifications(
         if user_id not in push_subscriptions:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="No subscriptions found for user"
+                detail="No subscriptions found for user",
             )
 
         # Mark subscription as inactive (don't delete for audit purposes)
@@ -149,8 +151,7 @@ async def unsubscribe_from_push_notifications(
 
         if not updated:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Subscription not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Subscription not found"
             )
 
         return {
@@ -163,7 +164,7 @@ async def unsubscribe_from_push_notifications(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to remove push subscription: {str(e)}"
+            detail=f"Failed to remove push subscription: {str(e)}",
         )
 
 
@@ -184,19 +185,18 @@ async def send_push_notification(
             return NotificationResponse(
                 success=False,
                 message="No push subscriptions found for user",
-                sent_count=0
+                sent_count=0,
             )
 
         active_subscriptions = [
-            sub for sub in push_subscriptions[user_id]
-            if sub.get("is_active", True)
+            sub for sub in push_subscriptions[user_id] if sub.get("is_active", True)
         ]
 
         if not active_subscriptions:
             return NotificationResponse(
                 success=False,
                 message="No active push subscriptions found",
-                sent_count=0
+                sent_count=0,
             )
 
         # TODO: Implement actual push notification sending using web-push library
@@ -206,13 +206,13 @@ async def send_push_notification(
         return NotificationResponse(
             success=True,
             message=f"Notification sent to {sent_count} device(s)",
-            sent_count=sent_count
+            sent_count=sent_count,
         )
 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to send push notification: {str(e)}"
+            detail=f"Failed to send push notification: {str(e)}",
         )
 
 

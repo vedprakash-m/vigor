@@ -3,7 +3,7 @@ High-impact API services testing for coverage expansion
 Targeting services with low coverage: auth.py (19%), ai.py (30%), usage_tracking.py (26%)
 """
 
-from typing import Union, Optional
+from typing import Optional, Union
 from unittest.mock import Mock, patch
 
 import pytest

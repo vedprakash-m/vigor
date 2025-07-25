@@ -3,11 +3,11 @@ Circuit Breaker Manager
 Implements circuit breaker pattern for LLM provider resilience
 """
 
-from typing import Dict, List, Optional
 import logging
 import time
 from dataclasses import dataclass
 from enum import Enum
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 

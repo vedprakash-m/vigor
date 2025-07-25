@@ -6,7 +6,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Callable
-from typing import Any, Optional, Union, Dict
+from typing import Any, Dict, Optional, Union
 
 logger = logging.getLogger(__name__)
 

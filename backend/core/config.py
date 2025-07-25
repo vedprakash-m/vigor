@@ -36,25 +36,37 @@ class Settings(BaseSettings):
     MICROSOFT_CLIENT_ID: Optional[str] = os.getenv("MICROSOFT_CLIENT_ID")
     MICROSOFT_CLIENT_SECRET: Optional[str] = os.getenv("MICROSOFT_CLIENT_SECRET")
     MICROSOFT_TENANT_ID: Optional[str] = os.getenv("MICROSOFT_TENANT_ID")
-    MICROSOFT_REDIRECT_URI: str = os.getenv("MICROSOFT_REDIRECT_URI", "http://localhost:5173/auth/callback/microsoft")
+    MICROSOFT_REDIRECT_URI: str = os.getenv(
+        "MICROSOFT_REDIRECT_URI", "http://localhost:5173/auth/callback/microsoft"
+    )
 
     # Social Login Providers
     GOOGLE_CLIENT_ID: Optional[str] = os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET: Optional[str] = os.getenv("GOOGLE_CLIENT_SECRET")
-    GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:5173/auth/callback/google")
+    GOOGLE_REDIRECT_URI: str = os.getenv(
+        "GOOGLE_REDIRECT_URI", "http://localhost:5173/auth/callback/google"
+    )
 
     GITHUB_CLIENT_ID: Optional[str] = os.getenv("GITHUB_CLIENT_ID")
     GITHUB_CLIENT_SECRET: Optional[str] = os.getenv("GITHUB_CLIENT_SECRET")
-    GITHUB_REDIRECT_URI: str = os.getenv("GITHUB_REDIRECT_URI", "http://localhost:5173/auth/callback/github")
+    GITHUB_REDIRECT_URI: str = os.getenv(
+        "GITHUB_REDIRECT_URI", "http://localhost:5173/auth/callback/github"
+    )
 
     # OAuth2 Configuration
-    OAUTH_STATE_SECRET: str = os.getenv("OAUTH_STATE_SECRET", "your-oauth-state-secret-change-in-production")
+    OAUTH_STATE_SECRET: str = os.getenv(
+        "OAUTH_STATE_SECRET", "your-oauth-state-secret-change-in-production"
+    )
     OAUTH_PKCE_CHALLENGE_METHOD: str = "S256"
 
     # Frontend URLs for OAuth flows
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
-    LOGIN_SUCCESS_REDIRECT: str = os.getenv("LOGIN_SUCCESS_REDIRECT", "http://localhost:5173/dashboard")
-    LOGIN_ERROR_REDIRECT: str = os.getenv("LOGIN_ERROR_REDIRECT", "http://localhost:5173/login?error=oauth_error")
+    LOGIN_SUCCESS_REDIRECT: str = os.getenv(
+        "LOGIN_SUCCESS_REDIRECT", "http://localhost:5173/dashboard"
+    )
+    LOGIN_ERROR_REDIRECT: str = os.getenv(
+        "LOGIN_ERROR_REDIRECT", "http://localhost:5173/login?error=oauth_error"
+    )
 
     # AI Provider APIs - all optional, fallback gracefully
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
@@ -86,7 +98,9 @@ class Settings(BaseSettings):
     # Microsoft Entra ID Authentication (Vedprakash Domain Standard)
     AZURE_AD_CLIENT_ID: Optional[str] = os.getenv("AZURE_AD_CLIENT_ID")
     AZURE_AD_TENANT_ID: str = os.getenv("AZURE_AD_TENANT_ID", "vedid.onmicrosoft.com")
-    AZURE_AD_AUTHORITY: str = f"https://login.microsoftonline.com/{os.getenv('AZURE_AD_TENANT_ID', 'vedid.onmicrosoft.com')}"
+    AZURE_AD_AUTHORITY: str = (
+        f"https://login.microsoftonline.com/{os.getenv('AZURE_AD_TENANT_ID', 'vedid.onmicrosoft.com')}"
+    )
 
     # CORS settings
     _cors_origins_env: ClassVar[Optional[str]] = os.getenv("CORS_ORIGINS")

@@ -30,14 +30,16 @@ class VedUser:
     Implements VedUser interface from Apps_Auth_Requirement.md
     """
 
-    def __init__(self,
-                 id: str,
-                 email: str,
-                 name: str,
-                 given_name: str = "",
-                 family_name: str = "",
-                 permissions: list[str] = None,
-                 ved_profile: Dict[str, Any] = None):
+    def __init__(
+        self,
+        id: str,
+        email: str,
+        name: str,
+        given_name: str = "",
+        family_name: str = "",
+        permissions: list[str] = None,
+        ved_profile: Dict[str, Any] = None,
+    ):
         self.id = id
         self.email = email
         self.name = name
@@ -48,7 +50,7 @@ class VedUser:
             "profile_id": id,
             "subscription_tier": "free",
             "apps_enrolled": ["vigor"],
-            "preferences": {}
+            "preferences": {},
         }
 
     def to_dict(self) -> Dict[str, Any]:
@@ -59,7 +61,7 @@ class VedUser:
             "given_name": self.given_name,
             "family_name": self.family_name,
             "permissions": self.permissions,
-            "ved_profile": self.ved_profile
+            "ved_profile": self.ved_profile,
         }
 
 
@@ -81,7 +83,7 @@ class MicrosoftEntraAuth:
             self.jwks_uri,
             cache_keys=True,
             max_cached_keys=16,
-            cache_timeout=3600  # 1 hour cache
+            cache_timeout=3600,  # 1 hour cache
         )
 
         # Token cache for performance
@@ -103,7 +105,9 @@ class MicrosoftEntraAuth:
         """
         try:
             # Check cache first
-            if token in self._token_cache and time.time() < self._cache_expiry.get(token, 0):
+            if token in self._token_cache and time.time() < self._cache_expiry.get(
+                token, 0
+            ):
                 return self._token_cache[token]
 
             # Get signing key from JWKS
@@ -122,15 +126,15 @@ class MicrosoftEntraAuth:
                     "verify_nbf": True,
                     "verify_iat": True,
                     "verify_aud": True,
-                    "verify_iss": True
-                }
+                    "verify_iss": True,
+                },
             )
 
             # Extract VedUser from token claims
             ved_user = self._extract_ved_user(payload)
 
             # Cache the result (cache for token lifetime or max 1 hour)
-            exp_time = payload.get('exp', time.time() + 3600)
+            exp_time = payload.get("exp", time.time() + 3600)
             cache_time = min(exp_time, time.time() + 3600)
             self._token_cache[token] = ved_user
             self._cache_expiry[token] = cache_time
@@ -140,20 +144,18 @@ class MicrosoftEntraAuth:
         except jwt.ExpiredSignatureError:
             logger.warning("Token has expired")
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token has expired"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired"
             )
         except jwt.InvalidTokenError as e:
             logger.warning(f"Invalid token: {e}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication token"
+                detail="Invalid authentication token",
             )
         except Exception as e:
             logger.error(f"Token validation failed: {e}")
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Authentication failed"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication failed"
             )
 
     def _extract_ved_user(self, payload: Dict[str, Any]) -> VedUser:
@@ -161,25 +163,25 @@ class MicrosoftEntraAuth:
         Extract VedUser from Microsoft Entra ID token payload
         Maps Microsoft claims to VedUser interface
         """
-        user_id = payload.get('sub') or payload.get('oid')
-        email = payload.get('email') or payload.get('preferred_username')
-        name = payload.get('name', '')
-        given_name = payload.get('given_name', '')
-        family_name = payload.get('family_name', '')
+        user_id = payload.get("sub") or payload.get("oid")
+        email = payload.get("email") or payload.get("preferred_username")
+        name = payload.get("name", "")
+        given_name = payload.get("given_name", "")
+        family_name = payload.get("family_name", "")
 
         # Extract roles/permissions
         permissions = []
-        if 'roles' in payload:
-            permissions.extend(payload['roles'])
-        if 'groups' in payload:
-            permissions.extend([f"group:{group}" for group in payload['groups']])
+        if "roles" in payload:
+            permissions.extend(payload["roles"])
+        if "groups" in payload:
+            permissions.extend([f"group:{group}" for group in payload["groups"]])
 
         # Build VedProfile
         ved_profile = {
             "profile_id": user_id,
-            "subscription_tier": payload.get('ved_subscription_tier', 'free'),
-            "apps_enrolled": payload.get('ved_apps_enrolled', ['vigor']),
-            "preferences": self._parse_preferences(payload.get('ved_preferences', {}))
+            "subscription_tier": payload.get("ved_subscription_tier", "free"),
+            "apps_enrolled": payload.get("ved_apps_enrolled", ["vigor"]),
+            "preferences": self._parse_preferences(payload.get("ved_preferences", {})),
         }
 
         return VedUser(
@@ -189,7 +191,7 @@ class MicrosoftEntraAuth:
             given_name=given_name,
             family_name=family_name,
             permissions=permissions,
-            ved_profile=ved_profile
+            ved_profile=ved_profile,
         )
 
     def _parse_preferences(self, preferences: Any) -> Dict[str, Any]:
@@ -204,16 +206,20 @@ class MicrosoftEntraAuth:
         else:
             return {}
 
-    async def get_or_create_user_profile(self, ved_user: VedUser, db: Session) -> UserProfileDB:
+    async def get_or_create_user_profile(
+        self, ved_user: VedUser, db: Session
+    ) -> UserProfileDB:
         """
         Get or create user profile in database
         Maps VedUser to database model
         """
         try:
             # Check if user exists
-            user_profile = db.query(UserProfileDB).filter(
-                UserProfileDB.entra_id == ved_user.id
-            ).first()
+            user_profile = (
+                db.query(UserProfileDB)
+                .filter(UserProfileDB.entra_id == ved_user.id)
+                .first()
+            )
 
             if not user_profile:
                 # Create new user profile
@@ -223,11 +229,13 @@ class MicrosoftEntraAuth:
                     name=ved_user.name,
                     given_name=ved_user.given_name,
                     family_name=ved_user.family_name,
-                    subscription_tier=ved_user.ved_profile.get('subscription_tier', 'free'),
+                    subscription_tier=ved_user.ved_profile.get(
+                        "subscription_tier", "free"
+                    ),
                     permissions=ved_user.permissions,
                     ved_profile=ved_user.ved_profile,
                     created_at=datetime.utcnow(),
-                    updated_at=datetime.utcnow()
+                    updated_at=datetime.utcnow(),
                 )
                 db.add(user_profile)
                 db.commit()
@@ -252,14 +260,15 @@ class MicrosoftEntraAuth:
             logger.error(f"Failed to get/create user profile: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to process user profile"
+                detail="Failed to process user profile",
             )
 
     def cleanup_cache(self):
         """Clean up expired tokens from cache"""
         current_time = time.time()
         expired_tokens = [
-            token for token, expiry in self._cache_expiry.items()
+            token
+            for token, expiry in self._cache_expiry.items()
             if current_time >= expiry
         ]
 
