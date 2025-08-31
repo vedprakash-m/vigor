@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vigor Authentication Test</title>
+    <script src="https://alcdn.msauth.net/lib/1.4.4/js/msal-browser.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .button {
+        background: #0078d4;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .button:hover {
+        background: #106ebe;
+      }
+      .result {
+        background: #f3f2f1;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 4px;
+      }
+      .token {
+        word-break: break-all;
+        font-family: monospace;
+        font-size: 12px;
+      }
+      .error {
+        background: #fef7f1;
+        border-left: 4px solid #d13438;
+      }
+      .success {
+        background: #f3f9f1;
+        border-left: 4px solid #107c10;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Vigor Authentication Test</h1>
+      <p>Test Microsoft Entra ID authentication for Vigor application</p>
+
+      <button class="button" onclick="signIn()">Sign In with Microsoft</button>
+      <button class="button" onclick="signOut()">Sign Out</button>
+      <button class="button" onclick="getToken()">Get Access Token</button>
+      <button class="button" onclick="testAPI()">Test API Call</button>
+
+      <div id="result"></div>
+
+      <h3>Configuration</h3>
+      <div class="result">
+        <strong>Client ID:</strong> be183263-80c3-4191-bc84-2ee3c618cbcd<br />
+        <strong>Authority:</strong>
+        https://login.microsoftonline.com/common<br />
+        <strong>Redirect URI:</strong> http://localhost:3000/auth/callback<br />
+        <strong>API Base URL:</strong>
+        https://vigor-backend-bpd7gfcgbxhbcvd8.westus2-01.azurewebsites.net
+      </div>
+    </div>
+
+    <script>
+      // MSAL configuration
+      const msalConfig = {
+        auth: {
+          clientId: "be183263-80c3-4191-bc84-2ee3c618cbcd",
+          authority: "https://login.microsoftonline.com/common",
+          redirectUri: window.location.origin + "/auth/callback",
+        },
+        cache: {
+          cacheLocation: "sessionStorage",
+          storeAuthStateInCookie: false,
+        },
+      };
+
+      const loginRequest = {
+        scopes: ["User.Read", "openid", "profile", "email"],
+      };
+
+      const msalInstance = new msal.PublicClientApplication(msalConfig);
+
+      let accessToken = null;
+
+      async function signIn() {
+        try {
+          showResult("Initiating sign in...", "info");
+          const loginResponse = await msalInstance.loginPopup(loginRequest);
+          showResult(
+            "Sign in successful!<br><strong>User:</strong> " +
+              loginResponse.account.username,
+            "success"
+          );
+          console.log("Login Response:", loginResponse);
+        } catch (error) {
+          showResult("Sign in failed: " + error.message, "error");
+          console.error("Login Error:", error);
+        }
+      }
+
+      async function signOut() {
+        try {
+          await msalInstance.logoutPopup();
+          accessToken = null;
+          showResult("Sign out successful!", "success");
+        } catch (error) {
+          showResult("Sign out failed: " + error.message, "error");
+        }
+      }
+
+      async function getToken() {
+        try {
+          const accounts = msalInstance.getAllAccounts();
+          if (accounts.length === 0) {
+            showResult("No active account. Please sign in first.", "error");
+            return;
+          }
+
+          const tokenRequest = {
+            scopes: ["User.Read"],
+            account: accounts[0],
+          };
+
+          const response = await msalInstance.acquireTokenSilent(tokenRequest);
+          accessToken = response.accessToken;
+
+          showResult(
+            'Access token acquired!<br><div class="token">' +
+              accessToken +
+              "</div>",
+            "success"
+          );
+          console.log("Token Response:", response);
+        } catch (error) {
+          showResult("Token acquisition failed: " + error.message, "error");
+          console.error("Token Error:", error);
+        }
+      }
+
+      async function testAPI() {
+        if (!accessToken) {
+          showResult("No access token. Please get token first.", "error");
+          return;
+        }
+
+        try {
+          showResult("Testing API call...", "info");
+
+          // Test the simple health endpoint first
+          const response = await fetch(
+            "https://vigor-backend-bpd7gfcgbxhbcvd8.westus2-01.azurewebsites.net/api/health-simple",
+            {
+              method: "GET",
+              headers: {
+                Authorization: "Bearer " + accessToken,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            showResult(
+              "API call successful!<br><pre>" +
+                JSON.stringify(data, null, 2) +
+                "</pre>",
+              "success"
+            );
+          } else {
+            const errorText = await response.text();
+            showResult(
+              "API call failed: " +
+                response.status +
+                " " +
+                response.statusText +
+                "<br>" +
+                errorText,
+              "error"
+            );
+          }
+        } catch (error) {
+          showResult("API call error: " + error.message, "error");
+          console.error("API Error:", error);
+        }
+      }
+
+      function showResult(message, type) {
+        const resultDiv = document.getElementById("result");
+        const className =
+          type === "error"
+            ? "result error"
+            : type === "success"
+            ? "result success"
+            : "result";
+        resultDiv.innerHTML =
+          '<div class="' + className + '">' + message + "</div>";
+      }
+
+      // Initialize MSAL
+      msalInstance.initialize().then(() => {
+        console.log("MSAL initialized");
+        showResult(
+          "MSAL library initialized. Ready for authentication.",
+          "info"
+        );
+      });
+    </script>
+  </body>
+</html>

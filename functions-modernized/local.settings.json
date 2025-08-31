@@ -1,0 +1,24 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "FUNCTIONS_EXTENSION_VERSION": "~4",
+    
+    "COSMOS_DB_ENDPOINT": "https://localhost:8081",
+    "COSMOS_DB_KEY": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
+    "COSMOS_DB_DATABASE": "vigor_db",
+    
+    "AI_PROVIDER": "gemini-flash-2.5",
+    "GOOGLE_AI_API_KEY": "your-gemini-api-key-here",
+    "AI_MONTHLY_BUDGET": "50",
+    "AI_COST_THRESHOLD": "40",
+    
+    "JWT_SECRET_KEY": "your-secret-key-here",
+    "AZURE_TENANT_ID": "VED",
+    "AZURE_DOMAIN_ID": "vedid.onmicrosoft.com",
+    
+    "ENVIRONMENT": "development",
+    "LOG_LEVEL": "INFO"
+  }
+}

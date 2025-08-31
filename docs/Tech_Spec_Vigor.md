@@ -10,15 +10,15 @@
 
 ## Executive Summary
 
-This Technical Specification defines the implementation details for Vigor, an AI-powered fitness platform built with cost-optimized architecture. The system implements Clean/Hexagonal Architecture with a dual resource group strategy for Azure deployment, enabling pause/resume functionality to maintain operational costs within budget ceiling (≤$100/month, pausable to ≤$70/month).
+This Technical Specification defines the implementation details for Vigor, an AI-powered fitness platform built with modern serverless architecture. The system implements Clean/Hexagonal Architecture with a unified resource group strategy for Azure deployment, enabling automatic scaling and cost optimization (≤$50/month operational ceiling).
 
 **Key Architectural Decisions:**
 
 - **Clean Architecture**: Domain-driven design with clear separation of concerns
-- **Multi-Provider AI**: Resilient LLM orchestration with automatic failover
-- **Cost-Optimized Infrastructure**: Dual resource group strategy for pause/resume capabilities
-- **Single Environment**: Direct production deployment for cost efficiency
-- **Modern Tech Stack**: FastAPI + React with TypeScript for type safety and performance
+- **Single AI Provider**: Gemini Flash 2.5 for streamlined, cost-effective AI operations
+- **Serverless Infrastructure**: Azure Functions with Flex Consumption Plan for optimal cost efficiency
+- **Modern Database**: Cosmos DB for global scale and automatic scaling
+- **Unified Resource Group**: Single `vigor-rg` for simplified management
 
 ---
 
@@ -28,16 +28,16 @@ This Technical Specification defines the implementation details for Vigor, an AI
 
 ```
 ┌─────────────────────┐    ┌──────────────────────┐    ┌─────────────────────┐
-│   React Frontend    │───▶│   FastAPI Backend    │───▶│ LLM Orchestration   │
-│   (TypeScript +     │    │   (Clean Arch)       │    │ (Multi-Provider)    │
+│   React Frontend    │───▶│  Azure Functions     │───▶│  Gemini Flash 2.5   │
+│   (TypeScript +     │    │  (Serverless API)    │    │  (Single AI Model)  │
 │   Chakra UI)        │    │                      │    │                     │
 └─────────────────────┘    └──────────────────────┘    └─────────────────────┘
            │                          │                          │
            │                          ▼                          │
            │                ┌──────────────────────┐             │
-           │                │   PostgreSQL DB      │             │
-           │                │   (User Data &       │             │
-           │                │   Workout Logs)      │             │
+           │                │    Cosmos DB         │             │
+           │                │   (NoSQL Database)   │             │
+           │                │                      │             │
            │                └──────────────────────┘             │
            │                                                     │
            ▼                                                     ▼
@@ -50,84 +50,83 @@ This Technical Specification defines the implementation details for Vigor, an AI
 
 ### 1.2 Infrastructure Architecture
 
-**Dual Resource Group Strategy:**
+**Unified Resource Group Strategy:**
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        vigor-rg (Compute Resources)                 │
+│                           vigor-rg (All Resources)                  │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐     │
-│  │  App Service    │  │ Static Web App  │  │ Application     │     │
-│  │  (Backend API)  │  │ (Frontend)      │  │ Insights        │     │
+│  │ Azure Functions │  │ Static Web App  │  │ Application     │     │
+│  │ (Serverless API)│  │ (Frontend)      │  │ Insights        │     │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘     │
-│          - AI/LLM Services # ~$55/month                            │
+│  ┌─────────────────┐  ┌─────────────────┐                         │
+│  │    Cosmos DB    │  │  Azure Key      │                         │
+│  │   (NoSQL DB)    │  │     Vault       │                         │
+│  └─────────────────┘  └─────────────────┘                         │
+│              - Estimated Cost: ~$30-50/month                       │
 └─────────────────────────────────────────────────────────────────────┘
-                                    │
-                              DELETE/RECREATE
-                              (Pause/Resume)
-                                    │
-┌─────────────────────────────────────────────────────────────────────┐
-│                      vigor-db-rg (Persistent Resources)             │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐     │
-│  │  PostgreSQL     │  │  Azure Key      │  │  Storage        │     │
-│  │  Database       │  │  Vault          │  │  Account        │     │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘     │
+```
+
+│ │ PostgreSQL │ │ Azure Key │ │ Storage │ │
+│ │ Database │ │ Vault │ │ Account │ │
+│ └─────────────────┘ └─────────────────┘ └─────────────────┘ │
 └─────────────────────────────────────────────────────────────────────┘
-                            (ALWAYS PERSISTENT)
+(ALWAYS PERSISTENT)
+
 ```
 
 ---
 
 ## 2. Backend Architecture
 
-### 2.1 Clean Architecture Implementation
+### 2.1 Serverless Architecture Implementation
 
-The backend follows Clean/Hexagonal Architecture as defined in ADR-0001:
+The backend follows Clean/Hexagonal Architecture with Azure Functions:
 
 ```
-backend/
-├── api/                    # Interface Layer (Controllers)
-│   ├── routes/            # FastAPI endpoints
-│   ├── schemas/           # Pydantic request/response models
-│   └── services/          # Application service facades
-├── application/            # Application Layer (Use Cases)
-│   ├── llm/              # LLM orchestration use cases
-│   └── services/         # Business logic orchestration
-├── core/                  # Domain Layer (Business Logic)
-│   ├── llm_orchestration/ # LLM domain logic
-│   └── security.py       # Security domain logic
-├── database/              # Infrastructure Layer (Data)
-│   ├── models.py         # Pydantic domain models
-│   ├── sql_models.py     # SQLAlchemy ORM models
-│   └── repositories/     # Data access patterns
-└── infrastructure/        # Infrastructure Layer (External)
-    └── adapters/         # External service adapters
-```
+
+functions/
+├── ai/ # AI-related functions
+│ ├── workout_generation/ # Workout plan generation
+│ ├── coach_chat/ # AI coaching conversations
+│ └── progress_analysis/ # User progress insights
+├── api/ # HTTP trigger functions
+│ ├── auth/ # Authentication endpoints
+│ ├── users/ # User management
+│ └── workouts/ # Workout operations
+├── shared/ # Shared code and utilities
+│ ├── models/ # Pydantic domain models
+│ ├── database/ # Cosmos DB client
+│ └── ai/ # Gemini AI client
+└── requirements.txt # Function dependencies
+
+````
 
 ### 2.2 Technology Stack
 
 #### Core Framework
 
-- **FastAPI 0.104+**: Async web framework with automatic OpenAPI documentation
-- **Python 3.12+**: Latest Python with performance improvements
-- **Uvicorn**: ASGI server for production deployment
+- **Azure Functions v4**: Serverless compute with HTTP/Timer triggers
+- **Python 3.11+**: Azure Functions supported Python runtime
+- **Flex Consumption Plan**: Pay-per-execution with automatic scaling
 - **Pydantic v2**: Data validation and serialization
 
-#### Database & ORM
+#### Database & Data Access
 
-- **PostgreSQL 14+**: Primary database with JSON support
-- **SQLAlchemy 2.0+**: Async ORM with relationship management
-- **Alembic**: Database migration management
-- **asyncpg**: High-performance async PostgreSQL driver
+- **Cosmos DB**: NoSQL database with global distribution
+- **Azure Cosmos Python SDK**: Official SDK for database operations
+- **JSON Document Store**: Native JSON support for flexible schemas
+- **Auto-scaling**: Automatic RU scaling based on usage
 
 #### Security & Authentication
 
-- **Microsoft Entra ID**: Sole identity provider for Vedprakash domain (`vedid.onmicrosoft.com`)
-- **MSAL (Microsoft Authentication Library)**: Enterprise SSO integration for cross-app authentication
+- **Microsoft Entra ID**: Default tenant authentication provider
+- **Email-based identification**: User email address as primary key for user records
 - **JWKS Validation**: Microsoft Entra ID JWT token validation with caching
 - **SlowAPI**: Rate limiting with Redis/memory backend
 - **CORS middleware**: Cross-origin request handling
-- **VedUser Standard**: Unified user object interface across Vedprakash applications
-- **Domain Structure**: vigor.vedprakash.net subdomain with shared auth infrastructure (ved-id-rg) and domain resources (ved-domain-rg)
+- **Auto user creation**: Automatic database entry creation for authenticated users
+- **Simplified architecture**: Single resource group deployment
 
 ### 2.3 LLM Orchestration System
 
@@ -149,7 +148,7 @@ class LLMGatewayFacade:
         self._routing_engine = RoutingEngine(config_manager)
         self._budget_enforcer = BudgetEnforcer(self._budget_manager)
         self._response_recorder = ResponseRecorder()
-```
+````
 
 #### Multi-Provider Strategy
 
@@ -168,68 +167,189 @@ class LLMGatewayFacade:
 - **Request Validation**: Input sanitization and user context injection
 - **Analytics**: Comprehensive usage tracking and performance metrics
 
-### 2.4 Database Schema
+### 2.4 Database Schema (Cosmos DB)
 
-#### Core Models
+#### Container Structure
+
+```json
+{
+  "users": {
+    "partitionKey": "/userId",
+    "items": [
+      {
+        "id": "user_12345",
+        "userId": "user_12345",
+        "email": "user@example.com",
+        "username": "john_doe",
+        "profile": {
+          "fitnessLevel": "intermediate",
+          "goals": ["strength", "endurance"],
+          "equipment": "home_gym",
+          "tier": "free"
+        },
+        "preferences": {
+          "workoutDuration": 45,
+          "restDays": ["sunday"],
+          "notifications": true
+        },
+        "createdAt": "2025-01-01T00:00:00Z",
+        "updatedAt": "2025-01-01T00:00:00Z",
+        "_ts": 1704067200
+      }
+    ]
+  },
+  "workouts": {
+    "partitionKey": "/userId",
+    "items": [
+      {
+        "id": "workout_67890",
+        "userId": "user_12345",
+        "name": "Upper Body Strength",
+        "description": "AI-generated upper body workout",
+        "exercises": [
+          {
+            "name": "Push-ups",
+            "sets": 3,
+            "reps": 12,
+            "duration": null,
+            "restTime": 60,
+            "equipment": "bodyweight"
+          }
+        ],
+        "metadata": {
+          "difficulty": "intermediate",
+          "estimatedDuration": 45,
+          "equipmentNeeded": ["none"],
+          "aiProviderUsed": "gemini-flash-2.5"
+        },
+        "createdAt": "2025-01-01T10:00:00Z",
+        "_ts": 1704103200
+      }
+    ]
+  },
+  "workout_logs": {
+    "partitionKey": "/userId",
+    "items": [
+      {
+        "id": "log_11111",
+        "userId": "user_12345",
+        "workoutPlanId": "workout_67890",
+        "exercisesCompleted": [
+          {
+            "exerciseName": "Push-ups",
+            "completedSets": 3,
+            "actualReps": [12, 10, 8],
+            "notes": "Felt strong today"
+          }
+        ],
+        "durationMinutes": 42,
+        "intensity": 8,
+        "notes": "Great workout, increased reps",
+        "completedAt": "2025-01-01T18:00:00Z",
+        "_ts": 1704132000
+      }
+    ]
+  },
+  "ai_coach_messages": {
+    "partitionKey": "/userId",
+    "items": [
+      {
+        "id": "msg_22222",
+        "userId": "user_12345",
+        "role": "user",
+        "content": "How should I modify my workout for better results?",
+        "providerUsed": "gemini-flash-2.5",
+        "tokensUsed": 150,
+        "responseTimeMs": 850,
+        "createdAt": "2025-01-01T19:00:00Z",
+        "_ts": 1704135600
+      }
+    ]
+  }
+}
+```
+
+#### Data Models (Python)
+
+````python
+#### Data Models (Python)
 
 ```python
-# User and Authentication
-class UserProfile:
-    id: str                           # UUID primary key
+# User and Authentication (Cosmos DB Document)
+class UserProfile(BaseModel):
+    id: str                           # Document ID
+    userId: str                       # Partition key
     email: str                        # Unique email
     username: str                     # Unique username
-    fitness_level: FitnessLevel       # BEGINNER, INTERMEDIATE, ADVANCED
-    goals: List[FitnessGoal]         # Multiple fitness objectives
-    equipment: Equipment              # Available equipment level
-    tier: UserTier                   # FREE (MVP), ADMIN (PREMIUM post-MVP)
-    created_at: datetime
-    updated_at: datetime
+    profile: UserProfileData
+    preferences: UserPreferences
+    createdAt: datetime
+    updatedAt: datetime
 
-# Workout System
-class WorkoutPlan:
-    id: str                          # UUID
-    user_id: str                     # FK to UserProfile
+class UserProfileData(BaseModel):
+    fitnessLevel: FitnessLevel       # BEGINNER, INTERMEDIATE, ADVANCED
+    goals: List[FitnessGoal]         # Multiple fitness objectives
+    equipment: Equipment             # Available equipment level
+    tier: UserTier                   # FREE (MVP), ADMIN (PREMIUM post-MVP)
+
+# Workout System (Cosmos DB Documents)
+class WorkoutPlan(BaseModel):
+    id: str                          # Document ID
+    userId: str                      # Partition key
     name: str                        # AI-generated name
     description: str                 # Workout overview
     exercises: List[Exercise]        # Structured exercise data
-    duration_minutes: int            # Planned duration
-    difficulty: str                  # Calculated difficulty
-    equipment_needed: List[str]      # Required equipment
-    ai_provider_used: str           # OpenAI, Gemini, etc.
-    created_at: datetime
+    metadata: WorkoutMetadata
+    createdAt: datetime
 
-class WorkoutLog:
-    id: str                          # UUID
-    user_id: str                     # FK to UserProfile
-    workout_plan_id: str            # FK to WorkoutPlan
-    exercises_completed: List[ExerciseLog]
-    duration_minutes: int            # Actual duration
+class WorkoutMetadata(BaseModel):
+    difficulty: str                  # Calculated difficulty
+    estimatedDuration: int           # Planned duration in minutes
+    equipmentNeeded: List[str]       # Required equipment
+    aiProviderUsed: str             # Always "gemini-flash-2.5"
+
+class WorkoutLog(BaseModel):
+    id: str                          # Document ID
+    userId: str                      # Partition key
+    workoutPlanId: str              # Reference to WorkoutPlan
+    exercisesCompleted: List[ExerciseLog]
+    durationMinutes: int             # Actual duration
     intensity: int                   # 1-10 user rating
     notes: str                       # User notes
-    completed_at: datetime
+    completedAt: datetime
 
-# AI System
-class AICoachMessage:
-    id: str                          # UUID
-    user_id: str                     # FK to UserProfile
+# AI System (Cosmos DB Documents)
+class AICoachMessage(BaseModel):
+    id: str                          # Document ID
+    userId: str                      # Partition key
     role: str                        # 'user' or 'assistant'
     content: str                     # Message content
-    provider_used: str              # Which AI provider
-    tokens_used: int                # Cost tracking
-    response_time_ms: int           # Performance tracking
-    created_at: datetime
+    providerUsed: str               # Always "gemini-flash-2.5"
+    tokensUsed: int                 # Cost tracking
+    responseTimeMs: int             # Performance tracking
+    createdAt: datetime
+````
+
+#### Indexing and Performance
+
+- **Automatic Indexing**: Cosmos DB indexes all properties by default
+- **Partition Strategy**: All data partitioned by `userId` for optimal query performance
+- **TTL Policies**: Automatic cleanup of old AI messages and temporary data
+- **Change Feed**: Real-time processing for analytics and notifications
 
 # Budget and Usage Tracking
+
 class BudgetSettings:
-    id: str                          # UUID
-    user_id: str                     # FK to UserProfile (or global)
-    monthly_limit: Decimal           # Budget limit in USD
-    current_usage: Decimal           # Current month spending
-    alert_threshold: float           # Alert at % of budget
-    auto_disable: bool               # Auto-disable when exceeded
-    created_at: datetime
-    updated_at: datetime
-```
+id: str # UUID
+user_id: str # FK to UserProfile (or global)
+monthly_limit: Decimal # Budget limit in USD
+current_usage: Decimal # Current month spending
+alert_threshold: float # Alert at % of budget
+auto_disable: bool # Auto-disable when exceeded
+created_at: datetime
+updated_at: datetime
+
+````
 
 #### Key Relationships
 
@@ -248,36 +368,115 @@ ALTER TABLE ai_coach_messages ADD CONSTRAINT fk_ai_messages_user
 CREATE INDEX idx_workout_logs_user_date ON workout_logs(user_id, completed_at);
 CREATE INDEX idx_ai_messages_user_date ON ai_coach_messages(user_id, created_at);
 CREATE INDEX idx_workout_plans_user ON workout_plans(user_id);
-```
+````
 
-### 2.5 API Layer
+### 2.5 API Layer (Azure Functions)
 
-#### Authentication & Security
+#### Function App Structure
 
 ```python
-# Microsoft Entra ID Authentication (Vedprakash Domain Standard)
-@router.post("/auth/login")
+# HTTP Trigger Functions for API endpoints
+import azure.functions as func
+from azure.functions import FunctionApp
+
+app = FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
+
+# Authentication & User Management
+@app.route(route="auth/login", methods=["POST"])
 @limiter.limit("10/minute")
-async def login(credentials: LoginRequest) -> TokenResponse:
-    """Authenticate user via Microsoft Entra ID for Vedprakash domain SSO"""
+async def login(req: func.HttpRequest) -> func.HttpResponse:
+    """Authenticate user via Microsoft Entra ID default tenant"""
 
-@router.get("/auth/me")
-async def get_current_user(
-    current_user: VedUser = Depends(get_current_user_entra_id)
-) -> VedUser:
+@app.route(route="auth/me", methods=["GET"])
+async def get_current_user(req: func.HttpRequest) -> func.HttpResponse:
     """Get current user profile using VedUser standard interface"""
+    current_user = await get_current_user_from_token(req)
+    return func.HttpResponse(json.dumps(current_user.dict()))
 
-@router.post("/auth/logout")
-async def logout(current_user: VedUser = Depends(get_current_user_entra_id)):
+@app.route(route="auth/logout", methods=["POST"])
+async def logout(req: func.HttpRequest) -> func.HttpResponse:
     """Logout user (stateless - handled client-side)"""
 
-# JWKS token validation for Microsoft Entra ID
-async def validate_entra_id_token(token: str) -> VedUser:
-    """Validate Microsoft Entra ID JWT token using JWKS endpoint"""
-    # Implementation with JWKS caching and VedUser extraction
+# User Profile Management
+@app.route(route="users/profile", methods=["GET", "PUT"])
+async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
+    """Get or update user profile stored in Cosmos DB"""
+    current_user = await get_current_user_from_token(req)
+
+    if req.method == "GET":
+        profile = await cosmos_db.get_user_profile(current_user.user_id)
+        return func.HttpResponse(json.dumps(profile))
+    elif req.method == "PUT":
+        profile_data = req.get_json()
+        updated_profile = await cosmos_db.update_user_profile(
+            current_user.user_id, profile_data
+        )
+        return func.HttpResponse(json.dumps(updated_profile))
 ```
 
-#### Enhanced AI Cost Management Endpoints
+#### AI-Powered Workout Functions
+
+```python
+# Workout Generation with Gemini Flash 2.5
+@app.route(route="workouts/generate", methods=["POST"])
+@limiter.limit("20/hour")
+async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
+    """Generate personalized workout using Gemini Flash 2.5"""
+    current_user = await get_current_user_from_token(req)
+    workout_request = req.get_json()
+
+    # Validate budget before AI operation
+    budget_check = await validate_ai_budget(current_user.user_id)
+    if not budget_check.approved:
+        return func.HttpResponse(
+            json.dumps({"error": "AI budget exceeded"}),
+            status_code=429
+        )
+
+    # Generate workout with Gemini
+    workout = await gemini_client.generate_workout(
+        user_profile=current_user.profile,
+        preferences=workout_request
+    )
+
+    # Store in Cosmos DB
+    saved_workout = await cosmos_db.create_workout(
+        user_id=current_user.user_id,
+        workout_data=workout
+    )
+
+    return func.HttpResponse(json.dumps(saved_workout))
+
+# AI Coach Chat
+@app.route(route="ai/coach/chat", methods=["POST"])
+@limiter.limit("50/hour")
+async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
+    """Chat with AI coach using Gemini Flash 2.5"""
+    current_user = await get_current_user_from_token(req)
+    message_data = req.get_json()
+
+    # Get conversation history from Cosmos DB
+    conversation_history = await cosmos_db.get_conversation_history(
+        current_user.user_id, limit=10
+    )
+
+    # Generate response with Gemini
+    ai_response = await gemini_client.generate_coach_response(
+        user_message=message_data["message"],
+        conversation_history=conversation_history,
+        user_context=current_user.profile
+    )
+
+    # Save both messages to Cosmos DB
+    await cosmos_db.save_chat_messages([
+        {"role": "user", "content": message_data["message"]},
+        {"role": "assistant", "content": ai_response}
+    ], user_id=current_user.user_id)
+
+    return func.HttpResponse(json.dumps({"response": ai_response}))
+```
+
+#### Cost Management & Monitoring
 
 ```python
 # Real-time Cost Monitoring
@@ -794,29 +993,35 @@ module db './db.bicep' = {
 }
 ```
 
-### 5.2 Application Configuration
+### 5.2 Application Configuration (Azure Functions)
 
 #### Environment Variables
 
 ```bash
 # Microsoft Entra ID Configuration
-AZURE_TENANT_ID=VED
-AZURE_DOMAIN_ID=vedid.onmicrosoft.com
+AZURE_TENANT_ID=common  # Default tenant
 AZURE_MAX_CONCURRENT_USERS=100
 
-# Database Configuration
-DATABASE_URL=${DATABASE_URL}
-POSTGRES_DB=vigor_prod
-POSTGRES_USER=${POSTGRES_USER}
-POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+# Cosmos DB Configuration
+COSMOS_DB_ENDPOINT=${COSMOS_DB_ENDPOINT}
+COSMOS_DB_KEY=${COSMOS_DB_KEY}
+COSMOS_DB_DATABASE=vigor_db
+COSMOS_DB_CONTAINER_USERS=users
+COSMOS_DB_CONTAINER_WORKOUTS=workouts
+COSMOS_DB_CONTAINER_LOGS=workout_logs
+COSMOS_DB_CONTAINER_MESSAGES=ai_coach_messages
 
-# AI Cost Management
-AZURE_MONTHLY_BUDGET=100
-AI_COST_THRESHOLD=85
-LLM_PROVIDER=fallback
-OPENAI_API_KEY=${OPENAI_API_KEY}
+# AI Configuration (Single Provider)
+AI_PROVIDER=gemini-flash-2.5
 GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY}
-PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY}
+AI_MONTHLY_BUDGET=50
+AI_COST_THRESHOLD=40
+
+# Azure Functions Configuration
+FUNCTIONS_WORKER_RUNTIME=python
+FUNCTIONS_EXTENSION_VERSION=~4
+AzureWebJobsStorage=${AZURE_STORAGE_CONNECTION_STRING}
+WEBSITE_CONTENTAZUREFILECONNECTIONSTRING=${AZURE_STORAGE_CONNECTION_STRING}
 
 # Application Settings
 ENVIRONMENT=production
@@ -824,16 +1029,34 @@ LOG_LEVEL=INFO
 JWT_SECRET_KEY=${JWT_SECRET_KEY}
 ```
 
-#### Application Secrets
+#### Application Secrets (Azure Key Vault)
 
 All sensitive configuration values are stored in Azure Key Vault:
 
 - **AZURE_CLIENT_SECRET**: Entra ID application secret
-- **DATABASE_URL**: PostgreSQL connection string
+- **COSMOS_DB_KEY**: Cosmos DB primary access key
+- **COSMOS_DB_ENDPOINT**: Cosmos DB endpoint URL
 - **JWT_SECRET_KEY**: Session token signing key
-- **OPENAI_API_KEY**: OpenAI API access key
-- **GOOGLE_AI_API_KEY**: Google AI API access key
-- **PERPLEXITY_API_KEY**: Perplexity API access key
+- **GOOGLE_AI_API_KEY**: Google Gemini API access key
+- **AZURE_STORAGE_CONNECTION_STRING**: Functions storage account
+
+#### Function App Settings
+
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "@Microsoft.KeyVault(SecretUri=https://vigor-kv.vault.azure.net/secrets/storage-connection/)",
+    "FUNCTIONS_EXTENSION_VERSION": "~4",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "COSMOS_DB_ENDPOINT": "@Microsoft.KeyVault(SecretUri=https://vigor-kv.vault.azure.net/secrets/cosmos-endpoint/)",
+    "COSMOS_DB_KEY": "@Microsoft.KeyVault(SecretUri=https://vigor-kv.vault.azure.net/secrets/cosmos-key/)",
+    "GOOGLE_AI_API_KEY": "@Microsoft.KeyVault(SecretUri=https://vigor-kv.vault.azure.net/secrets/gemini-api-key/)",
+    "AI_MONTHLY_BUDGET": "50",
+    "AI_PROVIDER": "gemini-flash-2.5"
+  }
+}
+```
 
 ### 5.3 CI/CD Pipeline
 

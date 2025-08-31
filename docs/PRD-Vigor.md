@@ -14,9 +14,9 @@
 
 **The Market Problem:** Existing fitness apps offer static content or basic customization (Nike Training Club, Fitbit Coach), while AI-powered alternatives depend on single providers creating reliability risks and cost $60-80/year. Traditional personal training is prohibitively expensive for regular use, creating a significant market gap for accessible, intelligent fitness guidance.
 
-**Vigor's Solution:** Multi-provider AI resilience ensures 99.9% uptime, conversational coaching provides real-time form guidance and motivation, and cost-optimized infrastructure (≤$100/month operational budget ceiling, pausable to ≤$70/month) enables professional-grade features at consumer prices. The platform combines reliability, personalization, and affordability in a single solution.
+**Vigor's Solution:** Single-provider AI (Gemini Flash 2.5) ensures reliability and cost efficiency, conversational coaching provides real-time form guidance and motivation, and serverless infrastructure (≤$50/month operational budget ceiling, with automatic scaling) enables professional-grade features at consumer prices. The platform combines reliability, personalization, and affordability in a single solution.
 
-Vigor's unique multi-provider AI architecture (OpenAI, Google Gemini, Perplexity, and fallback systems) delivers personalized workout generation, intelligent coaching conversations, and comprehensive progress tracking while maintaining industry-leading reliability and cost efficiency.
+Vigor's streamlined architecture with Gemini Flash 2.5 AI delivers personalized workout generation, intelligent coaching conversations, and comprehensive progress tracking while maintaining industry-leading reliability and cost efficiency through Azure Functions and Cosmos DB.
 
 ---
 
@@ -47,7 +47,7 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 - **AI Effectiveness**: 4.5+ star average rating for AI responses, <10% negative feedback
 - **Platform Reliability**: 99.9% uptime, <2s average response time, <1% error rate
-- **Cost Efficiency**: ≤$100/month operational budget ceiling (pausable to ≤$70/month) with Azure pause/resume capability
+- **Cost Efficiency**: ≤$50/month operational budget ceiling with Azure Functions auto-scaling
 - **User Growth**: 20%+ month-over-month user acquisition, 50%+ organic referrals
 
 #### Business Metrics
@@ -137,9 +137,9 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 ### 2.3.2 Vigor's Unique Value Propositions
 
-1. **Multi-Provider AI Resilience**: Only fitness platform with failover between OpenAI, Gemini, and Perplexity
+1. **Streamlined AI Excellence**: Focus on Gemini Flash 2.5 for optimal performance and cost efficiency
 2. **Conversational AI Coach**: 24/7 contextual fitness guidance beyond just workout generation
-3. **Cost-Optimized Infrastructure**: Pause/resume capability allows ultra-low operational costs
+3. **Serverless Infrastructure**: True pay-per-use with Azure Functions for ultra-low operational costs
 4. **Safety-First AI Prompting**: Health-focused AI responses with medical disclaimers
 5. **Progressive Complexity**: Starts simple for beginners, scales to advanced users
 6. **True Personalization**: AI considers equipment, injuries, goals, and real-time feedback
@@ -197,21 +197,22 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 ## 2.5 AI Capabilities Matrix
 
-| Feature                     | Primary Model  | Purpose                                       | Fallback Strategy                         | Response Time |
-| --------------------------- | -------------- | --------------------------------------------- | ----------------------------------------- | ------------- |
-| **Workout Planning**        | OpenAI GPT-4   | Personalized exercise selection & programming | Gemini Pro → Perplexity → Local templates | <10s          |
-| **Conversational Coaching** | Gemini Pro     | Real-time form, motivation, and guidance      | OpenAI GPT-4 → Perplexity → FAQ system    | <5s           |
-| **Progress Analysis**       | Perplexity Pro | Research-backed performance insights          | OpenAI GPT-4 → Local analytics            | <8s           |
-| **Nutrition Guidance**      | OpenAI GPT-4   | Meal planning and dietary advice              | Gemini Pro → Cached responses             | <6s           |
-| **Injury Prevention**       | OpenAI GPT-4   | Movement screening and modifications          | Perplexity → Conservative templates       | <4s           |
-| **Motivation & Habits**     | Gemini Pro     | Behavioral psychology and encouragement       | Local motivational content                | <3s           |
+| Feature                     | Model            | Purpose                                       | Response Time |
+| --------------------------- | ---------------- | --------------------------------------------- | ------------- |
+| **Workout Planning**        | Gemini Flash 2.5 | Personalized exercise selection & programming | <5s           |
+| **Conversational Coaching** | Gemini Flash 2.5 | Real-time form, motivation, and guidance      | <3s           |
+| **Progress Analysis**       | Gemini Flash 2.5 | Performance insights and recommendations      | <4s           |
+| **Nutrition Guidance**      | Gemini Flash 2.5 | Meal planning and dietary advice              | <3s           |
+| **Injury Prevention**       | Gemini Flash 2.5 | Movement screening and modifications          | <3s           |
+| **Motivation & Habits**     | Gemini Flash 2.5 | Behavioral psychology and encouragement       | <2s           |
 
-### Provider Selection Logic:
+### Model Selection Rationale:
 
-1. **Budget-Based Routing**: OpenAI for complex tasks, Gemini for frequent interactions
-2. **Quality Optimization**: Route to best-performing model for each use case
-3. **Cost Management**: Automatic downgrade during high-usage periods
-4. **Latency Requirements**: Fastest available provider for real-time coaching
+1. **Cost Efficiency**: Gemini Flash 2.5 offers best price-performance ratio
+2. **Consistency**: Single model ensures consistent user experience
+3. **Speed**: Flash variant optimized for fast responses
+4. **Capability**: Excellent performance across all fitness use cases
+5. **Reliability**: Google's enterprise-grade infrastructure
 
 ---
 
@@ -258,23 +259,22 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 **Requirements:**
 
-- **Microsoft Entra ID** (`vedid.onmicrosoft.com`) as the SOLE authentication provider for Vedprakash domain compliance
-- **Single Sign-On (SSO)** across all `.vedprakash.net` applications
+- **Microsoft Entra ID Default Tenant** as the authentication provider
+- Simplified user signup/signin using email address as primary identifier
 - User profile management including:
   - Fitness level (Beginner, Intermediate, Advanced)
   - Fitness goals (Weight Loss, Muscle Gain, Strength, Endurance, General Fitness)
   - Available equipment (None, Basic, Moderate, Full Gym)
   - Injury history and limitations
   - Personal preferences
-  - **Cross-app Vedprakash profile integration**
 
 **Technical Implementation:**
 
-- **Microsoft Entra ID**: Sole identity provider (`vedid.onmicrosoft.com`)
-  - **Authority**: https://login.microsoftonline.com/vedid.onmicrosoft.com
+- **Microsoft Entra ID**: Default tenant authentication
+  - **Email-based identification**: User email as primary key
   - **Token Format**: JWT tokens from Microsoft Entra ID
   - **Session Management**: Stateless authentication via JWT
-  - **Domain**: vigor.vedprakash.net with shared authentication infrastructure
+  - **Auto user creation**: Automatic database entry creation for new authenticated users
 - Rate-limited endpoints (5 registrations/min, 10 logins/min)
 - Admin users can adjust or temporarily bypass all rate limits and quotas via the Admin API
 - Security audit logging for all authentication events
@@ -299,14 +299,13 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 **Technical Implementation:**
 
-- Multi-provider AI integration (OpenAI, Gemini, Perplexity, Fallback)
+- Gemini Flash 2.5 integration with streaming responses
 - Structured JSON response format for consistent data handling
-- Error handling with graceful degradation to fallback providers
+- Error handling with graceful degradation to cached responses
 - **Enhanced AI Cost Management**:
   - Real-time token usage tracking and budget validation
-  - Azure Cost Management API integration for automated throttling
-  - Intelligent caching layer with LRU cache for cost optimization
-  - Dynamic model switching (GPT-4 → GPT-3.5, Gemini Pro → Flash)
+  - Intelligent response caching for cost optimization
+  - Cosmos DB caching layer for frequent workout patterns
   - Request batching and query deduplication
   - Per-user AI usage limits with enforcement and override capabilities
   - Automated scaling during off-peak hours
@@ -360,7 +359,7 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 **Priority: P0 (Must Have)**
 
-1. **User Authentication & Profiles** - Microsoft Entra ID sole authentication
+1. **User Authentication & Profiles** - Microsoft Entra ID default tenant authentication with email-based user identification
 2. **AI Workout Generation** - Core differentiated value with multi-provider fallback
 3. **Basic Progress Tracking** - User retention essential
 4. **AI Coaching Chat** - Engagement and support
@@ -925,26 +924,25 @@ class WorkoutAnalysis(BaseModel):
 
 #### 8.1.1 Azure Resource Strategy
 
-**Dual Resource Group Architecture**:
+**Unified Resource Group Architecture**:
 
-- **vigor-rg**: Compute resources (App Service, Static Web App, monitoring)
-- **vigor-db-rg**: Persistent resources (PostgreSQL, Key Vault, storage)
+- **vigor-rg**: All resources in single group for simplified management
 
 **Cost Optimization Features**:
 
-- Pause/resume capability by deleting/recreating compute resources
+- Serverless auto-scaling with pay-per-use pricing
 - Single-slot deployment for reduced costs
-- Static resource naming for idempotent deployments
+- Consumption-based billing for optimal cost efficiency
 
 #### 8.1.2 Core Services
 
-- **App Service (B1)**: Backend API hosting (~$13/month)
-- **PostgreSQL Flexible**: Database service (~$25/month)
+- **Azure Functions (Flex Consumption)**: Serverless backend (~$15-25/month)
+- **Cosmos DB (Serverless)**: NoSQL database (~$10-20/month)
 - **Static Web App**: Frontend hosting (Free tier)
 - **Key Vault**: Secrets management (~$3/month)
 - **Application Insights**: Monitoring and analytics (~$2/month)
 
-**Total Infrastructure Budget Ceiling**: ≤$100/month with pause capability to ≤$70/month
+**Total Infrastructure Budget Ceiling**: ≤$50/month with automatic scaling
 
 ### 8.2 Deployment Pipeline
 
@@ -970,29 +968,25 @@ class WorkoutAnalysis(BaseModel):
 
 ```bash
 # Database
-DATABASE_URL=postgresql://...
+COSMOS_DB_CONNECTION_STRING=AccountEndpoint=https://vigor-cosmos.documents.azure.com:443/...
 
-# AI Providers
-LLM_PROVIDER=openai|gemini|perplexity|fallback
-OPENAI_API_KEY=sk-...
+# AI Provider
 GEMINI_API_KEY=...
-PERPLEXITY_API_KEY=pplx-...
 
 # Security
 SECRET_KEY=...
 ALLOWED_HOSTS=vigor.app,localhost
 
 # Features
-USE_FUNCTIONS=true
 ENABLE_RATE_LIMITING=true
 ```
 
 **Frontend Environment Variables**:
 
 ```bash
-VITE_API_URL=https://vigor-backend.azurewebsites.net
+VITE_API_URL=https://vigor-functions.azurewebsites.net
 VITE_ENABLE_PWA=true
-VITE_APP_VERSION=1.0.0
+VITE_APP_VERSION=2.0.0
 ```
 
 ---

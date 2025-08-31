@@ -1,0 +1,96 @@
+{
+  "export_timestamp": "2025-08-30T07:37:02.666937+00:00",
+  "source_database": "sample_data",
+  "target_database": "cosmosdb",
+  "users": [
+    {
+      "id": 1,
+      "email": "testuser@vigor.com",
+      "username": "testuser",
+      "password_hash": "hashed_password_123",
+      "tier": "free",
+      "is_active": true,
+      "created_at": "2024-01-01T10:00:00Z",
+      "updated_at": "2024-08-29T10:00:00Z",
+      "last_login": "2024-08-28T10:00:00Z",
+      "first_name": "Test",
+      "last_name": "User",
+      "age": 30,
+      "fitness_level": "intermediate",
+      "goals": [
+        "lose_weight",
+        "build_muscle"
+      ],
+      "preferences": {
+        "workout_time": "morning",
+        "difficulty": "medium"
+      }
+    }
+  ],
+  "workouts": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "title": "Morning Cardio",
+      "description": "Quick cardio workout",
+      "difficulty": "beginner",
+      "duration_minutes": 20,
+      "workout_type": "cardio",
+      "equipment": [],
+      "exercises": [
+        {
+          "name": "Jumping Jacks",
+          "sets": 3,
+          "reps": 20,
+          "rest_seconds": 30
+        }
+      ],
+      "ai_generated": true,
+      "generation_prompt": "Create a quick morning cardio routine",
+      "created_at": "2024-08-01T10:00:00Z",
+      "updated_at": "2024-08-01T10:00:00Z",
+      "is_public": false,
+      "tags": [
+        "cardio",
+        "morning"
+      ],
+      "calories_estimate": 150
+    }
+  ],
+  "chat_sessions": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "title": "Fitness Goals Discussion",
+      "messages": [
+        {
+          "id": 1,
+          "role": "user",
+          "content": "What's the best way to start working out?",
+          "timestamp": "2024-08-01T10:00:00Z"
+        },
+        {
+          "id": 2,
+          "role": "assistant",
+          "content": "Start with light cardio and bodyweight exercises...",
+          "timestamp": "2024-08-01T10:01:00Z"
+        }
+      ],
+      "created_at": "2024-08-01T10:00:00Z",
+      "updated_at": "2024-08-01T10:05:00Z",
+      "total_tokens": 150,
+      "duration_minutes": 5,
+      "user_goals": [
+        "lose_weight"
+      ],
+      "current_workout": null,
+      "fitness_level": "beginner"
+    }
+  ],
+  "summary": {
+    "total_users": 1,
+    "total_workouts": 1,
+    "total_chat_sessions": 1,
+    "total_records": 3
+  }
+}

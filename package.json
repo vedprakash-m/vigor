@@ -1,0 +1,27 @@
+{
+  "name": "vigor",
+  "version": "1.0.0",
+  "description": "> **Transform your fitness journey with personalized AI coaching, smart workout generation, and intelligent progress tracking.**",
+  "main": "auth-test-server.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vedprakash-m/vigor.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/vedprakash-m/vigor/issues"
+  },
+  "homepage": "https://github.com/vedprakash-m/vigor#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

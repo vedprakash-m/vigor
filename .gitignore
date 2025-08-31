@@ -156,3 +156,6 @@ bandit-report.json
 *api*key*
 *secret*key*
 *private*key* 
+
+# Archived files
+.archive

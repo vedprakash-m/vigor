@@ -66,7 +66,7 @@ Journey IDs map to §4 and align with PRD user scenarios:
 
 #### P0 - MVP Core Features (Launch Ready)
 
-- **User Authentication**: Microsoft Entra ID sole authentication, profile management
+- **User Authentication**: Microsoft Entra ID default tenant authentication with email-based user identification
 - **Workout Generation**: AI-powered workout creation with multi-provider fallback
 - **Workout Execution**: Real-time session tracking, timer, exercise guidance
 - **Basic Progress Tracking**: Workout history, basic metrics dashboard
@@ -172,7 +172,7 @@ flowchart TD
 
 **Success Metrics**: 4+ workouts/week despite travel, 15+ weekly AI interactions, <3min workout generation
 
-### 4.3 Enhanced Authentication Journey: Microsoft Entra ID (Vedprakash Domain)
+### 4.3 Enhanced Authentication Journey: Microsoft Entra ID Default Tenant
 
 ```mermaid
 flowchart TD
@@ -271,10 +271,12 @@ flowchart TD
 
 ### 5.2 Register & Authentication (`/auth`) - Microsoft Entra ID Integration
 
-**Authentication Method**: Microsoft Entra ID (`vedid.onmicrosoft.com`) as SOLE authentication provider
-**Domain Structure**: vigor.vedprakash.net subdomain with shared authentication infrastructure
-**SSO Integration**: Single Sign-On across all `.vedprakash.net` applications
-**Resource Separation**: Vigor resources (vigor-rg, vigor-db-rg) independent from shared domain (ved-domain-rg) and auth (ved-id-rg) resources
+### 5.2 Register & Authentication (`/auth`) - Microsoft Entra ID Integration
+
+**Authentication Method**: Microsoft Entra ID default tenant authentication
+**Email-based identification**: User email address as primary key for user records
+**Auto user creation**: Automatic database entry creation for new authenticated users
+**Simplified architecture**: Single resource group deployment (vigor-rg)
 **Security Features**: Enterprise-grade MFA, conditional access, rate limiting (5 registrations/min)
 **Guest Option**: "Continue as guest" launches demo with synthetic data
 **Mobile**: MSAL-optimized redirects, biometric integration, accessible tap targets (44px minimum)
@@ -847,7 +849,7 @@ jobs:
 - [x] **Success Metrics**: KPI tracking aligned with PRD Section 1.3
 - [x] **Mobile-First Design**: Responsive web app (PWA post-MVP)
 - [x] **Cost Optimization UX**: Infrastructure pause/resume user experience
-- [x] **MVP Scope**: Single authentication (Microsoft Entra ID), Free tier only
+- [x] **MVP Scope**: Microsoft Entra ID default tenant authentication, Free tier only
 
 ### 12.2 Tech Spec Alignment Verification
 

@@ -6,8 +6,8 @@
 import type { Configuration, PopupRequest, RedirectRequest } from '@azure/msal-browser';
 
 // Environment variables for Microsoft Entra ID
-const clientId = import.meta.env.VITE_AZURE_AD_CLIENT_ID || 'vigor-app-client-id';
-const tenantId = import.meta.env.VITE_AZURE_AD_TENANT_ID || 'vedid.onmicrosoft.com';
+const clientId = import.meta.env.VITE_AZURE_AD_CLIENT_ID || 'be183263-80c3-4191-bc84-2ee3c618cbcd';
+const tenantId = import.meta.env.VITE_AZURE_AD_TENANT_ID || 'common'; // Use 'common' for default tenant
 const authority = `https://login.microsoftonline.com/${tenantId}`;
 
 /**
