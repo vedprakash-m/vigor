@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Generic, List, Optional, TypeVar, Union
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
@@ -12,7 +12,7 @@ class BaseRepository(Generic[T], ABC):
     """Base repository interface."""
 
     @abstractmethod
-    async def get(self, entity_id: str) -> Optional[T]:  # noqa: D401
+    async def get(self, entity_id: str) -> T | None:  # noqa: D401
         """Get entity by ID."""
         pass
 
@@ -32,6 +32,6 @@ class BaseRepository(Generic[T], ABC):
         pass
 
     @abstractmethod
-    async def list(self, limit: int = 100, offset: int = 0) -> List[T]:  # noqa: D401
+    async def list(self, limit: int = 100, offset: int = 0) -> list[T]:  # noqa: D401
         """List entities with pagination."""
         pass

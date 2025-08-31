@@ -2,9 +2,7 @@
 Enhanced Authentication API with OAuth2 and Microsoft Entra External ID support
 """
 
-from typing import Dict, List, Optional
-
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, ValidationError
@@ -207,7 +205,7 @@ async def login(
 
 
 class RefreshRequest(BaseModel):
-    refresh_token: Optional[str] = None
+    refresh_token: str | None = None
 
 
 @router.post("/refresh", response_model=Token, summary="Refresh Access Token")
@@ -435,7 +433,7 @@ async def oauth_callback(
     provider: str,
     code: str,
     state: str,
-    error: Optional[str] = None,
+    error: str | None = None,
     db: Session = Depends(get_db),
 ):
     """

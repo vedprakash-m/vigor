@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from .config_manager import ModelConfiguration
 from .key_vault import KeyVaultClientService
@@ -33,14 +33,14 @@ class LLMRequest:
     """Standardized LLM request structure"""
 
     prompt: str
-    user_id: Optional[str] = None
-    session_id: Optional[str] = None
-    task_type: Optional[str] = None
-    max_tokens: Optional[int] = None
-    temperature: Optional[float] = None
+    user_id: str | None = None
+    session_id: str | None = None
+    task_type: str | None = None
+    max_tokens: int | None = None
+    temperature: float | None = None
     stream: bool = False
-    context: Optional[Dict[str, Any]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    context: dict[str, Any] | None = None
+    metadata: dict[str, Any] | None = None
 
 
 @dataclass
@@ -54,8 +54,8 @@ class LLMResponse:
     cost_estimate: float
     latency_ms: int
     cached: bool = False
-    request_id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    request_id: str | None = None
+    metadata: dict[str, Any] | None = None
 
 
 @dataclass
@@ -63,9 +63,9 @@ class HealthCheckResult:
     """Health check result for LLM providers"""
 
     is_healthy: bool
-    latency_ms: Optional[int] = None
-    error_message: Optional[str] = None
-    last_check: Optional[float] = None
+    latency_ms: int | None = None
+    error_message: str | None = None
+    last_check: float | None = None
 
 
 class LLMServiceAdapter(ABC):
@@ -79,8 +79,8 @@ class LLMServiceAdapter(ABC):
     ):
         self.model_config = model_config
         self.key_vault_service = key_vault_service
-        self._api_key: Optional[str] = None
-        self._key_cache_time: Optional[float] = None
+        self._api_key: str | None = None
+        self._key_cache_time: float | None = None
         self._key_cache_ttl = 3600  # 1 hour
         self._health_status = HealthCheckResult(is_healthy=False)
 
@@ -535,7 +535,7 @@ class AdapterFactory:
             raise
 
     @classmethod
-    def get_supported_providers(cls) -> List[LLMProvider]:
+    def get_supported_providers(cls) -> list[LLMProvider]:
         """Get list of supported providers"""
         return list(cls._adapter_classes.keys())
 
@@ -544,8 +544,8 @@ class AdapterFactory:
 
 
 async def create_adapters_from_configs(
-    model_configs: List[ModelConfiguration], key_vault_service: KeyVaultClientService
-) -> Dict[str, LLMServiceAdapter]:
+    model_configs: list[ModelConfiguration], key_vault_service: KeyVaultClientService
+) -> dict[str, LLMServiceAdapter]:
     """Create adapters for a list of model configurations"""
     adapters = {}
 
@@ -561,8 +561,8 @@ async def create_adapters_from_configs(
 
 
 async def health_check_all_adapters(
-    adapters: Dict[str, LLMServiceAdapter],
-) -> Dict[str, HealthCheckResult]:
+    adapters: dict[str, LLMServiceAdapter],
+) -> dict[str, HealthCheckResult]:
     """Perform health check on all adapters"""
     results = {}
 

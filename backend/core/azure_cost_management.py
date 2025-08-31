@@ -3,14 +3,12 @@ Azure Cost Management Integration Service
 Integrates with Azure Cost Management API for real-time cost tracking and automated alerts
 """
 
-import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
-import httpx
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.consumption import ConsumptionManagementClient
 
@@ -30,7 +28,7 @@ class CostAlert:
     current_spend: float
     alert_type: str  # 'warning', 'critical', 'exceeded'
     created_at: datetime
-    last_triggered: Optional[datetime] = None
+    last_triggered: datetime | None = None
 
 
 @dataclass
@@ -40,10 +38,10 @@ class RealTimeCostMetrics:
     current_month_spend: float
     budget_limit: float
     utilization_percentage: float
-    daily_spend_trend: List[float]
+    daily_spend_trend: list[float]
     projected_monthly_spend: float
-    cost_per_user: Dict[str, float]
-    cost_per_model: Dict[str, float]
+    cost_per_user: dict[str, float]
+    cost_per_model: dict[str, float]
     alert_status: str
     last_updated: datetime
 
@@ -86,8 +84,8 @@ class AzureCostManagementService:
         self._initialize_azure_clients()
 
         # Cost tracking state
-        self._cost_cache: Dict[str, RealTimeCostMetrics] = {}
-        self._alerts: Dict[str, CostAlert] = {}
+        self._cost_cache: dict[str, RealTimeCostMetrics] = {}
+        self._alerts: dict[str, CostAlert] = {}
         self._last_cost_update = datetime.utcnow() - timedelta(hours=1)
 
     def _initialize_azure_clients(self):
@@ -129,13 +127,12 @@ class AzureCostManagementService:
             # Get costs from Azure API if available
             current_spend = 0.0
             daily_trend = []
-            cost_per_resource = {}
 
             if self.consumption_client:
                 try:
                     current_spend = await self._get_azure_current_spend()
                     daily_trend = await self._get_azure_daily_trend()
-                    cost_per_resource = await self._get_azure_cost_by_resource()
+                    await self._get_azure_cost_by_resource()
                 except Exception as e:
                     logger.warning(f"Azure API call failed, using local tracking: {e}")
                     current_spend = await self._get_local_current_spend()
@@ -193,7 +190,7 @@ class AzureCostManagementService:
 
     async def validate_budget_before_operation(
         self, user_id: str, estimated_cost: float, operation_type: str = "ai_request"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Validate budget before expensive AI operation
 
@@ -279,8 +276,8 @@ class AzureCostManagementService:
             }
 
     async def configure_automated_alerts(
-        self, alert_configs: List[Dict[str, Any]]
-    ) -> Dict[str, str]:
+        self, alert_configs: list[dict[str, Any]]
+    ) -> dict[str, str]:
         """
         Configure automated cost alerts
 
@@ -324,7 +321,7 @@ class AzureCostManagementService:
 
     async def get_cost_analytics(
         self, time_range: str = "30d", include_forecast: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get detailed cost analytics and forecasting
 
@@ -381,7 +378,7 @@ class AzureCostManagementService:
             logger.error(f"Failed to generate cost analytics: {e}")
             return {"error": str(e)}
 
-    async def get_budget_status(self) -> Dict[str, Any]:
+    async def get_budget_status(self) -> dict[str, Any]:
         """
         Get current budget status
 
@@ -416,7 +413,7 @@ class AzureCostManagementService:
                 "error": str(e),
             }
 
-    async def get_cost_breakdown(self) -> List[Dict[str, Any]]:
+    async def get_cost_breakdown(self) -> list[dict[str, Any]]:
         """
         Get cost breakdown by service/resource
 
@@ -468,7 +465,7 @@ class AzureCostManagementService:
             logger.error(f"Failed to get cost breakdown: {e}")
             return []
 
-    async def get_budget_alerts(self) -> List[Dict[str, Any]]:
+    async def get_budget_alerts(self) -> list[dict[str, Any]]:
         """
         Get active budget alerts
 
@@ -519,8 +516,8 @@ class AzureCostManagementService:
             return []
 
     async def create_budget_alert(
-        self, budget_name: str, threshold_percentage: float, email_contacts: List[str]
-    ) -> Dict[str, Any]:
+        self, budget_name: str, threshold_percentage: float, email_contacts: list[str]
+    ) -> dict[str, Any]:
         """
         Create or update a budget alert
 
@@ -563,7 +560,7 @@ class AzureCostManagementService:
             logger.error(f"Failed to create budget alert: {e}")
             raise Exception(f"Failed to create budget alert: {str(e)}")
 
-    async def delete_budget_alert(self, alert_id: str) -> Dict[str, Any]:
+    async def delete_budget_alert(self, alert_id: str) -> dict[str, Any]:
         """
         Delete a budget alert
 
@@ -588,7 +585,7 @@ class AzureCostManagementService:
             logger.error(f"Failed to delete budget alert: {e}")
             raise Exception(f"Failed to delete budget alert: {str(e)}")
 
-    async def get_cost_optimization_recommendations(self) -> List[Dict[str, Any]]:
+    async def get_cost_optimization_recommendations(self) -> list[dict[str, Any]]:
         """
         Get AI-powered cost optimization recommendations
 
@@ -700,9 +697,7 @@ class AzureCostManagementService:
             # Use Azure Consumption API to get current costs
             # This is a simplified implementation - real implementation would use proper Azure SDK
             end_date = datetime.utcnow()
-            start_date = end_date.replace(
-                day=1, hour=0, minute=0, second=0, microsecond=0
-            )
+            end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
             # Mock implementation - replace with actual Azure API call
             return 45.50  # Example current spend
@@ -760,7 +755,7 @@ class AzureCostManagementService:
             logger.error(f"Failed to get user budget: {e}")
             return 5.0
 
-    async def _get_cost_optimized_model(self, operation_type: str) -> Optional[str]:
+    async def _get_cost_optimized_model(self, operation_type: str) -> str | None:
         """Get cost-optimized model recommendation"""
         try:
             # Model cost efficiency mapping
@@ -782,7 +777,7 @@ class AzureCostManagementService:
     async def _check_and_trigger_alerts(self, metrics: RealTimeCostMetrics):
         """Check cost thresholds and trigger alerts"""
         try:
-            for alert_id, alert in self._alerts.items():
+            for _alert_id, alert in self._alerts.items():
                 if metrics.utilization_percentage >= alert.threshold_percentage:
                     # Check if alert was recently triggered (avoid spam)
                     if alert.last_triggered:
@@ -815,7 +810,7 @@ class AzureCostManagementService:
         except Exception as e:
             logger.error(f"Failed to send alert: {e}")
 
-    async def _get_cost_per_user(self) -> Dict[str, float]:
+    async def _get_cost_per_user(self) -> dict[str, float]:
         """Get cost breakdown by user"""
         try:
             if not self.db:
@@ -847,7 +842,7 @@ class AzureCostManagementService:
             logger.error(f"Failed to get per-user costs: {e}")
             return {}
 
-    async def _get_cost_per_model(self) -> Dict[str, float]:
+    async def _get_cost_per_model(self) -> dict[str, float]:
         """Get cost breakdown by model"""
         try:
             if not self.db:
@@ -879,12 +874,12 @@ class AzureCostManagementService:
             logger.error(f"Failed to get per-model costs: {e}")
             return {}
 
-    async def _get_azure_daily_trend(self) -> List[float]:
+    async def _get_azure_daily_trend(self) -> list[float]:
         """Get daily cost trend from Azure"""
         # Mock implementation - replace with actual Azure API calls
         return [1.2, 1.5, 1.8, 1.6, 2.1, 1.9, 2.3]
 
-    async def _get_local_daily_trend(self) -> List[float]:
+    async def _get_local_daily_trend(self) -> list[float]:
         """Get daily cost trend from local data"""
         try:
             if not self.db:
@@ -919,7 +914,7 @@ class AzureCostManagementService:
             return []
 
     def _calculate_projected_spend(
-        self, current_spend: float, daily_trend: List[float]
+        self, current_spend: float, daily_trend: list[float]
     ) -> float:
         """Calculate projected monthly spend based on trends"""
         try:
@@ -963,12 +958,12 @@ class AzureCostManagementService:
 
     async def _get_historical_costs(
         self, start_date: datetime, end_date: datetime
-    ) -> List[float]:
+    ) -> list[float]:
         """Get historical cost data"""
         # Mock implementation - replace with actual data queries
         return [1.2, 1.5, 1.8, 1.6, 2.1, 1.9, 2.3, 2.0, 1.8, 2.2]
 
-    def _calculate_cost_trend(self, historical_costs: List[float]) -> str:
+    def _calculate_cost_trend(self, historical_costs: list[float]) -> str:
         """Calculate cost trend direction"""
         if len(historical_costs) < 2:
             return "insufficient_data"
@@ -992,8 +987,8 @@ class AzureCostManagementService:
             return "stable"
 
     async def _generate_cost_forecast(
-        self, historical_costs: List[float]
-    ) -> Dict[str, Any]:
+        self, historical_costs: list[float]
+    ) -> dict[str, Any]:
         """Generate cost forecast"""
         if not historical_costs:
             return {"error": "insufficient_data"}
@@ -1010,7 +1005,7 @@ class AzureCostManagementService:
 
     async def _get_cost_breakdown(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get detailed cost breakdown"""
         return {
             "by_service": {
@@ -1021,7 +1016,7 @@ class AzureCostManagementService:
             "by_model": {"gpt-4": 35.00, "gemini-pro": 15.50, "claude-3": 10.00},
         }
 
-    async def _get_optimization_recommendations(self) -> List[Dict[str, str]]:
+    async def _get_optimization_recommendations(self) -> list[dict[str, str]]:
         """Get cost optimization recommendations"""
         return [
             {
@@ -1041,12 +1036,12 @@ class AzureCostManagementService:
             },
         ]
 
-    async def _get_alert_summary(self) -> Dict[str, Any]:
+    async def _get_alert_summary(self) -> dict[str, Any]:
         """Get summary of configured alerts"""
         return {
             "total_alerts": len(self._alerts),
             "active_alerts": len(
                 [a for a in self._alerts.values() if a.last_triggered]
             ),
-            "alert_types": list(set(a.alert_type for a in self._alerts.values())),
+            "alert_types": list({a.alert_type for a in self._alerts.values()}),
         }

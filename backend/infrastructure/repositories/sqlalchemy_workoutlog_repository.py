@@ -14,7 +14,7 @@ class SQLAlchemyWorkoutLogRepository(BaseRepository[WorkoutLog]):
     def __init__(self, session: Session):
         self.session = session
 
-    async def get(self, entity_id: str) -> Optional[WorkoutLog]:
+    async def get(self, entity_id: str) -> WorkoutLog | None:
         record = (
             self.session.query(WorkoutLogDB)
             .filter(WorkoutLogDB.id == entity_id)
@@ -59,12 +59,12 @@ class SQLAlchemyWorkoutLogRepository(BaseRepository[WorkoutLog]):
         self.session.commit()
         return True
 
-    async def list(self, limit: int = 100, offset: int = 0) -> List[WorkoutLog]:
+    async def list(self, limit: int = 100, offset: int = 0) -> list[WorkoutLog]:
         query = self.session.query(WorkoutLogDB)
         records = query.offset(offset).limit(limit).all()
         return [WorkoutLog.model_validate(r) for r in records]
 
-    async def list_dates(self, user_id: str) -> List[str]:
+    async def list_dates(self, user_id: str) -> list[str]:
         rows = (
             self.session.query(WorkoutLogDB.completed_at)
             .filter(WorkoutLogDB.user_id == user_id)

@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel
@@ -11,7 +10,6 @@ from core.admin_llm_manager import (
     BudgetMonitor,
 )
 from core.azure_cost_management import AzureCostManagementService
-from core.llm_orchestration import LLMGateway
 from core.security import get_current_user
 from database.connection import get_db
 from database.models import AIProviderPriority, BudgetSettings, UserProfile
@@ -26,9 +24,9 @@ class AIProviderPriorityRequest(BaseModel):
     model_name: str
     priority: int
     is_enabled: bool = True
-    max_daily_cost: Optional[float] = None
-    max_weekly_cost: Optional[float] = None
-    max_monthly_cost: Optional[float] = None
+    max_daily_cost: float | None = None
+    max_weekly_cost: float | None = None
+    max_monthly_cost: float | None = None
 
 
 class BudgetSettingsRequest(BaseModel):
@@ -45,26 +43,26 @@ class UsageStatsResponse(BaseModel):
     total_requests_today: int
     total_requests_week: int
     avg_cost_per_request: float
-    top_providers: List[dict]
-    recent_usage: List[dict]
+    top_providers: list[dict]
+    recent_usage: list[dict]
 
 
 # Azure Cost Management Response Models
 class AzureCostAnalyticsResponse(BaseModel):
-    current_costs: Dict
-    budget_status: Dict
-    cost_breakdown: List[Dict]
-    alerts: List[Dict]
-    usage_trends: Dict
+    current_costs: dict
+    budget_status: dict
+    cost_breakdown: list[dict]
+    alerts: list[dict]
+    usage_trends: dict
     last_updated: str
 
 
 class BudgetSyncResponse(BaseModel):
     status: str
     global_usage: float
-    azure_costs: Optional[Dict]
+    azure_costs: dict | None
     last_sync: str
-    error: Optional[str] = None
+    error: str | None = None
 
 
 # Admin Authentication Check
@@ -81,7 +79,7 @@ async def verify_admin_user(
 
 
 # Provider Priority Management
-@router.get("/ai-providers", response_model=List[AIProviderPriority])
+@router.get("/ai-providers", response_model=list[AIProviderPriority])
 async def get_ai_provider_priorities(
     db: Session = Depends(get_db), admin_user: UserProfile = Depends(verify_admin_user)
 ):
@@ -204,7 +202,7 @@ async def delete_ai_provider_priority(
 
 
 # Budget Management
-@router.get("/budget", response_model=Optional[BudgetSettings])
+@router.get("/budget", response_model=BudgetSettings | None)
 async def get_budget_settings(
     db: Session = Depends(get_db), admin_user: UserProfile = Depends(verify_admin_user)
 ):
@@ -544,7 +542,7 @@ async def get_real_time_cost_analytics(
 async def create_azure_budget_alert(
     budget_name: str,
     threshold_percentage: float,
-    email_contacts: List[str],
+    email_contacts: list[str],
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

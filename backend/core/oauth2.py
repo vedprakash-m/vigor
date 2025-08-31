@@ -5,20 +5,18 @@ Handles OAuth2 flows with PKCE, social login providers, and Microsoft Entra inte
 
 import base64
 import hashlib
-import json
 import logging
 import secrets
 import urllib.parse
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import httpx
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from jose import jwt
 from sqlalchemy.orm import Session
 
 from core.config import get_settings
-from database.models import UserProfile
 from database.sql_models import UserProfileDB
 
 settings = get_settings()
@@ -39,11 +37,11 @@ class OAuth2Provider:
 
     async def exchange_code_for_token(
         self, code: str, code_verifier: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Exchange authorization code for access token"""
         raise NotImplementedError
 
-    async def get_user_info(self, access_token: str) -> Dict[str, Any]:
+    async def get_user_info(self, access_token: str) -> dict[str, Any]:
         """Get user information from the provider"""
         raise NotImplementedError
 
@@ -77,7 +75,7 @@ class MicrosoftEntraProvider(OAuth2Provider):
 
     async def exchange_code_for_token(
         self, code: str, code_verifier: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Exchange authorization code for access token"""
         token_url = f"{self.authority_url}/oauth2/v2.0/token"
 
@@ -95,7 +93,7 @@ class MicrosoftEntraProvider(OAuth2Provider):
             response.raise_for_status()
             return response.json()
 
-    async def get_user_info(self, access_token: str) -> Dict[str, Any]:
+    async def get_user_info(self, access_token: str) -> dict[str, Any]:
         """Get user information from Microsoft Graph"""
         headers = {"Authorization": f"Bearer {access_token}"}
 
@@ -126,7 +124,7 @@ class GoogleOAuthProvider(OAuth2Provider):
 
     async def exchange_code_for_token(
         self, code: str, code_verifier: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Exchange authorization code for access token"""
         token_url = "https://oauth2.googleapis.com/token"
 
@@ -144,7 +142,7 @@ class GoogleOAuthProvider(OAuth2Provider):
             response.raise_for_status()
             return response.json()
 
-    async def get_user_info(self, access_token: str) -> Dict[str, Any]:
+    async def get_user_info(self, access_token: str) -> dict[str, Any]:
         """Get user information from Google"""
         headers = {"Authorization": f"Bearer {access_token}"}
 
@@ -175,7 +173,7 @@ class GitHubOAuthProvider(OAuth2Provider):
 
     async def exchange_code_for_token(
         self, code: str, code_verifier: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Exchange authorization code for access token"""
         token_url = "https://github.com/login/oauth/access_token"
 
@@ -194,7 +192,7 @@ class GitHubOAuthProvider(OAuth2Provider):
             response.raise_for_status()
             return response.json()
 
-    async def get_user_info(self, access_token: str) -> Dict[str, Any]:
+    async def get_user_info(self, access_token: str) -> dict[str, Any]:
         """Get user information from GitHub"""
         headers = {
             "Authorization": f"Bearer {access_token}",
@@ -232,7 +230,7 @@ class OAuth2Service:
         self.db = db
         self.providers = self._initialize_providers()
 
-    def _initialize_providers(self) -> Dict[str, OAuth2Provider]:
+    def _initialize_providers(self) -> dict[str, OAuth2Provider]:
         """Initialize OAuth2 providers"""
         providers = {}
 
@@ -267,7 +265,7 @@ class OAuth2Service:
 
         return providers
 
-    def generate_pkce_pair(self) -> Tuple[str, str]:
+    def generate_pkce_pair(self) -> tuple[str, str]:
         """Generate PKCE code verifier and challenge"""
         code_verifier = (
             base64.urlsafe_b64encode(secrets.token_bytes(32))
@@ -295,7 +293,7 @@ class OAuth2Service:
             payload, settings.OAUTH_STATE_SECRET, algorithm=settings.ALGORITHM
         )
 
-    def verify_state_token(self, state_token: str) -> Dict[str, Any]:
+    def verify_state_token(self, state_token: str) -> dict[str, Any]:
         """Verify and decode state token"""
         try:
             payload = jwt.decode(
@@ -313,7 +311,7 @@ class OAuth2Service:
         except jwt.JWTError:
             raise HTTPException(status_code=400, detail="Invalid OAuth state token")
 
-    def get_authorization_url(self, provider_name: str) -> Dict[str, str]:
+    def get_authorization_url(self, provider_name: str) -> dict[str, str]:
         """Get authorization URL for OAuth provider"""
         if provider_name not in self.providers:
             raise HTTPException(
@@ -331,7 +329,7 @@ class OAuth2Service:
 
     async def handle_oauth_callback(
         self, provider_name: str, code: str, state: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Handle OAuth callback and authenticate user"""
         if provider_name not in self.providers:
             raise HTTPException(
@@ -392,7 +390,7 @@ class OAuth2Service:
             raise HTTPException(status_code=500, detail="OAuth authentication failed")
 
     async def _find_or_create_oauth_user(
-        self, provider: str, user_info: Dict[str, Any]
+        self, provider: str, user_info: dict[str, Any]
     ) -> UserProfileDB:
         """Find existing user or create new OAuth user"""
         # Extract email from provider-specific user info
@@ -438,7 +436,7 @@ class OAuth2Service:
 
         return new_user
 
-    def _extract_email(self, provider: str, user_info: Dict[str, Any]) -> Optional[str]:
+    def _extract_email(self, provider: str, user_info: dict[str, Any]) -> str | None:
         """Extract email from provider-specific user info"""
         if provider == "microsoft":
             return user_info.get("mail") or user_info.get("userPrincipalName")
@@ -449,8 +447,8 @@ class OAuth2Service:
         return None
 
     def _extract_provider_id(
-        self, provider: str, user_info: Dict[str, Any]
-    ) -> Optional[str]:
+        self, provider: str, user_info: dict[str, Any]
+    ) -> str | None:
         """Extract provider-specific user ID"""
         if provider == "microsoft":
             return user_info.get("id")
@@ -461,7 +459,7 @@ class OAuth2Service:
         return None
 
     def _generate_username(
-        self, provider: str, user_info: Dict[str, Any], email: str
+        self, provider: str, user_info: dict[str, Any], email: str
     ) -> str:
         """Generate username from provider info"""
         # Try to get name from provider
@@ -493,7 +491,7 @@ class OAuth2Service:
 
         return username
 
-    def get_available_providers(self) -> Dict[str, str]:
+    def get_available_providers(self) -> dict[str, str]:
         """Get list of available OAuth providers"""
         return {
             provider_name: provider.__class__.__name__

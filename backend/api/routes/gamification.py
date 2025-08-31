@@ -3,8 +3,7 @@ Gamification API endpoints for badges, streaks, and achievements.
 Implements PRD gamification requirements including streak tracking, badge system, and progress analytics.
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -14,8 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import get_current_user
 from api.schemas.user import UserResponse
-from database.database import get_db_session
-from database.repositories import user_repository, workout_repository
+from database.connection import get_db
+from database.repositories import workout_repository
 
 # Rate limiting
 limiter = Limiter(key_func=get_remote_address)
@@ -40,26 +39,26 @@ class Badge(BaseModel):
     category: str = Field(
         ..., description="Badge category: streak, achievement, milestone, exploration"
     )
-    unlocked_at: Optional[datetime] = None
-    progress: Optional[Dict[str, int]] = None
+    unlocked_at: datetime | None = None
+    progress: dict[str, int] | None = None
 
 
 class GamificationStats(BaseModel):
     total_points: int
     level: int
-    streaks: Dict[str, StreakInfo]
-    badges: List[Badge]
-    achievements: List[Badge]
+    streaks: dict[str, StreakInfo]
+    badges: list[Badge]
+    achievements: list[Badge]
     weekly_consistency: int
     ai_interactions: int
     workout_count: int
-    equipment_types_used: List[str]
+    equipment_types_used: list[str]
 
 
 class WorkoutCompletionEvent(BaseModel):
     completed_at: datetime
-    workout_type: Optional[str] = None
-    equipment_used: Optional[List[str]] = None
+    workout_type: str | None = None
+    equipment_used: list[str] | None = None
 
 
 # Badge definitions from PRD specifications
@@ -138,10 +137,10 @@ BADGE_DEFINITIONS = {
 
 
 # In-memory storage for now (TODO: Add to database)
-user_gamification_data: Dict[str, Dict] = {}
+user_gamification_data: dict[str, dict] = {}
 
 
-def calculate_daily_streak(workout_dates: List[datetime]) -> StreakInfo:
+def calculate_daily_streak(workout_dates: list[datetime]) -> StreakInfo:
     """Calculate daily workout streak from workout dates."""
     if not workout_dates:
         return StreakInfo(
@@ -199,7 +198,7 @@ def calculate_level(total_points: int) -> int:
     return int((total_points / 100) ** 0.5) + 1
 
 
-def check_badge_unlocks(user_data: Dict) -> List[Badge]:
+def check_badge_unlocks(user_data: dict) -> list[Badge]:
     """Check which badges should be unlocked based on user activity."""
     unlocked_badges = []
     existing_badges = {badge["id"] for badge in user_data.get("badges", [])}
@@ -254,7 +253,7 @@ def check_badge_unlocks(user_data: Dict) -> List[Badge]:
 @limiter.limit("30/minute")
 async def get_gamification_stats(
     current_user: UserResponse = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = Depends(get_db),
 ) -> GamificationStats:
     """
     Get comprehensive gamification stats for the current user.
@@ -343,7 +342,7 @@ async def get_gamification_stats(
 async def record_workout_completion(
     event: WorkoutCompletionEvent,
     current_user: UserResponse = Depends(get_current_user),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """
     Record workout completion and update gamification stats.
     """
@@ -397,7 +396,7 @@ async def record_workout_completion(
 @limiter.limit("100/minute")
 async def record_ai_interaction(
     current_user: UserResponse = Depends(get_current_user),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """
     Record AI interaction for gamification tracking.
     """
@@ -443,7 +442,7 @@ async def record_ai_interaction(
 @router.get("/badges")
 async def get_available_badges(
     current_user: UserResponse = Depends(get_current_user),
-) -> List[Badge]:
+) -> list[Badge]:
     """
     Get all available badges with progress information.
     """
@@ -491,7 +490,7 @@ async def get_available_badges(
 @limiter.limit("10/minute")
 async def get_leaderboard(
     current_user: UserResponse = Depends(get_current_user),
-) -> Dict[str, List[Dict]]:
+) -> dict[str, list[dict]]:
     """
     Get anonymous leaderboard data for motivation.
     """

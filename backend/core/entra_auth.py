@@ -6,18 +6,15 @@ Compliant with Apps_Auth_Requirement.md for Vedprakash Domain Integration
 import json
 import logging
 import time
-from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
-from urllib.parse import urljoin
+from datetime import datetime
+from typing import Any
 
-import httpx
 import jwt
 from fastapi import HTTPException, status
 from jwt import PyJWKClient
 from sqlalchemy.orm import Session
 
 from core.config import get_settings
-from database.models import UserProfile
 from database.sql_models import UserProfileDB
 
 settings = get_settings()
@@ -38,7 +35,7 @@ class VedUser:
         given_name: str = "",
         family_name: str = "",
         permissions: list[str] = None,
-        ved_profile: Dict[str, Any] = None,
+        ved_profile: dict[str, Any] = None,
     ):
         self.id = id
         self.email = email
@@ -53,7 +50,7 @@ class VedUser:
             "preferences": {},
         }
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "email": self.email,
@@ -83,7 +80,6 @@ class MicrosoftEntraAuth:
             self.jwks_uri,
             cache_keys=True,
             max_cached_keys=16,
-            cache_timeout=3600,  # 1 hour cache
         )
 
         # Token cache for performance
@@ -158,7 +154,7 @@ class MicrosoftEntraAuth:
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication failed"
             )
 
-    def _extract_ved_user(self, payload: Dict[str, Any]) -> VedUser:
+    def _extract_ved_user(self, payload: dict[str, Any]) -> VedUser:
         """
         Extract VedUser from Microsoft Entra ID token payload
         Maps Microsoft claims to VedUser interface
@@ -194,7 +190,7 @@ class MicrosoftEntraAuth:
             ved_profile=ved_profile,
         )
 
-    def _parse_preferences(self, preferences: Any) -> Dict[str, Any]:
+    def _parse_preferences(self, preferences: Any) -> dict[str, Any]:
         """Parse preferences from token claims"""
         if isinstance(preferences, str):
             try:

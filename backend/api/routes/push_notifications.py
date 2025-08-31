@@ -4,18 +4,16 @@ Handles push subscription management and notification delivery.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_current_user
-from api.schemas.user import UserResponse
-from database.database import get_db_session
-from database.repositories import user_repository
+from api.schemas.users import UserProfileResponse
+from core.auth_dependencies import get_current_user
+from database.connection import get_db
 
 # Rate limiting
 limiter = Limiter(key_func=get_remote_address)
@@ -26,7 +24,7 @@ router = APIRouter(prefix="/push", tags=["push_notifications"])
 # Pydantic models for push notifications
 class PushSubscriptionEndpoint(BaseModel):
     endpoint: str
-    keys: Dict[str, str]  # Contains p256dh and auth keys
+    keys: dict[str, str]  # Contains p256dh and auth keys
 
 
 class PushSubscriptionCreate(BaseModel):
@@ -46,10 +44,10 @@ class PushSubscriptionResponse(BaseModel):
 class NotificationSend(BaseModel):
     title: str
     body: str
-    icon: Optional[str] = None
-    badge: Optional[str] = None
-    tag: Optional[str] = None
-    url: Optional[str] = None
+    icon: str | None = None
+    badge: str | None = None
+    tag: str | None = None
+    url: str | None = None
     require_interaction: bool = False
 
 
@@ -60,16 +58,17 @@ class NotificationResponse(BaseModel):
 
 
 # In-memory storage for now (TODO: Add to database)
-push_subscriptions: Dict[str, List[Dict]] = {}
+push_subscriptions: dict[str, list[dict]] = {}
 
 
 @router.post("/subscribe")
 @limiter.limit("10/minute")
 async def subscribe_to_push_notifications(
+    request: Request,
     subscription_data: PushSubscriptionCreate,
-    current_user: UserResponse = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session),
-) -> Dict[str, str]:
+    current_user: UserProfileResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
     """
     Subscribe user to push notifications.
     Stores the push subscription for future notification delivery.
@@ -114,8 +113,8 @@ async def subscribe_to_push_notifications(
 
 @router.get("/subscriptions")
 async def get_user_subscriptions(
-    current_user: UserResponse = Depends(get_current_user),
-) -> List[Dict]:
+    current_user: UserProfileResponse = Depends(get_current_user),
+) -> list[dict]:
     """
     Get all push subscriptions for the current user.
     """
@@ -126,9 +125,10 @@ async def get_user_subscriptions(
 @router.delete("/unsubscribe/{endpoint_hash}")
 @limiter.limit("5/minute")
 async def unsubscribe_from_push_notifications(
+    request: Request,
     endpoint_hash: str,
-    current_user: UserResponse = Depends(get_current_user),
-) -> Dict[str, str]:
+    current_user: UserProfileResponse = Depends(get_current_user),
+) -> dict[str, str]:
     """
     Unsubscribe from push notifications by removing specific subscription.
     """
@@ -171,8 +171,9 @@ async def unsubscribe_from_push_notifications(
 @router.post("/send")
 @limiter.limit("30/minute")
 async def send_push_notification(
+    request: Request,
     notification: NotificationSend,
-    current_user: UserResponse = Depends(get_current_user),
+    current_user: UserProfileResponse = Depends(get_current_user),
 ) -> NotificationResponse:
     """
     Send push notification to current user's devices.
@@ -219,7 +220,8 @@ async def send_push_notification(
 @router.post("/test")
 @limiter.limit("5/minute")
 async def send_test_notification(
-    current_user: UserResponse = Depends(get_current_user),
+    request: Request,
+    current_user: UserProfileResponse = Depends(get_current_user),
 ) -> NotificationResponse:
     """
     Send a test push notification to verify setup.
@@ -233,12 +235,12 @@ async def send_test_notification(
         require_interaction=False,
     )
 
-    return await send_push_notification(test_notification, current_user)
+    return await send_push_notification(request, test_notification, current_user)
 
 
 # Health check endpoint
 @router.get("/health")
-async def push_service_health() -> Dict[str, str]:
+async def push_service_health() -> dict[str, str]:
     """
     Check push notification service health.
     """

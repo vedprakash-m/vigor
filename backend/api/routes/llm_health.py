@@ -3,21 +3,18 @@ LLM Health Monitoring API routes
 """
 
 import asyncio
-import json
 from datetime import datetime, timedelta
-from typing import Any, Dict, List
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
 
-from ..dependencies import get_current_user, require_admin
-from ..schemas.llm_health import (
+from api.schemas.llm_health import (
     HealthCheckResponse,
     LLMConfiguration,
     LLMModelHealth,
     ModelSwitchRequest,
-    SystemMetrics,
 )
+from core.auth_dependencies import require_admin
 
 router = APIRouter(prefix="/llm-health", tags=["llm-health"])
 
@@ -77,7 +74,7 @@ MOCK_MODELS = [
 ]
 
 
-@router.get("/overview", response_model=Dict[str, Any])
+@router.get("/overview", response_model=dict[str, Any])
 async def get_llm_health_overview(
     time_range: str = "24h", current_user=Depends(require_admin)
 ):
@@ -111,7 +108,7 @@ async def get_llm_health_overview(
     }
 
 
-@router.get("/models", response_model=List[LLMModelHealth])
+@router.get("/models", response_model=list[LLMModelHealth])
 async def get_llm_models(current_user=Depends(require_admin)):
     """Get all LLM models health status"""
     return MOCK_MODELS

@@ -3,23 +3,21 @@ Microsoft Entra ID Authentication API Routes
 Implements Vedprakash domain authentication standard
 """
 
-from typing import Any, Dict
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends
 
 from core.auth_dependencies import get_current_user, get_current_user_profile
 from core.entra_auth import VedUser
-from database.connection import get_db
 from database.sql_models import UserProfileDB
 
 router = APIRouter(prefix="/api/v1/entra-auth", tags=["Microsoft Entra ID"])
 
 
-@router.get("/me", response_model=Dict[str, Any])
+@router.get("/me", response_model=dict[str, Any])
 async def get_current_user_info(
     ved_user: VedUser = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get current authenticated user information
     Returns standardized VedUser object
@@ -31,11 +29,11 @@ async def get_current_user_info(
     }
 
 
-@router.get("/profile", response_model=Dict[str, Any])
+@router.get("/profile", response_model=dict[str, Any])
 async def get_user_profile(
     user_profile: UserProfileDB = Depends(get_current_user_profile),
     ved_user: VedUser = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get user profile with fitness data
     Combines VedUser standardization with app-specific profile
@@ -65,7 +63,7 @@ async def get_user_profile(
 @router.post("/validate-token")
 async def validate_token(
     ved_user: VedUser = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Validate Microsoft Entra ID token
     Returns validation status and user info
@@ -74,7 +72,7 @@ async def validate_token(
 
 
 @router.get("/health")
-async def health_check() -> Dict[str, str]:
+async def health_check() -> dict[str, str]:
     """
     Health check endpoint for Microsoft Entra ID authentication service
     """

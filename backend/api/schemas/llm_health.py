@@ -4,7 +4,7 @@ Pydantic schemas for LLM Health Monitoring
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -22,10 +22,10 @@ class AlertSeverity(str, Enum):
 
 
 class LLMConfiguration(BaseModel):
-    temperature: Optional[float] = Field(None, ge=0.0, le=2.0)
-    max_tokens: Optional[int] = Field(None, gt=0)
-    top_p: Optional[float] = Field(None, ge=0.0, le=1.0)
-    enabled: Optional[bool] = None
+    temperature: float | None = Field(None, ge=0.0, le=2.0)
+    max_tokens: int | None = Field(None, gt=0)
+    top_p: float | None = Field(None, ge=0.0, le=1.0)
+    enabled: bool | None = None
 
 
 class LLMModelHealth(BaseModel):
@@ -55,13 +55,13 @@ class HealthCheckResponse(BaseModel):
     status: ModelStatus
     response_time: int
     timestamp: datetime
-    details: Dict[str, Any]
+    details: dict[str, Any]
 
 
 class ModelSwitchRequest(BaseModel):
     from_model: str
     to_model: str
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 class Alert(BaseModel):
@@ -72,8 +72,8 @@ class Alert(BaseModel):
     message: str
     timestamp: datetime
     acknowledged: bool
-    acknowledged_by: Optional[str] = None
-    acknowledged_at: Optional[datetime] = None
+    acknowledged_by: str | None = None
+    acknowledged_at: datetime | None = None
 
 
 class HistoricalDataPoint(BaseModel):
@@ -85,13 +85,13 @@ class HistoricalDataPoint(BaseModel):
 
 
 class HistoricalMetrics(BaseModel):
-    model_id: Optional[str]
+    model_id: str | None
     time_range: str
-    data_points: List[HistoricalDataPoint]
+    data_points: list[HistoricalDataPoint]
 
 
 class LLMHealthOverview(BaseModel):
     system_metrics: SystemMetrics
-    models: List[LLMModelHealth]
+    models: list[LLMModelHealth]
     time_range: str
     last_updated: datetime

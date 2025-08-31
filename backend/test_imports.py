@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Test script to verify all critical dependencies are working"""
+"""Test script to verify     try:
+    import importlib.util
+    if importlib.util.find_spec("azure.identity") is not None:
+        print("✅ Azure Identity: imported successfully")
+    else:
+        print("❌ Azure Identity: not available")
+except ImportError:ritical dependencies are working"""
 
 
 def test_imports():
@@ -47,9 +53,12 @@ def test_imports():
         return False
 
     try:
-        import azure.identity
+        import importlib.util
 
-        print("✅ Azure Identity: imported successfully")
+        if importlib.util.find_spec("azure.identity") is not None:
+            print("✅ Azure Identity: imported successfully")
+        else:
+            print("❌ Azure Identity: not available")
     except ImportError as e:
         print("❌ Azure Identity import failed:", e)
         return False

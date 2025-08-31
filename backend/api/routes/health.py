@@ -4,11 +4,10 @@ Production-ready health monitoring for Azure deployment
 """
 
 import asyncio
-import json
 import os
 import time
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 import psutil
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,9 +15,9 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..core.auth import get_current_user
-from ..core.config import get_settings
-from ..database.connection import get_db
+from core.auth_dependencies import get_current_user
+from core.config import get_settings
+from database.connection import get_db
 
 router = APIRouter(prefix="/health", tags=["health"])
 settings = get_settings()
@@ -39,8 +38,8 @@ class DatabaseHealth(BaseModel):
 
     status: str
     connection_time_ms: float
-    active_connections: Optional[int] = None
-    max_connections: Optional[int] = None
+    active_connections: int | None = None
+    max_connections: int | None = None
 
 
 class SystemHealth(BaseModel):
@@ -49,7 +48,7 @@ class SystemHealth(BaseModel):
     cpu_percent: float
     memory_percent: float
     disk_percent: float
-    load_average: List[float]
+    load_average: list[float]
 
 
 class LLMHealth(BaseModel):
@@ -66,7 +65,7 @@ class DependencyHealth(BaseModel):
     """External dependency health model"""
 
     azure_cost_api: str
-    external_services: Dict[str, str]
+    external_services: dict[str, str]
 
 
 class ComprehensiveHealth(BaseModel):
@@ -128,7 +127,7 @@ async def check_database_health(db: AsyncSession) -> DatabaseHealth:
                 connection_time_ms=round(connection_time, 2),
             )
 
-    except Exception as e:
+    except Exception:
         return DatabaseHealth(status="unhealthy", connection_time_ms=-1)
 
 
@@ -244,7 +243,7 @@ async def basic_health_check() -> HealthStatus:
 
     return HealthStatus(
         status="healthy",
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         version=os.getenv("APP_VERSION", "1.0.0"),
         environment=settings.environment,
         uptime_seconds=round(uptime, 2),
@@ -252,7 +251,7 @@ async def basic_health_check() -> HealthStatus:
 
 
 @router.get("/ready")
-async def readiness_check(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
+async def readiness_check(db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
     """
     Kubernetes readiness probe endpoint
     Checks if the application is ready to serve traffic
@@ -263,7 +262,7 @@ async def readiness_check(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
 
         return {
             "status": "ready",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "checks": {"database": "connected", "application": "initialized"},
         }
     except Exception as e:
@@ -272,20 +271,20 @@ async def readiness_check(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
             detail={
                 "status": "not_ready",
                 "error": str(e),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             },
         )
 
 
 @router.get("/live")
-async def liveness_check() -> Dict[str, Any]:
+async def liveness_check() -> dict[str, Any]:
     """
     Kubernetes liveness probe endpoint
     Simple check to verify the application is running
     """
     return {
         "status": "alive",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "uptime_seconds": round(time.time() - STARTUP_TIME, 2),
     }
 
@@ -325,7 +324,7 @@ async def detailed_health_check(
         overall_status=overall_status,
         health=HealthStatus(
             status=overall_status,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             version=os.getenv("APP_VERSION", "1.0.0"),
             environment=settings.environment,
             uptime_seconds=round(uptime, 2),
@@ -387,16 +386,14 @@ vigor_health_status 1
 
 
 @router.get("/startup")
-async def startup_check() -> Dict[str, Any]:
+async def startup_check() -> dict[str, Any]:
     """
     Startup health check for container orchestration
     Provides information about application initialization
     """
     return {
         "status": "started",
-        "startup_time": datetime.fromtimestamp(
-            STARTUP_TIME, tz=timezone.utc
-        ).isoformat(),
+        "startup_time": datetime.fromtimestamp(STARTUP_TIME, tz=UTC).isoformat(),
         "uptime_seconds": round(time.time() - STARTUP_TIME, 2),
         "environment": settings.environment,
         "version": os.getenv("APP_VERSION", "1.0.0"),
