@@ -155,7 +155,10 @@ bandit-report.json
 # API Keys (common patterns)
 *api*key*
 *secret*key*
-*private*key* 
+*private*key*
 
 # Archived files
-.archive
+.archive/
+
+# Database files
+*.db

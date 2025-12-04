@@ -129,7 +129,7 @@ const BADGE_DEFINITIONS: Omit<Badge, 'unlockedAt' | 'progress'>[] = [
 ]
 
 class GamificationService {
-  private readonly API_BASE = '/api'
+  private readonly API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
   /**
    * Calculate streak based on workout history

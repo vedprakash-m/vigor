@@ -1,3 +1,5 @@
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
 // Azure Cost Management types
 interface CostData {
   total_cost: number;
@@ -69,13 +71,13 @@ interface RealTimeAnalytics {
 
 export const adminService = {
   async getProviderPricing() {
-    const resp = await fetch('/api/admin/provider-pricing', { credentials: 'include' })
+    const resp = await fetch(`${API_BASE_URL}/admin/provider-pricing`, { credentials: 'include' })
     if (!resp.ok) throw new Error('Failed pricing')
     return resp.json() as Promise<Record<string, number>>
   },
 
   async validateProvider(provider: string, apiKey: string) {
-    const resp = await fetch('/api/admin/validate-provider', {
+    const resp = await fetch(`${API_BASE_URL}/admin/validate-provider`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ provider_name: provider, api_key: apiKey })
@@ -85,13 +87,13 @@ export const adminService = {
 
   // Azure Cost Management methods
   async getAzureCostAnalytics(): Promise<AzureCostAnalytics> {
-    const resp = await fetch('/api/admin/azure-cost-analytics', { credentials: 'include' })
+    const resp = await fetch(`${API_BASE_URL}/admin/azure-cost-analytics`, { credentials: 'include' })
     if (!resp.ok) throw new Error('Failed to fetch Azure cost analytics')
     return resp.json()
   },
 
   async syncAzureBudget(): Promise<BudgetSyncResult> {
-    const resp = await fetch('/api/admin/azure-budget-sync', {
+    const resp = await fetch(`${API_BASE_URL}/admin/azure-budget-sync`, {
       method: 'POST',
       credentials: 'include'
     })
@@ -100,13 +102,13 @@ export const adminService = {
   },
 
   async getRealTimeAnalytics(): Promise<RealTimeAnalytics> {
-    const resp = await fetch('/api/admin/real-time-cost-analytics', { credentials: 'include' })
+    const resp = await fetch(`${API_BASE_URL}/admin/real-time-cost-analytics`, { credentials: 'include' })
     if (!resp.ok) throw new Error('Failed to fetch real-time analytics')
     return resp.json()
   },
 
   async createBudgetAlert(budgetName: string, thresholdPercentage: number, emailContacts: string[]) {
-    const resp = await fetch('/api/admin/azure-budget-alert', {
+    const resp = await fetch(`${API_BASE_URL}/admin/azure-budget-alert`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -121,7 +123,7 @@ export const adminService = {
   },
 
   async deleteBudgetAlert(alertId: string) {
-    const resp = await fetch(`/api/admin/azure-budget-alert/${alertId}`, {
+    const resp = await fetch(`${API_BASE_URL}/admin/azure-budget-alert/${alertId}`, {
       method: 'DELETE',
       credentials: 'include'
     })
@@ -130,7 +132,7 @@ export const adminService = {
   },
 
   async getCostOptimizationRecommendations() {
-    const resp = await fetch('/api/admin/cost-optimization-recommendations', { credentials: 'include' })
+    const resp = await fetch(`${API_BASE_URL}/admin/cost-optimization-recommendations`, { credentials: 'include' })
     if (!resp.ok) throw new Error('Failed to fetch cost optimization recommendations')
     return resp.json()
   }

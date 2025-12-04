@@ -1,7 +1,9 @@
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
 export const workoutService = {
   async getWorkoutDays(): Promise<string[]> {
     try {
-      const resp = await fetch('/api/workouts/days', {
+      const resp = await fetch(`${API_BASE_URL}/workouts/days`, {
         credentials: 'include'
       })
       if (!resp.ok) {

@@ -1,6 +1,8 @@
 // PWA Service Utilities
 // Manages service worker registration, push notifications, and offline capabilities
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
 interface NotificationOptions {
   title: string;
   body: string;
@@ -176,7 +178,7 @@ class PWAService {
    */
   async sendSubscriptionToBackend(subscription: PushSubscription): Promise<boolean> {
     try {
-      const response = await fetch('/api/push/subscribe', {
+      const response = await fetch(`${API_BASE_URL}/push/subscribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

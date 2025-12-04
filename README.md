@@ -1,8 +1,8 @@
-# 🏋️‍♂️ Vigor - Modernized AI Fitness Platform
+# 🏋️‍♂️ Vigor - AI Fitness Platform
 
 > **AI-powered fitness coaching with personalized workout generation and progress tracking.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![React 19](https://img.shields.io/badge/react-19-blue.svg)](https://reactjs.org/)
 [![Azure Functions](https://img.shields.io/badge/Azure%20Functions-Serverless-green.svg)](https://azure.microsoft.com/en-us/services/functions/)
@@ -12,7 +12,7 @@
 
 ## ✨ Overview
 
-**Vigor** is a modernized AI-powered fitness platform built with serverless architecture. The application provides personalized workout generation, AI coaching conversations, and comprehensive progress tracking through a cost-optimized, scalable infrastructure.
+**Vigor** is an AI-powered fitness platform built with serverless architecture. The application provides personalized workout generation, AI coaching conversations, and comprehensive progress tracking.
 
 ### Key Features
 
@@ -23,29 +23,26 @@
 - **📱 Mobile-First Design** - Responsive interface optimized for mobile devices
 - **🔐 Secure Authentication** - Microsoft Entra ID integration with email-based user management
 
-### Architecture (Modernized 2025)
+### Tech Stack
 
-The application has been completely modernized with a serverless-first approach:
-
-- **Backend:** Azure Functions (Python 3.11) with Flex Consumption Plan
+- **Backend:** Azure Functions (Python 3.11)
 - **Frontend:** React 19 + TypeScript + Chakra UI v3 + MSAL.js
-- **Database:** Azure Cosmos DB (NoSQL) with email-based user identification
-- **Authentication:** Microsoft Entra ID default tenant with JWT validation
-- **AI Provider:** Google Gemini Flash 2.5 (single provider for cost efficiency)
-- **Infrastructure:** Single unified Azure resource group (`vigor-rg`) with Bicep IaC
-- **Cost Model:** Consumption-based pricing (~$30-50/month vs ~$100/month legacy)
+- **Database:** Azure Cosmos DB (NoSQL)
+- **Authentication:** Microsoft Entra ID with JWT validation
+- **AI Provider:** Google Gemini Flash 2.5
+- **Infrastructure:** Azure with Bicep IaC
 
 ---
 
 ## 🏗️ Architecture Overview
 
-### Single Unified Resource Group (`vigor-rg`)
+### Azure Resource Group
 
 ```
 vigor-rg (West US 2)
 ├── Azure Functions (vigor-backend)        # Serverless API
 ├── Cosmos DB (vigor-cosmos-prod)          # NoSQL database
-├── Key Vault (vigor-kv-pajllm52fgnly)     # Secrets management
+├── Key Vault (vigor-kv-*)                 # Secrets management
 ├── Application Insights (vigor-insights)  # Monitoring
 └── Storage Account (vigorstorage*)        # Function app storage
 ```
@@ -69,7 +66,7 @@ vigor-rg (West US 2)
 
 ### Local Development Setup
 
-**Option 1: Legacy Backend (FastAPI) + Frontend**
+**Backend + Frontend**
 
 ```bash
 # Backend setup
@@ -85,38 +82,18 @@ npm install
 npm run dev  # http://localhost:5173
 ```
 
-**Option 2: Modernized Functions + Frontend**
-
-```bash
-# Azure Functions setup (requires Azure Functions Core Tools)
-cd functions-modernized
-func start  # Local development server
-
-# Frontend setup (new terminal)
-cd frontend
-npm install
-npm run dev  # http://localhost:5173
-```
-
-**Option 3: VS Code Tasks**
+**VS Code Tasks**
 
 1. Open project in VS Code
 2. **Ctrl+Shift+P** → "Tasks: Run Task"
 3. Choose: "Start Backend Server" or "Start Frontend Dev Server"
 
-**🔑 Default Test Credentials:** `admin@vigor.com` / `admin123!`
-
 ---
 
-## 🧪 Testing & Validation
-
-### Comprehensive Testing
+## 🧪 Testing
 
 ```bash
-# Run modernization test suite (comprehensive)
-./scripts/test-modernization.sh
-
-# Legacy backend tests
+# Backend tests
 cd backend && source venv/bin/activate && pytest -v
 
 # Frontend tests
@@ -126,16 +103,13 @@ cd frontend && npm test
 cd frontend && npm run test:e2e
 ```
 
-### Quality Validation
+### Code Quality
 
 ```bash
-# Full validation pipeline (matches CI/CD)
-./scripts/enhanced-local-validation.sh
-
-# Backend code formatting
+# Backend formatting
 cd backend && source venv/bin/activate && black . && isort .
 
-# Frontend linting and fixing
+# Frontend linting
 cd frontend && npm run lint:fix
 ```
 
@@ -143,12 +117,9 @@ cd frontend && npm run lint:fix
 
 ## ☁️ Production Deployment
 
-### Azure Infrastructure Deployment
-
-**Modernized Infrastructure (Active)**
+### Azure Infrastructure
 
 ```bash
-# Deploy single unified resource group
 cd infrastructure/bicep
 az deployment group create \
   --resource-group vigor-rg \
@@ -156,18 +127,9 @@ az deployment group create \
   --parameters @parameters-modernized.bicepparam
 ```
 
-**Legacy Infrastructure (Maintained)**
+### Azure Functions
 
 ```bash
-# Deploy original dual resource group architecture
-cd infrastructure/bicep
-./deploy.sh  # Uses main.bicep
-```
-
-### Azure Functions Deployment
-
-```bash
-# Deploy modernized serverless backend
 cd functions-modernized
 func azure functionapp publish vigor-backend --python
 ```
@@ -177,12 +139,11 @@ func azure functionapp publish vigor-backend --python
 **Azure Key Vault Secrets**
 
 ```bash
-# Required secrets in Key Vault
-az keyvault secret set --vault-name vigor-kv-pajllm52fgnly \
+az keyvault secret set --vault-name <your-keyvault> \
   --name "cosmos-connection-string" \
-  --value "AccountEndpoint=https://vigor-cosmos-prod.documents.azure.com:443/;..."
+  --value "AccountEndpoint=https://..."
 
-az keyvault secret set --vault-name vigor-kv-pajllm52fgnly \
+az keyvault secret set --vault-name <your-keyvault> \
   --name "gemini-api-key" \
   --value "your-gemini-api-key"
 ```
@@ -190,30 +151,10 @@ az keyvault secret set --vault-name vigor-kv-pajllm52fgnly \
 **Frontend Environment (.env.local)**
 
 ```bash
-VITE_AZURE_AD_CLIENT_ID=be183263-80c3-4191-bc84-2ee3c618cbcd
+VITE_AZURE_AD_CLIENT_ID=<your-client-id>
 VITE_AZURE_AD_TENANT_ID=common
-VITE_API_BASE_URL=https://vigor-backend-bpd7gfcgbxhbcvd8.westus2-01.azurewebsites.net/api
+VITE_API_BASE_URL=https://<your-function-app>.azurewebsites.net/api
 ```
-
----
-
-## 💰 Cost Optimization
-
-### Infrastructure Costs (Monthly Estimates)
-
-| Component | Modernized                     | Legacy             | Savings    |
-| --------- | ------------------------------ | ------------------ | ---------- |
-| Compute   | Azure Functions (~$5-15)       | App Service (~$55) | 70-85%     |
-| Database  | Cosmos DB Serverless (~$20-25) | PostgreSQL (~$30)  | 15-35%     |
-| Storage   | Function Storage (~$1-2)       | App Service (~$5)  | 60-80%     |
-| **Total** | **~$30-50/month**              | **~$100/month**    | **40-70%** |
-
-### Key Cost Benefits
-
-- **Consumption-based pricing**: Pay only for actual execution time
-- **Automatic scaling**: Scale to zero when inactive
-- **Single resource group**: Simplified management and consolidated billing
-- **Serverless database**: Cosmos DB auto-pause during low usage periods
 
 ---
 
@@ -221,30 +162,23 @@ VITE_API_BASE_URL=https://vigor-backend-bpd7gfcgbxhbcvd8.westus2-01.azurewebsite
 
 ```
 vigor/
-├── backend/                    # Legacy FastAPI application (maintained)
+├── backend/                    # FastAPI application
 │   ├── api/                   # REST endpoints and schemas
 │   ├── core/                  # Business logic and domain models
-│   ├── database/              # PostgreSQL models and repositories
+│   ├── database/              # Database models and repositories
 │   └── infrastructure/        # External service integrations
-├── functions-modernized/       # Azure Functions application (active)
+├── functions-modernized/       # Azure Functions application
 │   ├── shared/                # Common utilities and models
-│   │   ├── auth.py           # Microsoft Entra ID authentication
-│   │   ├── cosmos_db.py      # Cosmos DB client
-│   │   ├── gemini_client.py  # Gemini Flash 2.5 AI client
-│   │   └── models.py         # Pydantic data models
 │   ├── function_app.py        # Main Azure Functions entry point
-│   └── requirements.txt       # Minimal Python dependencies
+│   └── requirements.txt       # Python dependencies
 ├── frontend/                   # React TypeScript application
 │   ├── src/components/        # Reusable UI components
 │   ├── src/pages/             # Route-level page components
 │   ├── src/services/          # API clients and external services
-│   └── src/config/            # MSAL authentication configuration
+│   └── src/config/            # Authentication configuration
 ├── infrastructure/             # Azure Bicep Infrastructure-as-Code
-│   └── bicep/
-│       ├── main-modernized.bicep      # Single resource group template (active)
-│       └── main.bicep                 # Legacy dual resource group template
 ├── scripts/                    # Development and deployment automation
-└── docs/                      # Comprehensive project documentation
+└── docs/                      # Project documentation
 ```
 
 ---
@@ -256,124 +190,63 @@ vigor/
 - **Provider**: Microsoft Entra ID default tenant (`common`)
 - **Flow**: MSAL.js browser authentication with JWT tokens
 - **User Identification**: Email-based user records in Cosmos DB
-- **Automatic User Creation**: New users automatically created on first successful login
-- **App Registration**: `be183263-80c3-4191-bc84-2ee3c618cbcd`
+- **Automatic User Creation**: New users created on first successful login
 
 ### Security Features
 
 - JWT token validation with Microsoft JWKS endpoint
-- Rate limiting on API endpoints (50 requests/hour for AI chat)
+- Rate limiting on API endpoints
 - HTTPS enforcement on all endpoints
-- Azure Key Vault for secrets management with managed identity
-- Input validation and sanitization for all API endpoints
+- Azure Key Vault for secrets management
+- Input validation and sanitization
 
 ---
 
 ## 🎯 AI Configuration
 
-### Gemini Flash 2.5 Integration
+### Gemini Flash 2.5
 
-The modernized architecture uses Google Gemini Flash 2.5 as the single AI provider for:
+The platform uses Google Gemini Flash 2.5 for:
 
-- Personalized workout generation (20 requests/hour limit)
-- Real-time coaching conversations (50 requests/hour limit)
+- Personalized workout generation
+- Real-time coaching conversations
 - Progress analysis and recommendations
 - Exercise form guidance and safety tips
 
-### Environment Configuration
-
-```python
-# Environment variables (stored in Azure Key Vault)
+```bash
+# Environment variable (stored in Azure Key Vault)
 GEMINI_API_KEY=your-gemini-api-key
-LLM_PROVIDER=gemini  # Single provider configuration
 ```
-
-### Legacy Multi-Provider Support (Backend Only)
-
-The legacy FastAPI backend still supports multiple providers for development:
-
-- OpenAI GPT-4 (premium option)
-- Google Gemini Pro (cost-effective)
-- Perplexity Pro (research-focused)
-- Fallback mode (template-based, no API costs)
-
----
-
-## 📈 Current Status
-
-### Implementation Progress
-
-- **Infrastructure**: 100% deployed and operational ✅
-- **Authentication**: 100% implemented with Microsoft Entra ID ✅
-- **Frontend**: 100% modernized with MSAL.js integration ✅
-- **Backend Migration**: 95% complete (minor Function App runtime issue) 🔧
-- **Cost Optimization**: 40-70% reduction achieved ✅
-
-### Known Issues
-
-- **Function App Runtime**: FC1 Flex Consumption plan compatibility issue
-- **Symptom**: "Function host is not running" error on deployed functions
-- **Impact**: APIs not accessible via HTTPS, frontend authentication works independently
-- **Workaround**: Authentication test server available at `localhost:3001`
-- **Resolution**: Consider migration to Y1 standard Consumption plan
-
-### Quality Metrics
-
-- **Test Coverage**: Backend 50%+, Frontend 31%+ (actively improving)
-- **Architecture**: Clean/Hexagonal design with clear separation of concerns
-- **Security**: Comprehensive authentication, rate limiting, secrets management
-- **Documentation**: Complete implementation guides and API documentation
 
 ---
 
 ## 🤝 Contributing
 
-### Development Workflow
-
 1. Fork the repository and create a feature branch
-2. Run local validation: `./scripts/test-modernization.sh`
+2. Run tests: `cd backend && pytest -v` and `cd frontend && npm test`
 3. Follow clean architecture principles and maintain test coverage
 4. Submit PR with clear description and passing tests
 
-### Key Development Scripts
-
-- **Modernization Testing**: `./scripts/test-modernization.sh`
-- **Health Check**: `./scripts/health-check.sh`
-- **Local Validation**: `./scripts/enhanced-local-validation.sh`
-- **Backend Formatting**: `cd backend && source venv/bin/activate && black . && isort .`
-- **Frontend Linting**: `cd frontend && npm run lint:fix`
-
-### Documentation Requirements
-
-- All architectural decisions documented in `docs/adr/`
-- API changes reflected in code documentation
-- User-facing changes updated in `docs/User_Experience.md`
-- Progress tracking maintained in `docs/metadata.md`
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed guidelines.
 
 ---
 
 ## 📚 Documentation
 
-| Document                       | Purpose                                           |
-| ------------------------------ | ------------------------------------------------- |
-| `docs/PRD-Vigor.md`            | Product requirements and user scenarios           |
-| `docs/Tech_Spec_Vigor.md`      | Technical architecture and implementation details |
-| `docs/User_Experience.md`      | UX/UI design specifications and user flows        |
-| `docs/metadata.md`             | Project progress and architectural decisions      |
-| `docs/IMPLEMENTATION_GUIDE.md` | Complete deployment and setup guide               |
-| `docs/PROJECT_COMPLETION.md`   | Modernization project summary and achievements    |
-
-### API Documentation
-
-- **Legacy Backend**: http://localhost:8000/docs (FastAPI OpenAPI)
-- **Modernized Functions**: Function-specific documentation in code comments
+| Document                  | Purpose                                           |
+| ------------------------- | ------------------------------------------------- |
+| `docs/PRD-Vigor.md`       | Product requirements and user scenarios           |
+| `docs/Tech_Spec_Vigor.md` | Technical architecture and implementation details |
+| `docs/User_Experience.md` | UX/UI design specifications and user flows        |
+| `docs/metadata.md`        | Project progress and architectural decisions      |
+| `docs/CONTRIBUTING.md`    | Contribution guidelines and development workflow  |
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**🚀 Vigor: Modern serverless fitness platform with AI-powered personalization**
+**🚀 Vigor: AI-powered fitness platform with personalized coaching**
