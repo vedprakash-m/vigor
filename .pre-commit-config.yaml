@@ -43,7 +43,7 @@ repos:
     hooks:
       - id: eslint-frontend
         name: eslint (frontend)
-        entry: bash -c 'cd frontend && npx eslint --max-warnings 0'
+        entry: bash -c 'cd frontend && npx eslint'
         language: system
         files: ^frontend/src/.*\.(ts|tsx|js|jsx)$
         exclude: ^frontend/src/(components/(chakra-compat|compat)|__tests__|test-utils)

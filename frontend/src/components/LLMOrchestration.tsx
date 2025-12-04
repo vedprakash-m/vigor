@@ -15,12 +15,6 @@ import {
 import React, { useEffect, useState } from 'react';
 import { useVedAuth } from '../contexts/useVedAuth';
 
-// Define missing types
-interface User {
-  id: string;
-  name: string;
-}
-
 interface LLMResponse {
   content: string;
   model_used: string;
