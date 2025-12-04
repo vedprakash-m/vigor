@@ -204,8 +204,6 @@ def test_core_llm_orchestration_modules():
 
 def test_api_services_basic():
     """Test basic API services functionality"""
-    from unittest.mock import Mock
-
     from api.services.ai import AIService
     from api.services.auth import AuthService
     from api.services.usage_tracking import UsageTrackingService

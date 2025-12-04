@@ -54,7 +54,7 @@ def client(db_session):
 @pytest.fixture
 def mock_current_user():
     """Mock authenticated user"""
-    from database.models import Equipment, FitnessLevel, Goal, UserProfile
+    from database.models import Equipment, Goal, UserProfile
 
     return MagicMock(
         id=str(uuid.uuid4()),
