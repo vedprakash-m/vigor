@@ -133,7 +133,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
   }
 
   const InstallFeatures = () => (
-    <VStack spacing={4} align="start">
+    <VStack gap={4} align="start">
       <HStack>
         <Icon as={FiSmartphone} color="blue.400" />
         <Box>
@@ -171,7 +171,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
     const isAndroid = /Android/.test(navigator.userAgent);
 
     return (
-      <VStack spacing={4} align="start">
+      <VStack gap={4} align="start">
         <Text fontWeight="semibold">Install Vigor manually:</Text>
 
         {isIOS && (
@@ -215,7 +215,6 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
       {isInstallable && !isOpen && (
         <Button
           size="sm"
-          leftIcon={<FiDownload />}
           colorScheme="blue"
           variant="outline"
           onClick={onOpen}
@@ -225,13 +224,14 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
           zIndex="banner"
           display={{ base: 'none', md: 'flex' }}
         >
+          <FiDownload style={{ marginRight: '4px' }} />
           Install App
         </Button>
       )}
 
       {/* Install prompt modal */}
       <Modal isOpen={isOpen} onClose={handleDismiss} size="md" isCentered>
-        <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+        <ModalOverlay />
         <ModalContent mx={4}>
           <ModalHeader>
             <HStack>
@@ -246,7 +246,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
           </ModalHeader>
 
           <ModalBody>
-            <VStack spacing={6}>
+            <VStack gap={6}>
               <Text color="gray.600">
                 Get the full Vigor experience with offline workouts, push notifications,
                 and faster access to your fitness journey.
@@ -257,16 +257,16 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
           </ModalBody>
 
           <ModalFooter>
-            <HStack spacing={3}>
+            <HStack gap={3}>
               <Button variant="ghost" onClick={handleDismiss}>
                 Not Now
               </Button>
               {!showManualInstructions ? (
                 <Button
                   colorScheme="blue"
-                  leftIcon={<FiDownload />}
                   onClick={handleInstallClick}
                 >
+                  <FiDownload style={{ marginRight: '4px' }} />
                   Install Now
                 </Button>
               ) : (

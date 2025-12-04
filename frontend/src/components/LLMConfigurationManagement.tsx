@@ -12,10 +12,6 @@ import {
     Heading,
     HStack,
     Input,
-    Slider,
-    SliderFilledTrack,
-    SliderThumb,
-    SliderTrack,
     Text,
     VStack,
 } from '@chakra-ui/react';
@@ -29,6 +25,7 @@ import {
     FiZap
 } from 'react-icons/fi';
 import { llmHealthService, type LLMModel } from '../services/llmHealthService';
+import { Slider, SliderFilledTrack, SliderThumb, SliderTrack } from './chakra-compat';
 
 interface ConfigurationChange {
     modelId: string;
@@ -309,7 +306,7 @@ const LLMConfigurationManagement: React.FC = () => {
                                         colorScheme="blue"
                                         onClick={handleSaveConfiguration}
                                         disabled={!hasUnsavedChanges || isSaving}
-                                        isLoading={isSaving}
+                                        loading={isSaving}
                                     >
                                         <FiSave style={{ marginRight: '8px' }} />
                                         Save Configuration

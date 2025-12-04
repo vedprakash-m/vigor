@@ -193,8 +193,8 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
                 variant="ghost"
                 onClick={handlePrevious}
                 disabled={currentStepIndex === 0}
-                leftIcon={<FiChevronLeft />}
               >
+                <FiChevronLeft style={{ marginRight: '4px' }} />
                 Previous
               </Button>
               <HStack gap={2}>
@@ -205,9 +205,9 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
                   size="sm"
                   colorScheme="blue"
                   onClick={handleNext}
-                  rightIcon={currentStepIndex === steps.length - 1 ? undefined : <FiChevronRight />}
                 >
                   {currentStepIndex === steps.length - 1 ? 'Finish' : 'Next'}
+                  {currentStepIndex !== steps.length - 1 && <FiChevronRight style={{ marginLeft: '4px' }} />}
                 </Button>
               </HStack>
             </HStack>

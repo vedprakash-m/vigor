@@ -13,7 +13,7 @@ import { useVedAuth } from '../contexts/useVedAuth'
 export const OnboardingPage = () => {
   const { user, isAuthenticated } = useVedAuth()
   const navigate = useNavigate()
-  const { toast } = useToast()
+  const toast = useToast()
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -27,14 +27,13 @@ export const OnboardingPage = () => {
       description: 'You can complete your profile later in settings.',
       status: 'info',
       duration: 3000,
-      isClosable: true,
     })
     navigate('/')
   }
 
   return (
     <Box minH="100vh" bg="gray.50" p={8}>
-      <VStack spacing={8} maxW="md" mx="auto" pt={20}>
+      <VStack gap={8} maxW="md" mx="auto" pt={20}>
         <Heading color="blue.500" textAlign="center">
           Welcome to Vigor, {user?.name || user?.email}!
         </Heading>
@@ -47,7 +46,7 @@ export const OnboardingPage = () => {
           Onboarding functionality will be restored after Microsoft Entra ID migration is complete.
         </Text>
 
-        <VStack spacing={4} w="full">
+        <VStack gap={4} w="full">
           <Button
             colorScheme="blue"
             size="lg"

@@ -45,9 +45,13 @@ export const RegisterPage = () => {
           <Text fontSize="sm" color="gray.500">
             Already have an account?{' '}
             <Button
-              variant="link"
+              variant="ghost"
               color="blue.500"
               onClick={() => navigate('/login')}
+              size="sm"
+              p={0}
+              minW="auto"
+              h="auto"
             >
               Sign In
             </Button>

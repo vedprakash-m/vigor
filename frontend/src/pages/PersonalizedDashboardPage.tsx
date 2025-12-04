@@ -1,16 +1,10 @@
 import {
-    Alert,
-    AlertDescription,
-    AlertTitle,
     Badge,
     Box,
     Button,
-    Card,
-    CardBody,
     Grid,
     Heading,
     HStack,
-    Progress,
     SimpleGrid,
     Text,
     VStack,
@@ -18,7 +12,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import { FiBarChart2, FiCalendar, FiClock, FiTarget, FiTrendingUp, FiUsers } from 'react-icons/fi';
 import AnalyticsDashboard from '../components/AnalyticsDashboard';
-import { AlertIcon, Tab, TabList, TabPanel, TabPanels, Tabs } from '../components/chakra-compat';
+import { Alert, AlertIcon, Card, CardBody, Progress, Tab, TabList, TabPanel, TabPanels, Tabs } from '../components/chakra-compat';
 import { BadgeGrid, QuickStats, StreakDisplay } from '../components/GamificationComponentsV2';
 import MobileLayout from '../components/MobileLayout';
 import SocialFeatures from '../components/SocialFeatures';
@@ -199,7 +193,7 @@ const PersonalizedDashboardPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <MobileLayout gamificationStats={gamificationStats}>
+      <MobileLayout gamificationStats={gamificationStats ?? undefined}>
         <VStack gap={6} align="center" py={20}>
           <Heading size="lg">Loading your personalized dashboard...</Heading>
           <Text color="gray.600">Analyzing your fitness journey</Text>
@@ -209,7 +203,7 @@ const PersonalizedDashboardPage: React.FC = () => {
   }
 
   return (
-    <MobileLayout gamificationStats={gamificationStats}>
+    <MobileLayout gamificationStats={gamificationStats ?? undefined}>
       <VStack gap={6} align="stretch">
         {/* Personalized Welcome Section */}
         <Box>
@@ -223,10 +217,10 @@ const PersonalizedDashboardPage: React.FC = () => {
             <Alert status="warning" mt={3} borderRadius="md">
               <AlertIcon />
               <Box>
-                <AlertTitle>We miss you!</AlertTitle>
-                <AlertDescription>
+                <Text fontWeight="bold">We miss you!</Text>
+                <Text fontSize="sm">
                   Let's get back on track with a quick 15-minute workout today.
-                </AlertDescription>
+                </Text>
               </Box>
             </Alert>
           )}
@@ -261,7 +255,7 @@ const PersonalizedDashboardPage: React.FC = () => {
                 <FiCalendar />
                 <Heading size="md">Weekly Goals</Heading>
               </HStack>
-              <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+              <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                 {weeklyGoals.map((goal) => {
                   const status = getGoalStatus(goal);
                   return (
@@ -280,7 +274,6 @@ const PersonalizedDashboardPage: React.FC = () => {
                         </Text>
                         <Progress
                           value={getGoalProgress(goal)}
-                          colorScheme={goal.color}
                           borderRadius="full"
                           w="full"
                         />
@@ -358,7 +351,7 @@ const PersonalizedDashboardPage: React.FC = () => {
                   </Badge>
                 </HStack>
 
-                <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+                <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
                   <Box textAlign="center">
                     <Text fontSize="2xl" fontWeight="bold" color="blue.600">
                       {engagementProfile.totalSessions}
@@ -401,7 +394,7 @@ const PersonalizedDashboardPage: React.FC = () => {
 
           <TabPanels>
             <TabPanel px={0}>
-              <AnalyticsDashboard gamificationStats={gamificationStats} />
+              <AnalyticsDashboard gamificationStats={gamificationStats ?? undefined} />
             </TabPanel>
 
             <TabPanel px={0}>
@@ -418,7 +411,6 @@ const PersonalizedDashboardPage: React.FC = () => {
                 <Heading size="md">Recent Achievements</Heading>
                 <BadgeGrid
                   badges={gamificationStats.badges.slice(0, 6)}
-                  showProgress={true}
                 />
                 {gamificationStats.badges.length > 6 && (
                   <Button variant="outline" size="sm" alignSelf="center">
@@ -431,40 +423,40 @@ const PersonalizedDashboardPage: React.FC = () => {
         )}
 
         {/* Quick Actions */}
-        <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+        <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
           <Button
-            leftIcon={<FiTarget />}
             colorScheme="blue"
             variant="outline"
             onClick={() => engagementTracker.trackFeatureUse('generate_workout', 'dashboard')}
           >
+            <FiTarget style={{ marginRight: '4px' }} />
             New Workout
           </Button>
 
           <Button
-            leftIcon={<FiClock />}
             colorScheme="green"
             variant="outline"
             onClick={() => engagementTracker.trackFeatureUse('quick_workout', 'dashboard')}
           >
+            <FiClock style={{ marginRight: '4px' }} />
             Quick 15min
           </Button>
 
           <Button
-            leftIcon={<FiBarChart2 />}
             colorScheme="purple"
             variant="outline"
             onClick={() => engagementTracker.trackFeatureUse('view_progress', 'dashboard')}
           >
+            <FiBarChart2 style={{ marginRight: '4px' }} />
             Progress
           </Button>
 
           <Button
-            leftIcon={<FiUsers />}
             colorScheme="orange"
             variant="outline"
             onClick={() => engagementTracker.trackFeatureUse('community', 'dashboard')}
           >
+            <FiUsers style={{ marginRight: '4px' }} />
             Community
           </Button>
         </SimpleGrid>

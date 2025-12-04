@@ -1,9 +1,7 @@
 import {
-    Avatar,
     Badge,
     Box,
     Button,
-    Card,
     Container,
     Grid,
     Heading,
@@ -19,13 +17,13 @@ import {
     FiAward,
     FiHeart,
     FiMessageCircle,
-    FiSearch,
     FiShare2,
     FiTarget,
     FiUserPlus,
     FiUsers
 } from 'react-icons/fi';
 import { useVedAuth } from '../contexts/useVedAuth';
+import { Avatar, Card } from './chakra-compat';
 
 interface LeaderboardEntry {
   id: string;
@@ -306,10 +304,9 @@ export const CommunityFeatures: React.FC = () => {
         {/* Search Bar */}
         <Box>
           <Input
-            placeholder="Search community..."
+            placeholder="🔍 Search community..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            leftElement={<FiSearch />}
           />
         </Box>
 
@@ -335,7 +332,7 @@ export const CommunityFeatures: React.FC = () => {
                       colorScheme="blue"
                       size="sm"
                       onClick={handlePostSubmit}
-                      isDisabled={!newPost.trim()}
+                      disabled={!newPost.trim()}
                     >
                       Share
                     </Button>
@@ -360,10 +357,11 @@ export const CommunityFeatures: React.FC = () => {
                       </HStack>
                       <IconButton
                         aria-label="More options"
-                        icon={<FiShare2 />}
                         variant="ghost"
                         size="sm"
-                      />
+                      >
+                        <FiShare2 />
+                      </IconButton>
                     </HStack>
 
                     {/* Post Content */}
@@ -392,27 +390,27 @@ export const CommunityFeatures: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          leftIcon={<FiHeart />}
                           colorScheme={post.isLiked ? 'red' : 'gray'}
                           onClick={() => handleLike(post.id)}
                         >
+                          <FiHeart style={{ marginRight: '4px' }} />
                           {post.likes}
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          leftIcon={<FiMessageCircle />}
                           colorScheme="gray"
                         >
+                          <FiMessageCircle style={{ marginRight: '4px' }} />
                           {post.comments}
                         </Button>
                       </HStack>
                       <Button
                         variant="ghost"
                         size="sm"
-                        leftIcon={<FiShare2 />}
                         colorScheme="gray"
                       >
+                        <FiShare2 style={{ marginRight: '4px' }} />
                         Share
                       </Button>
                     </HStack>
@@ -491,9 +489,9 @@ export const CommunityFeatures: React.FC = () => {
                         size="sm"
                         variant={entry.isFollowed ? 'solid' : 'outline'}
                         colorScheme="blue"
-                        leftIcon={<FiUserPlus />}
                         onClick={() => handleFollow(entry.id)}
                       >
+                        <FiUserPlus style={{ marginRight: '4px' }} />
                         {entry.isFollowed ? 'Following' : 'Follow'}
                       </Button>
                     </VStack>

@@ -1,27 +1,55 @@
 import {
-    Avatar,
     Badge,
     Box,
     Button,
-    Card,
     Container,
     Grid,
     Heading,
     HStack,
     IconButton,
-    Stat,
     Text,
     Textarea,
     VStack
 } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
 import {
+    FiAward,
     FiHeart,
     FiMoreHorizontal,
     FiShare2,
     FiUsers
 } from 'react-icons/fi';
 import { useVedAuth } from '../contexts/useVedAuth';
+import {
+    Avatar,
+    Card,
+    CardBody,
+    FormControl,
+    FormLabel,
+    Menu,
+    MenuButton,
+    MenuItem,
+    MenuList,
+    Modal,
+    ModalBody,
+    ModalCloseButton,
+    ModalContent,
+    ModalFooter,
+    ModalHeader,
+    ModalOverlay,
+    Select,
+    Stat,
+    StatHelpText,
+    StatLabel,
+    StatNumber,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+    useDisclosure,
+    useToast,
+} from './chakra-compat';
 
 interface LeaderboardEntry {
   id: string;
@@ -65,10 +93,15 @@ export const SocialFeatures: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [sharedWorkouts, setSharedWorkouts] = useState<SharedWorkout[]>([]);
   const [communityStats, setCommunityStats] = useState<CommunityStats | null>(null);
-  const [shareWorkoutData, setShareWorkoutData] = useState({
+  const [shareWorkoutData, setShareWorkoutData] = useState<{
+    workoutType: string;
+    duration: string;
+    difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+    notes: string;
+  }>({
     workoutType: '',
     duration: '',
-    difficulty: 'Intermediate' as const,
+    difficulty: 'Intermediate',
     notes: '',
   });
 
@@ -192,7 +225,7 @@ export const SocialFeatures: React.FC = () => {
       description: 'Your support helps motivate the community.',
       status: 'success',
       duration: 2000,
-      isClosable: true,
+
     });
   };
 
@@ -221,7 +254,7 @@ export const SocialFeatures: React.FC = () => {
         description: 'Your workout has been shared with the community.',
         status: 'success',
         duration: 3000,
-        isClosable: true,
+
       });
 
       // Reset form
@@ -239,7 +272,7 @@ export const SocialFeatures: React.FC = () => {
         description: 'Could not share your workout. Please try again.',
         status: 'error',
         duration: 3000,
-        isClosable: true,
+
       });
     }
   };
@@ -305,11 +338,11 @@ export const SocialFeatures: React.FC = () => {
         {/* Share Workout Button */}
         <Box>
           <Button
-            leftIcon={<FiShare2 />}
             colorScheme="blue"
             onClick={onOpen}
             size="lg"
           >
+            <FiShare2 style={{ marginRight: '8px' }} />
             Share Your Workout
           </Button>
         </Box>
@@ -400,12 +433,15 @@ export const SocialFeatures: React.FC = () => {
                           </HStack>
 
                           <Menu>
-                            <MenuButton
-                              as={IconButton}
-                              icon={<FiMoreHorizontal />}
-                              variant="ghost"
-                              size="sm"
-                            />
+                            <MenuButton>
+                              <IconButton
+                                aria-label="More options"
+                                variant="ghost"
+                                size="sm"
+                              >
+                                <FiMoreHorizontal />
+                              </IconButton>
+                            </MenuButton>
                             <MenuList>
                               <MenuItem>Report</MenuItem>
                               <MenuItem>Hide</MenuItem>
@@ -437,17 +473,16 @@ export const SocialFeatures: React.FC = () => {
                         {/* Actions */}
                         <HStack justifyContent="space-between">
                           <Button
-                            leftIcon={<FiHeart />}
                             variant={workout.isLiked ? 'solid' : 'ghost'}
                             colorScheme={workout.isLiked ? 'red' : 'gray'}
                             size="sm"
                             onClick={() => handleLikeWorkout(workout.id)}
                           >
+                            <FiHeart style={{ marginRight: '4px' }} />
                             {workout.likes} {workout.likes === 1 ? 'Like' : 'Likes'}
                           </Button>
 
                           <Button
-                            leftIcon={<FiShare2 />}
                             variant="ghost"
                             size="sm"
                             onClick={() => {
@@ -457,10 +492,10 @@ export const SocialFeatures: React.FC = () => {
                                 title: 'Link copied!',
                                 status: 'success',
                                 duration: 2000,
-                                isClosable: true,
                               });
                             }}
                           >
+                            <FiShare2 style={{ marginRight: '4px' }} />
                             Share
                           </Button>
                         </HStack>
@@ -481,12 +516,12 @@ export const SocialFeatures: React.FC = () => {
             <ModalCloseButton />
             <ModalBody>
               <VStack gap={4}>
-                <FormControl isRequired>
+                <FormControl>
                   <FormLabel>Workout Type</FormLabel>
                   <Select
                     placeholder="Select workout type"
                     value={shareWorkoutData.workoutType}
-                    onChange={(e) => setShareWorkoutData(prev => ({
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setShareWorkoutData(prev => ({
                       ...prev,
                       workoutType: e.target.value
                     }))}
@@ -501,12 +536,12 @@ export const SocialFeatures: React.FC = () => {
                   </Select>
                 </FormControl>
 
-                <FormControl isRequired>
+                <FormControl>
                   <FormLabel>Duration (minutes)</FormLabel>
                   <Select
                     placeholder="Select duration"
                     value={shareWorkoutData.duration}
-                    onChange={(e) => setShareWorkoutData(prev => ({
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setShareWorkoutData(prev => ({
                       ...prev,
                       duration: e.target.value
                     }))}
@@ -523,7 +558,7 @@ export const SocialFeatures: React.FC = () => {
                   <FormLabel>Difficulty</FormLabel>
                   <Select
                     value={shareWorkoutData.difficulty}
-                    onChange={(e) => setShareWorkoutData(prev => ({
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setShareWorkoutData(prev => ({
                       ...prev,
                       difficulty: e.target.value as 'Beginner' | 'Intermediate' | 'Advanced'
                     }))}
@@ -559,7 +594,7 @@ export const SocialFeatures: React.FC = () => {
               <Button
                 colorScheme="blue"
                 onClick={handleShareWorkout}
-                isDisabled={!shareWorkoutData.workoutType || !shareWorkoutData.duration}
+                disabled={!shareWorkoutData.workoutType || !shareWorkoutData.duration}
               >
                 Share Workout
               </Button>

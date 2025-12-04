@@ -142,7 +142,6 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, gamificati
   const QuickActionFAB = () => (
     <IconButton
       aria-label="Generate workout"
-      icon={<FiPlus />}
       position="fixed"
       bottom="80px" // Above bottom navigation
       right="16px"
@@ -154,7 +153,9 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, gamificati
       zIndex={10}
       w="56px"
       h="56px"
-    />
+    >
+      <FiPlus />
+    </IconButton>
   );
 
   // Mobile Bottom Navigation
@@ -260,13 +261,13 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, gamificati
           {filteredNavItems.map((item) => (
             <Button
               key={item.id}
-              leftIcon={<item.icon />}
               variant={isActivePath(item.path) ? 'solid' : 'ghost'}
               colorScheme={isActivePath(item.path) ? 'blue' : 'gray'}
               justifyContent="flex-start"
               onClick={() => handleNavigation(item.path)}
               position="relative"
             >
+              <item.icon style={{ marginRight: '8px' }} />
               {item.label}
               {item.badge && (
                 <Badge
@@ -287,7 +288,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, gamificati
         {/* User Menu */}
         <Box mt="auto">
           <Menu>
-            <MenuButton as={Button} variant="ghost" w="full" justifyContent="flex-start">
+            <MenuButton as={Button} w="full" justifyContent="flex-start">
               <HStack>
                 <Avatar size="sm" name={user?.username} />
                 <VStack align="start" gap={0}>
@@ -301,16 +302,19 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, gamificati
               </HStack>
             </MenuButton>
             <MenuList>
-              <MenuItem icon={<FiSettings />} onClick={() => navigate('/app/settings')}>
+              <MenuItem value="settings" onClick={() => navigate('/app/settings')}>
+                <FiSettings style={{ marginRight: '8px' }} />
                 Settings
               </MenuItem>
-              <MenuItem icon={<FiBell />}>
+              <MenuItem value="notifications">
+                <FiBell style={{ marginRight: '8px' }} />
                 Notifications {notifications > 0 && (
                   <Badge ml={2} colorScheme="red" variant="subtle">{notifications}</Badge>
                 )}
               </MenuItem>
               <MenuDivider />
-              <MenuItem icon={<FiLogOut />} onClick={handleLogout}>
+              <MenuItem value="logout" onClick={handleLogout}>
+                <FiLogOut style={{ marginRight: '8px' }} />
                 Sign Out
               </MenuItem>
             </MenuList>
@@ -337,10 +341,11 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, gamificati
         <HStack>
           <IconButton
             aria-label="Open menu"
-            icon={<FiMenu />}
             variant="ghost"
             onClick={onOpen}
-          />
+          >
+            <FiMenu />
+          </IconButton>
           <Text fontSize="lg" fontWeight="bold" color="blue.600">
             Vigor
           </Text>
@@ -354,10 +359,10 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, gamificati
           )}
           <IconButton
             aria-label="Notifications"
-            icon={<FiBell />}
             variant="ghost"
             position="relative"
           >
+            <FiBell />
             {notifications > 0 && (
               <Badge
                 position="absolute"
@@ -418,7 +423,6 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, gamificati
             {navigationItems.map((item) => (
               <Button
                 key={item.id}
-                leftIcon={<item.icon />}
                 variant={isActivePath(item.path) ? 'solid' : 'ghost'}
                 colorScheme={isActivePath(item.path) ? 'blue' : 'gray'}
                 justifyContent="flex-start"
@@ -426,6 +430,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, gamificati
                 position="relative"
                 w="full"
               >
+                <item.icon style={{ marginRight: '8px' }} />
                 {item.label}
                 {item.badge && (
                   <Badge
@@ -444,22 +449,22 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, gamificati
 
             <Box mt={6}>
               <Button
-                leftIcon={<FiSettings />}
                 variant="ghost"
                 justifyContent="flex-start"
                 onClick={() => handleNavigation('/app/settings')}
                 w="full"
               >
+                <FiSettings style={{ marginRight: '8px' }} />
                 Settings
               </Button>
 
               <Button
-                leftIcon={<FiBell />}
                 variant="ghost"
                 justifyContent="flex-start"
                 w="full"
                 position="relative"
               >
+                <FiBell style={{ marginRight: '8px' }} />
                 Notifications
                 {notifications > 0 && (
                   <Badge
@@ -476,13 +481,13 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, gamificati
               </Button>
 
               <Button
-                leftIcon={<FiLogOut />}
                 variant="ghost"
                 justifyContent="flex-start"
                 onClick={handleLogout}
                 w="full"
                 color="red.600"
               >
+                <FiLogOut style={{ marginRight: '8px' }} />
                 Sign Out
               </Button>
             </Box>

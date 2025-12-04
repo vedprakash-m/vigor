@@ -2,14 +2,13 @@ import {
     Box,
     Badge as ChakraBadge,
     HStack,
-    Progress,
     SimpleGrid,
     Text,
-    Tooltip,
     VStack,
 } from '@chakra-ui/react';
 import React from 'react';
-import { Badge, Streak } from '../services/gamificationService';
+import type { Badge, Streak } from '../services/gamificationService';
+import { Progress, Tooltip } from './chakra-compat';
 
 interface StreakDisplayProps {
   streak: Streak;
@@ -48,7 +47,7 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
       border="1px solid"
       borderColor={streak.isActive ? `${color}.200` : 'gray.200'}
     >
-      <VStack spacing={2} align="start">
+      <VStack gap={2} align="start">
         <HStack justify="space-between" w="full">
           <Text fontWeight="bold" color={`${color}.600`}>
             {title}
@@ -58,8 +57,8 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
           </Text>
         </HStack>
 
-        <HStack spacing={4} w="full">
-          <VStack spacing={0} align="start">
+        <HStack gap={4} w="full">
+          <VStack gap={0} align="start">
             <Text fontSize="2xl" fontWeight="bold" color={`${color}.600`}>
               {streak.current}
             </Text>
@@ -70,7 +69,7 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
 
           <Box w="2px" h={8} bg="gray.200" />
 
-          <VStack spacing={0} align="start">
+          <VStack gap={0} align="start">
             <Text fontSize="lg" fontWeight="semibold" color="gray.600">
               {streak.best}
             </Text>
@@ -107,7 +106,7 @@ export const BadgeGrid: React.FC<BadgeGridProps> = ({ badges, maxDisplay = 6 }) 
   const displayBadges = badges.slice(0, maxDisplay);
 
   return (
-    <SimpleGrid columns={{ base: 2, md: 3 }} spacing={3}>
+    <SimpleGrid columns={{ base: 2, md: 3 }} gap={3}>
       {displayBadges.map((badge) => (
         <BadgeCard key={badge.id} badge={badge} />
       ))}
@@ -133,7 +132,7 @@ export const BadgeCard: React.FC<BadgeCardProps> = ({ badge, size = 'md' }) => {
   return (
     <Tooltip
       label={
-        <VStack spacing={1} align="start">
+        <VStack gap={1} align="start">
           <Text fontWeight="bold">{badge.name}</Text>
           <Text fontSize="sm">{badge.description}</Text>
           {hasProgress && (
@@ -167,13 +166,13 @@ export const BadgeCard: React.FC<BadgeCardProps> = ({ badge, size = 'md' }) => {
           borderColor: isUnlocked ? `${getBadgeColor(badge.category)}.500` : 'gray.400',
         }}
       >
-        <VStack spacing={2}>
+        <VStack gap={2}>
           <Text fontSize={sizeProps[size].iconSize}>
             {badge.icon}
           </Text>
 
-          <VStack spacing={1}>
-            <Text fontSize="xs" fontWeight="bold" noOfLines={1}>
+          <VStack gap={1}>
+            <Text fontSize="xs" fontWeight="bold" lineClamp={1}>
               {badge.name}
             </Text>
 
@@ -223,9 +222,9 @@ export const QuickStats: React.FC<QuickStatsProps> = ({
       borderRadius="lg"
       color="white"
     >
-      <VStack spacing={3} align="start">
+      <VStack gap={3} align="start">
         <HStack justify="space-between" w="full">
-          <VStack spacing={0} align="start">
+          <VStack gap={0} align="start">
             <Text fontSize="xs" opacity={0.8}>
               LEVEL
             </Text>
@@ -234,7 +233,7 @@ export const QuickStats: React.FC<QuickStatsProps> = ({
             </Text>
           </VStack>
 
-          <VStack spacing={0} align="end">
+          <VStack gap={0} align="end">
             <Text fontSize="xs" opacity={0.8}>
               TOTAL POINTS
             </Text>

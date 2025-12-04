@@ -22,21 +22,22 @@ const toaster = createToaster({
   placement: 'top'
 })
 
-export const useToast = () => ({
-  toast: (options: {
+export const useToast = () => {
+  return (options: {
     title?: string
     description?: string
     status?: 'success' | 'error' | 'warning' | 'info'
     duration?: number
+    isClosable?: boolean
   }) => {
     toaster.create({
       title: options.title,
       description: options.description,
-      status: options.status,
+      type: options.status,
       duration: options.duration || 3000
     })
   }
-})
+}
 
 // useDisclosure hook for modal state management
 export const useDisclosure = (initialState = false) => {

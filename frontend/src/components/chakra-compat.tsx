@@ -1,5 +1,6 @@
 // Temporary Chakra UI v3 compatibility layer - to be improved later
 import { Box, Card as ChakraCard, useBreakpointValue as chakraUseBreakpointValue } from '@chakra-ui/react'
+import React from 'react'
 
 // Re-export useBreakpointValue from Chakra
 export const useBreakpointValue = chakraUseBreakpointValue
@@ -294,13 +295,13 @@ export const Tooltip = ({ children, label, ...props }: any) => (
 // Slider components
 export const Slider = ({ children, value, onChange, min, max, ...props }: any) => (
   <Box {...props}>
-    <Box
-      as="input"
+    <input
       type="range"
       value={value}
       onChange={(e: any) => onChange?.(e.target.value)}
       min={min}
       max={max}
+      style={{ width: '100%' }}
     />
     {children}
   </Box>
@@ -318,18 +319,18 @@ export const SliderThumb = ({ index, ...props }: any) => (
   <Box {...props} />
 )
 
-// useToast hook
-export const useToast = () => ({
-  toast: (options: any) => {
+// useToast hook - returns a callable function
+export const useToast = () => {
+  return (options: { title?: string; description?: string; status?: 'success' | 'error' | 'warning' | 'info'; duration?: number }) => {
     console.log('Toast:', options)
   }
-})
+}
 
 // useDisclosure hook
-export const useDisclosure = () => ({
-  open: false,
-  onOpen: () => {},
-  onClose: () => {},
-  onToggle: () => {},
-  setOpen: () => {}
-})
+export const useDisclosure = (initialState = false) => {
+  const [isOpen, setIsOpen] = React.useState(initialState)
+  const onOpen = React.useCallback(() => setIsOpen(true), [])
+  const onClose = React.useCallback(() => setIsOpen(false), [])
+  const onToggle = React.useCallback(() => setIsOpen(prev => !prev), [])
+  return { isOpen, onOpen, onClose, onToggle }
+}
