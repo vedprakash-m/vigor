@@ -43,10 +43,11 @@ repos:
     hooks:
       - id: eslint-frontend
         name: eslint (frontend)
-        entry: bash -c 'cd frontend && npm run lint'
+        entry: bash -c 'cd frontend && npx eslint --max-warnings 0'
         language: system
-        files: ^frontend/.*\.(ts|tsx|js|jsx)$
-        pass_filenames: false
+        files: ^frontend/src/.*\.(ts|tsx|js|jsx)$
+        exclude: ^frontend/src/(components/(chakra-compat|compat)|__tests__|test-utils)
+        pass_filenames: true
 
       - id: typescript-check
         name: TypeScript check

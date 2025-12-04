@@ -23,11 +23,11 @@ class DataMigrationError(Exception):
 
 class PostgreSQLToCosmosDBMigrator:
     """Migrates data from PostgreSQL to Cosmos DB"""
-    
+
     def __init__(self):
         self.settings = get_settings()
         self.cosmos_client = None
-    
+
     async def initialize(self):
         """Initialize Cosmos DB client"""
         try:
@@ -37,12 +37,12 @@ class PostgreSQLToCosmosDBMigrator:
         except Exception as e:
             logger.error(f"Failed to initialize Cosmos DB client: {str(e)}")
             raise DataMigrationError(f"Initialization failed: {str(e)}")
-    
+
     async def migrate_users(self, users_data: List[Dict[str, Any]]) -> int:
         """Migrate users from PostgreSQL to Cosmos DB"""
         try:
             migrated_count = 0
-            
+
             for user_data in users_data:
                 # Convert PostgreSQL user to Cosmos DB document
                 user_doc = {
@@ -72,24 +72,24 @@ class PostgreSQLToCosmosDBMigrator:
                     },
                     "partition_key": user_data.get("email")  # Partition by email
                 }
-                
+
                 # Create user document
                 await self.cosmos_client.create_user(user_doc)
                 migrated_count += 1
                 logger.info(f"Migrated user: {user_doc['email']}")
-            
+
             logger.info(f"Successfully migrated {migrated_count} users")
             return migrated_count
-            
+
         except Exception as e:
             logger.error(f"Error migrating users: {str(e)}")
             raise DataMigrationError(f"User migration failed: {str(e)}")
-    
+
     async def migrate_workouts(self, workouts_data: List[Dict[str, Any]]) -> int:
         """Migrate workouts from PostgreSQL to Cosmos DB"""
         try:
             migrated_count = 0
-            
+
             for workout_data in workouts_data:
                 # Convert PostgreSQL workout to Cosmos DB document
                 workout_doc = {
@@ -118,24 +118,24 @@ class PostgreSQLToCosmosDBMigrator:
                     },
                     "partition_key": str(workout_data.get("user_id"))  # Partition by user_id
                 }
-                
+
                 # Create workout document
                 await self.cosmos_client.create_workout(workout_doc)
                 migrated_count += 1
                 logger.info(f"Migrated workout: {workout_doc['title']} for user {workout_doc['user_id']}")
-            
+
             logger.info(f"Successfully migrated {migrated_count} workouts")
             return migrated_count
-            
+
         except Exception as e:
             logger.error(f"Error migrating workouts: {str(e)}")
             raise DataMigrationError(f"Workout migration failed: {str(e)}")
-    
+
     async def migrate_chat_sessions(self, chat_data: List[Dict[str, Any]]) -> int:
         """Migrate AI chat sessions from PostgreSQL to Cosmos DB"""
         try:
             migrated_count = 0
-            
+
             for chat_session in chat_data:
                 # Convert PostgreSQL chat to Cosmos DB document
                 chat_doc = {
@@ -158,51 +158,51 @@ class PostgreSQLToCosmosDBMigrator:
                     },
                     "partition_key": str(chat_session.get("user_id"))  # Partition by user_id
                 }
-                
+
                 # Create chat session document
                 await self.cosmos_client.create_chat_session(chat_doc)
                 migrated_count += 1
                 logger.info(f"Migrated chat session: {chat_doc['title']} for user {chat_doc['user_id']}")
-            
+
             logger.info(f"Successfully migrated {migrated_count} chat sessions")
             return migrated_count
-            
+
         except Exception as e:
             logger.error(f"Error migrating chat sessions: {str(e)}")
             raise DataMigrationError(f"Chat migration failed: {str(e)}")
-    
+
     def _convert_timestamp(self, timestamp: Any) -> Optional[str]:
         """Convert various timestamp formats to ISO string"""
         try:
             if timestamp is None:
                 return None
-            
+
             if isinstance(timestamp, str):
                 return timestamp
-            
+
             if hasattr(timestamp, 'isoformat'):
                 return timestamp.isoformat()
-            
+
             # Handle Unix timestamp
             if isinstance(timestamp, (int, float)):
                 return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
-            
+
             return str(timestamp)
-            
+
         except Exception as e:
             logger.warning(f"Error converting timestamp {timestamp}: {str(e)}")
             return None
-    
+
     def _convert_exercises(self, exercises: List[Any]) -> List[Dict[str, Any]]:
         """Convert exercise data to proper format"""
         try:
             if isinstance(exercises, str):
                 # If exercises is a JSON string, parse it
                 exercises = json.loads(exercises)
-            
+
             if not isinstance(exercises, list):
                 return []
-            
+
             converted_exercises = []
             for exercise in exercises:
                 if isinstance(exercise, dict):
@@ -230,22 +230,22 @@ class PostgreSQLToCosmosDBMigrator:
                         "muscle_groups": [],
                         "calories_per_set": 5
                     })
-            
+
             return converted_exercises
-            
+
         except Exception as e:
             logger.warning(f"Error converting exercises: {str(e)}")
             return []
-    
+
     def _convert_chat_messages(self, messages: List[Any]) -> List[Dict[str, Any]]:
         """Convert chat messages to proper format"""
         try:
             if isinstance(messages, str):
                 messages = json.loads(messages)
-            
+
             if not isinstance(messages, list):
                 return []
-            
+
             converted_messages = []
             for message in messages:
                 if isinstance(message, dict):
@@ -258,13 +258,13 @@ class PostgreSQLToCosmosDBMigrator:
                         "metadata": message.get("metadata", {})
                     }
                     converted_messages.append(converted_message)
-            
+
             return converted_messages
-            
+
         except Exception as e:
             logger.warning(f"Error converting chat messages: {str(e)}")
             return []
-    
+
     async def validate_migration(self) -> Dict[str, Any]:
         """Validate the migration by checking document counts and data integrity"""
         try:
@@ -274,27 +274,27 @@ class PostgreSQLToCosmosDBMigrator:
                 "counts": {},
                 "sample_checks": {}
             }
-            
+
             # Count documents by type
             user_count = await self.cosmos_client.count_documents("user")
             workout_count = await self.cosmos_client.count_documents("workout")
             chat_count = await self.cosmos_client.count_documents("chat_session")
-            
+
             validation_results["counts"] = {
                 "users": user_count,
                 "workouts": workout_count,
                 "chat_sessions": chat_count,
                 "total": user_count + workout_count + chat_count
             }
-            
+
             # Sample data validation
             if user_count > 0:
                 sample_user = await self.cosmos_client.get_user_by_email("sample@test.com")
                 validation_results["sample_checks"]["user_structure"] = sample_user is not None
-            
+
             logger.info(f"Migration validation completed: {validation_results}")
             return validation_results
-            
+
         except Exception as e:
             logger.error(f"Error during migration validation: {str(e)}")
             return {
@@ -303,7 +303,7 @@ class PostgreSQLToCosmosDBMigrator:
                 "counts": {},
                 "sample_checks": {}
             }
-    
+
     async def cleanup(self):
         """Cleanup resources"""
         try:
@@ -319,39 +319,39 @@ async def run_migration_from_json(json_file_path: str) -> Dict[str, Any]:
     try:
         migrator = PostgreSQLToCosmosDBMigrator()
         await migrator.initialize()
-        
+
         # Load data from JSON file
         with open(json_file_path, 'r') as f:
             migration_data = json.load(f)
-        
+
         results = {
             "users_migrated": 0,
             "workouts_migrated": 0,
             "chats_migrated": 0,
             "errors": []
         }
-        
+
         # Migrate users
         if "users" in migration_data:
             results["users_migrated"] = await migrator.migrate_users(migration_data["users"])
-        
+
         # Migrate workouts
         if "workouts" in migration_data:
             results["workouts_migrated"] = await migrator.migrate_workouts(migration_data["workouts"])
-        
+
         # Migrate chat sessions
         if "chat_sessions" in migration_data:
             results["chats_migrated"] = await migrator.migrate_chat_sessions(migration_data["chat_sessions"])
-        
+
         # Validate migration
         validation = await migrator.validate_migration()
         results["validation"] = validation
-        
+
         await migrator.cleanup()
-        
+
         logger.info(f"Migration completed: {results}")
         return results
-        
+
     except Exception as e:
         logger.error(f"Migration failed: {str(e)}")
         raise DataMigrationError(f"Migration execution failed: {str(e)}")
@@ -360,14 +360,14 @@ async def run_migration_from_json(json_file_path: str) -> Dict[str, Any]:
 if __name__ == "__main__":
     # Example usage
     import sys
-    
+
     async def main():
         if len(sys.argv) < 2:
             print("Usage: python data_migration.py <json_file_path>")
             return
-        
+
         json_file = sys.argv[1]
         results = await run_migration_from_json(json_file)
         print(f"Migration Results: {json.dumps(results, indent=2)}")
-    
+
     asyncio.run(main())

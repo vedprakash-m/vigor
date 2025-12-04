@@ -21,12 +21,12 @@ jest.mock('@chakra-ui/react', () => ({
     <div data-testid="hstack" {...props}>{children}</div>
   ),
   Input: ({ value, onChange, onKeyPress, ...props }: { value?: string; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void; onKeyPress?: (e: React.KeyboardEvent) => void } & Record<string, unknown>) => (
-    <input 
-      data-testid="message-input" 
-      value={value} 
-      onChange={onChange} 
+    <input
+      data-testid="message-input"
+      value={value}
+      onChange={onChange}
       onKeyPress={onKeyPress}
-      {...props} 
+      {...props}
     />
   ),
   Text: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
@@ -162,7 +162,7 @@ describe('CoachPage - Message Sending', () => {
 
     const input = screen.getByTestId('message-input') as HTMLInputElement
     fireEvent.change(input, { target: { value: 'Test message' } })
-    
+
     const sendButton = screen.getByTestId('send-button')
     fireEvent.click(sendButton)
 
@@ -193,7 +193,7 @@ describe('CoachPage - Error Handling', () => {
 
     const input = screen.getByTestId('message-input')
     fireEvent.change(input, { target: { value: 'Test message' } })
-    
+
     const sendButton = screen.getByTestId('send-button')
     fireEvent.click(sendButton)
 
@@ -209,7 +209,7 @@ describe('CoachPage - Error Handling', () => {
 
     const input = screen.getByTestId('message-input')
     fireEvent.change(input, { target: { value: 'Test message' } })
-    
+
     const sendButton = screen.getByTestId('send-button')
     fireEvent.click(sendButton)
 
@@ -237,7 +237,7 @@ describe('CoachPage - Message Display', () => {
 
     const input = screen.getByTestId('message-input')
     fireEvent.change(input, { target: { value: 'My question to coach' } })
-    
+
     const sendButton = screen.getByTestId('send-button')
     fireEvent.click(sendButton)
 
@@ -256,7 +256,7 @@ describe('CoachPage - Message Display', () => {
 
     const input = screen.getByTestId('message-input')
     fireEvent.change(input, { target: { value: 'Help me with workouts' } })
-    
+
     const sendButton = screen.getByTestId('send-button')
     fireEvent.click(sendButton)
 
