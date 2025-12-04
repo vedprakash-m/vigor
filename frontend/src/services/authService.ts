@@ -7,7 +7,8 @@ import type {
     User
 } from '../types/auth'
 
-const API_BASE_URL = 'http://localhost:8000'
+// Use environment variable for API URL, with fallback to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 // Create axios instance
 const api = axios.create({

@@ -3,30 +3,8 @@
 
 import { TextDecoder, TextEncoder } from 'util';
 
-// Override global render with Chakra/AuthProvider/Router wrapper
-jest.mock('@testing-library/react', () => {
-  const actual = jest.requireActual('@testing-library/react');
-  const React = require('react');
-  const { ChakraProvider, defaultSystem } = require('@chakra-ui/react');
-  const { AuthProvider } = require('./src/contexts/AuthContext');
-  const { MemoryRouter } = require('react-router-dom');
-
-  const AllProviders = ({ children }) =>
-    React.createElement(
-      MemoryRouter,
-      null,
-      React.createElement(
-        ChakraProvider,
-        { value: defaultSystem },
-        React.createElement(AuthProvider, null, children)
-      )
-    );
-
-  return {
-    ...actual,
-    render: (ui, options) => actual.render(ui, { wrapper: AllProviders, ...options }),
-  };
-});
+// Do NOT override render globally - let individual tests provide their own wrappers
+// Tests should use the test-utils.tsx wrapper pattern or define their own
 
 // Make TextEncoder and TextDecoder available globally
 global.TextEncoder = TextEncoder

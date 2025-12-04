@@ -10,8 +10,8 @@ from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
 import uuid
 
-from cosmos_db import CosmosDBClient
-from config import get_settings
+from .cosmos_db import CosmosDBClient
+from .config import get_settings
 
 logger = logging.getLogger(__name__)
 

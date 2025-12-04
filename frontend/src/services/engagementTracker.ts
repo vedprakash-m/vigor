@@ -374,9 +374,9 @@ class EngagementTrackingService {
       const totalTimeSpent = userSessions.reduce((sum: number, s: SessionData) => sum + (s.duration || 0), 0);
       const averageSessionDuration = totalTimeSpent / totalSessions;
 
-      const workoutsStarted = userEvents.filter(e => e.eventType === 'workout_start').length;
-      const workoutsCompleted = userEvents.filter(e => e.eventType === 'workout_complete').length;
-      const aiInteractions = userEvents.filter(e => e.eventType === 'ai_interaction').length;
+      const workoutsStarted = userEvents.filter((e: EngagementEvent) => e.eventType === 'workout_start').length;
+      const workoutsCompleted = userEvents.filter((e: EngagementEvent) => e.eventType === 'workout_complete').length;
+      const aiInteractions = userEvents.filter((e: EngagementEvent) => e.eventType === 'ai_interaction').length;
 
       // Calculate engagement score (0-100)
       const engagementScore = this.calculateEngagementScore({
@@ -384,7 +384,7 @@ class EngagementTrackingService {
         averageSessionDuration,
         workoutCompletionRate: workoutsStarted > 0 ? workoutsCompleted / workoutsStarted : 0,
         aiInteractions,
-        recentActivity: userSessions.filter(s =>
+        recentActivity: userSessions.filter((s: SessionData) =>
           new Date(s.startTime) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
         ).length,
       });
@@ -397,7 +397,7 @@ class EngagementTrackingService {
         workoutCompletionRate: workoutsStarted > 0 ? workoutsCompleted / workoutsStarted : 0,
         averageSessionDuration,
         aiInteractions,
-        recentActivity: userSessions.filter(s =>
+        recentActivity: userSessions.filter((s: SessionData) =>
           new Date(s.startTime) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
         ).length,
       });

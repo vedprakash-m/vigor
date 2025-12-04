@@ -11,9 +11,9 @@ from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 import azure.functions as func
 
-from config import get_settings
-from models import User
-from cosmos_db import get_cosmos_container
+from .config import get_settings
+from .models import User
+from .cosmos_db import get_cosmos_container
 
 logger = logging.getLogger(__name__)
 

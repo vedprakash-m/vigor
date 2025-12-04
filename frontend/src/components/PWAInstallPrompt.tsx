@@ -4,19 +4,12 @@ import {
     Button,
     HStack,
     Icon,
-    Modal,
-    ModalBody,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
-    ModalOverlay,
     Text,
-    useDisclosure,
-    useToast,
     VStack,
 } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
 import { FiDownload, FiSmartphone, FiWifi, FiZap } from 'react-icons/fi';
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, ModalOverlay, useDisclosure, useToast } from './compat';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];

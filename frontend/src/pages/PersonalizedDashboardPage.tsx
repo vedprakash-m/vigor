@@ -1,7 +1,6 @@
 import {
     Alert,
     AlertDescription,
-    AlertIcon,
     AlertTitle,
     Badge,
     Box,
@@ -13,17 +12,13 @@ import {
     HStack,
     Progress,
     SimpleGrid,
-    Tab,
-    TabList,
-    TabPanel,
-    TabPanels,
-    Tabs,
     Text,
     VStack,
 } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
-import { FiBarChart3, FiCalendar, FiClock, FiTarget, FiTrendingUp, FiUsers } from 'react-icons/fi';
+import { FiBarChart2, FiCalendar, FiClock, FiTarget, FiTrendingUp, FiUsers } from 'react-icons/fi';
 import AnalyticsDashboard from '../components/AnalyticsDashboard';
+import { AlertIcon, Tab, TabList, TabPanel, TabPanels, Tabs } from '../components/chakra-compat';
 import { BadgeGrid, QuickStats, StreakDisplay } from '../components/GamificationComponentsV2';
 import MobileLayout from '../components/MobileLayout';
 import SocialFeatures from '../components/SocialFeatures';
@@ -356,7 +351,7 @@ const PersonalizedDashboardPage: React.FC = () => {
             <CardBody>
               <VStack align="stretch" gap={4}>
                 <HStack>
-                  <FiBarChart3 />
+                  <FiBarChart2 />
                   <Heading size="md">Your Progress</Heading>
                   <Badge colorScheme="purple" variant="outline">
                     Engagement Score: {engagementProfile.engagementScore}/100
@@ -400,7 +395,7 @@ const PersonalizedDashboardPage: React.FC = () => {
         {/* Enhanced Tabs for Different Views */}
         <Tabs variant="soft-rounded" colorScheme="blue">
           <TabList>
-            <Tab><FiBarChart3 style={{ marginRight: '8px' }} />Analytics</Tab>
+            <Tab><FiBarChart2 style={{ marginRight: '8px' }} />Analytics</Tab>
             <Tab><FiUsers style={{ marginRight: '8px' }} />Community</Tab>
           </TabList>
 
@@ -456,7 +451,7 @@ const PersonalizedDashboardPage: React.FC = () => {
           </Button>
 
           <Button
-            leftIcon={<FiBarChart3 />}
+            leftIcon={<FiBarChart2 />}
             colorScheme="purple"
             variant="outline"
             onClick={() => engagementTracker.trackFeatureUse('view_progress', 'dashboard')}

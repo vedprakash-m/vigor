@@ -20,7 +20,8 @@
   "retry": {
     "strategy": "exponentialBackoff",
     "maxRetryCount": 3,
-    "delayInterval": "00:00:05",
-    "maximumInterval": "00:00:30"
+    "minimumInterval": "00:00:01",
+    "maximumInterval": "00:00:30",
+    "delayInterval": "00:00:05"
   }
 }

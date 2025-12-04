@@ -24,7 +24,7 @@ from azure.cosmos.aio import CosmosClient, DatabaseProxy, ContainerProxy
 from azure.cosmos import PartitionKey
 from azure.core.exceptions import AzureError
 
-from config import get_settings
+from .config import get_settings
 from .models import UserProfile, WorkoutPlan, WorkoutLog, AICoachMessage
 
 logger = logging.getLogger(__name__)

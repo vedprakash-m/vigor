@@ -13,24 +13,29 @@ import time
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
-from config import get_settings
+from .config import get_settings
 
 logger = logging.getLogger(__name__)
 
 
 class GeminiAIClient:
-    """Google Gemini Flash 2.5 client for AI operations"""
+    """Google Gemini Flash 2.0 client for AI operations"""
     
     def __init__(self):
         self.settings = get_settings()
-        self.model_name = "gemini-1.5-flash"  # Gemini Flash 2.5
+        self.model_name = "gemini-2.0-flash"  # Gemini Flash 2.0 (stable)
         self.model = None
         self._initialize_client()
     
     def _initialize_client(self):
         """Initialize Gemini client"""
         try:
-            genai.configure(api_key=self.settings.GOOGLE_AI_API_KEY)
+            api_key = self.settings.GOOGLE_AI_API_KEY
+            if not api_key or api_key.startswith("your-"):
+                logger.error(f"Gemini API key is not configured properly. Key starts with: {api_key[:10] if api_key else 'None'}...")
+                return
+            
+            genai.configure(api_key=api_key)
             
             # Configure safety settings to be less restrictive for fitness content
             safety_settings = {
@@ -46,11 +51,11 @@ class GeminiAIClient:
                 safety_settings=safety_settings
             )
             
-            logger.info(f"Gemini AI client initialized with model: {self.model_name}")
+            logger.info(f"Gemini AI client initialized with model: {self.model_name}, API key starts with: {api_key[:10]}...")
             
         except Exception as e:
-            logger.error(f"Failed to initialize Gemini client: {str(e)}")
-            raise
+            logger.error(f"Failed to initialize Gemini client: {type(e).__name__}: {str(e)}")
+            self.model = None
     
     async def generate_workout(self, user_profile: Dict[str, Any], preferences: Dict[str, Any]) -> Dict[str, Any]:
         """Generate personalized workout using Gemini Flash 2.5"""
@@ -300,14 +305,19 @@ CONVERSATION HISTORY:
         """Check Gemini API connectivity"""
         try:
             if not self.model:
+                logger.error("Gemini health check failed: model not initialized")
                 return False
             
             # Simple test generation
             test_prompt = "Say 'Hello' in one word."
             response = await asyncio.to_thread(self.model.generate_content, test_prompt)
             
-            return "hello" in response.text.lower()
+            if response and hasattr(response, 'text'):
+                return "hello" in response.text.lower()
+            else:
+                logger.error(f"Gemini health check failed: unexpected response format - {type(response)}")
+                return False
             
         except Exception as e:
-            logger.error(f"Gemini health check failed: {str(e)}")
+            logger.error(f"Gemini health check failed: {type(e).__name__}: {str(e)}")
             return False

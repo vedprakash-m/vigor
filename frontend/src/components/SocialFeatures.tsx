@@ -19,7 +19,6 @@ import {
     FiHeart,
     FiMoreHorizontal,
     FiShare2,
-    FiTrophy,
     FiUsers
 } from 'react-icons/fi';
 import { useVedAuth } from '../contexts/useVedAuth';
@@ -284,7 +283,7 @@ export const SocialFeatures: React.FC = () => {
             </Stat>
 
             <Stat bg="white" p={4} borderRadius="lg" boxShadow="sm">
-              <StatLabel><FiTrophy style={{ display: 'inline', marginRight: '8px' }} />Weekly Workouts</StatLabel>
+              <StatLabel><FiAward style={{ display: 'inline', marginRight: '8px' }} />Weekly Workouts</StatLabel>
               <StatNumber>{communityStats.weeklyWorkouts.toLocaleString()}</StatNumber>
               <StatHelpText>Community total</StatHelpText>
             </Stat>

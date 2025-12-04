@@ -1,32 +1,23 @@
 import {
-    Avatar,
     Badge,
     Box,
     Button,
     Container,
-    Drawer,
-    DrawerBody,
-    DrawerCloseButton,
-    DrawerContent,
-    DrawerHeader,
-    DrawerOverlay,
     Flex,
     HStack,
     IconButton,
-    Menu,
-    MenuButton,
-    MenuDivider,
+    MenuContent,
     MenuItem,
-    MenuList,
+    MenuRoot,
+    MenuSeparator,
+    MenuTrigger,
     Text,
-    useBreakpointValue,
-    useDisclosure,
     VStack,
 } from '@chakra-ui/react';
 import React, { useState } from 'react';
 import {
     FiActivity,
-    FiBarChart3,
+    FiBarChart2,
     FiBell,
     FiHome,
     FiLogOut,
@@ -40,6 +31,13 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useVedAuth } from '../contexts/useVedAuth';
 import { type UserGamificationStats } from '../services/gamificationService';
+import { Avatar, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerHeader, DrawerOverlay, useBreakpointValue, useDisclosure } from './chakra-compat';
+
+// Compat aliases for v3 Menu
+const Menu = MenuRoot;
+const MenuButton = MenuTrigger;
+const MenuList = MenuContent;
+const MenuDivider = MenuSeparator;
 
 interface MobileLayoutProps {
   children: React.ReactNode;
@@ -95,7 +93,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, gamificati
     {
       id: 'analytics',
       label: 'Analytics',
-      icon: FiBarChart3,
+      icon: FiBarChart2,
       path: '/app/analytics',
       desktopOnly: true,
     },

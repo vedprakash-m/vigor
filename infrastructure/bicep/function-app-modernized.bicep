@@ -25,7 +25,7 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
     type: 'SystemAssigned'
   }
   properties: {
-    serverFarmId: flexConsumptionPlan.id
+    serverFarmId: appServicePlan.id
     siteConfig: {
       linuxFxVersion: 'Python|3.11'
       appSettings: [
@@ -120,18 +120,21 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
   }
 }
 
-// Flex Consumption Plan
-resource flexConsumptionPlan 'Microsoft.Web/serverfarms@2023-01-01' = {
+// App Service Plan - Basic tier for reliable deployment
+// Using B1 instead of Consumption due to quota limits
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: '${name}-plan'
   location: location
   tags: tags
   sku: {
-    name: 'Y1'
-    tier: 'Dynamic'
+    name: 'B1'
+    tier: 'Basic'
+    capacity: 1
   }
   properties: {
     reserved: true // Required for Linux
   }
+  kind: 'linux'
 }
 
 // Outputs

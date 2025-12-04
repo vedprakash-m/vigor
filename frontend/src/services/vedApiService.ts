@@ -15,7 +15,8 @@ interface UserProfile {
   updated_at?: string
 }
 
-const API_BASE_URL = 'http://localhost:8000'
+// Use environment variable for API URL, with fallback to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 /**
  * MSAL-compatible API service for Microsoft Entra ID authentication

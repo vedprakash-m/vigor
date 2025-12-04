@@ -1,5 +1,8 @@
 // Temporary Chakra UI v3 compatibility layer - to be improved later
-import { Box, Card as ChakraCard } from '@chakra-ui/react'
+import { Box, Card as ChakraCard, useBreakpointValue as chakraUseBreakpointValue } from '@chakra-ui/react'
+
+// Re-export useBreakpointValue from Chakra
+export const useBreakpointValue = chakraUseBreakpointValue
 
 // Temporary stubs for missing components
 export const Card = ({ children, ...props }: any) => (

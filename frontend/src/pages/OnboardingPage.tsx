@@ -4,16 +4,16 @@ import {
     Heading,
     Text,
     VStack,
-    useToast,
 } from '@chakra-ui/react'
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useToast } from '../components/compat'
 import { useVedAuth } from '../contexts/useVedAuth'
 
 export const OnboardingPage = () => {
   const { user, isAuthenticated } = useVedAuth()
   const navigate = useNavigate()
-  const toast = useToast()
+  const { toast } = useToast()
 
   useEffect(() => {
     if (!isAuthenticated) {

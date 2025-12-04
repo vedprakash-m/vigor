@@ -15,6 +15,7 @@ import {
     Stack,
     Toaster
 } from '@chakra-ui/react'
+import { useCallback, useState } from 'react'
 
 // Toast system for v3
 const toaster = createToaster({
@@ -36,6 +37,15 @@ export const useToast = () => ({
     })
   }
 })
+
+// useDisclosure hook for modal state management
+export const useDisclosure = (initialState = false) => {
+  const [isOpen, setIsOpen] = useState(initialState)
+  const onOpen = useCallback(() => setIsOpen(true), [])
+  const onClose = useCallback(() => setIsOpen(false), [])
+  const onToggle = useCallback(() => setIsOpen(prev => !prev), [])
+  return { isOpen, onOpen, onClose, onToggle }
+}
 
 // Card compatibility
 export const Card = ({ children, ...props }: any) => (
