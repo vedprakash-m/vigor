@@ -64,7 +64,7 @@ mypy_extensions==1.1.0
 nltk==3.9.1
 openai==1.58.1
 opentelemetry-api==1.25.0
-opentelemetry-exporter-otlp==1.25.0
+opentelemetry-exporter-otlp==1.39.0
 opentelemetry-exporter-otlp-proto-common==1.25.0
 opentelemetry-exporter-otlp-proto-grpc==1.25.0
 opentelemetry-exporter-otlp-proto-http==1.25.0
