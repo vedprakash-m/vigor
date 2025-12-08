@@ -214,7 +214,7 @@ jobs:
           VITE_AZURE_AD_TENANT_ID: common
 
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: frontend-build
           path: frontend/dist
@@ -280,7 +280,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload E2E Test Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: e2e-test-results
