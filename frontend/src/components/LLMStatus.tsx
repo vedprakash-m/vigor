@@ -11,7 +11,7 @@ interface AIStatus {
 
 /**
  * AI Status Component
- * Shows the current AI provider status (OpenAI gpt-4o-mini)
+ * Shows the current AI provider status (OpenAI gpt-5-mini)
  */
 const LLMStatus: React.FC = () => {
   const [status, setStatus] = useState<AIStatus | null>(null);
@@ -24,7 +24,7 @@ const LLMStatus: React.FC = () => {
         const response = await api.health.check();
         setStatus({
           provider: 'OpenAI',
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-mini',
           is_available: response.data.status === 'healthy',
           version: response.data.version || '2.0.0',
         });
@@ -74,35 +74,10 @@ const LLMStatus: React.FC = () => {
         </HStack>
         <HStack>
           <Text fontSize="xs" color="gray.600">Status:</Text>
-          <Badge size="sm" colorScheme={status.is_available ? 'green' : 'red'}>
+          <Badge colorScheme={status.is_available ? 'green' : 'red'}>
             {status.is_available ? 'Online' : 'Offline'}
           </Badge>
         </HStack>
-      </VStack>
-    </Box>
-  );
-};
-
-export default LLMStatus;
-              <Badge size="sm" colorScheme={getProviderColor('gemini')}>
-                {getStatusText('gemini')}
-              </Badge>
-            </HStack>
-
-            <HStack>
-              <Text fontSize="xs">Perplexity:</Text>
-              <Badge size="sm" colorScheme={getProviderColor('perplexity')}>
-                {getStatusText('perplexity')}
-              </Badge>
-            </HStack>
-          </HStack>
-        </VStack>
-
-        {status.active_provider === 'FallbackProvider' && (
-          <Text fontSize="xs" color="orange.600">
-            Using fallback responses. Configure an API key for personalized AI features.
-          </Text>
-        )}
       </VStack>
     </Box>
   );
