@@ -174,7 +174,7 @@ class CosmosDBClient:
                     "difficulty": workout_data.get("difficulty", "moderate"),
                     "estimatedDuration": workout_data.get("estimatedDuration", 45),
                     "equipmentNeeded": workout_data.get("equipmentNeeded", []),
-                    "aiProviderUsed": "gemini-flash-2.5",
+                    "aiProviderUsed": "gpt-5-mini",
                     "tags": workout_data.get("tags", [])
                 },
                 "createdAt": datetime.now(timezone.utc).isoformat()
@@ -345,7 +345,7 @@ class CosmosDBClient:
                     "userId": message["userId"],  # Partition key
                     "role": message["role"],
                     "content": message["content"],
-                    "providerUsed": message.get("providerUsed", "gemini-flash-2.5"),
+                    "providerUsed": message.get("providerUsed", "gpt-5-mini"),
                     "tokensUsed": message.get("tokensUsed"),
                     "responseTimeMs": message.get("responseTimeMs"),
                     "createdAt": message.get("createdAt", datetime.now(timezone.utc).isoformat())
@@ -394,6 +394,35 @@ class CosmosDBClient:
             logger.error(f"Error getting conversation history: {str(e)}")
             raise
 
+    async def clear_conversation_history(self, user_id: str) -> bool:
+        """Clear all conversation history for a user"""
+        await self.ensure_initialized()
+
+        try:
+            container = self.containers["ai_coach_messages"]
+
+            # Query all messages for this user
+            query = "SELECT c.id FROM c WHERE c.userId = @user_id"
+            parameters = [{"name": "@user_id", "value": user_id}]
+
+            # Delete each message
+            async for item in container.query_items(
+                query=query,
+                parameters=parameters,
+                partition_key=user_id
+            ):
+                await container.delete_item(
+                    item=item["id"],
+                    partition_key=user_id
+                )
+
+            logger.info(f"Cleared conversation history for user: {user_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error clearing conversation history: {str(e)}")
+            raise
+
     # =============================================================================
     # COST TRACKING & ANALYTICS
     # =============================================================================
@@ -422,7 +451,7 @@ class CosmosDBClient:
 
             message_count = result[0]["message_count"] if result else 0
 
-            # Estimate cost: $0.01 per message (rough estimate for Gemini Flash)
+            # Estimate cost: $0.01 per message (rough estimate for OpenAI gpt-5-mini)
             estimated_cost = message_count * 0.01
             return estimated_cost
 

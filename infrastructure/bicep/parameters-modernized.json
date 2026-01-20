@@ -6,16 +6,26 @@
       "value": "prod"
     },
     "location": {
-      "value": "East US"
+      "value": "West US 2"
     },
     "appName": {
       "value": "vigor"
     },
     "secretKey": {
-      "value": "vigor-secret-key-2025-production"
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/{subscription-id}/resourceGroups/vigor-rg/providers/Microsoft.KeyVault/vaults/vigor-kv"
+        },
+        "secretName": "secret-key"
+      }
     },
-    "geminiApiKey": {
-      "value": "your-gemini-api-key-placeholder"
+    "openAiApiKey": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/{subscription-id}/resourceGroups/vigor-rg/providers/Microsoft.KeyVault/vaults/vigor-kv"
+        },
+        "secretName": "openai-api-key"
+      }
     }
   }
 }

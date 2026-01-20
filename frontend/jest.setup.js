@@ -10,12 +10,12 @@ import { TextDecoder, TextEncoder } from 'util';
 global.TextEncoder = TextEncoder
 global.TextDecoder = TextDecoder
 
-// Mock import.meta.env early
+// Mock import.meta.env early (Azure Functions runs on port 7071)
 Object.defineProperty(global, 'import', {
   value: {
     meta: {
       env: {
-        VITE_API_BASE_URL: 'http://localhost:8001'
+        VITE_API_URL: 'http://localhost:7071'
       }
     }
   },
@@ -26,7 +26,7 @@ Object.defineProperty(global, 'import', {
 global.import = {
   meta: {
     env: {
-      VITE_API_BASE_URL: 'http://localhost:8001'
+      VITE_API_URL: 'http://localhost:7071'
     }
   }
 }

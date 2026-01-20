@@ -1,34 +1,33 @@
 /**
  * Microsoft Entra ID Authentication Configuration
- * Compliance with Apps_Auth_Requirement.md for Vedprakash Domain
+ * Uses default tenant (common) for multi-tenant support
  */
 
 import type { Configuration, PopupRequest, RedirectRequest } from '@azure/msal-browser';
 
 // Environment variables for Microsoft Entra ID
-const clientId = import.meta.env.VITE_AZURE_AD_CLIENT_ID || 'be183263-80c3-4191-bc84-2ee3c618cbcd';
-const tenantId = import.meta.env.VITE_AZURE_AD_TENANT_ID || 'common'; // Use 'common' for default tenant
+const clientId = import.meta.env.VITE_AZURE_CLIENT_ID || import.meta.env.VITE_AZURE_AD_CLIENT_ID || '';
+const tenantId = 'common'; // Default tenant for multi-tenant auth
 const authority = `https://login.microsoftonline.com/${tenantId}`;
 
 /**
  * MSAL Configuration for Microsoft Entra ID
- * Configured for SSO across .vedprakash.net domain
  */
 export const msalConfig: Configuration = {
   auth: {
     clientId: clientId,
     authority: authority,
-    redirectUri: window.location.origin,
+    redirectUri: import.meta.env.VITE_REDIRECT_URI || window.location.origin,
     postLogoutRedirectUri: window.location.origin,
   },
   cache: {
-    cacheLocation: 'sessionStorage', // Required for SSO
-    storeAuthStateInCookie: true,    // Required for Safari/iOS
+    cacheLocation: 'sessionStorage',
+    storeAuthStateInCookie: false,
   },
   system: {
     loggerOptions: {
       loggerCallback: (_level, message, containsPii) => {
-        if (!containsPii) {
+        if (!containsPii && import.meta.env.DEV) {
           console.log(`[MSAL] ${message}`);
         }
       },
@@ -42,14 +41,13 @@ export const msalConfig: Configuration = {
  */
 export const loginRequest: RedirectRequest = {
   scopes: ['openid', 'profile', 'email'],
-  prompt: 'select_account'
 };
 
 /**
  * API request configuration for accessing protected endpoints
  */
 export const apiRequest: PopupRequest = {
-  scopes: [`api://${clientId}/access_as_user`],
+  scopes: ['openid', 'profile', 'email'],
   account: undefined
 };
 

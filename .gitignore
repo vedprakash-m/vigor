@@ -5,6 +5,10 @@ backend/__pycache__/
 backend/*.pyc
 backend/.pytest_cache/
 
+# Azure Functions local settings (contains secrets)
+local.settings.json
+**/local.settings.json
+
 # Environment files
 .env
 .env.local

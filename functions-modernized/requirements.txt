@@ -1,22 +1,23 @@
-# Vigor Backend - Azure Functions (Modernized)
-# Minimal requirements for Azure Functions deployment
+# Vigor Backend - Azure Functions
+# Single resource group: vigor-rg, Region: West US 2
 
 # Azure Functions Core
 azure-functions>=1.18.0
 
-# Database - Cosmos DB (with async support)
+# Database - Cosmos DB Serverless (with async support)
 azure-cosmos>=4.5.0
 azure-identity>=1.15.0
 aiohttp>=3.9.0
 
-# AI - Single Provider (Gemini Flash 2.5)
-google-generativeai>=0.3.0
+# AI - Single Provider (OpenAI gpt-5-mini)
+openai>=1.0.0
 
 # Authentication & Security
 PyJWT[crypto]>=2.8.0
 bcrypt>=4.0.0
 cryptography>=41.0.0
 requests>=2.31.0
+httpx>=0.25.0
 
 # Data Validation & Models
 pydantic>=2.4.0

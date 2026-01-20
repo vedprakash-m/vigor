@@ -40,12 +40,12 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
 // Mock structuredClone
 global.structuredClone = jest.fn().mockImplementation((obj) => JSON.parse(JSON.stringify(obj)))
 
-// Mock import.meta.env
+// Mock import.meta.env (Azure Functions runs on port 7071)
 Object.defineProperty(global, 'import', {
   value: {
     meta: {
       env: {
-        VITE_API_BASE_URL: 'http://localhost:8001'
+        VITE_API_URL: 'http://localhost:7071'
       }
     }
   },

@@ -1,6 +1,6 @@
 """
-Vigor Backend - Modernized Azure Functions App
-Single resource group, Cosmos DB, Gemini Flash 2.5
+Vigor Backend - Azure Functions App
+Single resource group (vigor-rg), Cosmos DB Serverless, OpenAI gpt-5-mini
 """
 
 import azure.functions as func
@@ -13,7 +13,7 @@ from typing import Dict, Any, Optional
 # Import shared modules
 from shared.auth import get_current_user_from_token, require_admin_user
 from shared.cosmos_db import CosmosDBClient
-from shared.gemini_client import GeminiAIClient
+from shared.openai_client import OpenAIClient
 from shared.models import (
     UserProfile, WorkoutPlan, WorkoutLog, AICoachMessage,
     WorkoutGenerationRequest, CoachChatRequest
@@ -24,7 +24,7 @@ from shared.config import get_settings
 # Initialize components
 settings = get_settings()
 cosmos_db = CosmosDBClient()
-gemini_client = GeminiAIClient()
+ai_client = OpenAIClient()
 rate_limiter = RateLimiter()
 
 # Create Function App
@@ -49,7 +49,7 @@ async def get_current_user(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=401,
                 mimetype="application/json"
             )
-        
+
         # Get full profile from Cosmos DB using email as key
         profile = await cosmos_db.get_user_profile(current_user["email"])
         if not profile:
@@ -63,13 +63,13 @@ async def get_current_user(req: func.HttpRequest) -> func.HttpResponse:
                 "fitness_goals": ["general_fitness"],
                 "available_equipment": ["none"]
             }
-        
+
         return func.HttpResponse(
             json.dumps(profile),
             status_code=200,
             mimetype="application/json"
         )
-        
+
     except Exception as e:
         logger.error(f"Error getting current user: {str(e)}")
         return func.HttpResponse(
@@ -89,7 +89,7 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=401,
                 mimetype="application/json"
             )
-        
+
         if req.method == "GET":
             profile = await cosmos_db.get_user_profile(current_user["email"])
             return func.HttpResponse(
@@ -97,12 +97,12 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=200,
                 mimetype="application/json"
             )
-            
+
         elif req.method == "PUT":
             # Rate limiting
             if not await rate_limiter.check_rate_limit(
-                key=f"profile_update:{current_user['email']}", 
-                limit=10, 
+                key=f"profile_update:{current_user['email']}",
+                limit=10,
                 window=3600  # 10 updates per hour
             ):
                 return func.HttpResponse(
@@ -110,19 +110,19 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
                     status_code=429,
                     mimetype="application/json"
                 )
-            
+
             profile_data = req.get_json()
             updated_profile = await cosmos_db.update_user_profile(
-                current_user["email"], 
+                current_user["email"],
                 profile_data
             )
-            
+
             return func.HttpResponse(
                 json.dumps(updated_profile),
                 status_code=200,
                 mimetype="application/json"
             )
-            
+
     except Exception as e:
         logger.error(f"Error in user profile: {str(e)}")
         return func.HttpResponse(
@@ -137,7 +137,7 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
 
 @app.route(route="workouts/generate", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
-    """Generate personalized workout using Gemini Flash 2.5"""
+    """Generate personalized workout using OpenAI gpt-5-mini"""
     try:
         current_user = await get_current_user_from_token(req)
         if not current_user:
@@ -146,11 +146,11 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=401,
                 mimetype="application/json"
             )
-        
+
         # Rate limiting - 20 workout generations per hour
         if not await rate_limiter.check_rate_limit(
-            key=f"workout_gen:{current_user['email']}", 
-            limit=20, 
+            key=f"workout_gen:{current_user['email']}",
+            limit=20,
             window=3600
         ):
             return func.HttpResponse(
@@ -158,42 +158,42 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=429,
                 mimetype="application/json"
             )
-        
+
         workout_request = req.get_json()
-        
+
         # Validate budget before AI operation
         budget_check = await validate_ai_budget(current_user["email"])
         if not budget_check["approved"]:
             return func.HttpResponse(
                 json.dumps({
-                    "error": "AI budget exceeded", 
+                    "error": "AI budget exceeded",
                     "details": budget_check["reason"]
                 }),
                 status_code=429,
                 mimetype="application/json"
             )
-        
+
         # Get user profile for context
         user_profile = await cosmos_db.get_user_profile(current_user["email"])
-        
-        # Generate workout with Gemini
-        workout = await gemini_client.generate_workout(
+
+        # Generate workout with OpenAI
+        workout = await ai_client.generate_workout(
             user_profile=user_profile,
             preferences=workout_request
         )
-        
+
         # Store in Cosmos DB
         saved_workout = await cosmos_db.create_workout(
             user_id=current_user["email"],
             workout_data=workout
         )
-        
+
         return func.HttpResponse(
             json.dumps(saved_workout),
             status_code=201,
             mimetype="application/json"
         )
-        
+
     except Exception as e:
         logger.error(f"Error generating workout: {str(e)}")
         return func.HttpResponse(
@@ -206,9 +206,9 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
 # AI COACH CHAT
 # =============================================================================
 
-@app.route(route="ai/coach/chat", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+@app.route(route="coach/chat", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
-    """Chat with AI coach using Gemini Flash 2.5"""
+    """Chat with AI coach using OpenAI gpt-5-mini"""
     try:
         current_user = await get_current_user_from_token(req)
         if not current_user:
@@ -217,11 +217,11 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=401,
                 mimetype="application/json"
             )
-        
+
         # Rate limiting - 50 chat messages per hour
         if not await rate_limiter.check_rate_limit(
-            key=f"coach_chat:{current_user['email']}", 
-            limit=50, 
+            key=f"coach_chat:{current_user['email']}",
+            limit=50,
             window=3600
         ):
             return func.HttpResponse(
@@ -229,9 +229,9 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=429,
                 mimetype="application/json"
             )
-        
+
         message_data = req.get_json()
-        
+
         # Validate budget
         budget_check = await validate_ai_budget(current_user["email"])
         if not budget_check["approved"]:
@@ -240,46 +240,46 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=429,
                 mimetype="application/json"
             )
-        
+
         # Get conversation history from Cosmos DB
         conversation_history = await cosmos_db.get_conversation_history(
-            current_user["email"], 
+            current_user["email"],
             limit=10
         )
-        
+
         # Get user context
         user_profile = await cosmos_db.get_user_profile(current_user["email"])
-        
-        # Generate response with Gemini
-        ai_response = await gemini_client.generate_coach_response(
-            user_message=message_data["message"],
-            conversation_history=conversation_history,
+
+        # Generate response with OpenAI
+        ai_response = await ai_client.coach_chat(
+            message=message_data["message"],
+            history=conversation_history,
             user_context=user_profile
         )
-        
+
         # Save both messages to Cosmos DB
         await cosmos_db.save_chat_messages([
             {
-                "role": "user", 
+                "role": "user",
                 "content": message_data["message"],
                 "userId": current_user["email"],
                 "createdAt": datetime.utcnow().isoformat()
             },
             {
-                "role": "assistant", 
+                "role": "assistant",
                 "content": ai_response,
                 "userId": current_user["email"],
-                "providerUsed": "gemini-flash-2.5",
+                "providerUsed": "gpt-5-mini",
                 "createdAt": datetime.utcnow().isoformat()
             }
         ])
-        
+
         return func.HttpResponse(
             json.dumps({"response": ai_response}),
             status_code=200,
             mimetype="application/json"
         )
-        
+
     except Exception as e:
         logger.error(f"Error in coach chat: {str(e)}")
         return func.HttpResponse(
@@ -287,6 +287,48 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500,
             mimetype="application/json"
         )
+
+
+@app.route(route="coach/history", methods=["GET", "DELETE"], auth_level=func.AuthLevel.ANONYMOUS)
+async def coach_history(req: func.HttpRequest) -> func.HttpResponse:
+    """Get or clear coach conversation history"""
+    try:
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return func.HttpResponse(
+                json.dumps({"error": "Unauthorized"}),
+                status_code=401,
+                mimetype="application/json"
+            )
+
+        if req.method == "GET":
+            limit = int(req.params.get("limit", 50))
+            history = await cosmos_db.get_conversation_history(
+                current_user["email"],
+                limit=limit
+            )
+            return func.HttpResponse(
+                json.dumps(history),
+                status_code=200,
+                mimetype="application/json"
+            )
+
+        elif req.method == "DELETE":
+            await cosmos_db.clear_conversation_history(current_user["email"])
+            return func.HttpResponse(
+                json.dumps({"message": "Conversation history cleared"}),
+                status_code=200,
+                mimetype="application/json"
+            )
+
+    except Exception as e:
+        logger.error(f"Error in coach history: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Failed to process history request"}),
+            status_code=500,
+            mimetype="application/json"
+        )
+
 
 # =============================================================================
 # WORKOUT MANAGEMENT
@@ -303,23 +345,23 @@ async def get_user_workouts(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=401,
                 mimetype="application/json"
             )
-        
+
         # Get query parameters
         limit = int(req.params.get("limit", 20))
         offset = int(req.params.get("offset", 0))
-        
+
         workouts = await cosmos_db.get_user_workouts(
             user_id=current_user["email"],
             limit=limit,
             offset=offset
         )
-        
+
         return func.HttpResponse(
             json.dumps(workouts),
             status_code=200,
             mimetype="application/json"
         )
-        
+
     except Exception as e:
         logger.error(f"Error getting workouts: {str(e)}")
         return func.HttpResponse(
@@ -339,9 +381,9 @@ async def workout_detail(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=401,
                 mimetype="application/json"
             )
-        
+
         workout_id = req.route_params.get("workout_id")
-        
+
         if req.method == "GET":
             workout = await cosmos_db.get_workout(workout_id, current_user["email"])
             if not workout:
@@ -350,13 +392,13 @@ async def workout_detail(req: func.HttpRequest) -> func.HttpResponse:
                     status_code=404,
                     mimetype="application/json"
                 )
-            
+
             return func.HttpResponse(
                 json.dumps(workout),
                 status_code=200,
                 mimetype="application/json"
             )
-            
+
         elif req.method == "DELETE":
             success = await cosmos_db.delete_workout(workout_id, current_user["email"])
             if not success:
@@ -365,9 +407,9 @@ async def workout_detail(req: func.HttpRequest) -> func.HttpResponse:
                     status_code=404,
                     mimetype="application/json"
                 )
-            
+
             return func.HttpResponse(status_code=204)
-            
+
     except Exception as e:
         logger.error(f"Error in workout detail: {str(e)}")
         return func.HttpResponse(
@@ -391,22 +433,22 @@ async def log_workout_session(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=401,
                 mimetype="application/json"
             )
-        
+
         workout_id = req.route_params.get("workout_id")
         session_data = req.get_json()
-        
+
         workout_log = await cosmos_db.create_workout_log(
             user_id=current_user["email"],
             workout_id=workout_id,
             session_data=session_data
         )
-        
+
         return func.HttpResponse(
             json.dumps(workout_log),
             status_code=201,
             mimetype="application/json"
         )
-        
+
     except Exception as e:
         logger.error(f"Error logging workout session: {str(e)}")
         return func.HttpResponse(
@@ -414,6 +456,40 @@ async def log_workout_session(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500,
             mimetype="application/json"
         )
+
+
+@app.route(route="workouts/history", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+async def get_workout_history(req: func.HttpRequest) -> func.HttpResponse:
+    """Get user's workout log history"""
+    try:
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return func.HttpResponse(
+                json.dumps({"error": "Unauthorized"}),
+                status_code=401,
+                mimetype="application/json"
+            )
+
+        limit = int(req.params.get("limit", 50))
+        logs = await cosmos_db.get_user_workout_logs(
+            user_id=current_user["email"],
+            limit=limit
+        )
+
+        return func.HttpResponse(
+            json.dumps(logs),
+            status_code=200,
+            mimetype="application/json"
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting workout history: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Failed to retrieve workout history"}),
+            status_code=500,
+            mimetype="application/json"
+        )
+
 
 # =============================================================================
 # ADMIN ENDPOINTS
@@ -430,22 +506,22 @@ async def get_real_time_costs(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=403,
                 mimetype="application/json"
             )
-        
+
         # Query Cosmos DB for cost metrics
         cost_metrics = await cosmos_db.get_ai_cost_metrics()
-        
+
         return func.HttpResponse(
             json.dumps({
                 "daily_spend": cost_metrics.get("daily_spend", 0),
-                "monthly_budget": 50.0,  # Fixed budget for Gemini Flash 2.5
+                "monthly_budget": 50.0,  # Fixed budget for OpenAI gpt-5-mini
                 "budget_utilization": cost_metrics.get("budget_utilization", 0),
-                "provider_breakdown": {"gemini-flash-2.5": cost_metrics.get("total_spend", 0)},
+                "provider_breakdown": {"gpt-5-mini": cost_metrics.get("total_spend", 0)},
                 "total_requests_today": cost_metrics.get("requests_today", 0)
             }),
             status_code=200,
             mimetype="application/json"
         )
-        
+
     except Exception as e:
         logger.error(f"Error getting cost metrics: {str(e)}")
         return func.HttpResponse(
@@ -464,7 +540,7 @@ async def validate_ai_budget(user_id: str) -> Dict[str, Any]:
         current_spend = await cosmos_db.get_daily_ai_spend()
         monthly_budget = float(settings.AI_MONTHLY_BUDGET)
         daily_budget = monthly_budget / 30  # Approximate daily budget
-        
+
         if current_spend >= daily_budget * 0.9:  # 90% threshold
             return {
                 "approved": False,
@@ -472,12 +548,12 @@ async def validate_ai_budget(user_id: str) -> Dict[str, Any]:
                 "current_spend": current_spend,
                 "daily_budget": daily_budget
             }
-        
+
         return {
             "approved": True,
             "remaining_budget": daily_budget - current_spend
         }
-        
+
     except Exception as e:
         logger.error(f"Error validating budget: {str(e)}")
         return {"approved": False, "reason": "Budget validation failed"}
@@ -487,14 +563,14 @@ async def budget_monitoring_timer(timer: func.TimerRequest) -> None:
     """Hourly budget monitoring and alerting"""
     try:
         logger.info("Running budget monitoring check...")
-        
+
         current_spend = await cosmos_db.get_daily_ai_spend()
         daily_threshold = float(settings.AI_COST_THRESHOLD)
-        
+
         if current_spend > daily_threshold:
             logger.warning(f"AI spend threshold exceeded: ${current_spend}")
             # Here you could add alerting logic (email, Slack, etc.)
-            
+
     except Exception as e:
         logger.error(f"Error in budget monitoring: {str(e)}")
 
@@ -508,28 +584,28 @@ async def health_check(req: func.HttpRequest) -> func.HttpResponse:
     try:
         # Check Cosmos DB connection
         cosmos_health = await cosmos_db.health_check()
-        
-        # Check Gemini API
-        gemini_health = await gemini_client.health_check()
-        
+
+        # Check OpenAI API
+        ai_health = ai_client.is_available()
+
         health_status = {
-            "status": "healthy" if cosmos_health and gemini_health else "unhealthy",
+            "status": "healthy" if cosmos_health and ai_health else "unhealthy",
             "timestamp": datetime.utcnow().isoformat(),
             "services": {
                 "cosmos_db": "healthy" if cosmos_health else "unhealthy",
-                "gemini_ai": "healthy" if gemini_health else "unhealthy"
+                "openai_api": "healthy" if ai_health else "unhealthy"
             },
-            "version": "1.0.0-modernized"
+            "version": "2.0.0"
         }
-        
-        status_code = 200 if cosmos_health and gemini_health else 503
-        
+
+        status_code = 200 if cosmos_health and ai_health else 503
+
         return func.HttpResponse(
             json.dumps(health_status),
             status_code=status_code,
             mimetype="application/json"
         )
-        
+
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
         return func.HttpResponse(

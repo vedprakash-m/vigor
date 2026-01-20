@@ -1,47 +1,76 @@
-import { Box, Button, Container, Grid, Heading, HStack, Text, VStack } from '@chakra-ui/react'
+import { Box, Button, Container, Grid, Heading, HStack, Spinner, Text, VStack } from '@chakra-ui/react'
 import React, { useEffect, useState } from 'react'
-import { BadgeGrid, QuickStats, StreakDisplay } from '../components/GamificationComponentsV2'
 import LLMStatus from '../components/LLMStatus'
 import { useVedAuth } from '../contexts/useVedAuth'
-import { gamificationService, type UserGamificationStats } from '../services/gamificationService'
-import { workoutService } from '../services/workoutService'
-import { computeStreakUtc } from '../utils/streak'
+import { api, type UserStats, type WorkoutLog } from '../services/api'
+
+interface DashboardStats {
+  totalWorkouts: number
+  weeklyWorkouts: number
+  currentStreak: number
+  longestStreak: number
+}
 
 const DashboardPage: React.FC = () => {
   const { user } = useVedAuth()
-  const [streak, setStreak] = useState<number>(0)
-  const [gamificationStats, setGamificationStats] = useState<UserGamificationStats | null>(null)
-  const [weeklyWorkouts, setWeeklyWorkouts] = useState(0)
-  const [totalWorkouts, setTotalWorkouts] = useState(0)
-  const [aiInteractions, setAiInteractions] = useState(0)
+  const [stats, setStats] = useState<DashboardStats>({
+    totalWorkouts: 0,
+    weeklyWorkouts: 0,
+    currentStreak: 0,
+    longestStreak: 0
+  })
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Fetch streak and workout data
-        const dates: string[] = await workoutService.getWorkoutDays()
-        const calculatedStreak = computeStreakUtc(dates)
-        setStreak(calculatedStreak)
-        setTotalWorkouts(dates.length)
+        setIsLoading(true)
+        
+        // Fetch user profile with stats
+        const profileResponse = await api.users.getProfile()
+        const userStats: UserStats = profileResponse.data?.stats || {
+          totalWorkouts: 0,
+          currentStreak: 0,
+          longestStreak: 0
+        }
 
+        // Fetch recent workout logs to calculate weekly stats
+        const logsResponse = await api.workouts.history(50)
+        const logs: WorkoutLog[] = logsResponse.data || []
+        
         // Calculate weekly workouts (last 7 days)
         const weekAgo = new Date()
         weekAgo.setDate(weekAgo.getDate() - 7)
-        const recentWorkouts = dates.filter(date => new Date(date) >= weekAgo)
-        setWeeklyWorkouts(recentWorkouts.length)
+        const weeklyWorkouts = logs.filter(log => 
+          new Date(log.completedAt) >= weekAgo
+        ).length
 
-        // Fetch gamification stats
-        const stats = await gamificationService.getUserStats()
-        setGamificationStats(stats)
-        setAiInteractions(stats.aiInteractions)
+        setStats({
+          totalWorkouts: userStats.totalWorkouts,
+          weeklyWorkouts,
+          currentStreak: userStats.currentStreak,
+          longestStreak: userStats.longestStreak
+        })
       } catch (err) {
         console.error('Failed to fetch dashboard data', err)
+      } finally {
+        setIsLoading(false)
       }
     }
+
     fetchDashboardData()
   }, [])
 
-  const nextLevelPoints = gamificationStats ? (gamificationStats.level * 100) : 100
+  if (isLoading) {
+    return (
+      <Container maxW="container.xl" py={6}>
+        <VStack gap={6} align="center" justify="center" minH="400px">
+          <Spinner size="xl" color="blue.500" />
+          <Text color="gray.500">Loading your dashboard...</Text>
+        </VStack>
+      </Container>
+    )
+  }
 
   return (
     <Container maxW="container.xl" py={6}>
@@ -49,150 +78,114 @@ const DashboardPage: React.FC = () => {
         {/* Welcome Section */}
         <Box>
           <Heading size="lg" mb={2}>
-            Welcome back, {user?.username}!
+            Welcome back{user?.displayName ? `, ${user.displayName}` : ''}!
           </Heading>
           <Text color="gray.600">
-            {gamificationStats ? gamificationService.getMotivationalMessage(gamificationStats) : "Here's your fitness dashboard overview."}
+            Here's your fitness dashboard overview.
           </Text>
         </Box>
 
         {/* LLM Status */}
         <LLMStatus />
 
-        {/* Gamification Stats Row */}
-        {gamificationStats && (
-          <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={6}>
-            <QuickStats
-              level={gamificationStats.level}
-              totalPoints={gamificationStats.totalPoints}
-              nextLevelPoints={nextLevelPoints}
-            />
-            <StreakDisplay
-              streak={gamificationStats.streaks.daily}
-              title="Daily Streak"
-              color="orange"
-            />
-            <StreakDisplay
-              streak={gamificationStats.streaks.weekly}
-              title="Weekly Consistency"
-              color="blue"
-            />
-          </Grid>
-        )}
-
-        {/* Quick Stats Grid - PRD Dashboard Requirements */}
+        {/* Quick Stats Grid */}
         <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }} gap={4}>
           <Box p={4} borderWidth={1} borderRadius="md" bg="white">
             <Text fontSize="sm" color="gray.500">Workouts This Week</Text>
-            <Heading size="lg" color="blue.600">{weeklyWorkouts}</Heading>
+            <Heading size="lg" color="blue.600">{stats.weeklyWorkouts}</Heading>
             <Text fontSize="sm" color="gray.400">
-              {weeklyWorkouts === 0 ? "Start your first workout!" : `${Math.max(0, 3 - weeklyWorkouts)} more to goal`}
+              {stats.weeklyWorkouts === 0 ? "Start your first workout!" : `${Math.max(0, 3 - stats.weeklyWorkouts)} more to goal`}
             </Text>
           </Box>
 
           <Box p={4} borderWidth={1} borderRadius="md" bg="white">
             <Text fontSize="sm" color="gray.500">Total Workouts</Text>
-            <Heading size="lg" color="green.600">{totalWorkouts}</Heading>
-            <Text fontSize="sm" color="gray.400">Logged workouts</Text>
+            <Heading size="lg" color="green.600">{stats.totalWorkouts}</Heading>
+            <Text fontSize="sm" color="gray.400">Completed workouts</Text>
           </Box>
 
           <Box p={4} borderWidth={1} borderRadius="md" bg="white">
             <Text fontSize="sm" color="gray.500">Current Streak</Text>
-            <Heading size="lg" color="orange.600">{streak} days</Heading>
+            <Heading size="lg" color="orange.600">{stats.currentStreak} days</Heading>
             <Text fontSize="sm" color="gray.400">
-              {streak === 0 ? "Start your streak!" : "Keep it up!"}
+              {stats.currentStreak === 0 ? "Start your streak!" : "Keep it up!"}
             </Text>
           </Box>
 
           <Box p={4} borderWidth={1} borderRadius="md" bg="white">
-            <Text fontSize="sm" color="gray.500">AI Interactions</Text>
-            <Heading size="lg" color="purple.600">{aiInteractions}</Heading>
-            <Text fontSize="sm" color="gray.400">Coach conversations</Text>
+            <Text fontSize="sm" color="gray.500">Longest Streak</Text>
+            <Heading size="lg" color="purple.600">{stats.longestStreak} days</Heading>
+            <Text fontSize="sm" color="gray.400">Personal best</Text>
           </Box>
         </Grid>
 
-        {/* Today's Focus Section - PRD Navigation */}
+        {/* Today's Focus Section */}
         <Box bg="blue.50" borderColor="blue.200" p={6} borderRadius="lg" borderWidth={1}>
           <VStack align="start" gap={4}>
             <Heading size="md" color="blue.700">Today's Focus</Heading>
             <Text color="blue.600">
               Ready to continue your fitness journey? Generate a personalized workout or get guidance from your AI coach.
-              </Text>
-              <HStack gap={4}>
-                <Button
-                  colorScheme="blue"
-                  onClick={() => window.location.href='/workouts'}
-                  size="lg"
-                >
-                  Generate Workout
-                </Button>
-                <Button
-                  variant="outline"
-                  colorScheme="blue"
-                  onClick={() => window.location.href='/coach'}
-                >
-                  Chat with Coach
-                </Button>
-              </HStack>
-              {user?.tier === 'free' && (
-                <Text fontSize="sm" color="blue.500">
-                  Free tier: {5 - (weeklyWorkouts || 0)} workout generations remaining this month
-                </Text>
-              )}
-            </VStack>
-          </Box>
-
-        {/* Badges Section */}
-        {gamificationStats && gamificationStats.badges.length > 0 && (
-          <Box>
-            <HStack justify="space-between" mb={4}>
-              <Heading size="md">Recent Achievements</Heading>
-              <Button variant="ghost" size="sm" onClick={() => window.location.href='/profile#badges'}>
-                View All
+            </Text>
+            <HStack gap={4}>
+              <Button
+                colorScheme="blue"
+                onClick={() => window.location.href = '/workouts'}
+                size="lg"
+              >
+                Generate Workout
+              </Button>
+              <Button
+                variant="outline"
+                colorScheme="blue"
+                onClick={() => window.location.href = '/coach'}
+              >
+                Chat with Coach
               </Button>
             </HStack>
-            <BadgeGrid badges={gamificationStats.badges} maxDisplay={6} />
-          </Box>
-        )}
+          </VStack>
+        </Box>
 
-        {/* AI Coach Preview - PRD Navigation */}
-        <Box bg="purple.50" borderColor="purple.200" cursor="pointer" onClick={() => window.location.href='/coach'} p={6} borderRadius="lg" borderWidth={1}>
+        {/* AI Coach Preview */}
+        <Box 
+          bg="purple.50" 
+          borderColor="purple.200" 
+          cursor="pointer" 
+          onClick={() => window.location.href = '/coach'} 
+          p={6} 
+          borderRadius="lg" 
+          borderWidth={1}
+          _hover={{ bg: 'purple.100' }}
+          transition="background 0.2s"
+        >
           <VStack align="start" gap={2}>
             <HStack>
               <Text fontSize="2xl">💬</Text>
-              <Heading size="md" color="purple.700">AI Coach Preview</Heading>
+              <Heading size="md" color="purple.700">AI Coach</Heading>
             </HStack>
             <Text color="purple.600" fontSize="sm">
-              "Great job on your consistency! Ready for today's workout? I can help you target specific muscle groups or adjust intensity based on how you're feeling."
+              Get personalized fitness advice, form tips, and motivation from your AI coach powered by OpenAI.
             </Text>
-            <HStack justify="space-between" w="full">
-              <Text fontSize="xs" color="purple.500">
-                  {user?.tier === 'free'
-                    ? `${Math.max(0, 10 - aiInteractions)} AI chats remaining this month`
-                    : 'Unlimited AI coaching'
+            <Text fontSize="xs" color="purple.500">Tap to start a conversation →</Text>
+          </VStack>
+        </Box>
+
+        {/* Streak Encouragement */}
+        {stats.currentStreak > 0 && (
+          <Box bg="orange.50" borderColor="orange.200" p={4} borderRadius="lg" borderWidth={1}>
+            <HStack gap={3}>
+              <Text fontSize="2xl">🔥</Text>
+              <VStack align="start" gap={0}>
+                <Text fontWeight="bold" color="orange.700">
+                  {stats.currentStreak} Day Streak!
+                </Text>
+                <Text fontSize="sm" color="orange.600">
+                  {stats.currentStreak >= stats.longestStreak 
+                    ? "You're at your personal best!" 
+                    : `${stats.longestStreak - stats.currentStreak} more days to beat your record!`
                   }
                 </Text>
-                <Text fontSize="xs" color="purple.500">Tap to chat →</Text>
-              </HStack>
-            </VStack>
-          </Box>
-
-        {/* Tier Upgrade Prompt for Free Users */}
-        {user?.tier === 'free' && (weeklyWorkouts >= 3 || aiInteractions >= 8) && (
-          <Box bg="gradient-to-r from-yellow.50 to-orange.50" borderColor="orange.200" p={6} borderRadius="lg" borderWidth={1}>
-            <VStack align="start" gap={3}>
-              <HStack>
-                <Text fontSize="2xl">⭐</Text>
-                <Heading size="md" color="orange.700">Upgrade to Premium</Heading>
-              </HStack>
-              <Text color="orange.600">
-                You're making great progress! Upgrade to Premium for unlimited workouts,
-                unlimited AI coaching, and advanced analytics.
-              </Text>
-              <Button colorScheme="orange" onClick={() => window.location.href='/tiers'}>
-                View Premium Features
-              </Button>
-            </VStack>
+              </VStack>
+            </HStack>
           </Box>
         )}
       </VStack>

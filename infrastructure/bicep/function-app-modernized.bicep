@@ -1,22 +1,60 @@
-// Modernized Function App with Flex Consumption Plan
+// Vigor Function App - Flex Consumption Plan
+// Single resource group: vigor-rg, Region: West US 2
+
+@description('Function App name')
 param name string
+
+@description('Azure region')
 param location string
+
+@description('Resource tags')
 param tags object
+
+@description('Application Insights connection string')
 param appInsightsConnectionString string
+
+@description('Application Insights instrumentation key')
 param appInsightsInstrumentationKey string
+
+@description('Storage account name')
 param storageAccountName string
+
+@description('Storage account key')
 @secure()
 param storageAccountKey string
+
+@description('Cosmos DB endpoint')
 param cosmosDbEndpoint string
+
+@description('Cosmos DB key')
 @secure()
 param cosmosDbKey string
+
+@description('OpenAI API key')
 @secure()
-param geminiApiKey string
+param openAiApiKey string
+
+@description('Secret key for JWT tokens')
 @secure()
 param secretKey string
 
-// Function App with Flex Consumption Plan
-resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
+// Flex Consumption Plan (Y1)
+resource hostingPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
+  name: '${name}-plan'
+  location: location
+  tags: tags
+  sku: {
+    name: 'FC1'
+    tier: 'FlexConsumption'
+  }
+  kind: 'functionapp'
+  properties: {
+    reserved: true // Linux
+  }
+}
+
+// Function App
+resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   name: name
   location: location
   tags: tags
@@ -25,9 +63,29 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
     type: 'SystemAssigned'
   }
   properties: {
-    serverFarmId: appServicePlan.id
+    serverFarmId: hostingPlan.id
+    httpsOnly: true
+    functionAppConfig: {
+      deployment: {
+        storage: {
+          type: 'blobContainer'
+          value: 'https://${storageAccountName}.blob.${environment().suffixes.storage}/deployments'
+          authentication: {
+            type: 'StorageAccountConnectionString'
+            storageAccountConnectionStringName: 'AzureWebJobsStorage'
+          }
+        }
+      }
+      scaleAndConcurrency: {
+        maximumInstanceCount: 100
+        instanceMemoryMB: 2048
+      }
+      runtime: {
+        name: 'python'
+        version: '3.11'
+      }
+    }
     siteConfig: {
-      linuxFxVersion: 'Python|3.11'
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
@@ -38,8 +96,12 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
           value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${storageAccountKey};EndpointSuffix=core.windows.net'
         }
         {
-          name: 'WEBSITE_CONTENTSHARE'
-          value: toLower(name)
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: appInsightsConnectionString
+        }
+        {
+          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+          value: appInsightsInstrumentationKey
         }
         {
           name: 'FUNCTIONS_EXTENSION_VERSION'
@@ -50,46 +112,27 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
           value: 'python'
         }
         {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: appInsightsConnectionString
-        }
-        {
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: appInsightsInstrumentationKey
-        }
-        // Cosmos DB Configuration
-        {
-          name: 'COSMOS_DB_ENDPOINT'
+          name: 'COSMOS_ENDPOINT'
           value: cosmosDbEndpoint
         }
         {
-          name: 'COSMOS_DB_KEY'
+          name: 'COSMOS_KEY'
           value: cosmosDbKey
         }
         {
-          name: 'COSMOS_DB_DATABASE'
+          name: 'COSMOS_DATABASE'
           value: 'vigor_db'
         }
-        // AI Configuration (Single Provider)
         {
-          name: 'AI_PROVIDER'
-          value: 'gemini-flash-2.5'
+          name: 'OPENAI_API_KEY'
+          value: openAiApiKey
         }
         {
-          name: 'GOOGLE_AI_API_KEY'
-          value: geminiApiKey
+          name: 'OPENAI_MODEL'
+          value: 'gpt-4o-mini'
         }
         {
-          name: 'AI_MONTHLY_BUDGET'
-          value: '50'
-        }
-        {
-          name: 'AI_COST_THRESHOLD'
-          value: '40'
-        }
-        // Application Settings
-        {
-          name: 'JWT_SECRET_KEY'
+          name: 'SECRET_KEY'
           value: secretKey
         }
         {
@@ -97,44 +140,29 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
           value: 'production'
         }
         {
-          name: 'LOG_LEVEL'
-          value: 'INFO'
-        }
-        // Azure Authentication
-        {
-          name: 'AZURE_TENANT_ID'
-          value: 'VED'
+          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
+          value: 'true'
         }
         {
-          name: 'AZURE_DOMAIN_ID'
-          value: 'vedid.onmicrosoft.com'
-        }
-        {
-          name: 'AZURE_MAX_CONCURRENT_USERS'
-          value: '100'
+          name: 'ENABLE_ORYX_BUILD'
+          value: 'true'
         }
       ]
+      cors: {
+        allowedOrigins: [
+          'https://vigor-frontend.azurestaticapps.net'
+          'http://localhost:5173'
+          'http://localhost:3000'
+        ]
+        supportCredentials: true
+      }
+      pythonVersion: '3.11'
+      linuxFxVersion: 'PYTHON|3.11'
+      ftpsState: 'Disabled'
+      minTlsVersion: '1.2'
+      http20Enabled: true
     }
-    httpsOnly: true
-    clientAffinityEnabled: false
   }
-}
-
-// App Service Plan - Basic tier for reliable deployment
-// Using B1 instead of Consumption due to quota limits
-resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
-  name: '${name}-plan'
-  location: location
-  tags: tags
-  sku: {
-    name: 'B1'
-    tier: 'Basic'
-    capacity: 1
-  }
-  properties: {
-    reserved: true // Required for Linux
-  }
-  kind: 'linux'
 }
 
 // Outputs

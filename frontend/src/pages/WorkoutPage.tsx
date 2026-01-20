@@ -5,63 +5,35 @@ import {
     GridItem,
     Heading,
     HStack,
-    Input,
     Text,
-    VStack,
+    VStack
 } from '@chakra-ui/react'
 import { useState } from 'react'
+import { api, type Workout } from '../services/api'
 
-interface Exercise {
-  name: string
-  sets: number
-  reps: string
-  rest: string
-  notes?: string
-}
-
-interface WorkoutPlan {
-  name: string
-  description: string
-  exercises: Exercise[]
-  duration_minutes: number
-  difficulty: string
-  equipment_needed: string[]
-  notes?: string
-}
+type EquipmentType = 'bodyweight' | 'dumbbells' | 'full_gym' | 'resistance_bands' | 'kettlebells'
 
 export const WorkoutPage = () => {
   const [isGenerating, setIsGenerating] = useState(false)
-  const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null)
+  const [workoutPlan, setWorkoutPlan] = useState<Workout | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [duration, setDuration] = useState(45)
-  const [equipment, setEquipment] = useState<'bodyweight' | 'dumbbells' | 'full_gym' | 'resistance_bands' | 'kettlebells'>('bodyweight')
+  const [equipment, setEquipment] = useState<EquipmentType>('bodyweight')
 
   const generateWorkout = async () => {
     setIsGenerating(true)
+    setError(null)
 
     try {
-      const response = await fetch('http://localhost:8001/ai/workout-plan', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        },
-        body: JSON.stringify({
-          duration_minutes: duration,
-          equipment: equipment,
-          goals: ['strength', 'fitness'], // Default goals
-          focus_areas: []
-        })
+      const response = await api.workouts.generate({
+        durationMinutes: duration,
+        equipment: equipment === 'bodyweight' ? [] : [equipment],
+        focusAreas: [],
       })
-
-      if (response.ok) {
-        const data = await response.json()
-        setWorkoutPlan(data)
-      } else {
-        throw new Error('Failed to generate workout')
-      }
-    } catch (error) {
-      console.error('Error generating workout:', error)
-      alert('Failed to generate workout. Please try again.')
+      setWorkoutPlan(response.data)
+    } catch (err) {
+      console.error('Error generating workout:', err)
+      setError('Failed to generate workout. Please try again.')
     } finally {
       setIsGenerating(false)
     }
@@ -75,44 +47,54 @@ export const WorkoutPage = () => {
       <Box bg="white" p={6} rounded="lg" shadow="sm" border="1px" borderColor="gray.200" mb={6}>
         <Heading size="md" mb={4}>Generate AI Workout Plan</Heading>
 
+        {error && (
+          <Box mb={4} p={3} bg="red.50" border="1px" borderColor="red.200" rounded="md">
+            <Text color="red.600">{error}</Text>
+          </Box>
+        )}
+
         <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={4} mb={4}>
           <GridItem>
             <Text mb={2} fontWeight="bold">Duration (minutes)</Text>
-            <Input
-              type="number"
-              value={duration}
-              onChange={(e) => setDuration(parseInt(e.target.value))}
-              min={15}
-              max={120}
-            />
+            <NativeSelectRoot>
+              <NativeSelectField
+                value={duration.toString()}
+                onChange={(e) => setDuration(parseInt(e.target.value))}
+              >
+                <option value="15">15 min</option>
+                <option value="30">30 min</option>
+                <option value="45">45 min</option>
+                <option value="60">60 min</option>
+                <option value="90">90 min</option>
+              </NativeSelectField>
+            </NativeSelectRoot>
           </GridItem>
 
           <GridItem>
             <Text mb={2} fontWeight="bold">Equipment</Text>
-            <select
-              value={equipment}
-              onChange={(e) => setEquipment(e.target.value as 'bodyweight' | 'dumbbells' | 'full_gym' | 'resistance_bands' | 'kettlebells')}
-              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-            >
-              <option value="bodyweight">Bodyweight Only</option>
-              <option value="dumbbells">Dumbbells</option>
-              <option value="full_gym">Full Gym</option>
-              <option value="resistance_bands">Resistance Bands</option>
-              <option value="kettlebells">Kettlebells</option>
-            </select>
+            <NativeSelectRoot>
+              <NativeSelectField
+                value={equipment}
+                onChange={(e) => setEquipment(e.target.value as EquipmentType)}
+              >
+                <option value="bodyweight">Bodyweight Only</option>
+                <option value="dumbbells">Dumbbells</option>
+                <option value="full_gym">Full Gym</option>
+                <option value="resistance_bands">Resistance Bands</option>
+                <option value="kettlebells">Kettlebells</option>
+              </NativeSelectField>
+            </NativeSelectRoot>
           </GridItem>
 
           <GridItem display="flex" alignItems="end">
             <Button
               onClick={generateWorkout}
-              bg="blue.500"
-              color="white"
+              colorScheme="blue"
               size="lg"
               w="full"
               disabled={isGenerating}
-              _hover={{ bg: 'blue.600' }}
             >
-              {isGenerating ? 'Generating...' : 'Generate Workout'}
+              {isGenerating ? <><Spinner size="sm" mr={2} /> Generating...</> : 'Generate Workout'}
             </Button>
           </GridItem>
         </Grid>
@@ -124,7 +106,7 @@ export const WorkoutPage = () => {
           <HStack justify="space-between" mb={4}>
             <Heading size="lg">{workoutPlan.name}</Heading>
             <Box textAlign="right">
-              <Text fontSize="sm" color="gray.600">Duration: {workoutPlan.duration_minutes} min</Text>
+              <Text fontSize="sm" color="gray.600">Duration: {workoutPlan.durationMinutes} min</Text>
               <Text fontSize="sm" color="gray.600">Difficulty: {workoutPlan.difficulty}</Text>
             </Box>
           </HStack>
@@ -159,18 +141,24 @@ export const WorkoutPage = () => {
             ))}
           </VStack>
 
-          {workoutPlan.notes && (
+          {workoutPlan.tips && workoutPlan.tips.length > 0 && (
             <Box mt={4} p={4} bg="blue.50" border="1px" borderColor="blue.200" rounded="md">
-              <Text fontWeight="bold" mb={2}>Coach Notes:</Text>
-              <Text>{workoutPlan.notes}</Text>
+              <Text fontWeight="bold" mb={2}>Coach Tips:</Text>
+              <VStack align="start" gap={1}>
+                {workoutPlan.tips.map((tip, index) => (
+                  <Text key={index} fontSize="sm">• {tip}</Text>
+                ))}
+              </VStack>
             </Box>
           )}
 
-          <Box mt={4}>
-            <Text fontSize="sm" color="gray.600">
-              Equipment needed: {workoutPlan.equipment_needed.join(', ')}
-            </Text>
-          </Box>
+          {workoutPlan.equipment && workoutPlan.equipment.length > 0 && (
+            <Box mt={4}>
+              <Text fontSize="sm" color="gray.600">
+                Equipment needed: {workoutPlan.equipment.join(', ')}
+              </Text>
+            </Box>
+          )}
         </Box>
       )}
     </Box>

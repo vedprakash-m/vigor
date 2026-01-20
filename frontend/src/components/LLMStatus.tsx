@@ -1,37 +1,37 @@
 import { Badge, Box, HStack, Spinner, Text, VStack } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
+import api from '../services/api';
 
-interface ProviderInfo {
-  configured: boolean;
+interface AIStatus {
+  provider: string;
   model: string;
-}
-
-interface LLMStatus {
-  configured_provider: string;
-  active_provider: string;
   is_available: boolean;
-  provider_info: {
-    openai: ProviderInfo;
-    gemini: ProviderInfo;
-    perplexity: ProviderInfo;
-  };
+  version: string;
 }
 
+/**
+ * AI Status Component
+ * Shows the current AI provider status (OpenAI gpt-4o-mini)
+ */
 const LLMStatus: React.FC = () => {
-  const [status, setStatus] = useState<LLMStatus | null>(null);
+  const [status, setStatus] = useState<AIStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const response = await fetch('http://localhost:8001/ai/provider-status');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setStatus(data);
-      } catch (error) {
-        console.error('Failed to fetch LLM status:', error);
+        const response = await api.health.check();
+        setStatus({
+          provider: 'OpenAI',
+          model: 'gpt-4o-mini',
+          is_available: response.data.status === 'healthy',
+          version: response.data.version || '2.0.0',
+        });
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch AI status:', err);
+        setError('Unable to connect to AI service');
       } finally {
         setLoading(false);
       }
@@ -51,53 +51,39 @@ const LLMStatus: React.FC = () => {
     );
   }
 
-  if (!status) {
+  if (error || !status) {
     return (
       <Box p={3} borderWidth={1} borderRadius="md" bg="red.50">
-        <Text fontSize="sm" color="red.600">Failed to load AI status</Text>
+        <Text fontSize="sm" color="red.600">{error || 'AI service unavailable'}</Text>
       </Box>
     );
   }
 
-  const getProviderColor = (providerName: string) => {
-    if (!status || !status.provider_info) return 'gray';
-    if (status.active_provider?.toLowerCase().includes(providerName.toLowerCase())) {
-      return 'green';
-    }
-    return status.provider_info[providerName as keyof typeof status.provider_info]?.configured ? 'blue' : 'gray';
-  };
-
-  const getStatusText = (providerName: string) => {
-    if (!status || !status.provider_info) return 'Not Configured';
-    if (status.active_provider?.toLowerCase().includes(providerName.toLowerCase())) {
-      return 'Active';
-    }
-    return status.provider_info[providerName as keyof typeof status.provider_info]?.configured ? 'Configured' : 'Not Configured';
-  };
-
   return (
     <Box p={3} borderWidth={1} borderRadius="md" bg="gray.50">
-      <VStack align="start">
+      <VStack align="start" gap={2}>
         <HStack>
           <Text fontSize="sm" fontWeight="bold">AI Provider:</Text>
           <Badge colorScheme={status.is_available ? 'green' : 'red'}>
-            {status.active_provider}
+            {status.provider}
           </Badge>
         </HStack>
+        <HStack>
+          <Text fontSize="xs" color="gray.600">Model:</Text>
+          <Text fontSize="xs">{status.model}</Text>
+        </HStack>
+        <HStack>
+          <Text fontSize="xs" color="gray.600">Status:</Text>
+          <Badge size="sm" colorScheme={status.is_available ? 'green' : 'red'}>
+            {status.is_available ? 'Online' : 'Offline'}
+          </Badge>
+        </HStack>
+      </VStack>
+    </Box>
+  );
+};
 
-        <VStack align="start">
-          <Text fontSize="xs" color="gray.600">Available Providers:</Text>
-
-          <HStack flexWrap="wrap">
-            <HStack>
-              <Text fontSize="xs">OpenAI:</Text>
-              <Badge size="sm" colorScheme={getProviderColor('openai')}>
-                {getStatusText('openai')}
-              </Badge>
-            </HStack>
-
-            <HStack>
-              <Text fontSize="xs">Gemini:</Text>
+export default LLMStatus;
               <Badge size="sm" colorScheme={getProviderColor('gemini')}>
                 {getStatusText('gemini')}
               </Badge>

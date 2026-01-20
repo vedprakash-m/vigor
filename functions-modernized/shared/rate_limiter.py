@@ -19,58 +19,58 @@ class RateLimitExceeded(Exception):
 
 class RateLimiter:
     """Simple in-memory rate limiter for Azure Functions"""
-    
+
     def __init__(self):
         self._cache: Dict[str, List[float]] = {}
-    
+
     def is_allowed(self, key: str, limit: int, window_seconds: int) -> bool:
         """Check if request is allowed based on rate limit"""
         try:
             now = datetime.now(timezone.utc).timestamp()
-            
+
             if key not in self._cache:
                 self._cache[key] = []
-            
+
             # Clean old entries outside the window
             self._cache[key] = [
                 timestamp for timestamp in self._cache[key]
                 if now - timestamp < window_seconds
             ]
-            
+
             # Check if limit is exceeded
             if len(self._cache[key]) >= limit:
                 logger.warning(f"Rate limit exceeded for key: {key}")
                 return False
-            
+
             # Add current request timestamp
             self._cache[key].append(now)
             return True
-            
+
         except Exception as e:
             logger.error(f"Error in rate limiting for key {key}: {str(e)}")
             # Allow request if rate limiting fails
             return True
-    
+
     def get_remaining(self, key: str, limit: int, window_seconds: int) -> int:
         """Get remaining requests for a key"""
         try:
             now = datetime.now(timezone.utc).timestamp()
-            
+
             if key not in self._cache:
                 return limit
-            
+
             # Clean old entries
             self._cache[key] = [
                 timestamp for timestamp in self._cache[key]
                 if now - timestamp < window_seconds
             ]
-            
+
             return max(0, limit - len(self._cache[key]))
-            
+
         except Exception as e:
             logger.error(f"Error getting remaining for key {key}: {str(e)}")
             return limit
-    
+
     def reset(self, key: str):
         """Reset rate limit for a key"""
         try:
@@ -90,7 +90,7 @@ def get_client_identifier(req: func.HttpRequest, user_id: Optional[str] = None) 
         # Use user ID if available (authenticated requests)
         if user_id:
             return f"user:{user_id}"
-        
+
         # Use IP address for anonymous requests
         client_ip = req.headers.get("X-Forwarded-For")
         if client_ip:
@@ -98,9 +98,9 @@ def get_client_identifier(req: func.HttpRequest, user_id: Optional[str] = None) 
             client_ip = client_ip.split(",")[0].strip()
         else:
             client_ip = req.headers.get("X-Real-IP", "unknown")
-        
+
         return f"ip:{client_ip}"
-        
+
     except Exception as e:
         logger.error(f"Error getting client identifier: {str(e)}")
         return "unknown"
@@ -116,7 +116,7 @@ async def check_rate_limit(
     try:
         client_id = get_client_identifier(req, user_id)
         return _rate_limiter.is_allowed(client_id, limit, window_seconds)
-        
+
     except Exception as e:
         logger.error(f"Error checking rate limit: {str(e)}")
         return True  # Allow request if check fails
@@ -133,7 +133,7 @@ async def apply_rate_limit(
         if not await check_rate_limit(req, limit, window_seconds, user_id):
             client_id = get_client_identifier(req, user_id)
             remaining = _rate_limiter.get_remaining(client_id, limit, window_seconds)
-            
+
             return func.HttpResponse(
                 json.dumps({
                     "error": "Rate limit exceeded",
@@ -144,9 +144,9 @@ async def apply_rate_limit(
                 status_code=429,
                 headers={"Content-Type": "application/json"}
             )
-        
+
         return None  # Rate limit passed
-        
+
     except Exception as e:
         logger.error(f"Error applying rate limit: {str(e)}")
         return None  # Allow request if rate limiting fails
@@ -191,7 +191,7 @@ async def apply_tier_based_rate_limit(
             return await apply_premium_tier_limit(req, user_id)
         else:  # free tier
             return await apply_free_tier_limit(req, user_id)
-            
+
     except Exception as e:
         logger.error(f"Error applying tier-based rate limit: {str(e)}")
         return None
@@ -206,13 +206,13 @@ def get_rate_limit_headers(
     try:
         remaining = _rate_limiter.get_remaining(client_id, limit, window_seconds)
         reset_time = int(datetime.now(timezone.utc).timestamp() + window_seconds)
-        
+
         return {
             "X-RateLimit-Limit": str(limit),
             "X-RateLimit-Remaining": str(remaining),
             "X-RateLimit-Reset": str(reset_time)
         }
-        
+
     except Exception as e:
         logger.error(f"Error getting rate limit headers: {str(e)}")
         return {}
@@ -229,15 +229,15 @@ async def add_rate_limit_headers(
     try:
         client_id = get_client_identifier(req, user_id)
         headers = get_rate_limit_headers(client_id, limit, window_seconds)
-        
+
         # Add headers to existing response
         if hasattr(response, 'headers') and response.headers:
             response.headers.update(headers)
         else:
             response.headers = headers
-        
+
         return response
-        
+
     except Exception as e:
         logger.error(f"Error adding rate limit headers: {str(e)}")
         return response

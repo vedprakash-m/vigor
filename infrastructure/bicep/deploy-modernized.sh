@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Vigor Modernized Infrastructure Deployment Script
-# Single Resource Group Architecture with Azure Functions + Cosmos DB
+# Single Resource Group Architecture with Azure Functions + Cosmos DB + OpenAI
 
 set -e
 
 # Configuration
 RESOURCE_GROUP="vigor-rg"
-LOCATION="Central US"
+LOCATION="West US 2"
 DEPLOYMENT_NAME="vigor-modernized-$(date +%Y%m%d-%H%M%S)"
 TEMPLATE_FILE="main-modernized.bicep"
 PARAMETERS_FILE="parameters-modernized.bicepparam"
@@ -90,7 +90,7 @@ if [ $? -eq 0 ]; then
     echo -e "${GREEN}  ✓ Deployment Completed Successfully${NC}"
     echo -e "${GREEN}========================================${NC}"
     echo ""
-    
+
     # Get outputs
     echo -e "${YELLOW}Deployment outputs:${NC}"
     az deployment group show \
@@ -98,14 +98,14 @@ if [ $? -eq 0 ]; then
         --name $DEPLOYMENT_NAME \
         --query properties.outputs \
         --output table
-    
+
     echo ""
     echo -e "${BLUE}Next steps:${NC}"
     echo "1. Update GitHub secrets with new infrastructure details"
     echo "2. Deploy Function App code using CI/CD pipeline"
     echo "3. Configure Static Web App with GitHub repository"
     echo "4. Run post-deployment verification tests"
-    
+
 else
     echo -e "${RED}✗ Deployment failed${NC}"
     exit 1

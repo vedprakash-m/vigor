@@ -12,7 +12,7 @@ import {
 } from '@azure/msal-react';
 import React, { createContext, useEffect, useState } from 'react';
 import { loginRequest, logoutRequest, silentRequest } from '../config/authConfig';
-import { vedApiService } from '../services/vedApiService';
+import api from '../services/api';
 import type { VedUser } from '../types/auth';
 
 interface VedAuthContextType {
@@ -90,19 +90,19 @@ export const VedAuthProvider: React.FC<VedAuthProviderProps> = ({ children }) =>
           const response = await instance.acquireTokenSilent(silentRequestWithAccount);
 
           // Set API token for authenticated requests
-          vedApiService.setAccessToken(response.accessToken);
+          api.setAccessToken(response.accessToken);
 
           const vedUser = extractVedUser(account, response.idTokenClaims as Record<string, unknown>);
           setUser(vedUser);
         } else {
           setUser(null);
-          vedApiService.setAccessToken(null);
+          api.setAccessToken(null);
         }
       } catch (error) {
         console.error('Failed to initialize user:', error);
         setError('Failed to load user profile');
         setUser(null);
-        vedApiService.setAccessToken(null);
+        api.setAccessToken(null);
       } finally {
         setIsLoading(false);
       }

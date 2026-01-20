@@ -4,7 +4,7 @@
 param environment string = 'prod'
 
 @description('Azure region for resources')
-param location string = 'Central US'
+param location string = 'West US 2'
 
 @description('Application name')
 param appName string = 'vigor'
@@ -13,9 +13,9 @@ param appName string = 'vigor'
 @secure()
 param secretKey string
 
-@description('Google Gemini API key (single LLM provider)')
+@description('OpenAI API key (single LLM provider)')
 @secure()
-param geminiApiKey string
+param openAiApiKey string
 
 // Variables
 var commonTags = {
@@ -223,7 +223,7 @@ module functionApp './function-app-modernized.bicep' = {
     storageAccountKey: storageAccount.listKeys().keys[0].value
     cosmosDbEndpoint: cosmosDbAccount.properties.documentEndpoint
     cosmosDbKey: cosmosDbAccount.listKeys().primaryMasterKey
-    geminiApiKey: geminiApiKey
+    openAiApiKey: openAiApiKey
     secretKey: secretKey
   }
 }
@@ -248,11 +248,11 @@ resource secretKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   }
 }
 
-resource geminiApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+resource openAiApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   parent: keyVault
-  name: 'gemini-api-key'
+  name: 'openai-api-key'
   properties: {
-    value: geminiApiKey
+    value: openAiApiKey
   }
 }
 

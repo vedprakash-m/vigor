@@ -1,0 +1,28 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "FUNCTIONS_EXTENSION_VERSION": "~4",
+
+    "COSMOS_DB_ENDPOINT": "https://your-cosmos-account.documents.azure.com:443/",
+    "COSMOS_DB_KEY": "your-cosmos-db-key",
+    "COSMOS_DB_DATABASE": "vigor_db",
+
+    "OPENAI_API_KEY": "your-openai-api-key",
+    "OPENAI_MODEL": "gpt-5-mini",
+
+    "AI_MONTHLY_BUDGET": "50",
+    "AI_COST_THRESHOLD": "40",
+
+    "AZURE_CLIENT_ID": "your-app-registration-client-id",
+    "AZURE_TENANT_ID": "common",
+
+    "ENVIRONMENT": "development",
+    "LOG_LEVEL": "INFO"
+  },
+  "Host": {
+    "CORS": "*",
+    "CORSCredentials": false
+  }
+}

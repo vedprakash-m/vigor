@@ -1,16 +1,19 @@
 import {
-  Box,
-  Button,
-  Flex,
-  Heading,
-  HStack,
-  Input,
-  Text,
-  VStack,
+    Box,
+    Button,
+    Flex,
+    Heading,
+    HStack,
+    Input,
+    Spinner,
+    Text,
+    VStack,
 } from '@chakra-ui/react'
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { api } from '../services/api'
 
 interface Message {
+  id: string
   role: 'user' | 'assistant'
   content: string
   timestamp: Date
@@ -19,54 +22,71 @@ interface Message {
 export const CoachPage = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
+      id: 'welcome',
       role: 'assistant',
-      content: 'Hello! I\'m your AI fitness coach. How can I help you with your fitness journey today?',
+      content: "Hello! I'm your AI fitness coach. How can I help you with your fitness journey today?",
       timestamp: new Date()
     }
   ])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Load history on mount
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const response = await api.coach.history(50)
+        if (response.data && response.data.length > 0) {
+          setMessages(response.data.map(msg => ({
+            id: msg.id,
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp)
+          })))
+        }
+      } catch (err) {
+        console.error('Failed to load chat history:', err)
+      }
+    }
+    loadHistory()
+  }, [])
 
   const sendMessage = async () => {
-    if (!inputMessage.trim()) return
+    if (!inputMessage.trim() || isLoading) return
 
     const userMessage: Message = {
+      id: `user-${Date.now()}`,
       role: 'user',
       content: inputMessage,
       timestamp: new Date()
     }
 
     setMessages(prev => [...prev, userMessage])
+    const messageToSend = inputMessage
     setInputMessage('')
     setIsLoading(true)
 
     try {
-      // This would be replaced with actual API call to the AI service
-      const response = await fetch('http://localhost:8001/ai/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        },
-        body: JSON.stringify({ message: inputMessage })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        const assistantMessage: Message = {
-          role: 'assistant',
-          content: data.response,
-          timestamp: new Date()
-        }
-        setMessages(prev => [...prev, assistantMessage])
-      } else {
-        throw new Error('Failed to get response')
+      const response = await api.coach.chat(messageToSend)
+      const assistantMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: response.data.response,
+        timestamp: new Date()
       }
+      setMessages(prev => [...prev, assistantMessage])
     } catch (error) {
       console.error('Error sending message:', error)
       const errorMessage: Message = {
+        id: `error-${Date.now()}`,
         role: 'assistant',
-        content: 'Sorry, I\'m having trouble responding right now. Please try again later.',
+        content: "Sorry, I'm having trouble responding right now. Please try again later.",
         timestamp: new Date()
       }
       setMessages(prev => [...prev, errorMessage])
@@ -98,9 +118,9 @@ export const CoachPage = () => {
         mb={4}
       >
         <VStack gap={4} align="stretch">
-          {messages.map((message, index) => (
+          {messages.map((message) => (
             <Flex
-              key={index}
+              key={message.id}
               justify={message.role === 'user' ? 'flex-end' : 'flex-start'}
             >
               <Box
@@ -110,7 +130,7 @@ export const CoachPage = () => {
                 p={3}
                 rounded="lg"
               >
-                <Text>{message.content}</Text>
+                <Text whiteSpace="pre-wrap">{message.content}</Text>
                 <Text fontSize="xs" opacity={0.7} mt={1}>
                   {message.timestamp.toLocaleTimeString()}
                 </Text>
@@ -120,10 +140,14 @@ export const CoachPage = () => {
           {isLoading && (
             <Flex justify="flex-start">
               <Box bg="gray.100" p={3} rounded="lg">
-                <Text>AI is typing...</Text>
+                <HStack>
+                  <Spinner size="sm" />
+                  <Text>Coach is typing...</Text>
+                </HStack>
               </Box>
             </Flex>
           )}
+          <div ref={messagesEndRef} />
         </VStack>
       </Box>
 
@@ -138,14 +162,12 @@ export const CoachPage = () => {
         />
         <Button
           onClick={sendMessage}
-          bg="blue.500"
-          color="white"
+          colorScheme="blue"
           disabled={isLoading || !inputMessage.trim()}
-          _hover={{ bg: 'blue.600' }}
         >
           Send
         </Button>
       </HStack>
     </Box>
   )
-} 
+}
