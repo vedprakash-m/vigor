@@ -11,6 +11,28 @@ tags = ["key", "API", "generic"]
 severity = "HIGH"
 
 [[rules]]
+id = "azure-openai-key"
+description = "Azure OpenAI API Key (32-char hex)"
+regex = '''(?i)(?:azure[_-]?openai[_-]?(?:api[_-]?)?key|openai[_-]?api[_-]?key)\s*[=:]\s*['"]?[a-f0-9]{32}['"]?'''
+tags = ["key", "Azure", "OpenAI"]
+severity = "CRITICAL"
+
+[[rules]]
+id = "azure-cognitive-key"
+description = "Azure Cognitive Services Key"
+regex = '''[a-f0-9]{32}'''
+path = '''(?i).*(?:\.bicepparam|parameters.*\.json|local\.settings\.json)$'''
+tags = ["key", "Azure"]
+severity = "CRITICAL"
+
+[[rules]]
+id = "azure-storage-key"
+description = "Azure Storage Account Key (Base64)"
+regex = '''[A-Za-z0-9+/]{86}=='''
+tags = ["key", "Azure", "Storage"]
+severity = "CRITICAL"
+
+[[rules]]
 id = "aws-access-key"
 description = "AWS Access Key ID"
 regex = '''(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}'''
@@ -36,6 +58,14 @@ id = "azure-service-principal"
 description = "Azure Service Principal Password or Client Secret"
 regex = '''(?i)(?:password|pwd|pass|client[-_]secret)[\s]*[=:]\s*['"][a-zA-Z0-9~!@#$%^&*()_\-+={}[\]\\|:;"'<>,.?/]{16,}['"]'''
 tags = ["key", "Azure"]
+severity = "CRITICAL"
+
+[[rules]]
+id = "cosmos-db-key"
+description = "Azure Cosmos DB Key"
+regex = '''[A-Za-z0-9+/]{86}=='''
+path = '''(?i).*(?:cosmos|cosmosdb|documentdb).*'''
+tags = ["key", "Azure", "CosmosDB"]
 severity = "CRITICAL"
 
 [[rules]]
@@ -67,6 +97,13 @@ tags = ["token", "GitHub"]
 severity = "CRITICAL"
 
 [[rules]]
+id = "github-pat"
+description = "GitHub Personal Access Token"
+regex = '''ghp_[a-zA-Z0-9]{36}'''
+tags = ["token", "GitHub"]
+severity = "CRITICAL"
+
+[[rules]]
 id = "jwt-token"
 description = "JWT Token"
 regex = '''eyJ[a-zA-Z0-9]{10,}\.eyJ[a-zA-Z0-9]{10,}.[a-zA-Z0-9_-]{10,}'''
@@ -80,6 +117,14 @@ regex = '''(?i)(?:password|passwd|pwd)[\s]*[=:]\s*['"][^'"]{4,}['"]'''
 tags = ["password"]
 severity = "HIGH"
 
+[[rules]]
+id = "bicep-param-secret"
+description = "Secret value in Bicep parameter file"
+regex = '''param\s+(?:.*key|.*secret|.*password|.*token)\s*=\s*['"][^'"]{8,}['"]'''
+path = '''.*\.bicepparam$'''
+tags = ["key", "Bicep", "IaC"]
+severity = "CRITICAL"
+
 # Allow rules override detection of specific false positives
 [allowlist]
 description = "Allow test, example, and dependency files"
@@ -90,9 +135,8 @@ paths = [
     ".*/mocks/.*",
     ".*/fixture/.*",
     ".*/fixtures/.*",
-    ".*\\.md$",
-    ".*\\.mdx$",
     ".*\\.example$",
+    ".*\\.example\\..*",
     ".*/\\.venv/.*",
     ".*/venv/.*",
     ".*/env/.*",
@@ -107,11 +151,13 @@ paths = [
     ".*/\\.next/.*",
     ".*/e2e-results/.*",
     ".*/playwright-report/.*",
-    ".*/test-results/.*"
+    ".*/test-results/.*",
+    ".*/\\.python_packages/.*"
 ]
 regexes = [
-    '''(?i)(?:password|passwd|pwd)[\s]*[=:]\s*['"](?:placeholder|example|changeme|yourpassword)['"]''',
-    '''(?i)['"]?(?:api[_-]?key|api[_-]?token)['"]\s*[:=]\s*['"]?(?:test|dummy|example|placeholder|sample)[a-z0-9_-]*['"]?'''
+    '''(?i)(?:password|passwd|pwd)[\s]*[=:]\s*['"](?:placeholder|example|changeme|yourpassword|your-.*-here)['"]''',
+    '''(?i)['"]?(?:api[_-]?key|api[_-]?token)['"]\s*[:=]\s*['"]?(?:test|dummy|example|placeholder|sample|your-.*-here)[a-z0-9_-]*['"]?''',
+    '''(?i)param\s+.*=\s*['"](?:your-.*-here|placeholder|GET_FROM_.*)['"]'''
 ]
 
 # Optional: Enable commit depth scan to only scan new commits

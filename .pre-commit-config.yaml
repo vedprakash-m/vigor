@@ -1,4 +1,15 @@
 repos:
+  # CRITICAL: Secret scanning runs FIRST to prevent credential leaks
+  - repo: local
+    hooks:
+      - id: vigor-secret-scanner
+        name: 🔐 Vigor Secret Scanner (CRITICAL)
+        entry: bash scripts/secret-scanner.sh
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [pre-commit]
+
   # Backend Python hooks
   - repo: https://github.com/psf/black
     rev: 25.11.0
