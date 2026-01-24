@@ -166,3 +166,6 @@ bandit-report.json
 
 # Database files
 *.db
+
+# Bicep parameters with secrets
+infrastructure/bicep/parameters-modernized.bicepparam

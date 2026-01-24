@@ -1,0 +1,11 @@
+using './main-modernized.bicep'
+
+param environment = 'prod'
+param location = 'West US 2'
+param appName = 'vigor'
+// Generate a secure random key for JWT signing
+param secretKey = 'your-jwt-secret-key-here'
+// Use existing Azure OpenAI resource
+param azureOpenAiEndpoint = 'https://your-openai-resource.openai.azure.com/'
+param azureOpenAiDeployment = 'gpt-4o-mini'
+param azureOpenAiApiKey = 'your-azure-openai-api-key-here'
