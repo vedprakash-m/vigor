@@ -5,6 +5,8 @@ import {
     GridItem,
     Heading,
     HStack,
+    NativeSelect,
+    Spinner,
     Text,
     VStack
 } from '@chakra-ui/react'
@@ -56,8 +58,8 @@ export const WorkoutPage = () => {
         <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={4} mb={4}>
           <GridItem>
             <Text mb={2} fontWeight="bold">Duration (minutes)</Text>
-            <NativeSelectRoot>
-              <NativeSelectField
+            <NativeSelect.Root>
+              <NativeSelect.Field
                 value={duration.toString()}
                 onChange={(e) => setDuration(parseInt(e.target.value))}
               >
@@ -66,14 +68,14 @@ export const WorkoutPage = () => {
                 <option value="45">45 min</option>
                 <option value="60">60 min</option>
                 <option value="90">90 min</option>
-              </NativeSelectField>
-            </NativeSelectRoot>
+              </NativeSelect.Field>
+            </NativeSelect.Root>
           </GridItem>
 
           <GridItem>
             <Text mb={2} fontWeight="bold">Equipment</Text>
-            <NativeSelectRoot>
-              <NativeSelectField
+            <NativeSelect.Root>
+              <NativeSelect.Field
                 value={equipment}
                 onChange={(e) => setEquipment(e.target.value as EquipmentType)}
               >
@@ -82,8 +84,8 @@ export const WorkoutPage = () => {
                 <option value="full_gym">Full Gym</option>
                 <option value="resistance_bands">Resistance Bands</option>
                 <option value="kettlebells">Kettlebells</option>
-              </NativeSelectField>
-            </NativeSelectRoot>
+              </NativeSelect.Field>
+            </NativeSelect.Root>
           </GridItem>
 
           <GridItem display="flex" alignItems="end">
@@ -94,7 +96,7 @@ export const WorkoutPage = () => {
               w="full"
               disabled={isGenerating}
             >
-              {isGenerating ? <><Spinner size="sm" mr={2} /> Generating...</> : 'Generate Workout'}
+              {isGenerating ? <><Spinner size="sm" /> Generating...</> : 'Generate Workout'}
             </Button>
           </GridItem>
         </Grid>

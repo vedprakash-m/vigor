@@ -5,12 +5,13 @@
     "FUNCTIONS_WORKER_RUNTIME": "python",
     "FUNCTIONS_EXTENSION_VERSION": "~4",
 
-    "COSMOS_DB_ENDPOINT": "https://your-cosmos-account.documents.azure.com:443/",
+    "COSMOS_DB_ENDPOINT": "https://vigor-cosmos.documents.azure.com:443/",
     "COSMOS_DB_KEY": "your-cosmos-db-key",
     "COSMOS_DB_DATABASE": "vigor_db",
 
-    "OPENAI_API_KEY": "your-openai-api-key",
-    "OPENAI_MODEL": "gpt-5-mini",
+    "AZURE_OPENAI_ENDPOINT": "https://aoai-vemishra-rag.openai.azure.com/",
+    "AZURE_OPENAI_API_KEY": "your-azure-openai-api-key",
+    "AZURE_OPENAI_DEPLOYMENT": "gpt-4o-mini",
 
     "AI_MONTHLY_BUDGET": "50",
     "AI_COST_THRESHOLD": "40",
@@ -22,7 +23,7 @@
     "LOG_LEVEL": "INFO"
   },
   "Host": {
-    "CORS": "*",
-    "CORSCredentials": false
+    "CORS": "http://localhost:5173,https://vigor.vedprakash.net",
+    "CORSCredentials": true
   }
 }

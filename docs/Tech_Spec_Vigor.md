@@ -15,7 +15,7 @@ This Technical Specification defines the implementation details for Vigor, an AI
 **Key Architectural Decisions:**
 
 - **Clean Architecture**: Domain-driven design with clear separation of concerns
-- **Single AI Provider**: Gemini Flash 2.5 for streamlined, cost-effective AI operations
+- **Single AI Provider**: Azure OpenAI gpt-5-mini (deployed in vigor-rg) for streamlined, cost-effective AI operations
 - **Serverless Infrastructure**: Azure Functions with Flex Consumption Plan for optimal cost efficiency
 - **Modern Database**: Cosmos DB for global scale and automatic scaling
 - **Unified Resource Group**: Single `vigor-rg` for simplified management
@@ -28,8 +28,8 @@ This Technical Specification defines the implementation details for Vigor, an AI
 
 ```
 ┌─────────────────────┐    ┌──────────────────────┐    ┌─────────────────────┐
-│   React Frontend    │───▶│  Azure Functions     │───▶│  Gemini Flash 2.5   │
-│   (TypeScript +     │    │  (Serverless API)    │    │  (Single AI Model)  │
+│   React Frontend    │───▶│  Azure Functions     │───▶│  Azure OpenAI       │
+│   (TypeScript +     │    │  (Serverless API)    │    │  (gpt-5-mini)       │
 │   Chakra UI)        │    │                      │    │                     │
 └─────────────────────┘    └──────────────────────┘    └─────────────────────┘
            │                          │                          │
@@ -97,10 +97,10 @@ functions/
 ├── shared/ # Shared code and utilities
 │ ├── models/ # Pydantic domain models
 │ ├── database/ # Cosmos DB client
-│ └── ai/ # Gemini AI client
+│ └── ai/ # OpenAI client
 └── requirements.txt # Function dependencies
 
-````
+`````
 
 ### 2.2 Technology Stack
 
@@ -128,41 +128,37 @@ functions/
 - **Auto user creation**: Automatic database entry creation for authenticated users
 - **Simplified architecture**: Single resource group deployment
 
-### 2.3 LLM Orchestration System
+### 2.3 LLM System
 
 #### Architecture Components
 
-The LLM system implements a sophisticated enterprise-grade orchestration layer:
+The LLM system uses Azure OpenAI (deployed in vigor-rg) with gpt-5-mini:
 
 ```python
-# Core orchestration facade
-class LLMGatewayFacade:
-    def __init__(self, config_manager, key_vault_service, db_session):
-        # Cross-cutting services
-        self._budget_manager = BudgetManager(db_session)
+# Azure OpenAI client for AI operations
+from openai import AzureOpenAI
+
+class AzureOpenAIClient:
+    def __init__(self, endpoint: str, api_key: str, deployment: str):
+        self._client = AzureOpenAI(
+            azure_endpoint=endpoint,
+            api_key=api_key,
+            api_version="2024-02-01"
+        )
+        self._deployment = deployment  # "gpt-5-mini"
+        self._budget_manager = BudgetManager()
         self._cache_manager = CacheManager()
-        self._circuit_breaker = CircuitBreakerManager()
+```
 
-        # Application-layer components
-        self._request_validator = RequestValidator()
-        self._routing_engine = RoutingEngine(config_manager)
-        self._budget_enforcer = BudgetEnforcer(self._budget_manager)
-        self._response_recorder = ResponseRecorder()
-````
+#### Single Provider Configuration
 
-#### Multi-Provider Strategy
-
-| Provider        | Primary Use Case         | Fallback Order                                   | Cost/1M Tokens |
-| --------------- | ------------------------ | ------------------------------------------------ | -------------- |
-| OpenAI GPT-4    | Complex workout planning | Primary → Gemini → Perplexity                    | $20-60         |
-| Google Gemini   | Conversational coaching  | Primary → OpenAI → Perplexity                    | $1.5-15        |
-| Perplexity Pro  | Research-backed insights | Primary → OpenAI → Local                         | $20            |
-| Fallback System | Service continuity       | Local workout templates + rules-based generation | $0             |
+| Provider               | Use Cases                                        | Cost/1M Tokens |
+| ---------------------- | ------------------------------------------------ | -------------- |
+| Azure OpenAI gpt-5-mini | Workout generation, coaching, progress analysis | ~$0.15-0.60    |
 
 #### Key Features
 
 - **Budget Management**: Real-time cost tracking and enforcement
-- **Circuit Breaker**: Automatic failover when providers fail
 - **Response Caching**: TTL-based caching for cost optimization
 - **Request Validation**: Input sanitization and user context injection
 - **Analytics**: Comprehensive usage tracking and performance metrics
@@ -220,7 +216,7 @@ class LLMGatewayFacade:
           "difficulty": "intermediate",
           "estimatedDuration": 45,
           "equipmentNeeded": ["none"],
-          "aiProviderUsed": "gemini-flash-2.5"
+          "aiProviderUsed": "openai-gpt-5-mini"
         },
         "createdAt": "2025-01-01T10:00:00Z",
         "_ts": 1704103200
@@ -258,7 +254,7 @@ class LLMGatewayFacade:
         "userId": "user_12345",
         "role": "user",
         "content": "How should I modify my workout for better results?",
-        "providerUsed": "gemini-flash-2.5",
+        "providerUsed": "openai-gpt-5-mini",
         "tokensUsed": 150,
         "responseTimeMs": 850,
         "createdAt": "2025-01-01T19:00:00Z",
@@ -306,7 +302,7 @@ class WorkoutMetadata(BaseModel):
     difficulty: str                  # Calculated difficulty
     estimatedDuration: int           # Planned duration in minutes
     equipmentNeeded: List[str]       # Required equipment
-    aiProviderUsed: str             # Always "gemini-flash-2.5"
+    aiProviderUsed: str             # Always "openai-gpt-5-mini"
 
 class WorkoutLog(BaseModel):
     id: str                          # Document ID
@@ -324,11 +320,11 @@ class AICoachMessage(BaseModel):
     userId: str                      # Partition key
     role: str                        # 'user' or 'assistant'
     content: str                     # Message content
-    providerUsed: str               # Always "gemini-flash-2.5"
+    providerUsed: str               # Always "openai-gpt-5-mini"
     tokensUsed: int                 # Cost tracking
     responseTimeMs: int             # Performance tracking
     createdAt: datetime
-````
+`````
 
 #### Indexing and Performance
 
@@ -417,11 +413,11 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
 #### AI-Powered Workout Functions
 
 ```python
-# Workout Generation with Gemini Flash 2.5
+# Workout Generation with OpenAI gpt-5-mini
 @app.route(route="workouts/generate", methods=["POST"])
-@limiter.limit("20/hour")
+@limiter.limit("50/day")  # Generous for early adopters
 async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
-    """Generate personalized workout using Gemini Flash 2.5"""
+    """Generate personalized workout using OpenAI gpt-5-mini"""""
     current_user = await get_current_user_from_token(req)
     workout_request = req.get_json()
 
@@ -433,8 +429,8 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
             status_code=429
         )
 
-    # Generate workout with Gemini
-    workout = await gemini_client.generate_workout(
+    # Generate workout with OpenAI
+    workout = await openai_client.generate_workout(
         user_profile=current_user.profile,
         preferences=workout_request
     )
@@ -449,9 +445,9 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
 
 # AI Coach Chat
 @app.route(route="ai/coach/chat", methods=["POST"])
-@limiter.limit("50/hour")
+@limiter.limit("50/day")  # Generous for early adopters
 async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
-    """Chat with AI coach using Gemini Flash 2.5"""
+    """Chat with AI coach using OpenAI gpt-5-mini"""
     current_user = await get_current_user_from_token(req)
     message_data = req.get_json()
 
@@ -460,8 +456,8 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
         current_user.user_id, limit=10
     )
 
-    # Generate response with Gemini
-    ai_response = await gemini_client.generate_coach_response(
+    # Generate response with OpenAI
+    ai_response = await openai_client.generate_coach_response(
         user_message=message_data["message"],
         conversation_history=conversation_history,
         user_context=current_user.profile
@@ -828,7 +824,7 @@ The AI Cost Management system implements comprehensive cost tracking, budget val
 - **Budget validation** before expensive LLM operations
 - **Intelligent caching layer** using Python functools.lru_cache for RAG responses
 - **Dynamic fallback mechanisms** for budget constraints
-- **Cost-effective model switching** (GPT-4-Turbo → GPT-3.5-Turbo; Gemini Pro → Flash)
+- **Cost-effective model management** with OpenAI gpt-5-mini as primary
 - **Request batching and query deduplication** for cost optimization
 - **Graceful degradation** with user notification system
 - **AI cost forecasting** and budget planning tools
@@ -1011,9 +1007,10 @@ COSMOS_DB_CONTAINER_WORKOUTS=workouts
 COSMOS_DB_CONTAINER_LOGS=workout_logs
 COSMOS_DB_CONTAINER_MESSAGES=ai_coach_messages
 
-# AI Configuration (Single Provider)
-AI_PROVIDER=gemini-flash-2.5
-GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY}
+# AI Configuration (Azure OpenAI)
+AZURE_OPENAI_ENDPOINT=https://vigor-openai.openai.azure.com/
+AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+AZURE_OPENAI_DEPLOYMENT=gpt-5-mini
 AI_MONTHLY_BUDGET=50
 AI_COST_THRESHOLD=40
 
@@ -1037,7 +1034,8 @@ All sensitive configuration values are stored in Azure Key Vault:
 - **COSMOS_DB_KEY**: Cosmos DB primary access key
 - **COSMOS_DB_ENDPOINT**: Cosmos DB endpoint URL
 - **JWT_SECRET_KEY**: Session token signing key
-- **GOOGLE_AI_API_KEY**: Google Gemini API access key
+- **AZURE_OPENAI_API_KEY**: Azure OpenAI API access key
+- **AZURE_OPENAI_ENDPOINT**: Azure OpenAI endpoint URL
 - **AZURE_STORAGE_CONNECTION_STRING**: Functions storage account
 
 #### Function App Settings
@@ -1051,9 +1049,10 @@ All sensitive configuration values are stored in Azure Key Vault:
     "FUNCTIONS_WORKER_RUNTIME": "python",
     "COSMOS_DB_ENDPOINT": "@Microsoft.KeyVault(SecretUri=https://vigor-kv.vault.azure.net/secrets/cosmos-endpoint/)",
     "COSMOS_DB_KEY": "@Microsoft.KeyVault(SecretUri=https://vigor-kv.vault.azure.net/secrets/cosmos-key/)",
-    "GOOGLE_AI_API_KEY": "@Microsoft.KeyVault(SecretUri=https://vigor-kv.vault.azure.net/secrets/gemini-api-key/)",
-    "AI_MONTHLY_BUDGET": "50",
-    "AI_PROVIDER": "gemini-flash-2.5"
+    "AZURE_OPENAI_ENDPOINT": "@Microsoft.KeyVault(SecretUri=https://vigor-kv.vault.azure.net/secrets/azure-openai-endpoint/)",
+    "AZURE_OPENAI_API_KEY": "@Microsoft.KeyVault(SecretUri=https://vigor-kv.vault.azure.net/secrets/azure-openai-api-key/)",
+    "AZURE_OPENAI_DEPLOYMENT": "gpt-5-mini",
+    "AI_MONTHLY_BUDGET": "50"
   }
 }
 ```

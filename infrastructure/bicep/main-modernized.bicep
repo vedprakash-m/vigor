@@ -13,9 +13,15 @@ param appName string = 'vigor'
 @secure()
 param secretKey string
 
-@description('OpenAI API key (single LLM provider)')
+@description('Existing Azure OpenAI endpoint (uses existing resource in rg-vemishra-rag)')
+param azureOpenAiEndpoint string = 'https://aoai-vemishra-rag.openai.azure.com/'
+
+@description('Azure OpenAI deployment name')
+param azureOpenAiDeployment string = 'gpt-4o-mini'
+
+@description('Azure OpenAI API key')
 @secure()
-param openAiApiKey string
+param azureOpenAiApiKey string
 
 // Variables
 var commonTags = {
@@ -33,8 +39,9 @@ var staticWebAppName = 'vigor-frontend'
 var cosmosDbAccountName = 'vigor-cosmos-${environment}'
 var storageAccountName = 'vigorsa${uniqueString(resourceGroup().id)}'
 var keyVaultName = 'vigor-kv-${uniqueString(resourceGroup().id)}'
-var appInsightsName = 'vigor-ai'
-var logAnalyticsName = 'vigor-la'
+var appInsightsName = 'vigor-insights'
+var logAnalyticsName = 'vigor-logs'
+// Note: Using existing Azure OpenAI resource (aoai-vemishra-rag in rg-vemishra-rag)
 
 // Log Analytics Workspace
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
@@ -210,6 +217,9 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   }
 }
 
+// Note: Azure OpenAI uses existing resource (aoai-vemishra-rag in rg-vemishra-rag)
+// with gpt-4o-mini deployment. Endpoint and API key are passed as parameters.
+
 // Function App with Flex Consumption Plan
 module functionApp './function-app-modernized.bicep' = {
   name: 'functionApp'
@@ -223,7 +233,9 @@ module functionApp './function-app-modernized.bicep' = {
     storageAccountKey: storageAccount.listKeys().keys[0].value
     cosmosDbEndpoint: cosmosDbAccount.properties.documentEndpoint
     cosmosDbKey: cosmosDbAccount.listKeys().primaryMasterKey
-    openAiApiKey: openAiApiKey
+    azureOpenAiEndpoint: azureOpenAiEndpoint
+    azureOpenAiApiKey: azureOpenAiApiKey
+    azureOpenAiDeployment: azureOpenAiDeployment
     secretKey: secretKey
   }
 }
@@ -248,11 +260,11 @@ resource secretKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   }
 }
 
-resource openAiApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+resource azureOpenAiApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   parent: keyVault
-  name: 'openai-api-key'
+  name: 'azure-openai-api-key'
   properties: {
-    value: openAiApiKey
+    value: azureOpenAiApiKey
   }
 }
 

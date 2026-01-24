@@ -30,9 +30,15 @@ param cosmosDbEndpoint string
 @secure()
 param cosmosDbKey string
 
-@description('OpenAI API key')
+@description('Azure OpenAI endpoint')
+param azureOpenAiEndpoint string
+
+@description('Azure OpenAI API key')
 @secure()
-param openAiApiKey string
+param azureOpenAiApiKey string
+
+@description('Azure OpenAI deployment name')
+param azureOpenAiDeployment string = 'gpt-4o-mini'
 
 @description('Secret key for JWT tokens')
 @secure()
@@ -92,10 +98,6 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
           value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${storageAccountKey};EndpointSuffix=core.windows.net'
         }
         {
-          name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${storageAccountKey};EndpointSuffix=core.windows.net'
-        }
-        {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
           value: appInsightsConnectionString
         }
@@ -108,28 +110,28 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
           value: '~4'
         }
         {
-          name: 'FUNCTIONS_WORKER_RUNTIME'
-          value: 'python'
-        }
-        {
-          name: 'COSMOS_ENDPOINT'
+          name: 'COSMOS_DB_ENDPOINT'
           value: cosmosDbEndpoint
         }
         {
-          name: 'COSMOS_KEY'
+          name: 'COSMOS_DB_KEY'
           value: cosmosDbKey
         }
         {
-          name: 'COSMOS_DATABASE'
+          name: 'COSMOS_DB_DATABASE'
           value: 'vigor_db'
         }
         {
-          name: 'OPENAI_API_KEY'
-          value: openAiApiKey
+          name: 'AZURE_OPENAI_ENDPOINT'
+          value: azureOpenAiEndpoint
         }
         {
-          name: 'OPENAI_MODEL'
-          value: 'gpt-4o-mini'
+          name: 'AZURE_OPENAI_API_KEY'
+          value: azureOpenAiApiKey
+        }
+        {
+          name: 'AZURE_OPENAI_DEPLOYMENT'
+          value: azureOpenAiDeployment
         }
         {
           name: 'SECRET_KEY'
@@ -139,25 +141,17 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
           name: 'ENVIRONMENT'
           value: 'production'
         }
-        {
-          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
-          value: 'true'
-        }
-        {
-          name: 'ENABLE_ORYX_BUILD'
-          value: 'true'
-        }
       ]
       cors: {
         allowedOrigins: [
-          'https://vigor-frontend.azurestaticapps.net'
+          'https://vigor.vedprakash.net'
+          'https://yellow-mushroom-04726a70f.1.azurestaticapps.net'
           'http://localhost:5173'
           'http://localhost:3000'
         ]
         supportCredentials: true
       }
-      pythonVersion: '3.11'
-      linuxFxVersion: 'PYTHON|3.11'
+      // Note: Python version is set in functionAppConfig.runtime for Flex Consumption
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
       http20Enabled: true

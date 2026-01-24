@@ -12,23 +12,46 @@ from pydantic import Field
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
 
-    # Cosmos DB Configuration
+    # Cosmos DB Configuration - support both naming conventions
     COSMOS_DB_ENDPOINT: str = Field(default="", description="Cosmos DB endpoint URL")
+    COSMOS_ENDPOINT: str = Field(default="", description="Cosmos DB endpoint URL (alias)")
     COSMOS_DB_KEY: str = Field(default="", description="Cosmos DB primary key")
+    COSMOS_KEY: str = Field(default="", description="Cosmos DB primary key (alias)")
     COSMOS_DB_CONNECTION_STRING: str = Field(default="", description="Cosmos DB connection string")
     COSMOS_DB_DATABASE: str = Field(default="vigor_db", description="Database name")
+    COSMOS_DATABASE: str = Field(default="vigor_db", description="Database name (alias)")
     COSMOS_DB_DATABASE_NAME: str = Field(default="vigor_db", description="Database name (alias)")
+
+    @property
+    def cosmos_endpoint(self) -> str:
+        """Get Cosmos DB endpoint from either setting name"""
+        return self.COSMOS_DB_ENDPOINT or self.COSMOS_ENDPOINT or ""
+
+    @property
+    def cosmos_key(self) -> str:
+        """Get Cosmos DB key from either setting name"""
+        return self.COSMOS_DB_KEY or self.COSMOS_KEY or ""
+
+    @property
+    def cosmos_database(self) -> str:
+        """Get Cosmos DB database from any setting name"""
+        return self.COSMOS_DB_DATABASE or self.COSMOS_DATABASE or self.COSMOS_DB_DATABASE_NAME or "vigor_db"
 
     # Admin Configuration
     ADMIN_EMAIL: str = Field(default="admin@vigor.com", description="Default admin email")
     ADMIN_PASSWORD: str = Field(default="ChangeMe123!", description="Default admin password")
 
-    # AI Configuration (OpenAI gpt-5-mini - Single Provider)
-    AI_PROVIDER: str = Field(default="openai-gpt-5-mini", description="AI provider")
-    OPENAI_API_KEY: str = Field(default="", description="OpenAI API key")
-    OPENAI_MODEL: str = Field(default="gpt-5-mini", description="OpenAI model name")
-    AI_MONTHLY_BUDGET: str = Field(default="50", description="Monthly AI budget")
-    AI_COST_THRESHOLD: str = Field(default="40", description="Daily cost threshold")
+    # Azure OpenAI Configuration (gpt-4o-mini deployed in rg-vemishra-rag, East US 2)
+    AZURE_OPENAI_ENDPOINT: str = Field(default="", description="Azure OpenAI endpoint URL")
+    AZURE_OPENAI_API_KEY: str = Field(default="", description="Azure OpenAI API key")
+    AZURE_OPENAI_DEPLOYMENT: str = Field(default="gpt-4o-mini", description="Azure OpenAI deployment name")
+    AI_MONTHLY_BUDGET: str = Field(default="50", description="Monthly AI budget in USD")
+    AI_COST_THRESHOLD: str = Field(default="40", description="Cost alert threshold in USD")
+
+    # Legacy OpenAI settings (for backward compatibility during migration)
+    OPENAI_API_KEY: str = Field(default="", description="OpenAI API key (deprecated, use Azure OpenAI)")
+    OPENAI_MODEL: str = Field(default="gpt-4o-mini", description="OpenAI model name (deprecated)")
+    AI_PROVIDER: str = Field(default="azure-openai-gpt-4o-mini", description="AI provider identifier")
 
     # Authentication
     JWT_SECRET_KEY: str = Field(default="", description="JWT secret key")

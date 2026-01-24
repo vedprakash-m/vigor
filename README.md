@@ -10,13 +10,23 @@
 
 ---
 
+## 🌐 Live Deployment
+
+| Service          | URL                                                         |
+| ---------------- | ----------------------------------------------------------- |
+| **Frontend**     | https://vigor.vedprakash.net                                |
+| **Backend API**  | https://vigor-functions.azurewebsites.net                   |
+| **Health Check** | https://vigor-functions.azurewebsites.net/api/health-simple |
+
+---
+
 ## ✨ Overview
 
 **Vigor** is an AI-powered fitness platform built with serverless architecture on Azure. The application provides personalized workout generation, AI coaching conversations, and comprehensive progress tracking.
 
 ### Key Features
 
-- **🤖 AI Fitness Coach** - Conversational coaching powered by OpenAI gpt-5-mini
+- **🤖 AI Fitness Coach** - Conversational coaching powered by Azure OpenAI gpt-4o-mini
 - **📋 Personalized Workouts** - AI-generated workout plans based on user goals and available equipment
 - **📊 Progress Tracking** - Comprehensive analytics with workout logs and performance metrics
 - **💬 Interactive Coaching** - Real-time chat interface for fitness guidance and form tips
@@ -30,7 +40,7 @@
 | **Frontend** | React 19, TypeScript 5, Vite, Chakra UI v3, MSAL.js |
 | **Backend**  | Azure Functions (Python 3.11, Flex Consumption)     |
 | **Database** | Azure Cosmos DB Serverless                          |
-| **AI**       | OpenAI gpt-5-mini                                   |
+| **AI**       | Azure OpenAI gpt-4o-mini (existing resource)        |
 | **Auth**     | Microsoft Entra ID (default tenant)                 |
 | **Hosting**  | Azure Static Web Apps + Azure Functions             |
 | **IaC**      | Bicep                                               |
@@ -46,10 +56,11 @@ vigor-rg (West US 2)
 ├── vigor-functions          # Azure Functions (Flex Consumption)
 ├── vigor-frontend           # Static Web App
 ├── vigor-cosmos             # Cosmos DB Serverless
-├── vigor-kv-*               # Key Vault (secrets)
-├── vigor-ai                 # Application Insights
-├── vigor-la                 # Log Analytics
-└── vigorsa*                 # Storage Account
+├── (external)               # Azure OpenAI (gpt-4o-mini in rg-vemishra-rag)
+├── vigor-kv                 # Key Vault (secrets)
+├── vigor-insights           # Application Insights
+├── vigor-logs               # Log Analytics
+└── vigorsa                  # Storage Account
 ```
 
 ### Database Schema (Cosmos DB)
@@ -82,7 +93,10 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-export OPENAI_API_KEY="your-openai-api-key"
+# Copy and configure settings
+cp local.settings.json.example local.settings.json
+# Edit local.settings.json with your Azure OpenAI credentials
+
 func start  # http://localhost:7071
 ```
 
@@ -153,11 +167,13 @@ func azure functionapp publish vigor-functions --python
 vigor/
 ├── frontend/                    # React 19 + TypeScript SPA
 │   ├── src/
-│   │   ├── components/         # LLMStatus, Layout, ProtectedRoute
-│   │   ├── pages/              # WorkoutPage, CoachPage, DashboardPage
-│   │   ├── services/           # Unified API client (api.ts)
+│   │   ├── App.tsx             # Route definitions + ErrorBoundary
+│   │   ├── components/         # Layout, ErrorBoundary, ProtectedRoute, etc.
+│   │   ├── pages/              # WorkoutPage, CoachPage, DashboardPage, etc.
+│   │   ├── services/api.ts     # Unified API client
 │   │   ├── contexts/           # VedAuthContext (MSAL)
-│   │   └── config/             # authConfig.ts
+│   │   └── config/             # authConfig.ts, environment
+│   ├── e2e/                    # Playwright E2E tests
 │   └── package.json
 │
 ├── functions-modernized/        # Azure Functions Python backend
@@ -166,15 +182,19 @@ vigor/
 │   │   ├── auth.py             # Entra ID JWT validation
 │   │   ├── config.py           # Environment settings
 │   │   ├── cosmos_db.py        # Database operations
-│   │   ├── openai_client.py    # AI integration (gpt-5-mini)
+│   │   ├── openai_client.py    # Azure OpenAI integration
 │   │   ├── models.py           # Pydantic models
-│   │   └── rate_limiter.py     # Rate limiting
+│   │   └── rate_limiter.py     # Rate limiting (50/day)
 │   └── requirements.txt
 │
-├── infrastructure/bicep/        # Azure Bicep IaC templates
-├── scripts/                     # Deployment scripts
-├── docs/                        # Documentation
-└── .archive/                    # Archived legacy code
+├── infrastructure/bicep/        # Azure Bicep IaC
+│   ├── main-modernized.bicep   # All resources (Functions, Cosmos, OpenAI, etc.)
+│   ├── function-app-modernized.bicep
+│   └── deploy-modernized.sh    # Deployment script
+│
+├── scripts/                     # Deployment & setup scripts
+├── docs/                        # PRD, Tech Spec, UX Spec, metadata
+└── .archive/                    # Archived legacy code (not deployed)
 ```
 
 ---
@@ -186,11 +206,12 @@ vigor/
 | Static Web App  | Free             | $0               |
 | Azure Functions | Flex Consumption | $5-15            |
 | Cosmos DB       | Serverless       | $5-20            |
+| Azure OpenAI    | Pay-per-token    | $5-15            |
 | Key Vault       | Standard         | ~$1              |
-| OpenAI API      | Pay-per-token    | $5-15            |
+| App Insights    | Free (5GB)       | $0               |
 | **Total**       |                  | **$16-51/month** |
 
-_Estimated for 100 daily active users with moderate usage_
+_Target: ≤$50/month for early adopter usage_
 
 ---
 

@@ -96,7 +96,7 @@ class WorkoutMetadata(BaseModel):
     difficulty: str
     estimatedDuration: int  # Minutes
     equipmentNeeded: List[str] = Field(default_factory=list)
-    aiProviderUsed: str = "gpt-5-mini"
+    aiProviderUsed: str = "azure-openai-gpt-5-mini"
     tags: List[str] = Field(default_factory=list)
 
 
@@ -142,7 +142,7 @@ class AICoachMessage(BaseModel):
     userId: str  # Partition key
     role: str  # 'user' or 'assistant'
     content: str
-    providerUsed: str = "gpt-5-mini"
+    providerUsed: str = "azure-openai-gpt-5-mini"
     tokensUsed: Optional[int] = None
     responseTimeMs: Optional[int] = None
     createdAt: datetime = Field(default_factory=datetime.utcnow)

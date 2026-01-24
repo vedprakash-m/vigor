@@ -103,8 +103,8 @@ export const CoachPage = () => {
   }
 
   return (
-    <Box h="calc(100vh - 200px)" display="flex" flexDirection="column">
-      <Heading mb={6}>AI Coach</Heading>
+    <Box h={{ base: 'calc(100vh - 150px)', md: 'calc(100vh - 200px)' }} display="flex" flexDirection="column">
+      <Heading mb={4} size={{ base: 'lg', md: 'xl' }}>AI Coach</Heading>
 
       {/* Chat Messages */}
       <Box
@@ -113,24 +113,24 @@ export const CoachPage = () => {
         border="1px"
         borderColor="gray.200"
         rounded="lg"
-        p={4}
+        p={{ base: 2, md: 4 }}
         overflowY="auto"
         mb={4}
       >
-        <VStack gap={4} align="stretch">
+        <VStack gap={{ base: 2, md: 4 }} align="stretch">
           {messages.map((message) => (
             <Flex
               key={message.id}
               justify={message.role === 'user' ? 'flex-end' : 'flex-start'}
             >
               <Box
-                maxW="70%"
+                maxW={{ base: '85%', md: '70%' }}
                 bg={message.role === 'user' ? 'blue.500' : 'gray.100'}
                 color={message.role === 'user' ? 'white' : 'black'}
                 p={3}
                 rounded="lg"
               >
-                <Text whiteSpace="pre-wrap">{message.content}</Text>
+                <Text whiteSpace="pre-wrap" fontSize={{ base: 'sm', md: 'md' }}>{message.content}</Text>
                 <Text fontSize="xs" opacity={0.7} mt={1}>
                   {message.timestamp.toLocaleTimeString()}
                 </Text>
@@ -152,18 +152,21 @@ export const CoachPage = () => {
       </Box>
 
       {/* Input Area */}
-      <HStack>
+      <HStack gap={2}>
         <Input
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="Ask your AI coach anything about fitness..."
+          placeholder="Ask your AI coach..."
           disabled={isLoading}
+          size={{ base: 'md', md: 'lg' }}
         />
         <Button
           onClick={sendMessage}
           colorScheme="blue"
           disabled={isLoading || !inputMessage.trim()}
+          size={{ base: 'md', md: 'lg' }}
+          px={{ base: 4, md: 6 }}
         >
           Send
         </Button>

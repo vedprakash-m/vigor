@@ -1,6 +1,7 @@
 """
-OpenAI client for Vigor Functions
-Single LLM provider using gpt-5-mini for workout generation and AI coaching
+Azure OpenAI client for Vigor Functions
+Single LLM provider using gpt-4o-mini for workout generation and AI coaching
+Deployed in vigor-rg alongside other Azure resources
 """
 
 import json
@@ -8,7 +9,7 @@ import logging
 from typing import Dict, Any, List, Optional
 import time
 
-from openai import AsyncOpenAI
+from openai import AsyncAzureOpenAI
 
 from .config import get_settings
 
@@ -16,27 +17,38 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAIClient:
-    """OpenAI gpt-5-mini client for AI operations"""
+    """Azure OpenAI gpt-4o-mini client for AI operations"""
 
     def __init__(self):
         self.settings = get_settings()
-        self.model = "gpt-5-mini"
-        self.client: Optional[AsyncOpenAI] = None
+        self.deployment = self.settings.AZURE_OPENAI_DEPLOYMENT or "gpt-4o-mini"
+        self.client: Optional[AsyncAzureOpenAI] = None
         self._initialize_client()
 
     def _initialize_client(self):
-        """Initialize OpenAI client"""
+        """Initialize Azure OpenAI client"""
         try:
-            api_key = self.settings.OPENAI_API_KEY
-            if not api_key or api_key.startswith("your-") or api_key.startswith("sk-placeholder"):
-                logger.warning("OpenAI API key is not configured properly")
+            endpoint = self.settings.AZURE_OPENAI_ENDPOINT
+            api_key = self.settings.AZURE_OPENAI_API_KEY
+
+            # Validate configuration
+            if not endpoint or endpoint.startswith("https://your-"):
+                logger.warning("Azure OpenAI endpoint is not configured properly")
                 return
 
-            self.client = AsyncOpenAI(api_key=api_key)
-            logger.info(f"OpenAI client initialized with model: {self.model}")
+            if not api_key or api_key.startswith("your-") or api_key.startswith("sk-"):
+                logger.warning("Azure OpenAI API key is not configured properly")
+                return
+
+            self.client = AsyncAzureOpenAI(
+                azure_endpoint=endpoint,
+                api_key=api_key,
+                api_version="2024-02-01"
+            )
+            logger.info(f"Azure OpenAI client initialized with deployment: {self.deployment}")
 
         except Exception as e:
-            logger.error(f"Failed to initialize OpenAI client: {type(e).__name__}: {str(e)}")
+            logger.error(f"Failed to initialize Azure OpenAI client: {type(e).__name__}: {str(e)}")
             self.client = None
 
     async def generate_workout(
@@ -44,7 +56,7 @@ class OpenAIClient:
         user_profile: Dict[str, Any],
         preferences: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Generate personalized workout using OpenAI gpt-5-mini"""
+        """Generate personalized workout using OpenAI gpt-4o-mini"""
         try:
             start_time = time.time()
 
@@ -74,7 +86,7 @@ class OpenAIClient:
 
             # Generate content
             response = await self.client.chat.completions.create(
-                model=self.model,
+                model=self.deployment,
                 messages=[
                     {
                         "role": "system",
@@ -98,7 +110,7 @@ class OpenAIClient:
                 "difficulty": difficulty,
                 "estimatedDuration": duration,
                 "equipmentNeeded": equipment if equipment else [],
-                "aiProviderUsed": "openai-gpt-5-mini",
+                "aiProviderUsed": "azure-openai-gpt-4o-mini",
                 "generationTime": time.time() - start_time,
                 "tags": (focus_areas or []) + (goals if isinstance(goals, list) else [goals])
             }
@@ -209,7 +221,7 @@ Guidelines:
             messages.append({"role": "user", "content": message})
 
             response = await self.client.chat.completions.create(
-                model=self.model,
+                model=self.deployment,
                 messages=messages,  # type: ignore
                 max_tokens=500,
                 temperature=0.8
@@ -247,7 +259,7 @@ Provide a JSON response with:
 }}"""
 
             response = await self.client.chat.completions.create(
-                model=self.model,
+                model=self.deployment,
                 messages=[
                     {
                         "role": "system",

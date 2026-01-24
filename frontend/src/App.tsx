@@ -5,10 +5,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Route, BrowserRouter as Router, Routes, useParams } from 'react-router-dom'
 import { AccessibilityProvider } from './components/AccessibilityFeatures'
 import AdminAuditSecurity from './components/AdminAuditSecurity'
-import AnalyticsDashboard from './components/AnalyticsDashboard-temp'
+import AnalyticsDashboard from './components/AnalyticsDashboard'
 import BulkUserOperations from './components/BulkUserOperations'
-import CommunityFeatures from './components/CommunityFeatures-temp'
+import CommunityFeatures from './components/CommunityFeatures'
 import EnhancedProgressVisualization from './components/EnhancedProgressVisualization'
+import ErrorBoundary from './components/ErrorBoundary'
 import { Layout } from './components/Layout'
 import LLMAnalyticsSimple from './components/LLMAnalyticsSimple'
 import LLMConfigurationManagement from './components/LLMConfigurationSimple'
@@ -58,14 +59,15 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <ChakraProvider value={defaultSystem}>
-      <QueryClientProvider client={queryClient}>
-        <AccessibilityProvider>
-          <MsalProvider instance={msalInstance}>
-            <VedAuthProvider>
-              <Router>
-                <PWAInstallPrompt />
-                <Routes>
+    <ErrorBoundary>
+      <ChakraProvider value={defaultSystem}>
+        <QueryClientProvider client={queryClient}>
+          <AccessibilityProvider>
+            <MsalProvider instance={msalInstance}>
+              <VedAuthProvider>
+                <Router>
+                  <PWAInstallPrompt />
+                  <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<LoginPage />} />
@@ -124,6 +126,7 @@ function App() {
         </AccessibilityProvider>
       </QueryClientProvider>
     </ChakraProvider>
+    </ErrorBoundary>
   )
 }
 

@@ -1,16 +1,6 @@
 """
 Cosmos DB client for Vigor Functions
-Handles all database operations wit            return user_document
-
-        except Exception as e:
-            if hasattr(e, 'status_code') and e.status_code == 404:
-                return None
-             except Exception as e:
-            if hasattr(e, 'status_code') and e.status_code == 404:
-                return True
-            logger.error(f"Error deleting workout: {str(e)}")
-            raise  logger.error(f"Error getting user profile: {str(e)}")
-            raiseodernized NoSQL schema
+Handles all database operations with Cosmos DB Serverless NoSQL schema
 """
 
 import asyncio
@@ -22,6 +12,7 @@ from uuid import uuid4
 
 from azure.cosmos.aio import CosmosClient, DatabaseProxy, ContainerProxy
 from azure.cosmos import PartitionKey
+from azure.cosmos.exceptions import CosmosHttpResponseError
 from azure.core.exceptions import AzureError
 
 from .config import get_settings
@@ -42,14 +33,21 @@ class CosmosDBClient:
     async def initialize(self):
         """Initialize Cosmos DB client and containers"""
         try:
+            endpoint = self.settings.cosmos_endpoint
+            key = self.settings.cosmos_key
+            database = self.settings.cosmos_database
+
+            if not endpoint or not key:
+                raise ValueError(f"Cosmos DB credentials not configured. Endpoint: {bool(endpoint)}, Key: {bool(key)}")
+
+            logger.info(f"Initializing Cosmos DB client for database: {database}")
+
             self.client = CosmosClient(
-                url=self.settings.COSMOS_DB_ENDPOINT,
-                credential=self.settings.COSMOS_DB_KEY
+                url=endpoint,
+                credential=key
             )
 
-            self.database = self.client.get_database_client(
-                self.settings.COSMOS_DB_DATABASE
-            )
+            self.database = self.client.get_database_client(database)
 
             # Initialize container references
             self.containers = {
@@ -509,14 +507,13 @@ class CosmosDBClient:
         try:
             await self.ensure_initialized()
 
-            # Try to read from users container
-            container = self.containers["users"]
-            query = "SELECT TOP 1 c.id FROM c"
-
-            async for _ in container.query_items(query=query):
-                break
-
-            return True
+            # Simple connectivity check - just verify we can read database properties
+            # This avoids issues with cross-partition queries on empty containers
+            if self.database:
+                # Reading database properties confirms connectivity
+                await self.database.read()
+                return True
+            return False
 
         except Exception as e:
             logger.error(f"Cosmos DB health check failed: {str(e)}")

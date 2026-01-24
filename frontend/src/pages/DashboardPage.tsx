@@ -25,7 +25,7 @@ const DashboardPage: React.FC = () => {
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true)
-        
+
         // Fetch user profile with stats
         const profileResponse = await api.users.getProfile()
         const userStats: UserStats = profileResponse.data?.stats || {
@@ -37,11 +37,11 @@ const DashboardPage: React.FC = () => {
         // Fetch recent workout logs to calculate weekly stats
         const logsResponse = await api.workouts.history(50)
         const logs: WorkoutLog[] = logsResponse.data || []
-        
+
         // Calculate weekly workouts (last 7 days)
         const weekAgo = new Date()
         weekAgo.setDate(weekAgo.getDate() - 7)
-        const weeklyWorkouts = logs.filter(log => 
+        const weeklyWorkouts = logs.filter(log =>
           new Date(log.completedAt) >= weekAgo
         ).length
 
@@ -78,7 +78,7 @@ const DashboardPage: React.FC = () => {
         {/* Welcome Section */}
         <Box>
           <Heading size="lg" mb={2}>
-            Welcome back{user?.displayName ? `, ${user.displayName}` : ''}!
+            Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}!
           </Heading>
           <Text color="gray.600">
             Here's your fitness dashboard overview.
@@ -146,13 +146,13 @@ const DashboardPage: React.FC = () => {
         </Box>
 
         {/* AI Coach Preview */}
-        <Box 
-          bg="purple.50" 
-          borderColor="purple.200" 
-          cursor="pointer" 
-          onClick={() => window.location.href = '/coach'} 
-          p={6} 
-          borderRadius="lg" 
+        <Box
+          bg="purple.50"
+          borderColor="purple.200"
+          cursor="pointer"
+          onClick={() => window.location.href = '/coach'}
+          p={6}
+          borderRadius="lg"
           borderWidth={1}
           _hover={{ bg: 'purple.100' }}
           transition="background 0.2s"
@@ -179,8 +179,8 @@ const DashboardPage: React.FC = () => {
                   {stats.currentStreak} Day Streak!
                 </Text>
                 <Text fontSize="sm" color="orange.600">
-                  {stats.currentStreak >= stats.longestStreak 
-                    ? "You're at your personal best!" 
+                  {stats.currentStreak >= stats.longestStreak
+                    ? "You're at your personal best!"
                     : `${stats.longestStreak - stats.currentStreak} more days to beat your record!`
                   }
                 </Text>

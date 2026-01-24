@@ -14,9 +14,9 @@
 
 **The Market Problem:** Existing fitness apps offer static content or basic customization (Nike Training Club, Fitbit Coach), while AI-powered alternatives depend on single providers creating reliability risks and cost $60-80/year. Traditional personal training is prohibitively expensive for regular use, creating a significant market gap for accessible, intelligent fitness guidance.
 
-**Vigor's Solution:** Single-provider AI (Gemini Flash 2.5) ensures reliability and cost efficiency, conversational coaching provides real-time form guidance and motivation, and serverless infrastructure (≤$50/month operational budget ceiling, with automatic scaling) enables professional-grade features at consumer prices. The platform combines reliability, personalization, and affordability in a single solution.
+**Vigor's Solution:** Single-provider AI (OpenAI gpt-5-mini) ensures reliability and cost efficiency, conversational coaching provides real-time form guidance and motivation, and serverless infrastructure (≤$50/month operational budget ceiling, with automatic scaling) enables professional-grade features at consumer prices. The platform combines reliability, personalization, and affordability in a single solution.
 
-Vigor's streamlined architecture with Gemini Flash 2.5 AI delivers personalized workout generation, intelligent coaching conversations, and comprehensive progress tracking while maintaining industry-leading reliability and cost efficiency through Azure Functions and Cosmos DB.
+Vigor's streamlined architecture with OpenAI gpt-5-mini delivers personalized workout generation, intelligent coaching conversations, and comprehensive progress tracking while maintaining industry-leading reliability and cost efficiency through Azure Functions and Cosmos DB.
 
 ---
 
@@ -88,9 +88,10 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 #### Free Tier (MVP)
 
-- **Features**: Basic workout generation, limited AI interactions, basic progress tracking
-- **Limitations**: 10 AI chats/month, 5 workout plans/month
-- **Target**: Trial users, casual fitness enthusiasts
+- **Features**: Workout generation, AI coaching interactions, progress tracking
+- **Limitations**: 50 AI chats/day, 50 workout generations/day (generous for early adopters)
+- **Rate Limiting**: In-memory storage (accept cold-start resets for cost efficiency)
+- **Target**: Early adopters, fitness enthusiasts
 - **MVP Scope**: Only tier implemented in MVP
 
 #### Premium Tier (Post-MVP)
@@ -115,7 +116,7 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 - **Strengths**: Large user base, nutrition tracking, established brand
 - **Weaknesses**: Limited AI coaching, expensive premium tiers, complex interface
-- **Vigor Advantage**: Superior AI coaching with multi-provider reliability, simpler UX
+- **Vigor Advantage**: Superior AI coaching with OpenAI gpt-5-mini, simpler UX
 
 #### Freeletics (AI-Powered Bodyweight Training)
 
@@ -137,7 +138,7 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 ### 2.3.2 Vigor's Unique Value Propositions
 
-1. **Streamlined AI Excellence**: Focus on Gemini Flash 2.5 for optimal performance and cost efficiency
+1. **Streamlined AI Excellence**: Focus on OpenAI gpt-5-mini for optimal performance and consistent quality
 2. **Conversational AI Coach**: 24/7 contextual fitness guidance beyond just workout generation
 3. **Serverless Infrastructure**: True pay-per-use with Azure Functions for ultra-low operational costs
 4. **Safety-First AI Prompting**: Health-focused AI responses with medical disclaimers
@@ -148,7 +149,7 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 - **Primary Position**: "The AI fitness coach that actually understands you"
 - **Secondary Position**: "Professional-grade fitness guidance at consumer prices"
-- **Differentiation**: Reliability through AI diversity, not dependency on single provider
+- **Differentiation**: Reliability through robust error handling and caching, focus on UX quality
 
 ---
 
@@ -197,22 +198,22 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 ## 2.5 AI Capabilities Matrix
 
-| Feature                     | Model            | Purpose                                       | Response Time |
-| --------------------------- | ---------------- | --------------------------------------------- | ------------- |
-| **Workout Planning**        | Gemini Flash 2.5 | Personalized exercise selection & programming | <5s           |
-| **Conversational Coaching** | Gemini Flash 2.5 | Real-time form, motivation, and guidance      | <3s           |
-| **Progress Analysis**       | Gemini Flash 2.5 | Performance insights and recommendations      | <4s           |
-| **Nutrition Guidance**      | Gemini Flash 2.5 | Meal planning and dietary advice              | <3s           |
-| **Injury Prevention**       | Gemini Flash 2.5 | Movement screening and modifications          | <3s           |
-| **Motivation & Habits**     | Gemini Flash 2.5 | Behavioral psychology and encouragement       | <2s           |
+| Feature                     | Model             | Purpose                                       | Response Time |
+| --------------------------- | ----------------- | --------------------------------------------- | ------------- |
+| **Workout Planning**        | OpenAI gpt-5-mini | Personalized exercise selection & programming | <5s           |
+| **Conversational Coaching** | OpenAI gpt-5-mini | Real-time form, motivation, and guidance      | <3s           |
+| **Progress Analysis**       | OpenAI gpt-5-mini | Performance insights and recommendations      | <4s           |
+| **Nutrition Guidance**      | OpenAI gpt-5-mini | Meal planning and dietary advice              | <3s           |
+| **Injury Prevention**       | OpenAI gpt-5-mini | Movement screening and modifications          | <3s           |
+| **Motivation & Habits**     | OpenAI gpt-5-mini | Behavioral psychology and encouragement       | <2s           |
 
 ### Model Selection Rationale:
 
-1. **Cost Efficiency**: Gemini Flash 2.5 offers best price-performance ratio
+1. **Cost Efficiency**: OpenAI gpt-5-mini offers excellent price-performance ratio
 2. **Consistency**: Single model ensures consistent user experience
-3. **Speed**: Flash variant optimized for fast responses
+3. **Speed**: Optimized for fast responses with low latency
 4. **Capability**: Excellent performance across all fitness use cases
-5. **Reliability**: Google's enterprise-grade infrastructure
+5. **Reliability**: OpenAI's enterprise-grade infrastructure
 
 ---
 
@@ -234,7 +235,7 @@ To democratize access to personalized fitness coaching through AI-powered techno
 - **Plateau Buster**: Achieve 3+ personal records in a month
 - **Early Bird**: Complete 20 morning workouts (before 9 AM)
 - **Consistency King**: Maintain 30+ day streaks
-- **AI Explorer**: Use all 3 AI providers (OpenAI, Gemini, Perplexity)
+- **AI Enthusiast**: Complete 50+ AI-powered workout generations
 
 #### Progress Milestones
 
@@ -299,7 +300,7 @@ To democratize access to personalized fitness coaching through AI-powered techno
 
 **Technical Implementation:**
 
-- Gemini Flash 2.5 integration with streaming responses
+- OpenAI gpt-5-mini integration with streaming responses
 - Structured JSON response format for consistent data handling
 - Error handling with graceful degradation to cached responses
 - **Enhanced AI Cost Management**:
@@ -360,7 +361,7 @@ To democratize access to personalized fitness coaching through AI-powered techno
 **Priority: P0 (Must Have)**
 
 1. **User Authentication & Profiles** - Microsoft Entra ID default tenant authentication with email-based user identification
-2. **AI Workout Generation** - Core differentiated value with multi-provider fallback
+2. **AI Workout Generation** - Core differentiated value using OpenAI gpt-5-mini
 3. **Basic Progress Tracking** - User retention essential
 4. **AI Coaching Chat** - Engagement and support
 5. **Workout History** - User data retention
@@ -581,9 +582,7 @@ Response: {
   "budget_limit": 100.00,
   "budget_utilization": 75.50,
   "cost_by_provider": {
-    "openai": 45.00,
-    "gemini": 20.50,
-    "perplexity": 10.00
+    "openai": 75.50
   },
   "tokens_used_today": 25000,
   "estimated_monthly_cost": 95.25
@@ -971,7 +970,7 @@ class WorkoutAnalysis(BaseModel):
 COSMOS_DB_CONNECTION_STRING=AccountEndpoint=https://vigor-cosmos.documents.azure.com:443/...
 
 # AI Provider
-GEMINI_API_KEY=...
+OPENAI_API_KEY=...
 
 # Security
 SECRET_KEY=...
@@ -1294,7 +1293,7 @@ VITE_APP_VERSION=2.0.0
 
 **Risk**: Primary AI provider service interruption
 **Impact**: Core features unavailable, user experience degraded
-**Mitigation**: Multi-provider architecture with automatic failover
+**Mitigation**: Robust error handling with cached responses and graceful degradation
 **Monitoring**: Real-time provider health checks and alerts
 
 #### 14.1.2 Database Performance
@@ -1365,7 +1364,7 @@ VITE_APP_VERSION=2.0.0
 
 ## 16. Conclusion
 
-Vigor represents a comprehensive, modern approach to AI-powered fitness coaching that balances cutting-edge technology with practical user needs. The platform's clean architecture, multi-provider AI strategy, and cost-optimized infrastructure provide a solid foundation for sustainable growth and user satisfaction.
+Vigor represents a comprehensive, modern approach to AI-powered fitness coaching that balances cutting-edge technology with practical user needs. The platform's clean architecture, streamlined AI integration with OpenAI gpt-5-mini, and cost-optimized infrastructure provide a solid foundation for sustainable growth and user satisfaction.
 
 With its focus on personalization, accessibility, and reliability, Vigor is positioned to capture significant market share in the growing digital fitness space while maintaining operational efficiency and user safety as core priorities.
 
@@ -1409,7 +1408,7 @@ The implementation roadmap, security measures, and operational strategies outlin
 
 ### AI/ML Terms
 
-**Multi-Provider Strategy**: Using multiple AI service providers to ensure reliability and optimize for different use cases.
+**Single-Provider Strategy**: Using OpenAI gpt-5-mini as the exclusive AI provider for consistent quality and simplified maintenance.
 
 **Context Injection**: Providing relevant user information and conversation history to AI models for personalized responses.
 
@@ -1433,7 +1432,7 @@ The implementation roadmap, security measures, and operational strategies outlin
 
 ### Technical Assumptions
 
-1. **AI Provider Reliability**: Major AI providers (OpenAI, Google, Perplexity) maintain >99% uptime individually
+1. **AI Provider Reliability**: OpenAI maintains >99% uptime and consistent API performance
 2. **Azure Service Stability**: Azure App Service and PostgreSQL maintain stated SLA commitments
 3. **Internet Connectivity**: Users have reliable internet access for AI-powered features
 4. **Browser Compatibility**: Modern web browsers support required PWA and React features
@@ -1454,7 +1453,7 @@ The implementation roadmap, security measures, and operational strategies outlin
 
 ### Market Assumptions
 
-1. **Competition Response**: Existing competitors won't immediately replicate multi-provider AI approach
+1. **Competition Response**: Focus on UX and AI quality rather than complex multi-provider architecture
 2. **Technology Adoption**: AI-powered fitness coaching gains broader market acceptance during product lifecycle
 3. **Economic Conditions**: Target demographic maintains discretionary spending on fitness technology
 4. **Platform Evolution**: Web technology continues evolving to support increasingly native-like experiences

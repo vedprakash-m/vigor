@@ -1,6 +1,7 @@
 """
 Vigor Backend - Azure Functions App
-Single resource group (vigor-rg), Cosmos DB Serverless, OpenAI gpt-5-mini
+Single resource group (vigor-rg), Cosmos DB Serverless, Azure OpenAI gpt-4o-mini
+Production domain: vigor.vedprakash.net
 """
 
 import azure.functions as func
@@ -137,7 +138,7 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
 
 @app.route(route="workouts/generate", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
-    """Generate personalized workout using OpenAI gpt-5-mini"""
+    """Generate personalized workout using OpenAI gpt-4o-mini"""
     try:
         current_user = await get_current_user_from_token(req)
         if not current_user:
@@ -147,11 +148,11 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
                 mimetype="application/json"
             )
 
-        # Rate limiting - 20 workout generations per hour
+        # Rate limiting - 50 workout generations per day
         if not await rate_limiter.check_rate_limit(
             key=f"workout_gen:{current_user['email']}",
-            limit=20,
-            window=3600
+            limit=50,
+            window=86400  # 24 hours
         ):
             return func.HttpResponse(
                 json.dumps({"error": "Rate limit exceeded. Please try again later."}),
@@ -208,7 +209,7 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
 
 @app.route(route="coach/chat", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
-    """Chat with AI coach using OpenAI gpt-5-mini"""
+    """Chat with AI coach using OpenAI gpt-4o-mini"""
     try:
         current_user = await get_current_user_from_token(req)
         if not current_user:
@@ -218,11 +219,11 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
                 mimetype="application/json"
             )
 
-        # Rate limiting - 50 chat messages per hour
+        # Rate limiting - 50 chat messages per day
         if not await rate_limiter.check_rate_limit(
             key=f"coach_chat:{current_user['email']}",
             limit=50,
-            window=3600
+            window=86400  # 24 hours
         ):
             return func.HttpResponse(
                 json.dumps({"error": "Rate limit exceeded"}),
@@ -269,7 +270,7 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
                 "role": "assistant",
                 "content": ai_response,
                 "userId": current_user["email"],
-                "providerUsed": "gpt-5-mini",
+                "providerUsed": "gpt-4o-mini",
                 "createdAt": datetime.utcnow().isoformat()
             }
         ])
@@ -495,9 +496,9 @@ async def get_workout_history(req: func.HttpRequest) -> func.HttpResponse:
 # ADMIN ENDPOINTS
 # =============================================================================
 
-@app.route(route="admin/ai/costs/real-time", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
-async def get_real_time_costs(req: func.HttpRequest) -> func.HttpResponse:
-    """Get real-time AI cost metrics (admin only)"""
+@app.route(route="admin/ai/cost-metrics", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+async def get_cost_metrics(req: func.HttpRequest) -> func.HttpResponse:
+    """Get AI cost metrics (admin only)"""
     try:
         admin_user = await require_admin_user(req)
         if not admin_user:
@@ -513,9 +514,9 @@ async def get_real_time_costs(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({
                 "daily_spend": cost_metrics.get("daily_spend", 0),
-                "monthly_budget": 50.0,  # Fixed budget for OpenAI gpt-5-mini
+                "monthly_budget": 50.0,  # Fixed budget for OpenAI gpt-4o-mini
                 "budget_utilization": cost_metrics.get("budget_utilization", 0),
-                "provider_breakdown": {"gpt-5-mini": cost_metrics.get("total_spend", 0)},
+                "provider_breakdown": {"gpt-4o-mini": cost_metrics.get("total_spend", 0)},
                 "total_requests_today": cost_metrics.get("requests_today", 0)
             }),
             status_code=200,
@@ -558,6 +559,8 @@ async def validate_ai_budget(user_id: str) -> Dict[str, Any]:
         logger.error(f"Error validating budget: {str(e)}")
         return {"approved": False, "reason": "Budget validation failed"}
 
+# Timer trigger for budget monitoring - runs hourly in production
+# Note: Requires Azure Storage for local development (Azurite emulator)
 @app.timer_trigger(schedule="0 0 * * * *", arg_name="timer", run_on_startup=False)
 async def budget_monitoring_timer(timer: func.TimerRequest) -> None:
     """Hourly budget monitoring and alerting"""
@@ -593,7 +596,7 @@ async def health_check(req: func.HttpRequest) -> func.HttpResponse:
             "timestamp": datetime.utcnow().isoformat(),
             "services": {
                 "cosmos_db": "healthy" if cosmos_health else "unhealthy",
-                "openai_api": "healthy" if ai_health else "unhealthy"
+                "azure_openai": "healthy" if ai_health else "unhealthy"
             },
             "version": "2.0.0"
         }

@@ -23,13 +23,13 @@ This document is the **single source of truth** for all User-Experience (UX) and
 
 ## 2. User Roles & Responsibilities
 
-| Role              | Description                                                                                   | Key Responsibilities                                                                                                                           | Critical Journeys | Tier Access        |
-| ----------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------------------ |
-| **Free User**     | Fitness enthusiast using Vigor's basic features with limitations per PRD specifications.      | • Maintain profile & preferences<br/>• Generate limited workout plans (5/month)<br/>• Limited AI chat (10/month)<br/>• Basic progress tracking | 1, 2, 3           | FREE               |
-| **Premium User**  | Paid subscriber with unlimited access to all core features and advanced analytics (POST-MVP). | • Unlimited workout generation<br/>• Unlimited AI coaching<br/>• Advanced analytics<br/>• Priority support<br/>• Enhanced gamification         | 1, 2, 3, 8        | PREMIUM (POST-MVP) |
-| **Administrator** | Ops / Product personnel who configure AI providers, budgets, and oversee system health.       | • Configure LLM providers & routing<br/>• Manage budgets & cost alerts<br/>• Monitor system health<br/>• User tier management                  | 4, 6              | ADMIN              |
-| **Support Staff** | Customer-success agents with read-only access to user data for troubleshooting.               | • View user profiles & logs (read-only)<br/>• Access support console<br/>• Create tickets<br/>• Escalate incidents                             | 5, 7              | SUPPORT            |
-| **Guest User**    | Unregistered visitor experiencing demo functionality before signup (limited demo mode).       | • Browse sample workout plan<br/>• Experience AI coach demo<br/>• View synthetic progress data<br/>• Convert to registered account             | 1                 | GUEST              |
+| Role              | Description                                                                                   | Key Responsibilities                                                                                                                   | Critical Journeys | Tier Access        |
+| ----------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------------------ |
+| **Free User**     | Early adopter using Vigor's core features with generous daily limits.                         | • Maintain profile & preferences<br/>• Generate workout plans (50/day)<br/>• AI chat (50/day)<br/>• Full progress tracking             | 1, 2, 3           | FREE               |
+| **Premium User**  | Paid subscriber with unlimited access to all core features and advanced analytics (POST-MVP). | • Unlimited workout generation<br/>• Unlimited AI coaching<br/>• Advanced analytics<br/>• Priority support<br/>• Enhanced gamification | 1, 2, 3, 8        | PREMIUM (POST-MVP) |
+| **Administrator** | Ops / Product personnel who configure AI providers, budgets, and oversee system health.       | • Configure LLM providers & routing<br/>• Manage budgets & cost alerts<br/>• Monitor system health<br/>• User tier management          | 4, 6              | ADMIN              |
+| **Support Staff** | Customer-success agents with read-only access to user data for troubleshooting.               | • View user profiles & logs (read-only)<br/>• Access support console<br/>• Create tickets<br/>• Escalate incidents                     | 5, 7              | SUPPORT            |
+| **Guest User**    | Unregistered visitor experiencing demo functionality before signup (limited demo mode).       | • Browse sample workout plan<br/>• Experience AI coach demo<br/>• View synthetic progress data<br/>• Convert to registered account     | 1                 | GUEST              |
 
 Journey IDs map to §4 and align with PRD user scenarios:
 • 1 – Guest Demo Flow & User Onboarding
@@ -51,7 +51,7 @@ Journey IDs map to §4 and align with PRD user scenarios:
 4. **Behavior Change Driven** – UI nudges (streaks, badges, contextual AI praise) fuel habit formation per PRD gamification requirements.
 5. **Accessibility & Inclusivity** – WCAG 2.1 AA color contrast, keyboard navigation, and screen-reader landmarks.
 6. **Consistency via Design System** – Chakra-UI v3 tokens + custom Vigor brand palette; 8-pt spacing grid per Tech Spec.
-7. **Multi-Provider AI Transparency** – Show AI provider used and response quality to build user trust.
+7. **AI Transparency** – Show AI-powered features and response quality to build user trust.
 8. **Cost-Conscious UX** – Design supports Azure pause/resume infrastructure for cost optimization.
 
 ### 3.1 Key Performance Targets (aligned with PRD KPIs)
@@ -60,14 +60,14 @@ Journey IDs map to §4 and align with PRD user scenarios:
 - **Engagement Depth**: 4+ workouts per user per week, 15+ AI interactions per week
 - **Workout Completion**: 80%+ completion rate for generated workouts
 - **Response Times**: <2s average response time, <10s AI generation, <5s chat responses
-- **Platform Reliability**: 99.9% uptime target with multi-provider failover
+- **Platform Reliability**: 99.9% uptime target with robust error handling
 
 ### 3.2 Feature Priority Framework (MVP Alignment with PRD)
 
 #### P0 - MVP Core Features (Launch Ready)
 
 - **User Authentication**: Microsoft Entra ID default tenant authentication with email-based user identification
-- **Workout Generation**: AI-powered workout creation with multi-provider fallback
+- **Workout Generation**: AI-powered workout creation using OpenAI gpt-5-mini
 - **Workout Execution**: Real-time session tracking, timer, exercise guidance
 - **Basic Progress Tracking**: Workout history, basic metrics dashboard
 - **AI Chat Coach**: Conversational coaching and exercise guidance
@@ -223,22 +223,18 @@ flowchart LR
   BB --> II[Emergency Provider Toggle]
 ```
 
-### 4.6 Multi-Provider AI Experience (Transparent to User)
+### 4.6 AI-Powered Experience
 
 ```mermaid
 flowchart TD
-  A[User Requests Workout] --> B[LLM Gateway]
-  B --> C{Primary Provider Check}
-  C -->|Available| D[OpenAI GPT-4]
-  C -->|Busy/Down| E[Fallback to Gemini]
-  E -->|Also Down| F[Fallback to Perplexity]
-  F -->|All Down| G[Local Templates]
-  D --> H[Workout Generated]
-  E --> H
-  F --> H
-  G --> H
-  H --> I[User Receives Plan]
-  I --> J[Provider Attribution Shown]
+  A[User Requests Workout] --> B[OpenAI gpt-5-mini]
+  B --> C{Request Processing}
+  C -->|Success| D[Workout Generated]
+  C -->|Error| E[Graceful Error Handling]
+  E --> F[Retry with Cached Templates]
+  D --> G[User Receives Plan]
+  F --> G
+  G --> H[AI-Powered Attribution Shown]
 ```
 
 ### 4.7 Password Reset Journey (Enhanced Security)
@@ -260,14 +256,14 @@ flowchart TD
 
 ### 5.1 Landing / Marketing (`/`) - Aligned with PRD Value Propositions
 
-| Element                  | Purpose                     | Mobile Pattern                              | Desktop Pattern                   |
-| ------------------------ | --------------------------- | ------------------------------------------- | --------------------------------- |
-| Hero Section             | Multi-Provider AI Advantage | "The AI fitness coach that understands you" | Hero video with AI provider logos |
-| Value Proposition Banner | Cost vs Personal Trainer    | Carousel: $50-100/session → Free            | Side-by-side comparison           |
-| Primary CTA              | Signup / SSO / Guest Demo   | Sticky bottom sheet when scrolling          | Top-right signup modal            |
-| AI Transparency          | Build Provider Trust        | "Powered by OpenAI, Gemini, Perplexity"     | Provider logos with explanations  |
-| Social Proof             | Testimonials & Stats        | Horizontal scroll user testimonials         | Grid layout with success metrics  |
-| Cost Comparison          | vs Competitors              | "Professional guidance at consumer prices"  | Feature comparison table          |
+| Element                  | Purpose                   | Mobile Pattern                              | Desktop Pattern                  |
+| ------------------------ | ------------------------- | ------------------------------------------- | -------------------------------- |
+| Hero Section             | AI-Powered Advantage      | "The AI fitness coach that understands you" | Hero video with AI branding      |
+| Value Proposition Banner | Cost vs Personal Trainer  | Carousel: $50-100/session → Free            | Side-by-side comparison          |
+| Primary CTA              | Signup / SSO / Guest Demo | Sticky bottom sheet when scrolling          | Top-right signup modal           |
+| AI Transparency          | Build AI Trust            | "Powered by OpenAI gpt-5-mini"              | OpenAI branding with explanation |
+| Social Proof             | Testimonials & Stats      | Horizontal scroll user testimonials         | Grid layout with success metrics |
+| Cost Comparison          | vs Competitors            | "Professional guidance at consumer prices"  | Feature comparison table         |
 
 ### 5.2 Register & Authentication (`/auth`) - Microsoft Entra ID Integration
 
@@ -284,7 +280,7 @@ flowchart TD
 
 ### 5.3 Progressive Onboarding Wizard (`/onboarding`) - PRD Profile Requirements
 
-1. **Welcome & Value** – Multi-provider AI explanation, personalization promise
+1. **Welcome & Value** – AI-powered fitness explanation, personalization promise
 2. **Fitness Goals** – Weight loss, muscle gain, strength, endurance, general fitness (PRD goals)
 3. **Experience Level** – Beginner, Intermediate, Advanced with descriptions (PRD fitness levels)
 4. **Equipment Access** – None, Basic, Moderate, Full Gym (PRD equipment categories)
@@ -316,18 +312,18 @@ flowchart TD
 - Equipment override: Use profile default or specify for session
 - Intensity level: Light, Moderate, Intense
 
-**AI Provider Transparency**:
+**AI Transparency**:
 
-- Show which provider is generating (OpenAI/Gemini/Perplexity)
+- Show OpenAI gpt-5-mini generating the workout
 - Response time indicator
 - Quality rating prompt after generation
 
 **Generation Flow**:
 
 1. User inputs collected with progressive disclosure
-2. Loading state with provider name and estimated time
+2. Loading state with estimated time
 3. Generated plan with exercise details, modifications, safety notes
-4. Option to regenerate with different provider if unsatisfied
+4. Option to regenerate with adjusted parameters if unsatisfied
 
 ### 5.6 Workout Session (`/workout/:id`) - PWA Optimized
 
@@ -373,8 +369,8 @@ flowchart TD
 
 **Cost Management UX**:
 
-- **Graceful Degradation**: When budget limits are approached, users see informative messages about temporary model switching (e.g., "Using cost-optimized AI for faster responses")
-- **Transparent AI Provider**: Users can see which AI provider is responding (OpenAI/Gemini/Perplexity) with quality indicators
+- **Graceful Degradation**: When budget limits are approached, users see informative messages about usage limits
+- **Transparent AI**: Users can see OpenAI gpt-5-mini responding with quality indicators
 - **Budget-Aware Features**: Free tier users see remaining AI chat quota with upgrade prompts
 - **Cache Hit Indicators**: Visual indicators when responses come from intelligent caching for faster experience
 
@@ -412,13 +408,13 @@ flowchart TD
 - **Automated Throttling Controls**: Emergency cost controls with one-click activation
 - **Cache Performance Metrics**: Cache hit rates and cost savings visualization
 
-**Advanced Provider Management**:
+**AI Provider Monitoring**:
 
-- Real-time health status for OpenAI, Gemini, Perplexity with latency metrics
-- Priority ordering with drag-and-drop interface and fallback chains
-- **Dynamic Model Switching**: Automated cost optimization controls (GPT-4 → GPT-3.5)
+- Real-time health status for OpenAI gpt-5-mini with latency metrics
+- Model configuration with cost thresholds
+- **Dynamic Model Management**: Cost optimization controls
 - **Off-Peak Scaling**: Automated cost reduction during 2-6 AM UTC
-- Emergency provider toggle switches with impact assessment
+- Emergency toggle switches with impact assessment
 
 **Enhanced Budget Controls**:
 
@@ -493,7 +489,7 @@ flowchart TD
 - **Plateau Buster**: Achieve 3+ personal records in a month 📈
 - **Early Bird**: Complete 20 morning workouts (before 9 AM) 🌅
 - **Consistency King**: Maintain 30+ day streaks 👑
-- **AI Explorer**: Use all 3 AI providers (OpenAI, Gemini, Perplexity) 🤖
+- **AI Explorer**: Complete 50+ AI-powered workouts 🤖
 
 #### Progress Milestones
 
@@ -530,20 +526,20 @@ flowchart TD
 
 ## 7. Technical UX Implementation (Tech Spec Alignment)
 
-### 7.1 Multi-Provider AI User Experience
+### 7.1 AI-Powered User Experience
 
 **Transparency in AI Usage**:
 
-- Display current provider (OpenAI/Gemini/Perplexity) during generation
+- Display OpenAI gpt-5-mini branding during generation
 - Show response quality and generation time
 - Allow user feedback on AI responses for continuous improvement
-- Explain provider strengths: "Using OpenAI for complex workout planning"
+- Explain AI capabilities: "Powered by OpenAI gpt-5-mini for intelligent workout planning"
 
-**Failover User Experience**:
+**Error Handling User Experience**:
 
-- Seamless failover without user interruption
-- Optional notification: "Switched to backup provider for faster response"
-- Provider performance history in user settings for transparency
+- Graceful error handling without user interruption
+- Clear messaging: "Retrying your request..."
+- Cached response fallback for common requests
 
 ### 7.2 Cost-Optimized Infrastructure UX
 
@@ -671,41 +667,33 @@ graph TD
 flowchart TD
   Start([Generate Workout CTA]) --> Input[Duration, Focus, Equipment]
   Input --> Check{Free Tier Limit?}
-  Check -->|Within Limit| AI[AI Generation with Provider]
+  Check -->|Within Limit| AI[AI Generation]
   Check -->|Limit Reached| Upgrade[Upgrade Prompt]
-  AI --> Loading[Loading: Using OpenAI GPT-4...]
+  AI --> Loading[Loading: Using OpenAI gpt-5-mini...]
   Loading --> Generated[Workout Plan with Safety Notes]
   Generated --> Review[User Review + Rating]
   Review --> Save[Save to Library]
   Save --> Session([Start Workout Session])
 ```
 
-### 9.3 Multi-Provider AI Fallback Visualization
+### 9.3 AI Processing Flow
 
 ```mermaid
 flowchart LR
-  Request[User Request] --> Gateway[LLM Gateway]
-  Gateway --> Primary{OpenAI Available?}
-  Primary -->|Yes| OpenAI[OpenAI GPT-4]
-  Primary -->|No| Secondary{Gemini Available?}
-  Secondary -->|Yes| Gemini[Google Gemini]
-  Secondary -->|No| Tertiary{Perplexity Available?}
-  Tertiary -->|Yes| Perplexity[Perplexity Pro]
-  Tertiary -->|No| Fallback[Local Templates]
-
-  OpenAI --> Response[Generated Response]
-  Gemini --> Response
-  Perplexity --> Response
-  Fallback --> Response
-
-  Response --> User[User Receives Plan + Provider Attribution]
+  Request[User Request] --> AI[OpenAI gpt-5-mini]
+  AI --> Cache{Cache Check}
+  Cache -->|Hit| Cached[Cached Response]
+  Cache -->|Miss| Generate[Generate New Response]
+  Generate --> Response[Generated Response]
+  Cached --> Response
+  Response --> User[User Receives Plan + AI Attribution]
 ```
 
 ### 9.4 Progressive Onboarding (Mobile PWA)
 
 ```mermaid
 flowchart LR
-  Welcome[Welcome: Multi-Provider AI] --> Goals[Fitness Goals Selection]
+  Welcome[Welcome: AI-Powered Fitness] --> Goals[Fitness Goals Selection]
   Goals --> Level[Experience Level: Beginner/Intermediate/Advanced]
   Level --> Equipment[Equipment Access: None/Basic/Moderate/Full]
   Equipment --> Injuries[Injury Considerations - Optional]
@@ -713,24 +701,22 @@ flowchart LR
   Schedule --> Complete[Profile Complete + First Workout CTA]
 ```
 
-### 9.5 Admin LLM Management Dashboard
+### 9.5 Admin AI Management Dashboard
 
 ```mermaid
 flowchart TD
-  AdminLogin[Admin Authentication] --> Dashboard[LLM Management Dashboard]
+  AdminLogin[Admin Authentication] --> Dashboard[AI Management Dashboard]
   Dashboard --> Status[Provider Health Status]
   Dashboard --> Budget[Budget & Cost Monitoring]
-  Dashboard --> Config[Provider Configuration]
+  Dashboard --> Config[Model Configuration]
 
-  Status --> OpenAI_Status[OpenAI: ✅ Healthy - 245ms avg]
-  Status --> Gemini_Status[Gemini: ✅ Healthy - 180ms avg]
-  Status --> Perplexity_Status[Perplexity: ⚠️ Slow - 800ms avg]
+  Status --> OpenAI_Status[OpenAI gpt-5-mini: ✅ Healthy - 245ms avg]
 
   Budget --> Monthly[Monthly Spend: $28.50 / $50 budget]
   Budget --> Alerts[Alert Thresholds & Notifications]
 
-  Config --> Priority[Provider Priority Order]
-  Config --> Emergency[Emergency Provider Toggle]
+  Config --> Cache[Cache Configuration]
+  Config --> Emergency[Emergency Controls]
 ```
 
 ### 9.6 Premium Upgrade Flow
@@ -816,7 +802,7 @@ jobs:
         run: |
           echo "Validating UX document alignment with PRD requirements..."
           # Check for required PRD elements in UX doc
-          grep -q "Multi-Provider AI" docs/User_Experience.md
+          grep -q "OpenAI" docs/User_Experience.md
           grep -q "Free.*Premium.*Admin" docs/User_Experience.md
           grep -q "70%.*weekly retention" docs/User_Experience.md
       - name: Check Tech Spec Alignment
@@ -842,7 +828,7 @@ jobs:
 
 ### 12.1 PRD Requirements Implementation Status
 
-- [x] **Multi-Provider AI UX**: Transparent provider display and failover
+- [x] **AI-Powered UX**: Transparent OpenAI gpt-5-mini integration
 - [x] **User Tier Management**: Free tier MVP (Premium and Admin post-MVP)
 - [x] **Gamification System**: Basic streaks, badges, achievements per PRD Section 2.6
 - [x] **Core User Journeys**: Beginner, Professional, Enthusiast scenarios
