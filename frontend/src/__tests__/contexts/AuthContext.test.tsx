@@ -37,11 +37,14 @@ jest.mock('../../config/authConfig', () => ({
 }))
 
 // Mock API service (using the actual api.ts module)
+const mockApi = {
+  setAccessToken: jest.fn(),
+  clearAccessToken: jest.fn(),
+}
 jest.mock('../../services/api', () => ({
-  api: {
-    setAccessToken: jest.fn(),
-    clearAccessToken: jest.fn(),
-  },
+  __esModule: true,
+  default: mockApi,
+  api: mockApi,
 }))
 
 import { AuthProvider } from '../../contexts/AuthContext'

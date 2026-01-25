@@ -49,6 +49,7 @@ module.exports = {
     '<rootDir>/src/__tests__/integration/.*',
     '<rootDir>/src/components/.*test\.tsx$',
     '<rootDir>/src/__tests__/pages/ProfilePage.test.tsx',
+    '<rootDir>/src/__tests__/setup/testUtils.tsx',
   ],
   watchAll: false,
   globals: {

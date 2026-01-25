@@ -2,6 +2,13 @@ import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 
+// Mock pwaService to avoid import.meta issues
+jest.mock('../../services/pwaService', () => ({
+  pwaService: { registerServiceWorker: jest.fn() },
+  isPushNotificationSupported: jest.fn().mockReturnValue(false),
+  setupPushNotifications: jest.fn(),
+}));
+
 // Mock the auth config to avoid import.meta issues in Jest
 jest.mock('../../config/authConfig', () => ({
   msalConfig: {
@@ -38,6 +45,16 @@ jest.mock('@chakra-ui/react', () => ({
   Link: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <a {...props}>{children}</a>,
   ChakraProvider: ({ children }: React.PropsWithChildren<unknown>) => <>{children}</>,
   defaultSystem: {},
+  Portal: ({ children }: React.PropsWithChildren<unknown>) => <>{children}</>,
+  Drawer: {
+    Root: ({ children }: React.PropsWithChildren<Record<string, unknown>>) => <div data-testid="drawer">{children}</div>,
+    Backdrop: () => <div data-testid="drawer-backdrop" />,
+    Positioner: ({ children }: React.PropsWithChildren<unknown>) => <div>{children}</div>,
+    Content: ({ children }: React.PropsWithChildren<unknown>) => <div>{children}</div>,
+    Header: ({ children }: React.PropsWithChildren<unknown>) => <div>{children}</div>,
+    Body: ({ children }: React.PropsWithChildren<unknown>) => <div>{children}</div>,
+    CloseTrigger: ({ children }: React.PropsWithChildren<unknown>) => <button>{children}</button>,
+  },
 }));
 
 import { Layout } from '../../components/Layout';
