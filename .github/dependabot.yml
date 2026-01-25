@@ -10,19 +10,19 @@ updates:
       - "dependencies"
       - "github-actions"
 
-  # Python backend dependencies
+  # Python Functions dependencies
   - package-ecosystem: "pip"
-    directory: "/backend"
+    directory: "/functions-modernized"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     labels:
       - "dependencies"
       - "python"
-    ignore:
-      # Ignore patch updates for non-critical packages
-      - dependency-name: "*"
-        update-types: ["version-update:semver-patch"]
+    groups:
+      azure-functions:
+        patterns:
+          - "azure*"
 
   # Npm frontend dependencies
   - package-ecosystem: "npm"
