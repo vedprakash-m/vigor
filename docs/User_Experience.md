@@ -252,7 +252,62 @@ flowchart TD
 
 ---
 
-## 5. Page-By-Page Specifications
+## 5. Information Architecture & Page Specifications
+
+### 5.0 Core Design Principle: Each Page Owns Its Domain
+
+To create a magical, intuitive experience, we eliminate information duplication across pages. Each page has a clear purpose and owns specific data domains:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    NAVIGATION HIERARCHY                              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  🏠 HOME (Dashboard)     → TODAY's focus + motivation                │
+│     • What should I do RIGHT NOW?                                    │
+│     • Streak display (the ONE motivational metric)                   │
+│     • Single primary CTA                                             │
+│                                                                      │
+│  💪 WORKOUTS             → CREATE & EXECUTE workouts                 │
+│     • Generate new workout                                           │
+│     • View/repeat past workouts                                      │
+│     • Active workout session                                         │
+│                                                                      │
+│  🤖 COACH                → CONVERSATION & GUIDANCE                   │
+│     • Chat interface with Coach Vigor persona                        │
+│     • Contextual suggestions                                         │
+│     • Form tips, motivation                                          │
+│                                                                      │
+│  📊 PROGRESS             → ANALYTICS & HISTORY (owns ALL stats)      │
+│     • All numerical metrics (total, weekly, calories)                │
+│     • Charts, trends, calendars                                      │
+│     • Milestones & achievements                                      │
+│     • Workout history                                                │
+│                                                                      │
+│  ⚙️ SETTINGS (Profile)   → SETTINGS & PERSONALIZATION               │
+│     • User info & preferences                                        │
+│     • Fitness goals & equipment                                      │
+│     • Notification & accessibility settings                          │
+│     • Account management                                             │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 5.0.1 Information Ownership Matrix
+
+| Information Domain     |     Home     |  Workouts  |  Coach  |   Progress    |   Settings   |
+| ---------------------- | :----------: | :--------: | :-----: | :-----------: | :----------: |
+| **Current Streak**     |  ✅ Primary  |     ❌     |   ❌    | ✅ In context |      ❌      |
+| **Total Workouts**     |      ❌      |     ❌     |   ❌    |    ✅ Owns    |      ❌      |
+| **Weekly Workouts**    |      ❌      |     ❌     |   ❌    |    ✅ Owns    |      ❌      |
+| **Calories Burned**    |      ❌      |     ❌     |   ❌    |    ✅ Owns    |      ❌      |
+| **Workout Generation** |  Link only   |  ✅ Owns   |   ❌    |      ❌       |      ❌      |
+| **Workout History**    |      ❌      | ✅ Library |   ❌    | ✅ Analytics  |      ❌      |
+| **AI Chat**            |    Teaser    |     ❌     | ✅ Owns |      ❌       |      ❌      |
+| **User Profile Data**  |      ❌      |     ❌     |   ❌    |      ❌       |   ✅ Owns    |
+| **Accessibility**      |      ❌      |     ❌     |   ❌    |      ❌       |   ✅ Owns    |
+| **Milestones/Badges**  |      ❌      |     ❌     |   ❌    |    ✅ Owns    |      ❌      |
+| **Weekly Goals**       | Progress bar |     ❌     |   ❌    |  ✅ Detailed  | ✅ Configure |
 
 ### 5.1 Landing / Marketing (`/`) - Aligned with PRD Value Propositions
 
@@ -261,11 +316,9 @@ flowchart TD
 | Hero Section             | AI-Powered Advantage      | "The AI fitness coach that understands you" | Hero video with AI branding      |
 | Value Proposition Banner | Cost vs Personal Trainer  | Carousel: $50-100/session → Free            | Side-by-side comparison          |
 | Primary CTA              | Signup / SSO / Guest Demo | Sticky bottom sheet when scrolling          | Top-right signup modal           |
-| AI Transparency          | Build AI Trust            | "Powered by OpenAI gpt-5-mini"              | OpenAI branding with explanation |
+| AI Transparency          | Build AI Trust            | "Powered by OpenAI"                         | AI branding with explanation     |
 | Social Proof             | Testimonials & Stats      | Horizontal scroll user testimonials         | Grid layout with success metrics |
 | Cost Comparison          | vs Competitors            | "Professional guidance at consumer prices"  | Feature comparison table         |
-
-### 5.2 Register & Authentication (`/auth`) - Microsoft Entra ID Integration
 
 ### 5.2 Register & Authentication (`/auth`) - Microsoft Entra ID Integration
 
@@ -290,47 +343,118 @@ flowchart TD
 **Mobile UX**: Progress bar, haptic feedback, swipe navigation, auto-save for resumption
 **Skip Options**: All optional except goals and fitness level for basic AI personalization
 
-### 5.4 Dashboard (`/app/dashboard`) - Central Hub per PRD Navigation
+### 5.4 Home (`/app/dashboard`) - Today's Mission Control
 
-| Section                 | Component                                    | Free Tier                      | Premium Tier                                |
-| ----------------------- | -------------------------------------------- | ------------------------------ | ------------------------------------------- |
-| **Today's Focus**       | Next workout card + "Generate New" CTA       | 5 plans/month limit shown      | Unlimited generation (POST-MVP)             |
-| **AI Coach Preview**    | Last conversation snippet + unread indicator | 10 chats/month limit shown     | Unlimited coaching (POST-MVP)               |
-| **Streak & Motivation** | Current streak, weekly consistency           | Basic streak counter           | Enhanced badges + social sharing (POST-MVP) |
-| **Quick Stats**         | This week: workouts, AI interactions         | Basic metrics                  | Advanced analytics preview (POST-MVP)       |
-| **Upgrade Prompt**      | Contextual premium feature highlights        | Visible when limits approached | Hidden for premium users (POST-MVP)         |
+**Purpose**: Answer "What should I do RIGHT NOW?" — motivate immediate action, not overwhelm with data.
 
-**Mobile**: Bottom tab navigation (Dashboard, Workouts, Coach, Profile)
-**Desktop**: Sidebar navigation with 3-column dashboard layout
+**Design Philosophy**: The Home page is NOT a data dashboard. It's a launchpad that creates momentum.
 
-### 5.5 Workout Generation (`/workouts/generate`) - Core AI Feature
+#### Content Structure
 
-**Input Controls**:
+| Section                | Purpose                      | Implementation                                                        |
+| ---------------------- | ---------------------------- | --------------------------------------------------------------------- |
+| **Greeting**           | Personal, contextual welcome | Time-of-day aware: "Good morning, [Name]!" with motivational subtitle |
+| **Streak Display**     | Single motivational metric   | Current streak with flame icon 🔥 — the ONE stat shown prominently    |
+| **Today's Focus Card** | Primary action               | Adaptive CTA based on user state (see below)                          |
+| **Coach Teaser**       | AI engagement                | One-line contextual suggestion from AI coach with link                |
+| **Today's Status**     | Simple check-in              | "Did you work out today?" Yes/No quick log option                     |
+
+#### Adaptive Primary Action Card
+
+The main card adapts to user state:
+
+| User State                       | Card Content                                                  | CTA                         |
+| -------------------------------- | ------------------------------------------------------------- | --------------------------- |
+| **New user (0 workouts)**        | "Ready to begin your fitness journey?" + quick focus selector | "Generate My First Workout" |
+| **Returning user (has history)** | Suggested workout based on schedule/history                   | "Start Today's Workout"     |
+| **Streak at risk**               | "Don't break your X-day streak! 🔥"                           | "Quick 15-min Workout"      |
+| **Completed today**              | "Great job today! 🎉" with recovery tip                       | "Chat with Coach"           |
+
+#### What is NOT on Home (Moved to Progress)
+
+- ❌ Total Workouts stat
+- ❌ Weekly Workouts stat
+- ❌ Calories Burned stat
+- ❌ Longest Streak stat
+- ❌ Recent Workouts list
+- ❌ Weekly Goal Progress bar (simplified version OK)
+- ❌ LLMStatus technical card (moved to Settings > Debug)
+
+#### Mobile Layout
+
+```
+┌─────────────────────────────────────────────────┐
+│  Good morning, Vedprakash! ☀️                   │
+│  Your 3-day streak is on fire 🔥                 │
+├─────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────┐    │
+│  │  TODAY'S FOCUS                          │    │
+│  │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━     │    │
+│  │  💪 Upper Body Strength                 │    │
+│  │  30 min • Based on your schedule        │    │
+│  │                                         │    │
+│  │  [   Start Workout   ]                  │    │
+│  │                                         │    │
+│  │  or customize →                         │    │
+│  └─────────────────────────────────────────┘    │
+├─────────────────────────────────────────────────┤
+│  💬 Coach Vigor says:                           │
+│  "Great consistency! Try adding stretching."    │
+│                              [Chat with Coach]  │
+├─────────────────────────────────────────────────┤
+│  Did you work out today?  [Yes ✓] [Not yet]     │
+└─────────────────────────────────────────────────┘
+```
+
+### 5.5 Workouts (`/app/workouts`) - Your Workout Studio
+
+**Purpose**: Generate, browse, and execute workouts. This page OWNS workout creation and library.
+
+#### Tab Structure
+
+| Tab             | Content                                       |
+| --------------- | --------------------------------------------- |
+| **Generate**    | AI workout generator with full controls       |
+| **Library**     | Saved/generated workouts (favorites, history) |
+| **Quick Start** | One-tap access to repeat workouts             |
+
+#### Generate Tab — Input Controls
 
 - Duration slider: 15-90 minutes (PRD specification)
 - Focus areas: Full body, Upper, Lower, Core, Cardio (PRD categories)
 - Equipment override: Use profile default or specify for session
 - Intensity level: Light, Moderate, Intense
 
-**AI Transparency**:
+#### Quick Start Options
 
-- Show OpenAI gpt-5-mini generating the workout
+```
+┌────────────────┐ ┌────────────────┐ ┌────────────────┐
+│ 🔄 Repeat      │ │ ⚡ Quick       │ │ 💪 Full        │
+│ Last Workout   │ │ 15-min HIIT   │ │ Body Blast     │
+│ 45 min         │ │ No equipment  │ │ 60 min         │
+└────────────────┘ └────────────────┘ └────────────────┘
+```
+
+#### AI Transparency
+
+- Show AI generating the workout with subtle animation
 - Response time indicator
 - Quality rating prompt after generation
 
-**Generation Flow**:
+#### Generation Flow
 
 1. User inputs collected with progressive disclosure
-2. Loading state with estimated time
+2. Loading state with motivational message
 3. Generated plan with exercise details, modifications, safety notes
-4. Option to regenerate with adjusted parameters if unsatisfied
+4. Start Session button leads to active workout mode
+5. Option to regenerate with adjusted parameters
 
-### 5.6 Workout Session (`/workout/:id`) - PWA Optimized
+### 5.6 Workout Session (`/app/workout/:id`) - Active Workout Mode
 
 **Mobile-First Design**:
 
 - Full-screen exercise cards with swipe navigation
-- Large, thumb-friendly "Complete Set" button
+- Large, thumb-friendly "Complete Set" button (bottom-right per design philosophy)
 - Rest timer with background notifications and haptic feedback
 - Voice announcements for hands-free operation (accessibility)
 
@@ -347,83 +471,173 @@ flowchart TD
 - Offline capability with sync when connected
 - Emergency exit with session state preservation
 
-### 5.7 AI Coach Chat (`/coach`) - Conversational Intelligence
+### 5.7 Coach (`/app/coach`) - Your AI Fitness Coach
 
-**Chat Interface**:
+**Purpose**: Conversational AI guidance with personality and context awareness.
 
-- WhatsApp-style message bubbles
-- Provider attribution for each AI response
-- Context awareness indicators (knows your profile, workout history)
-- Quick reply suggestions for common questions
+#### Coach Persona: "Coach Vigor"
 
-**Free vs Premium**:
+The AI coach has a defined persona to create emotional connection:
 
-- Free: 10 conversations/month with usage counter
-- Premium: Unlimited with priority routing and faster responses
+- **Name**: Coach Vigor
+- **Personality**: Encouraging, knowledgeable, supportive
+- **Voice**: Warm but professional, uses user's name
+- **Avatar**: Friendly robot/coach icon 🤖
 
-**Safety Features**:
+#### Chat Interface
 
-- Medical disclaimers for health-related advice
-- Injury prevention warnings
-- Professional consultation recommendations
+```
+┌─────────────────────────────────────────────────┐
+│  🤖 Coach Vigor                          [···]  │
+│  Your AI Fitness Coach                          │
+├─────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────┐    │
+│  │ 🤖 Hey Vedprakash! I noticed you've    │    │
+│  │    been consistent this week. Ready    │    │
+│  │    to push a bit harder today?         │    │
+│  └─────────────────────────────────────────┘    │
+│                                                 │
+│  Quick topics:                                  │
+│  [Form tips] [Motivation] [Recovery] [Nutrition]│
+├─────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────┐    │
+│  │ Ask Coach Vigor anything...             │  ▶ │
+│  └─────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────┘
+```
 
-**Cost Management UX**:
+#### Features
 
-- **Graceful Degradation**: When budget limits are approached, users see informative messages about usage limits
-- **Transparent AI**: Users can see OpenAI gpt-5-mini responding with quality indicators
-- **Budget-Aware Features**: Free tier users see remaining AI chat quota with upgrade prompts
-- **Cache Hit Indicators**: Visual indicators when responses come from intelligent caching for faster experience
+- **Quick Action Chips**: Pre-defined topics for easy engagement
+- **Context Awareness**: Shows "I know you did legs yesterday" type indicators
+- **Conversation History**: Maintains context across sessions
+- **Safety First**: Medical disclaimers, injury prevention warnings
 
-### 5.8 Progress Analytics (`/progress`) - Data-Driven Insights
+#### Free vs Premium (POST-MVP)
 
-**Visualization Types**:
+- Free: 50 chats/day with usage counter
+- Premium: Unlimited with priority routing
 
-- Weekly workout frequency (line chart)
-- Strength progression (bar charts for key lifts)
-- Consistency streaks (calendar heatmap)
-- AI interaction patterns
+### 5.8 Progress (`/app/progress`) - Your Fitness Journey (OWNS ALL STATS)
 
-**Interactive Features**:
+**Purpose**: Complete analytics, history, achievements. This page is the SINGLE SOURCE for all numerical data.
 
-- Date range selection
+#### Tab Structure
+
+| Tab              | Content                              |
+| ---------------- | ------------------------------------ |
+| **Overview**     | Summary stats, activity calendar     |
+| **History**      | Detailed workout log list            |
+| **Achievements** | Milestones, badges, personal records |
+
+#### Stats This Page Owns
+
+- ✅ Total Workouts (all time)
+- ✅ Weekly Workouts (this week count)
+- ✅ Current Streak (days)
+- ✅ Longest Streak (personal record)
+- ✅ Calories Burned (estimated)
+- ✅ 30-Day Activity Calendar
+- ✅ Weekly/Monthly Trends
+- ✅ Average Workout Duration
+- ✅ Consistency Percentage
+
+#### Layout
+
+```
+┌─────────────────────────────────────────────────┐
+│  Progress                                       │
+│  ───────────────────────────────────────────    │
+│  [Overview]    [History]    [Achievements]      │
+├─────────────────────────────────────────────────┤
+│  THIS MONTH                                     │
+│  ┌────┐ ┌────┐ ┌────┐ ┌────┐                   │
+│  │ 12 │ │ 3  │ │5🔥 │ │2.4k│                   │
+│  │total│ │week│ │strk│ │cal │                   │
+│  └────┘ └────┘ └────┘ └────┘                   │
+├─────────────────────────────────────────────────┤
+│  30-DAY ACTIVITY                                │
+│  [■][■][□][■][■][■][□][■][■][■][□]...          │
+├─────────────────────────────────────────────────┤
+│  MILESTONES                                     │
+│  ✅ First Workout    ✅ 7-Day Streak            │
+│  🔄 20 Workouts (12/20)  🔄 30-Day Streak      │
+└─────────────────────────────────────────────────┘
+```
+
+#### Interactive Features
+
+- Date range selection for trend analysis
 - Exercise type filtering
 - Export data functionality (CSV/PDF)
-- Goal progress tracking with celebrations
+- Celebration animations for milestones
 
-**Mobile Optimizations**:
+### 5.9 Settings (`/app/profile`) - Your Preferences Hub
 
-- Horizontal scroll for chart viewing
-- Pinch-zoom for detailed inspection
-- Simplified metrics for small screens
+**Purpose**: All user configuration in one place. Renamed from "Profile" to reflect comprehensive scope.
 
-### 5.9 Admin Panel (`/admin/*`) - Enhanced AI Cost Management & LLM Control
+#### Section Structure
+
+| Section             | Content                                 |
+| ------------------- | --------------------------------------- |
+| **Account**         | Name, email, member since, avatar       |
+| **Fitness Profile** | Goals, level, equipment (editable)      |
+| **Weekly Goals**    | Target workouts per week                |
+| **Preferences**     | Notifications, theme, units             |
+| **Accessibility**   | High contrast, reduce motion, font size |
+| **Data & Privacy**  | Export data, delete account             |
+
+#### Layout
+
+```
+┌─────────────────────────────────────────────────┐
+│  Settings                                       │
+│  ───────────────────────────────────────────    │
+│  ┌──────┐ Vedprakash Mishra                    │
+│  │  👤  │ vedprakash@example.com               │
+│  └──────┘ Member since Jan 2026                │
+├─────────────────────────────────────────────────┤
+│  FITNESS PROFILE                          [Edit]│
+│  Goal: Build Strength                          │
+│  Level: Intermediate                           │
+│  Equipment: Dumbbells, Resistance Bands        │
+│  Weekly Target: 4 workouts                     │
+├─────────────────────────────────────────────────┤
+│  PREFERENCES                                    │
+│  ├─ 🔔 Notifications                    [On]   │
+│  ├─ 🌙 Dark Mode                        [Off]  │
+│  ├─ ♿ Accessibility                    [→]    │
+│  └─ 🤖 AI Coach Settings               [→]    │
+├─────────────────────────────────────────────────┤
+│  DATA & ACCOUNT                                 │
+│  ├─ 📤 Export My Data                   [→]    │
+│  └─ 🗑️ Delete Account                   [→]    │
+└─────────────────────────────────────────────────┘
+```
+
+#### Accessibility Settings (Moved from Header)
+
+- High Contrast Mode toggle
+- Reduce Motion toggle
+- Screen Reader Optimized toggle
+- Font Size selector (A, A+, A++)
+- Reset to Defaults button
+
+### 5.10 Admin Panel (`/admin/*`) - System Management
 
 **AI Cost Management Dashboard**:
 
 - **Real-time Cost Monitoring**: Live budget utilization with visual indicators (green/yellow/red)
 - **Usage Breakdown**: Separate tabs for _Count_ metrics (workout plans, AI chats) and _Cost_ metrics (monthly $ per user)
 - **Budget Alerts**: Configurable thresholds with Azure Cost Management API integration
-- **Cost Forecasting**: Predictive analytics for monthly cost projection
 - **Per-User Cost Breakdown**: Detailed usage analytics by tier (Free/Premium)
-- **Automated Throttling Controls**: Emergency cost controls with one-click activation
-- **Cache Performance Metrics**: Cache hit rates and cost savings visualization
+- **Emergency Controls**: One-click throttling activation
 
 **AI Provider Monitoring**:
 
-- Real-time health status for OpenAI gpt-5-mini with latency metrics
+- Real-time health status for OpenAI with latency metrics
 - Model configuration with cost thresholds
-- **Dynamic Model Management**: Cost optimization controls
-- **Off-Peak Scaling**: Automated cost reduction during 2-6 AM UTC
 - Emergency toggle switches with impact assessment
-
-**Enhanced Budget Controls**:
-
-- Azure Cost Management API integration with real-time alerts
-- Monthly spend tracking by provider with trend analysis
-- Cost per user metrics with tier-based limits enforcement
-- **Budget Validation Engine**: Pre-operation cost checking with approval workflows
-- **Limit Overrides**: Admins can adjust or temporarily bypass any rate limit, quota, or budget cap directly from the dashboard
-- Pause/resume infrastructure controls with cost impact preview
 
 **User Management**:
 
@@ -431,7 +645,7 @@ flowchart TD
 - Usage analytics and patterns
 - Support impersonation (read-only)
 
-### 5.10 Support Console (`/support/*`) - Customer Success Tools
+### 5.11 Support Console (`/support/*`) - Customer Success Tools
 
 **User Search & Overview**:
 
@@ -644,43 +858,62 @@ flowchart TD
 
 > _Use the built-in Mermaid live renderer to view._
 
-### 9.1 Mobile Dashboard (Updated for Production)
+### 9.1 Mobile Home (Redesigned for Clarity)
 
 ```mermaid
 graph TD
   style root fill:#fff,stroke:#333,stroke-width:1px
-  subgraph root[Mobile Dashboard 360×640]
-    A[Top Bar: 'Hi Sarah' + AI Status]
-    B[Streak Badge: 🔥 5 Days + Weekly Goal]
-    C[Today's Workout Card: 'Upper Body HIIT - 30min']
-    D[AI Coach Snippet: 'Great squat form yesterday!']
-    E[Quick Stats: This Week - 3 workouts, 8 AI chats]
-    F[Upgrade Prompt: 'Get unlimited workouts' - Free Tier]
-    G[[Bottom Tab Bar: Home|Workouts|Coach|Profile]]
+  subgraph root[Mobile Home 360×640]
+    A[Greeting: 'Good morning, Sarah! ☀️']
+    B[Streak: '🔥 5-day streak - Keep it up!']
+    C[Today's Focus Card: Primary CTA]
+    D[Coach Teaser: One-line AI suggestion]
+    E[Quick Check-in: Did you work out today?]
+    F[[Bottom Nav: 🏠Home|💪Workouts|🤖Coach|📊Progress|⚙️Settings]]
   end
-  A --> B --> C --> D --> E --> F --> G
+  A --> B --> C --> D --> E --> F
 ```
 
-### 9.2 AI Workout Generation Flow
+### 9.2 Navigation Structure
+
+```mermaid
+flowchart LR
+  subgraph Navigation[Main Navigation]
+    Home[🏠 Home]
+    Workouts[💪 Workouts]
+    Coach[🤖 Coach]
+    Progress[📊 Progress]
+    Settings[⚙️ Settings]
+  end
+
+  Home -->|Primary Action| Workouts
+  Home -->|Teaser Link| Coach
+  Workouts -->|After Complete| Progress
+  Coach -->|Profile Questions| Settings
+  Progress -->|Edit Goals| Settings
+```
+
+### 9.3 AI Workout Generation Flow
 
 ```mermaid
 flowchart TD
   Start([Generate Workout CTA]) --> Input[Duration, Focus, Equipment]
-  Input --> Check{Free Tier Limit?}
-  Check -->|Within Limit| AI[AI Generation]
-  Check -->|Limit Reached| Upgrade[Upgrade Prompt]
-  AI --> Loading[Loading: Using OpenAI gpt-5-mini...]
+  Input --> Check{Daily Limit Check}
+  Check -->|Within 50/day| AI[AI Generation]
+  Check -->|Limit Reached| Tomorrow[Try Again Tomorrow Message]
+  AI --> Loading[Loading with motivational message]
   Loading --> Generated[Workout Plan with Safety Notes]
-  Generated --> Review[User Review + Rating]
-  Review --> Save[Save to Library]
-  Save --> Session([Start Workout Session])
+  Generated --> Actions{User Choice}
+  Actions -->|Start| Session([Active Workout Mode])
+  Actions -->|Save| Library[Add to Library]
+  Actions -->|Regenerate| Input
 ```
 
-### 9.3 AI Processing Flow
+### 9.4 AI Processing Flow
 
 ```mermaid
 flowchart LR
-  Request[User Request] --> AI[OpenAI gpt-5-mini]
+  Request[User Request] --> AI[Azure OpenAI]
   AI --> Cache{Cache Check}
   Cache -->|Hit| Cached[Cached Response]
   Cache -->|Miss| Generate[Generate New Response]

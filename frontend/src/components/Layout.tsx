@@ -2,15 +2,15 @@ import { Box, Drawer, Flex, Heading, HStack, IconButton, Portal, Text } from '@c
 import { useState } from 'react'
 import { Outlet, Link as RouterLink, useLocation } from 'react-router-dom'
 import { useVedAuth } from '../contexts/useVedAuth'
-import AccessibilityPanel from './AccessibilityPanel'
 import PushNotificationSetup from './PushNotificationSetup'
 
+// Navigation links with icons for visual hierarchy
 const Links = [
-  { name: 'Dashboard', path: '/app/dashboard' },
-  { name: 'Workouts', path: '/app/workouts' },
-  { name: 'AI Coach', path: '/app/coach' },
-  { name: 'Progress', path: '/app/progress' },
-  { name: 'Profile', path: '/app/profile' },
+  { name: 'Home', path: '/app/dashboard', icon: '🏠' },
+  { name: 'Workouts', path: '/app/workouts', icon: '💪' },
+  { name: 'Coach', path: '/app/coach', icon: '🤖' },
+  { name: 'Progress', path: '/app/progress', icon: '📊' },
+  { name: 'Settings', path: '/app/profile', icon: '⚙️' },
 ]
 
 export const Layout = () => {
@@ -27,15 +27,19 @@ export const Layout = () => {
               to={link.path}
               onClick={onClose}
               style={{
-                display: 'block',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
                 padding: '12px',
                 borderRadius: '8px',
                 backgroundColor: location.pathname === link.path ? '#3182CE' : 'transparent',
                 color: location.pathname === link.path ? 'white' : '#2D3748',
                 textDecoration: 'none',
+                transition: 'all 0.2s',
               }}
             >
-              {link.name}
+              <span style={{ fontSize: '1.2em' }}>{link.icon}</span>
+              <span>{link.name}</span>
             </RouterLink>
           </Box>
         ))}
@@ -48,6 +52,9 @@ export const Layout = () => {
           w="100%"
           textAlign="left"
           rounded="md"
+          display="flex"
+          alignItems="center"
+          gap={3}
           _hover={{ bg: 'gray.100' }}
           onClick={() => {
             onClose?.()
@@ -55,7 +62,8 @@ export const Layout = () => {
           }}
           cursor="pointer"
         >
-          Logout
+          <span>🚪</span>
+          <span>Logout</span>
         </Text>
       </Box>
     </>
@@ -112,7 +120,7 @@ export const Layout = () => {
 
       {/* Main content */}
       <Box flex="1">
-        {/* Header */}
+        {/* Header - Simplified, accessibility moved to Settings */}
         <Flex
           bg="white"
           px={6}
@@ -138,8 +146,9 @@ export const Layout = () => {
           </HStack>
 
           <HStack gap={4}>
-            <AccessibilityPanel />
-            <Text display={{ base: 'none', sm: 'block' }}>{user?.name || user?.email}</Text>
+            <Text display={{ base: 'none', sm: 'block' }} color="gray.600">
+              {user?.name || user?.email}
+            </Text>
           </HStack>
         </Flex>
 

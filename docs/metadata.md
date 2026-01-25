@@ -182,6 +182,54 @@ vigor/
 
 ---
 
+## 6.1 Phase 4: UX Transformation (Current Focus)
+
+> **Goal**: Transform from functional-but-flat UI to magical, intuitive experience with clear information architecture.
+
+### 6.1.1 Design Principles Applied
+
+1. **Each page owns its domain** — No duplicate information across pages
+2. **Home is a launchpad, not a dashboard** — Motivates action, doesn't overwhelm with data
+3. **Progress owns all stats** — Single source of truth for metrics
+4. **Settings is comprehensive** — All user preferences in one place
+5. **Coach has personality** — AI with persona creates emotional connection
+
+### 6.1.2 Implementation Tasks
+
+| Task                              | Priority | File(s)                             | Status | Description                                                                                      |
+| --------------------------------- | -------- | ----------------------------------- | ------ | ------------------------------------------------------------------------------------------------ |
+| **T1: Refactor Home page**        | P0       | `PersonalizedDashboardPage.tsx`     | ⏳     | Remove duplicate stats, add time-contextual greeting, single primary CTA, streak-only motivation |
+| **T2: Update navigation**         | P0       | `Layout.tsx`                        | ⏳     | Add icons (🏠💪🤖📊⚙️), rename Dashboard→Home, Profile→Settings                                  |
+| **T3: Move Accessibility**        | P0       | `Layout.tsx`, `ProfilePage.tsx`     | ⏳     | Remove from header, add to Settings page                                                         |
+| **T4: Enhance Settings page**     | P1       | `ProfilePage.tsx`                   | ⏳     | Add fitness profile, weekly goals, preferences, accessibility settings                           |
+| **T5: Add Coach persona**         | P1       | `CoachPage.tsx`                     | ⏳     | Add "Coach Vigor" branding, quick action chips, context awareness                                |
+| **T6: Enhance Workouts page**     | P1       | `WorkoutPage.tsx`                   | ⏳     | Add quick-start options, improve generation UX                                                   |
+| **T7: Verify Progress ownership** | P2       | `EnhancedProgressVisualization.tsx` | ⏳     | Ensure all stats display correctly with no Dashboard duplication                                 |
+
+### 6.1.3 Information Ownership Matrix
+
+| Information        |  Home  | Workouts | Coach | Progress | Settings |
+| ------------------ | :----: | :------: | :---: | :------: | :------: |
+| Current Streak     |   ✅   |    ❌    |  ❌   |    ✅    |    ❌    |
+| Total Workouts     |   ❌   |    ❌    |  ❌   |    ✅    |    ❌    |
+| Weekly Workouts    |   ❌   |    ❌    |  ❌   |    ✅    |    ❌    |
+| Calories Burned    |   ❌   |    ❌    |  ❌   |    ✅    |    ❌    |
+| Workout Generation |  Link  |    ✅    |  ❌   |    ❌    |    ❌    |
+| AI Chat            | Teaser |    ❌    |  ✅   |    ❌    |    ❌    |
+| User Profile       |   ❌   |    ❌    |  ❌   |    ❌    |    ✅    |
+| Accessibility      |   ❌   |    ❌    |  ❌   |    ❌    |    ✅    |
+
+### 6.1.4 Success Criteria
+
+- [ ] Home page shows only: greeting, streak, primary CTA, coach teaser
+- [ ] No duplicate stats between Home and Progress
+- [ ] Navigation has icons and clearer labels
+- [ ] Settings page has all preferences including accessibility
+- [ ] Coach page has "Coach Vigor" persona
+- [ ] App loads without errors after all changes
+
+---
+
 ## 7. ENVIRONMENT CONFIGURATION
 
 ### Required Environment Variables (Backend)
