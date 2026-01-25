@@ -385,7 +385,7 @@ async def login(req: func.HttpRequest) -> func.HttpResponse:
 
 @app.route(route="auth/me", methods=["GET"])
 async def get_current_user(req: func.HttpRequest) -> func.HttpResponse:
-    """Get current user profile using VedUser standard interface"""
+    """Get current user profile using User standard interface"""
     current_user = await get_current_user_from_token(req)
     return func.HttpResponse(json.dumps(current_user.dict()))
 
@@ -891,7 +891,7 @@ class BudgetDecision(Enum):
     DOWNGRADE = "downgrade"  # switch to cheaper model
     DENY = "deny"            # use local template / fallback
 
-async def validate_budget_before_operation(user: VedUser, tokens: int) -> BudgetDecision:
+async def validate_budget_before_operation(user: User, tokens: int) -> BudgetDecision:
     if exceeds_count_quota(user):
         return BudgetDecision.DENY
     if exceeds_dollar_budget(tokens):

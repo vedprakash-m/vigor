@@ -107,7 +107,7 @@ vigor/
 │   │   │   ├── Layout.tsx      # App shell
 │   │   │   └── ...
 │   │   ├── pages/              # Route-level pages
-│   │   ├── contexts/           # VedAuthContext (MSAL)
+│   │   ├── contexts/           # AuthContext (MSAL)
 │   │   ├── services/api.ts     # API client
 │   │   └── config/authConfig.ts# MSAL configuration
 │   └── package.json

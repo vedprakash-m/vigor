@@ -61,8 +61,8 @@ const mockUser = {
   id: 'test-id-123',
 }
 
-jest.mock('../../contexts/useVedAuth', () => ({
-  useVedAuth: () => ({
+jest.mock('../../contexts/useAuth', () => ({
+  useAuth: () => ({
     user: mockUser,
     isAuthenticated: true,
     isLoading: false,
@@ -80,13 +80,15 @@ const mockWorkoutPlan = {
   duration_minutes: 45,
 }
 
-// Mock AI service - simplified since service might not exist
-jest.mock('../../services/workoutService', () => ({
-  workoutService: {
-    getWorkoutPlans: jest.fn().mockResolvedValue([mockWorkoutPlan]),
-    generateWorkout: jest.fn().mockResolvedValue(mockWorkoutPlan),
-    logWorkout: jest.fn().mockResolvedValue({ success: true }),
-    saveWorkoutPlan: jest.fn().mockResolvedValue({ id: 'new-plan-1' }),
+// Mock AI service - using the actual api.ts module
+jest.mock('../../services/api', () => ({
+  api: {
+    workouts: {
+      getWorkoutPlans: jest.fn().mockResolvedValue([mockWorkoutPlan]),
+      generateWorkout: jest.fn().mockResolvedValue(mockWorkoutPlan),
+      logWorkout: jest.fn().mockResolvedValue({ success: true }),
+      saveWorkoutPlan: jest.fn().mockResolvedValue({ id: 'new-plan-1' }),
+    },
   },
 }))
 

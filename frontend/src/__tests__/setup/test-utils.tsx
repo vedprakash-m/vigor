@@ -7,7 +7,6 @@ import { ChakraProvider, defaultSystem } from '@chakra-ui/react';
 import { render, RenderOptions } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { AuthProvider } from '../../contexts/AuthContext';
 import type { User } from '../../types/auth';
 
 // Mock User with all required properties for testing
@@ -16,21 +15,23 @@ export const createMockUser = (overrides: Partial<User> = {}): User => ({
   email: 'test@example.com',
   username: 'testuser',
   name: 'Test User',
-  is_active: true,
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z',
-  fitness_level: 'beginner',
-  tier: 'FREE',
+  givenName: 'Test',
+  familyName: 'User',
+  permissions: [],
+  profile: {
+    profileId: 'test-profile-1',
+    subscriptionTier: 'free',
+    appsEnrolled: [],
+    preferences: {},
+  },
   ...overrides,
 });
 
-// Test wrapper with all necessary providers
+// Test wrapper with all necessary providers (no AuthProvider needed - using AuthContext via MSAL)
 const AllTestProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <MemoryRouter>
     <ChakraProvider value={defaultSystem}>
-      <AuthProvider>
-        {children}
-      </AuthProvider>
+      {children}
     </ChakraProvider>
   </MemoryRouter>
 );

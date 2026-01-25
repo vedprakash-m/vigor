@@ -19,7 +19,7 @@ import {
 } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
-import { useVedAuth } from '../contexts/useVedAuth'
+import { useAuth } from '../contexts/useAuth'
 import { api, type UserStats, type WorkoutLog } from '../services/api'
 
 // Get time-of-day greeting
@@ -35,7 +35,7 @@ const getGreeting = (): { text: string; emoji: string } => {
 type UserState = 'new' | 'returning' | 'streak-at-risk' | 'completed-today'
 
 const PersonalizedDashboardPage = () => {
-    const { user } = useVedAuth()
+    const { user } = useAuth()
     const [currentStreak, setCurrentStreak] = useState(0)
     const [hasWorkoutToday, setHasWorkoutToday] = useState(false)
     const [totalWorkouts, setTotalWorkouts] = useState(0)

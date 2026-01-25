@@ -6,7 +6,7 @@
 import { Box, Heading, Spinner, Text, VStack } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useVedAuth } from '../contexts/useVedAuth'
+import { useAuth } from '../contexts/useAuth'
 
 interface OAuthCallbackProps {
     provider: string
@@ -14,7 +14,7 @@ interface OAuthCallbackProps {
 
 export const OAuthCallback = ({ provider }: OAuthCallbackProps) => {
     const navigate = useNavigate()
-    const { isAuthenticated, isLoading } = useVedAuth()
+    const { isAuthenticated, isLoading } = useAuth()
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {

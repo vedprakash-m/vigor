@@ -6,17 +6,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 
-// Mock the auth context
+// Mock the auth context (using AuthContext)
 const mockAuthContext = {
-  user: { id: 'test-user', username: 'testuser' },
-  token: 'test-token',
+  user: { id: 'test-user', username: 'testuser', email: 'test@example.com', name: 'Test User', givenName: 'Test', familyName: 'User', permissions: [], profile: { profileId: 'test', subscriptionTier: 'free' as const, appsEnrolled: [], preferences: {} } },
   isAuthenticated: true,
+  isLoading: false,
   login: jest.fn(),
   logout: jest.fn(),
-  register: jest.fn()
 }
 
-jest.mock('../../contexts/AuthContext', () => ({
+jest.mock('../../contexts/useAuth', () => ({
   useAuth: () => mockAuthContext
 }))
 

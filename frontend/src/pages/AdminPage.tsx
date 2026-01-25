@@ -10,7 +10,7 @@ import {
     Text,
     VStack,
 } from '@chakra-ui/react'
-import { useVedAuth } from '../contexts/useVedAuth'
+import { useAuth } from '../contexts/useAuth'
 
 interface StatCardProps {
   title: string
@@ -43,7 +43,7 @@ const StatCard = ({ title, value, description, status = 'success' }: StatCardPro
 }
 
 export const AdminPage = () => {
-  const { user } = useVedAuth()
+  const { user } = useAuth()
 
   return (
     <Box p={6}>

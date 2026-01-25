@@ -18,7 +18,7 @@ import {
     VStack,
 } from '@chakra-ui/react'
 import { useState } from 'react'
-import { useVedAuth } from '../contexts/useVedAuth'
+import { useAuth } from '../contexts/useAuth'
 
 interface Friend {
     id: string
@@ -82,7 +82,7 @@ const mockActivities: Activity[] = [
 ]
 
 const SocialFeatures = () => {
-    useVedAuth() // For future user-specific features
+    useAuth() // For future user-specific features
     const [friends] = useState<Friend[]>(mockFriends)
     const [activities] = useState<Activity[]>(mockActivities)
     const [searchQuery, setSearchQuery] = useState('')

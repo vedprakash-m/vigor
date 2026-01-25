@@ -171,7 +171,7 @@ vigor/
 │   │   ├── components/         # Layout, ErrorBoundary, ProtectedRoute, etc.
 │   │   ├── pages/              # WorkoutPage, CoachPage, DashboardPage, etc.
 │   │   ├── services/api.ts     # Unified API client
-│   │   ├── contexts/           # VedAuthContext (MSAL)
+│   │   ├── contexts/           # AuthContext (MSAL)
 │   │   └── config/             # authConfig.ts, environment
 │   ├── e2e/                    # Playwright E2E tests
 │   └── package.json

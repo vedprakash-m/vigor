@@ -32,7 +32,7 @@ import {
     FiZap,
 } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
-import { useVedAuth } from '../contexts/useVedAuth'
+import { useAuth } from '../contexts/useAuth'
 
 // Motion components
 const MotionBox = motion.create(Box)
@@ -67,7 +67,7 @@ const taglines = [
 
 export const LandingPage = () => {
   const navigate = useNavigate()
-  const { login, isAuthenticated, isLoading } = useVedAuth()
+  const { login, isAuthenticated, isLoading } = useAuth()
   const [currentTagline, setCurrentTagline] = useState(0)
 
   // Redirect if already authenticated

@@ -1,36 +1,27 @@
 /**
- * VedUser Interface - Vedprakash Domain Standard
- * Compliant with Apps_Auth_Requirement.md
+ * User Interface - Standard Auth Types
+ * For Microsoft Entra ID authentication
  */
-export interface VedUser {
+
+/**
+ * Primary User interface for authenticated users
+ */
+export interface User {
   id: string;           // Entra ID subject claim (primary user identifier)
   email: string;        // User's email address
   name: string;         // Full display name
   username: string;     // Username derived from email for backward compatibility
   givenName: string;    // First name
   familyName: string;   // Last name
-  tier?: 'free' | 'premium' | 'enterprise';    // Backward compatibility
+  tier?: 'free' | 'premium' | 'enterprise';    // Subscription tier
   permissions: string[]; // App-specific permissions from JWT claims
-  vedProfile: {
-    profileId: string;                           // Vedprakash domain profile ID
+  createdAt?: string;   // Account creation timestamp
+  profile: {
+    profileId: string;                           // Profile ID
     subscriptionTier: 'free' | 'premium' | 'enterprise';
     appsEnrolled: string[];                      // List of enrolled apps
     preferences: Record<string, string | number | boolean>; // User preferences
   };
-}
-
-// Legacy User interface - to be deprecated
-export interface User {
-  id: string
-  email: string
-  username: string
-  name: string
-  is_active: boolean
-  created_at: string
-  updated_at: string
-  fitness_level?: string
-  oauth_provider?: string
-  tier: string
 }
 
 export interface LoginRequest {
@@ -45,7 +36,7 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  user: VedUser
+  user: User
   access_token: string
   refresh_token: string
   token_type: string

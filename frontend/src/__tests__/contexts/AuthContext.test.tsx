@@ -36,20 +36,20 @@ jest.mock('../../config/authConfig', () => ({
   silentRequest: { scopes: ['api://test/access'] },
 }))
 
-// Mock API service
-jest.mock('../../services/vedApiService', () => ({
-  vedApiService: {
+// Mock API service (using the actual api.ts module)
+jest.mock('../../services/api', () => ({
+  api: {
     setAccessToken: jest.fn(),
     clearAccessToken: jest.fn(),
   },
 }))
 
-import { VedAuthProvider } from '../../contexts/VedAuthContext'
-import { useVedAuth } from '../../contexts/useVedAuth'
+import { AuthProvider } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/useAuth'
 
 // Test component that uses the context
 const TestConsumer: React.FC = () => {
-  const auth = useVedAuth()
+  const auth = useAuth()
   return (
     <div>
       <span data-testid="loading">{auth.isLoading.toString()}</span>
@@ -62,7 +62,7 @@ const TestConsumer: React.FC = () => {
   )
 }
 
-describe('VedAuthContext', () => {
+describe('AuthContext', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockInstance.acquireTokenSilent.mockResolvedValue({
@@ -77,9 +77,9 @@ describe('VedAuthContext', () => {
 
   it('provides authentication context to children', async () => {
     render(
-      <VedAuthProvider>
+      <AuthProvider>
         <TestConsumer />
-      </VedAuthProvider>
+      </AuthProvider>
     )
 
     await waitFor(() => {
@@ -89,9 +89,9 @@ describe('VedAuthContext', () => {
 
   it('shows authenticated state when user is logged in', async () => {
     render(
-      <VedAuthProvider>
+      <AuthProvider>
         <TestConsumer />
-      </VedAuthProvider>
+      </AuthProvider>
     )
 
     await waitFor(() => {
@@ -101,9 +101,9 @@ describe('VedAuthContext', () => {
 
   it('extracts user email from account', async () => {
     render(
-      <VedAuthProvider>
+      <AuthProvider>
         <TestConsumer />
-      </VedAuthProvider>
+      </AuthProvider>
     )
 
     await waitFor(() => {
@@ -113,9 +113,9 @@ describe('VedAuthContext', () => {
 
   it('renders login and logout buttons', async () => {
     render(
-      <VedAuthProvider>
+      <AuthProvider>
         <TestConsumer />
-      </VedAuthProvider>
+      </AuthProvider>
     )
 
     await waitFor(() => {
@@ -125,7 +125,7 @@ describe('VedAuthContext', () => {
   })
 })
 
-describe('VedAuthContext - Login Flow', () => {
+describe('AuthContext - Login Flow', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockInstance.acquireTokenSilent.mockResolvedValue({
@@ -143,9 +143,9 @@ describe('VedAuthContext - Login Flow', () => {
 
   it('calls login function when login button clicked', async () => {
     render(
-      <VedAuthProvider>
+      <AuthProvider>
         <TestConsumer />
-      </VedAuthProvider>
+      </AuthProvider>
     )
 
     await waitFor(() => {
@@ -162,7 +162,7 @@ describe('VedAuthContext - Login Flow', () => {
   })
 })
 
-describe('VedAuthContext - Logout Flow', () => {
+describe('AuthContext - Logout Flow', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockInstance.acquireTokenSilent.mockResolvedValue({
@@ -174,9 +174,9 @@ describe('VedAuthContext - Logout Flow', () => {
 
   it('calls logout function when logout button clicked', async () => {
     render(
-      <VedAuthProvider>
+      <AuthProvider>
         <TestConsumer />
-      </VedAuthProvider>
+      </AuthProvider>
     )
 
     await waitFor(() => {
@@ -193,7 +193,7 @@ describe('VedAuthContext - Logout Flow', () => {
   })
 })
 
-describe('VedAuthContext - Error Handling', () => {
+describe('AuthContext - Error Handling', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     jest.spyOn(console, 'error').mockImplementation(() => {})
@@ -207,9 +207,9 @@ describe('VedAuthContext - Error Handling', () => {
     mockInstance.acquireTokenSilent.mockRejectedValueOnce(new Error('Token error'))
 
     render(
-      <VedAuthProvider>
+      <AuthProvider>
         <TestConsumer />
-      </VedAuthProvider>
+      </AuthProvider>
     )
 
     await waitFor(() => {
@@ -222,9 +222,9 @@ describe('VedAuthContext - Error Handling', () => {
     useAccount.mockReturnValueOnce(null)
 
     render(
-      <VedAuthProvider>
+      <AuthProvider>
         <TestConsumer />
-      </VedAuthProvider>
+      </AuthProvider>
     )
 
     await waitFor(() => {
@@ -233,7 +233,7 @@ describe('VedAuthContext - Error Handling', () => {
   })
 })
 
-describe('useVedAuth Hook', () => {
+describe('useAuth Hook', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockInstance.acquireTokenSilent.mockResolvedValue({
@@ -255,9 +255,9 @@ describe('useVedAuth Hook', () => {
 
   it('returns user object when authenticated', async () => {
     render(
-      <VedAuthProvider>
+      <AuthProvider>
         <TestConsumer />
-      </VedAuthProvider>
+      </AuthProvider>
     )
 
     await waitFor(() => {

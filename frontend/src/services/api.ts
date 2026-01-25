@@ -181,9 +181,11 @@ export interface UserProfile extends User {
 
 export interface UserProfileData {
   fitnessLevel: 'beginner' | 'intermediate' | 'advanced';
+  fitnessGoal?: string;
   goals: string[];
   equipment: string[];
   preferredDuration: number;
+  weeklyGoal?: number;
 }
 
 export interface UserProfileUpdate {

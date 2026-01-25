@@ -19,7 +19,7 @@ import {
     VStack,
 } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
-import { useVedAuth } from '../contexts/useVedAuth'
+import { useAuth } from '../contexts/useAuth'
 import { api } from '../services/api'
 
 interface LLMConfig {
@@ -52,7 +52,7 @@ interface HealthStatus {
 }
 
 const LLMOrchestrationPage = () => {
-    const { user } = useVedAuth()
+    const { user } = useAuth()
     const [config, setConfig] = useState<LLMConfig>({
         provider: 'openai',
         model: 'gpt-5-mini',

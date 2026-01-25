@@ -185,7 +185,7 @@ flowchart TD
   E --> H[MFA Challenge if Required]
   F --> H
   H --> I[Entra ID Token Validation]
-  I --> J[VedUser Profile Creation/Update]
+  I --> J[User Profile Creation/Update]
   J --> K[Cross-App SSO Enabled]
   K --> L[Dashboard Access]
   G --> M[Limited Demo Experience]
@@ -329,7 +329,7 @@ To create a magical, intuitive experience, we eliminate information duplication 
 **Security Features**: Enterprise-grade MFA, conditional access, rate limiting (5 registrations/min)
 **Guest Option**: "Continue as guest" launches demo with synthetic data
 **Mobile**: MSAL-optimized redirects, biometric integration, accessible tap targets (44px minimum)
-**Enterprise Features**: Cross-app user profiles, unified permissions, VedUser interface compliance
+**Enterprise Features**: Cross-app user profiles, unified permissions, User interface compliance
 
 ### 5.3 Progressive Onboarding Wizard (`/onboarding`) - PRD Profile Requirements
 

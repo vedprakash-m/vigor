@@ -8,10 +8,10 @@ import {
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../components/compat'
-import { useVedAuth } from '../contexts/useVedAuth'
+import { useAuth } from '../contexts/useAuth'
 
 export const OnboardingPage = () => {
-  const { user, isAuthenticated } = useVedAuth()
+  const { user, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const toast = useToast()
 

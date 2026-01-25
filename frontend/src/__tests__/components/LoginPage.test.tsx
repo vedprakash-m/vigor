@@ -1,112 +1,83 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
-import { LoginPage } from '../../pages/LoginPage'
-import { authService } from '../../services/authService'
-import { render } from '../../test-utils'
+import { fireEvent, render, screen } from '@testing-library/react'
+import React from 'react'
+import { MemoryRouter } from 'react-router-dom'
 
-// Mock services
-jest.mock('../../services/authService')
+// Mock MSAL
+jest.mock('@azure/msal-react', () => ({
+  useMsal: () => ({
+    instance: { loginRedirect: jest.fn() },
+    accounts: [],
+  }),
+  MsalProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
 
-// Mock router
+// Mock navigate
+const mockNavigate = jest.fn()
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
-  useNavigate: () => jest.fn(),
+  useNavigate: () => mockNavigate,
 }))
+
+// Mock Auth context
+const mockLogin = jest.fn()
+jest.mock('../../contexts/useAuth', () => ({
+  useAuth: () => ({
+    login: mockLogin,
+    isAuthenticated: false,
+    isLoading: false,
+    error: null,
+  }),
+}))
+
+// Mock Chakra UI
+jest.mock('@chakra-ui/react', () => ({
+  Box: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <div {...props}>{children}</div>,
+  Button: ({ children, onClick, ...props }: React.PropsWithChildren<{ onClick?: () => void }>) => (
+    <button onClick={onClick} {...props}>{children}</button>
+  ),
+  Flex: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <div {...props}>{children}</div>,
+  Heading: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <h1 {...props}>{children}</h1>,
+  Icon: () => <span data-testid="icon" />,
+  Text: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <span {...props}>{children}</span>,
+  VStack: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <div {...props}>{children}</div>,
+}))
+
+import { LoginPage } from '../../pages/LoginPage'
 
 describe('LoginPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
-  it('renders email & password fields and submit button', () => {
-    render(<LoginPage />)
-    expect(screen.getByPlaceholderText('Enter your email')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Enter your password')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument()
-  })
-
-  it('calls authService.login with provided credentials', async () => {
-    const mockLogin = jest.fn().mockResolvedValue({})
-    // @ts-expect-error - overriding mocked login type for test
-    authService.login.mockImplementation(mockLogin)
-
-    render(<LoginPage />)
-
-    fireEvent.change(screen.getByPlaceholderText('Enter your email'), {
-      target: { value: 'test@example.com' },
-    })
-    fireEvent.change(screen.getByPlaceholderText('Enter your password'), {
-      target: { value: 'password123' },
-    })
-
-    fireEvent.click(screen.getByRole('button', { name: 'Login' }))
-
-    await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith('test@example.com', 'password123')
-    })
-  })
-
-  it('shows error returned from authService.login', async () => {
-    const mockLogin = jest.fn().mockRejectedValue({ response: { data: { detail: 'Invalid credentials' } } })
-    // @ts-expect-error - overriding mocked login type for test
-    authService.login.mockImplementation(mockLogin)
-
-    render(<LoginPage />)
-
-    fireEvent.change(screen.getByPlaceholderText('Enter your email'), {
-      target: { value: 'test@example.com' },
-    })
-    fireEvent.change(screen.getByPlaceholderText('Enter your password'), {
-      target: { value: 'password123' },
-    })
-
-    fireEvent.click(screen.getByRole('button', { name: 'Login' }))
-
-    await waitFor(() => {
-      expect(screen.getByText(/invalid credentials/i)).toBeInTheDocument()
-    })
-  })
-
-  it('accepts email input and allows form submission', () => {
-    render(<LoginPage />)
-
-    fireEvent.change(screen.getByPlaceholderText('Enter your email'), {
-      target: { value: 'test@example.com' }
-    })
-    fireEvent.change(screen.getByPlaceholderText('Enter your password'), {
-      target: { value: 'password123' }
-    })
-
-    // The form should be submittable with valid email
-    const submitButton = screen.getByRole('button', { name: 'Login' })
-    expect(submitButton).not.toBeDisabled()
-  })
-
-  it('shows loading state during login', async () => {
-    const mockLogin = jest.fn().mockImplementation(
-      () => new Promise(() => {}) // Never resolves
+  it('renders welcome heading and sign in button', () => {
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
     )
-    ;(authService.login as jest.Mock).mockImplementation(mockLogin)
-
-    render(<LoginPage />)
-
-    fireEvent.change(screen.getByPlaceholderText('Enter your email'), {
-      target: { value: 'test@example.com' }
-    })
-    fireEvent.change(screen.getByPlaceholderText('Enter your password'), {
-      target: { value: 'password123' }
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Login' }))
-
-    await waitFor(() => {
-      expect(screen.getByText(/signing in/i)).toBeInTheDocument()
-    })
+    expect(screen.getByText('Welcome to Vigor')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /sign in with microsoft/i })).toBeInTheDocument()
   })
 
-  it('navigates to register page when register link is clicked', () => {
-    render(<LoginPage />)
+  it('calls login when sign in button is clicked', async () => {
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    )
 
-    const registerLink = screen.getByText('Sign up')
-    expect(registerLink).toBeInTheDocument()
-    expect(registerLink.closest('a')).toHaveAttribute('href', '/register')
+    const signInButton = screen.getByRole('button', { name: /sign in with microsoft/i })
+    fireEvent.click(signInButton)
+
+    expect(mockLogin).toHaveBeenCalled()
+  })
+
+  it('shows description text', () => {
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    )
+    expect(screen.getByText(/sign in with your microsoft account/i)).toBeInTheDocument()
   })
 })

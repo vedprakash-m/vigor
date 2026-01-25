@@ -281,7 +281,7 @@ To democratize access to personalized fitness coaching through AI-powered techno
 - Security audit logging for all authentication events
 - Multi-factor authentication (MFA) support via Entra ID
 - Account verification and password reset functionality
-- **VedUser Interface**: Standardized user object across Vedprakash domain
+- **User Interface**: Standardized user object across application
   - Cross-app permissions and profile synchronization
   - Resource separation: vigor resources (vigor-rg, vigor-db-rg) independent from shared domain (ved-domain-rg) and auth (ved-id-rg) resources
 

@@ -19,7 +19,7 @@ import {
 } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import { useAccessibility } from '../components/AccessibilityFeatures'
-import { useVedAuth } from '../contexts/useVedAuth'
+import { useAuth } from '../contexts/useAuth'
 import { api } from '../services/api'
 
 interface FitnessProfile {
@@ -30,7 +30,7 @@ interface FitnessProfile {
 }
 
 export const ProfilePage = () => {
-    const { user } = useVedAuth()
+    const { user } = useAuth()
     const { settings: accessibilitySettings, updateSettings: updateAccessibility, resetSettings: resetAccessibility } = useAccessibility()
 
     const [fitnessProfile, setFitnessProfile] = useState<FitnessProfile>({

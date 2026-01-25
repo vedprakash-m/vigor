@@ -21,7 +21,7 @@ import PWAInstallPrompt from './components/PWAInstallPrompt'
 import SocialFeatures from './components/SocialFeatures'
 import UserManagement from './components/UserManagement'
 import { msalConfig } from './config/authConfig'
-import { VedAuthProvider } from './contexts/VedAuthContext'
+import { AuthProvider } from './contexts/AuthContext'
 import AdminPage from './pages/AdminPage'
 import { CoachPage } from './pages/CoachPage'
 import DashboardPage from './pages/DashboardPage'
@@ -64,7 +64,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <AccessibilityProvider>
             <MsalProvider instance={msalInstance}>
-              <VedAuthProvider>
+              <AuthProvider>
                 <Router>
                   <PWAInstallPrompt />
                   <Routes>
@@ -121,7 +121,7 @@ function App() {
                   </Route>
                 </Routes>
               </Router>
-            </VedAuthProvider>
+            </AuthProvider>
           </MsalProvider>
         </AccessibilityProvider>
       </QueryClientProvider>

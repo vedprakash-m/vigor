@@ -1,7 +1,6 @@
 /**
  * Microsoft Entra ID Authentication Context
- * Replaces custom AuthContext with MSAL integration
- * Compliant with Apps_Auth_Requirement.md
+ * Standard auth context with MSAL integration
  */
 
 import type { AccountInfo } from '@azure/msal-common';
@@ -13,10 +12,10 @@ import {
 import React, { createContext, useEffect, useState } from 'react';
 import { loginRequest, logoutRequest, silentRequest } from '../config/authConfig';
 import api from '../services/api';
-import type { VedUser } from '../types/auth';
+import type { User } from '../types/auth';
 
-interface VedAuthContextType {
-  user: VedUser | null;
+interface AuthContextType {
+  user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: () => Promise<void>;
@@ -25,17 +24,16 @@ interface VedAuthContextType {
   error: string | null;
 }
 
-export const VedAuthContext = createContext<VedAuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface VedAuthProviderProps {
+interface AuthProviderProps {
   children: React.ReactNode;
 }
 
 /**
- * Extract VedUser from Microsoft Entra ID token claims
- * Implements standardized user extraction as per Apps_Auth_Requirement.md
+ * Extract User from Microsoft Entra ID token claims
  */
-function extractVedUser(account: AccountInfo, idTokenClaims?: Record<string, unknown>): VedUser {
+function extractUser(account: AccountInfo, idTokenClaims?: Record<string, unknown>): User {
   const claims = idTokenClaims || {};
 
   return {
@@ -45,17 +43,17 @@ function extractVedUser(account: AccountInfo, idTokenClaims?: Record<string, unk
     username: account.username?.split('@')[0] || claims.preferred_username as string || account.name || '',
     givenName: claims.given_name as string || '',
     familyName: claims.family_name as string || '',
-    tier: (claims.ved_subscription_tier as 'free' | 'premium' | 'enterprise') || 'free',
+    tier: (claims.subscription_tier as 'free' | 'premium' | 'enterprise') || 'free',
     permissions: (claims.roles as string[]) || [],
-    vedProfile: {
-      profileId: claims.ved_profile_id as string || account.homeAccountId || account.localAccountId,
-      subscriptionTier: (claims.ved_subscription_tier as 'free' | 'premium' | 'enterprise') || 'free',
-      appsEnrolled: (claims.ved_apps_enrolled as string[]) || ['vigor'],
+    profile: {
+      profileId: claims.profile_id as string || account.homeAccountId || account.localAccountId,
+      subscriptionTier: (claims.subscription_tier as 'free' | 'premium' | 'enterprise') || 'free',
+      appsEnrolled: (claims.apps_enrolled as string[]) || ['vigor'],
       preferences: (() => {
         try {
-          return typeof claims.ved_preferences === 'string'
-            ? JSON.parse(claims.ved_preferences)
-            : (claims.ved_preferences as Record<string, string | number | boolean>) || {};
+          return typeof claims.preferences === 'string'
+            ? JSON.parse(claims.preferences)
+            : (claims.preferences as Record<string, string | number | boolean>) || {};
         } catch {
           return {};
         }
@@ -64,12 +62,12 @@ function extractVedUser(account: AccountInfo, idTokenClaims?: Record<string, unk
   };
 }
 
-export const VedAuthProvider: React.FC<VedAuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const { instance, accounts } = useMsal();
   const isAuthenticated = useIsAuthenticated();
   const account = useAccount(accounts[0] || {});
 
-  const [user, setUser] = useState<VedUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,7 +79,7 @@ export const VedAuthProvider: React.FC<VedAuthProviderProps> = ({ children }) =>
 
       try {
         if (isAuthenticated && account) {
-          // Get ID token claims for VedUser extraction
+          // Get ID token claims for User extraction
           const silentRequestWithAccount = {
             ...silentRequest,
             account: account
@@ -92,8 +90,8 @@ export const VedAuthProvider: React.FC<VedAuthProviderProps> = ({ children }) =>
           // Set API token for authenticated requests
           api.setAccessToken(response.accessToken);
 
-          const vedUser = extractVedUser(account, response.idTokenClaims as Record<string, unknown>);
-          setUser(vedUser);
+          const extractedUser = extractUser(account, response.idTokenClaims as Record<string, unknown>);
+          setUser(extractedUser);
         } else {
           setUser(null);
           api.setAccessToken(null);
@@ -169,7 +167,7 @@ export const VedAuthProvider: React.FC<VedAuthProviderProps> = ({ children }) =>
     }
   };
 
-  const value: VedAuthContextType = {
+  const value: AuthContextType = {
     user,
     isLoading,
     isAuthenticated,
@@ -180,8 +178,8 @@ export const VedAuthProvider: React.FC<VedAuthProviderProps> = ({ children }) =>
   };
 
   return (
-    <VedAuthContext.Provider value={value}>
+    <AuthContext.Provider value={value}>
       {children}
-    </VedAuthContext.Provider>
+    </AuthContext.Provider>
   );
 };

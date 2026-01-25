@@ -17,7 +17,7 @@ import {
     VStack,
 } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
-import { useVedAuth } from '../contexts/useVedAuth'
+import { useAuth } from '../contexts/useAuth'
 
 interface PremiumFeature {
     id: string
@@ -73,7 +73,7 @@ const premiumFeatures: PremiumFeature[] = [
 ]
 
 const PremiumFeatures = () => {
-    const { user } = useVedAuth()
+    const { user } = useAuth()
     const isPremium = user?.tier === 'premium' || user?.tier === 'enterprise'
 
     if (isPremium) {

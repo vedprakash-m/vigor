@@ -3,15 +3,15 @@ import type { RenderOptions } from '@testing-library/react'
 import { render } from '@testing-library/react'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { VedAuthProvider } from './contexts/VedAuthContext'
+import { AuthProvider } from './contexts/AuthContext'
 
 // Simple wrapper that provides basic context for tests
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => (
   <BrowserRouter>
     <ChakraProvider value={defaultSystem}>
-      <VedAuthProvider>
+      <AuthProvider>
         <div data-testid="test-wrapper">{children}</div>
-      </VedAuthProvider>
+      </AuthProvider>
     </ChakraProvider>
   </BrowserRouter>
 )

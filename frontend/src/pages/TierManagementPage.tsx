@@ -16,7 +16,7 @@ import {
     Text,
     VStack,
 } from '@chakra-ui/react'
-import { useVedAuth } from '../contexts/useVedAuth'
+import { useAuth } from '../contexts/useAuth'
 
 interface TierFeature {
     name: string
@@ -180,7 +180,7 @@ const TierCard = ({
 )
 
 const TierManagementPage = () => {
-    const { user } = useVedAuth()
+    const { user } = useAuth()
     const currentTier = user?.tier || 'free'
 
     const handleSelectTier = (tier: string) => {

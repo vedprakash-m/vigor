@@ -1,7 +1,7 @@
 import { Box, Button, Container, Grid, Heading, HStack, Spinner, Text, VStack } from '@chakra-ui/react'
 import React, { useEffect, useState } from 'react'
 import LLMStatus from '../components/LLMStatus'
-import { useVedAuth } from '../contexts/useVedAuth'
+import { useAuth } from '../contexts/useAuth'
 import { api, type UserStats, type WorkoutLog } from '../services/api'
 
 interface DashboardStats {
@@ -12,7 +12,7 @@ interface DashboardStats {
 }
 
 const DashboardPage: React.FC = () => {
-  const { user } = useVedAuth()
+  const { user } = useAuth()
   const [stats, setStats] = useState<DashboardStats>({
     totalWorkouts: 0,
     weeklyWorkouts: 0,

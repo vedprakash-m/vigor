@@ -1,7 +1,7 @@
 import { Box, Drawer, Flex, Heading, HStack, IconButton, Portal, Text } from '@chakra-ui/react'
 import { useState } from 'react'
 import { Outlet, Link as RouterLink, useLocation } from 'react-router-dom'
-import { useVedAuth } from '../contexts/useVedAuth'
+import { useAuth } from '../contexts/useAuth'
 import PushNotificationSetup from './PushNotificationSetup'
 
 // Navigation links with icons for visual hierarchy
@@ -14,7 +14,7 @@ const Links = [
 ]
 
 export const Layout = () => {
-  const { user, logout } = useVedAuth()
+  const { user, logout } = useAuth()
   const location = useLocation()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 

@@ -10,10 +10,10 @@ import {
 import { useEffect } from 'react'
 import { FaMicrosoft } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
-import { useVedAuth } from '../contexts/useVedAuth'
+import { useAuth } from '../contexts/useAuth'
 
 export const LoginPage = () => {
-  const { login, isAuthenticated, isLoading, error } = useVedAuth()
+  const { login, isAuthenticated, isLoading, error } = useAuth()
   const navigate = useNavigate()
 
   // Redirect if already authenticated
