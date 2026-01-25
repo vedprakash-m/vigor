@@ -7,6 +7,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
+
 import azure.functions as func
 
 logger = logging.getLogger(__name__)
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 class RateLimitExceeded(Exception):
     """Rate limit exceeded exception"""
+
     pass
 
 
@@ -33,7 +35,8 @@ class RateLimiter:
 
             # Clean old entries outside the window
             self._cache[key] = [
-                timestamp for timestamp in self._cache[key]
+                timestamp
+                for timestamp in self._cache[key]
                 if now - timestamp < window_seconds
             ]
 
@@ -61,7 +64,8 @@ class RateLimiter:
 
             # Clean old entries
             self._cache[key] = [
-                timestamp for timestamp in self._cache[key]
+                timestamp
+                for timestamp in self._cache[key]
                 if now - timestamp < window_seconds
             ]
 
@@ -110,7 +114,7 @@ async def check_rate_limit(
     req: func.HttpRequest,
     limit: int,
     window_seconds: int,
-    user_id: Optional[str] = None
+    user_id: Optional[str] = None,
 ) -> bool:
     """Check if request passes rate limit"""
     try:
@@ -126,7 +130,7 @@ async def apply_rate_limit(
     req: func.HttpRequest,
     limit: int,
     window_seconds: int,
-    user_id: Optional[str] = None
+    user_id: Optional[str] = None,
 ) -> Optional[func.HttpResponse]:
     """Apply rate limiting and return error response if exceeded"""
     try:
@@ -135,14 +139,16 @@ async def apply_rate_limit(
             remaining = _rate_limiter.get_remaining(client_id, limit, window_seconds)
 
             return func.HttpResponse(
-                json.dumps({
-                    "error": "Rate limit exceeded",
-                    "message": f"Too many requests. Limit: {limit} per {window_seconds} seconds",
-                    "remaining": remaining,
-                    "reset_after": window_seconds
-                }),
+                json.dumps(
+                    {
+                        "error": "Rate limit exceeded",
+                        "message": f"Too many requests. Limit: {limit} per {window_seconds} seconds",
+                        "remaining": remaining,
+                        "reset_after": window_seconds,
+                    }
+                ),
                 status_code=429,
-                headers={"Content-Type": "application/json"}
+                headers={"Content-Type": "application/json"},
             )
 
         return None  # Rate limit passed
@@ -153,19 +159,31 @@ async def apply_rate_limit(
 
 
 # Rate limit decorators for different tiers
-async def apply_free_tier_limit(req: func.HttpRequest, user_id: Optional[str] = None) -> Optional[func.HttpResponse]:
+async def apply_free_tier_limit(
+    req: func.HttpRequest, user_id: Optional[str] = None
+) -> Optional[func.HttpResponse]:
     """Apply free tier rate limits"""
-    return await apply_rate_limit(req, limit=100, window_seconds=3600, user_id=user_id)  # 100 per hour
+    return await apply_rate_limit(
+        req, limit=100, window_seconds=3600, user_id=user_id
+    )  # 100 per hour
 
 
-async def apply_premium_tier_limit(req: func.HttpRequest, user_id: Optional[str] = None) -> Optional[func.HttpResponse]:
+async def apply_premium_tier_limit(
+    req: func.HttpRequest, user_id: Optional[str] = None
+) -> Optional[func.HttpResponse]:
     """Apply premium tier rate limits"""
-    return await apply_rate_limit(req, limit=1000, window_seconds=3600, user_id=user_id)  # 1000 per hour
+    return await apply_rate_limit(
+        req, limit=1000, window_seconds=3600, user_id=user_id
+    )  # 1000 per hour
 
 
-async def apply_admin_tier_limit(req: func.HttpRequest, user_id: Optional[str] = None) -> Optional[func.HttpResponse]:
+async def apply_admin_tier_limit(
+    req: func.HttpRequest, user_id: Optional[str] = None
+) -> Optional[func.HttpResponse]:
     """Apply admin tier rate limits"""
-    return await apply_rate_limit(req, limit=10000, window_seconds=3600, user_id=user_id)  # 10000 per hour
+    return await apply_rate_limit(
+        req, limit=10000, window_seconds=3600, user_id=user_id
+    )  # 10000 per hour
 
 
 async def apply_auth_rate_limit(req: func.HttpRequest) -> Optional[func.HttpResponse]:
@@ -173,15 +191,17 @@ async def apply_auth_rate_limit(req: func.HttpRequest) -> Optional[func.HttpResp
     return await apply_rate_limit(req, limit=10, window_seconds=300)  # 10 per 5 minutes
 
 
-async def apply_ai_generation_limit(req: func.HttpRequest, user_id: Optional[str] = None) -> Optional[func.HttpResponse]:
+async def apply_ai_generation_limit(
+    req: func.HttpRequest, user_id: Optional[str] = None
+) -> Optional[func.HttpResponse]:
     """Apply AI generation rate limits"""
-    return await apply_rate_limit(req, limit=20, window_seconds=3600, user_id=user_id)  # 20 per hour
+    return await apply_rate_limit(
+        req, limit=20, window_seconds=3600, user_id=user_id
+    )  # 20 per hour
 
 
 async def apply_tier_based_rate_limit(
-    req: func.HttpRequest,
-    user_tier: str,
-    user_id: Optional[str] = None
+    req: func.HttpRequest, user_tier: str, user_id: Optional[str] = None
 ) -> Optional[func.HttpResponse]:
     """Apply rate limit based on user tier"""
     try:
@@ -198,9 +218,7 @@ async def apply_tier_based_rate_limit(
 
 
 def get_rate_limit_headers(
-    client_id: str,
-    limit: int,
-    window_seconds: int
+    client_id: str, limit: int, window_seconds: int
 ) -> Dict[str, str]:
     """Get rate limit headers for response"""
     try:
@@ -210,7 +228,7 @@ def get_rate_limit_headers(
         return {
             "X-RateLimit-Limit": str(limit),
             "X-RateLimit-Remaining": str(remaining),
-            "X-RateLimit-Reset": str(reset_time)
+            "X-RateLimit-Reset": str(reset_time),
         }
 
     except Exception as e:
@@ -223,7 +241,7 @@ async def add_rate_limit_headers(
     req: func.HttpRequest,
     limit: int,
     window_seconds: int,
-    user_id: Optional[str] = None
+    user_id: Optional[str] = None,
 ) -> func.HttpResponse:
     """Add rate limit headers to response"""
     try:
@@ -231,7 +249,7 @@ async def add_rate_limit_headers(
         headers = get_rate_limit_headers(client_id, limit, window_seconds)
 
         # Add headers to existing response
-        if hasattr(response, 'headers') and response.headers:
+        if hasattr(response, "headers") and response.headers:
             response.headers.update(headers)
         else:
             response.headers = headers

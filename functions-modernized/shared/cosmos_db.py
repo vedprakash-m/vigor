@@ -3,20 +3,15 @@ Cosmos DB client for Vigor Functions
 Handles all database operations with Cosmos DB Serverless NoSQL schema
 """
 
-import asyncio
-import json
 import logging
 from datetime import datetime, timezone
-from typing import List, Optional, Dict, Any, Union
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from azure.cosmos.aio import CosmosClient, DatabaseProxy, ContainerProxy
-from azure.cosmos import PartitionKey
+from azure.cosmos.aio import ContainerProxy, CosmosClient, DatabaseProxy
 from azure.cosmos.exceptions import CosmosHttpResponseError
-from azure.core.exceptions import AzureError
 
 from .config import get_settings
-from .models import UserProfile, WorkoutPlan, WorkoutLog, AICoachMessage
 
 logger = logging.getLogger(__name__)
 
@@ -38,14 +33,13 @@ class CosmosDBClient:
             database = self.settings.cosmos_database
 
             if not endpoint or not key:
-                raise ValueError(f"Cosmos DB credentials not configured. Endpoint: {bool(endpoint)}, Key: {bool(key)}")
+                raise ValueError(
+                    f"Cosmos DB credentials not configured. Endpoint: {bool(endpoint)}, Key: {bool(key)}"
+                )
 
             logger.info(f"Initializing Cosmos DB client for database: {database}")
 
-            self.client = CosmosClient(
-                url=endpoint,
-                credential=key
-            )
+            self.client = CosmosClient(url=endpoint, credential=key)
 
             self.database = self.client.get_database_client(database)
 
@@ -54,7 +48,9 @@ class CosmosDBClient:
                 "users": self.database.get_container_client("users"),
                 "workouts": self.database.get_container_client("workouts"),
                 "workout_logs": self.database.get_container_client("workout_logs"),
-                "ai_coach_messages": self.database.get_container_client("ai_coach_messages")
+                "ai_coach_messages": self.database.get_container_client(
+                    "ai_coach_messages"
+                ),
             }
 
             logger.info("Cosmos DB client initialized successfully")
@@ -78,10 +74,7 @@ class CosmosDBClient:
 
         try:
             container = self.containers["users"]
-            response = await container.read_item(
-                item=user_id,
-                partition_key=user_id
-            )
+            response = await container.read_item(item=user_id, partition_key=user_id)
             return response
 
         except CosmosHttpResponseError as e:
@@ -104,19 +97,21 @@ class CosmosDBClient:
                 "userId": user_id,  # Partition key
                 "email": user_data["email"],
                 "username": user_data.get("username"),
-                "profile": user_data.get("profile", {
-                    "fitnessLevel": "beginner",
-                    "goals": [],
-                    "equipment": "bodyweight",
-                    "tier": "free"
-                }),
-                "preferences": user_data.get("preferences", {
-                    "workoutDuration": 45,
-                    "restDays": [],
-                    "notifications": True
-                }),
+                "profile": user_data.get(
+                    "profile",
+                    {
+                        "fitnessLevel": "beginner",
+                        "goals": [],
+                        "equipment": "bodyweight",
+                        "tier": "free",
+                    },
+                ),
+                "preferences": user_data.get(
+                    "preferences",
+                    {"workoutDuration": 45, "restDays": [], "notifications": True},
+                ),
                 "createdAt": datetime.now(timezone.utc).isoformat(),
-                "updatedAt": datetime.now(timezone.utc).isoformat()
+                "updatedAt": datetime.now(timezone.utc).isoformat(),
             }
 
             container = self.containers["users"]
@@ -127,7 +122,9 @@ class CosmosDBClient:
             logger.error(f"Error creating user profile: {str(e)}")
             raise
 
-    async def update_user_profile(self, user_id: str, update_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def update_user_profile(
+        self, user_id: str, update_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Update user profile"""
         await self.ensure_initialized()
 
@@ -142,10 +139,7 @@ class CosmosDBClient:
             existing_profile["updatedAt"] = datetime.now(timezone.utc).isoformat()
 
             container = self.containers["users"]
-            response = await container.replace_item(
-                item=user_id,
-                body=existing_profile
-            )
+            response = await container.replace_item(item=user_id, body=existing_profile)
             return response
 
         except Exception as e:
@@ -156,7 +150,9 @@ class CosmosDBClient:
     # WORKOUT OPERATIONS
     # =============================================================================
 
-    async def create_workout(self, user_id: str, workout_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_workout(
+        self, user_id: str, workout_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Create new workout plan"""
         await self.ensure_initialized()
 
@@ -173,9 +169,9 @@ class CosmosDBClient:
                     "estimatedDuration": workout_data.get("estimatedDuration", 45),
                     "equipmentNeeded": workout_data.get("equipmentNeeded", []),
                     "aiProviderUsed": "gpt-5-mini",
-                    "tags": workout_data.get("tags", [])
+                    "tags": workout_data.get("tags", []),
                 },
-                "createdAt": datetime.now(timezone.utc).isoformat()
+                "createdAt": datetime.now(timezone.utc).isoformat(),
             }
 
             container = self.containers["workouts"]
@@ -186,7 +182,9 @@ class CosmosDBClient:
             logger.error(f"Error creating workout: {str(e)}")
             raise
 
-    async def get_user_workouts(self, user_id: str, limit: int = 20, offset: int = 0) -> List[Dict[str, Any]]:
+    async def get_user_workouts(
+        self, user_id: str, limit: int = 20, offset: int = 0
+    ) -> List[Dict[str, Any]]:
         """Get user's workout plans"""
         await self.ensure_initialized()
 
@@ -203,14 +201,12 @@ class CosmosDBClient:
             parameters = [
                 {"name": "@user_id", "value": user_id},
                 {"name": "@offset", "value": offset},
-                {"name": "@limit", "value": limit}
+                {"name": "@limit", "value": limit},
             ]
 
             items = []
             async for item in container.query_items(
-                query=query,
-                parameters=parameters,
-                partition_key=user_id
+                query=query, parameters=parameters, partition_key=user_id
             ):
                 items.append(item)
 
@@ -220,20 +216,19 @@ class CosmosDBClient:
             logger.error(f"Error getting user workouts: {str(e)}")
             raise
 
-    async def get_workout(self, workout_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+    async def get_workout(
+        self, workout_id: str, user_id: str
+    ) -> Optional[Dict[str, Any]]:
         """Get specific workout by ID"""
         await self.ensure_initialized()
 
         try:
             container = self.containers["workouts"]
-            response = await container.read_item(
-                item=workout_id,
-                partition_key=user_id
-            )
+            response = await container.read_item(item=workout_id, partition_key=user_id)
             return response
 
         except Exception as e:
-            if hasattr(e, 'status_code') and e.status_code == 404:
+            if hasattr(e, "status_code") and e.status_code == 404:
                 return None
             logger.error(f"Error getting workout: {str(e)}")
             raise
@@ -247,10 +242,7 @@ class CosmosDBClient:
 
         try:
             container = self.containers["workouts"]
-            await container.delete_item(
-                item=workout_id,
-                partition_key=user_id
-            )
+            await container.delete_item(item=workout_id, partition_key=user_id)
             return True
 
         except CosmosHttpResponseError as e:
@@ -266,7 +258,9 @@ class CosmosDBClient:
     # WORKOUT LOG OPERATIONS
     # =============================================================================
 
-    async def create_workout_log(self, user_id: str, workout_id: Optional[str], session_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_workout_log(
+        self, user_id: str, workout_id: Optional[str], session_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Create workout session log"""
         await self.ensure_initialized()
 
@@ -280,7 +274,7 @@ class CosmosDBClient:
                 "durationMinutes": session_data["durationMinutes"],
                 "intensity": session_data.get("intensity", 5),
                 "notes": session_data.get("notes"),
-                "completedAt": datetime.now(timezone.utc).isoformat()
+                "completedAt": datetime.now(timezone.utc).isoformat(),
             }
 
             container = self.containers["workout_logs"]
@@ -291,7 +285,9 @@ class CosmosDBClient:
             logger.error(f"Error creating workout log: {str(e)}")
             raise
 
-    async def get_user_workout_logs(self, user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
+    async def get_user_workout_logs(
+        self, user_id: str, limit: int = 20
+    ) -> List[Dict[str, Any]]:
         """Get user's workout session logs"""
         await self.ensure_initialized()
 
@@ -307,14 +303,12 @@ class CosmosDBClient:
 
             parameters = [
                 {"name": "@user_id", "value": user_id},
-                {"name": "@limit", "value": limit}
+                {"name": "@limit", "value": limit},
             ]
 
             items = []
             async for item in container.query_items(
-                query=query,
-                parameters=parameters,
-                partition_key=user_id
+                query=query, parameters=parameters, partition_key=user_id
             ):
                 items.append(item)
 
@@ -328,7 +322,9 @@ class CosmosDBClient:
     # AI CHAT OPERATIONS
     # =============================================================================
 
-    async def save_chat_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    async def save_chat_messages(
+        self, messages: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Save AI chat messages"""
         await self.ensure_initialized()
 
@@ -346,7 +342,9 @@ class CosmosDBClient:
                     "providerUsed": message.get("providerUsed", "gpt-5-mini"),
                     "tokensUsed": message.get("tokensUsed"),
                     "responseTimeMs": message.get("responseTimeMs"),
-                    "createdAt": message.get("createdAt", datetime.now(timezone.utc).isoformat())
+                    "createdAt": message.get(
+                        "createdAt", datetime.now(timezone.utc).isoformat()
+                    ),
                 }
 
                 response = await container.create_item(body=message_document)
@@ -358,7 +356,9 @@ class CosmosDBClient:
             logger.error(f"Error saving chat messages: {str(e)}")
             raise
 
-    async def get_conversation_history(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+    async def get_conversation_history(
+        self, user_id: str, limit: int = 10
+    ) -> List[Dict[str, Any]]:
         """Get recent conversation history"""
         await self.ensure_initialized()
 
@@ -374,14 +374,12 @@ class CosmosDBClient:
 
             parameters = [
                 {"name": "@user_id", "value": user_id},
-                {"name": "@limit", "value": limit}
+                {"name": "@limit", "value": limit},
             ]
 
             items = []
             async for item in container.query_items(
-                query=query,
-                parameters=parameters,
-                partition_key=user_id
+                query=query, parameters=parameters, partition_key=user_id
             ):
                 items.append(item)
 
@@ -405,14 +403,9 @@ class CosmosDBClient:
 
             # Delete each message
             async for item in container.query_items(
-                query=query,
-                parameters=parameters,
-                partition_key=user_id
+                query=query, parameters=parameters, partition_key=user_id
             ):
-                await container.delete_item(
-                    item=item["id"],
-                    partition_key=user_id
-                )
+                await container.delete_item(item=item["id"], partition_key=user_id)
 
             logger.info(f"Cleared conversation history for user: {user_id}")
             return True
@@ -485,8 +478,9 @@ class CosmosDBClient:
             return {
                 "daily_spend": daily_spend,
                 "total_spend": daily_spend,  # For now, same as daily
-                "budget_utilization": (daily_spend / 1.67) * 100,  # $50/30 days = $1.67/day
-                "requests_today": requests_today
+                "budget_utilization": (daily_spend / 1.67)
+                * 100,  # $50/30 days = $1.67/day
+                "requests_today": requests_today,
             }
 
         except Exception as e:
@@ -495,7 +489,7 @@ class CosmosDBClient:
                 "daily_spend": 0.0,
                 "total_spend": 0.0,
                 "budget_utilization": 0.0,
-                "requests_today": 0
+                "requests_today": 0,
             }
 
     # =============================================================================
@@ -533,9 +527,7 @@ class CosmosDBClient:
             parameters = [{"name": "@email", "value": email}]
 
             items = container.query_items(
-                query=query,
-                parameters=parameters,
-                enable_cross_partition_query=True
+                query=query, parameters=parameters, enable_cross_partition_query=True
             )
 
             async for item in items:
@@ -557,8 +549,10 @@ class CosmosDBClient:
             logger.error(f"Error creating user: {str(e)}")
             raise
 
-    async def create_workout(self, workout_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a new workout document"""
+    async def create_workout_simple(
+        self, workout_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Create a new workout document (simplified wrapper)"""
         await self.ensure_initialized()
 
         try:
@@ -583,18 +577,18 @@ class CosmosDBClient:
 
         try:
             # Determine container based on document type
-            container_name = "users" if document_type == "user" else \
-                           "workouts" if document_type == "workout" else \
-                           "chat_sessions"
+            container_name = (
+                "users"
+                if document_type == "user"
+                else "workouts" if document_type == "workout" else "chat_sessions"
+            )
 
             container = self.containers[container_name]
             query = "SELECT VALUE COUNT(1) FROM c WHERE c.type = @type"
             parameters = [{"name": "@type", "value": document_type}]
 
             items = container.query_items(
-                query=query,
-                parameters=parameters,
-                enable_cross_partition_query=True
+                query=query, parameters=parameters, enable_cross_partition_query=True
             )
 
             async for item in items:
@@ -606,20 +600,26 @@ class CosmosDBClient:
             logger.error(f"Error counting documents of type {document_type}: {str(e)}")
             return 0
 
-    async def upsert_document(self, container_name: str, document: Dict[str, Any]) -> Dict[str, Any]:
+    async def upsert_document(
+        self, container_name: str, document: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Insert or update a document in the specified container"""
         await self.ensure_initialized()
 
         try:
             container = self.containers[container_name]
             result = await container.upsert_item(document)
-            logger.debug(f"Upserted document in {container_name}: {document.get('id', 'unknown')}")
+            logger.debug(
+                f"Upserted document in {container_name}: {document.get('id', 'unknown')}"
+            )
             return result
         except Exception as e:
             logger.error(f"Error upserting document in {container_name}: {str(e)}")
             raise
 
-    async def delete_document(self, container_name: str, document_id: str, partition_key: str) -> bool:
+    async def delete_document(
+        self, container_name: str, document_id: str, partition_key: str
+    ) -> bool:
         """Delete a document from the specified container"""
         await self.ensure_initialized()
 
@@ -629,10 +629,17 @@ class CosmosDBClient:
             logger.debug(f"Deleted document {document_id} from {container_name}")
             return True
         except Exception as e:
-            logger.error(f"Error deleting document {document_id} from {container_name}: {str(e)}")
+            logger.error(
+                f"Error deleting document {document_id} from {container_name}: {str(e)}"
+            )
             return False
 
-    async def query_documents(self, container_name: str, query: str, parameters: Optional[List[Dict[str, Any]]] = None) -> List[Dict[str, Any]]:
+    async def query_documents(
+        self,
+        container_name: str,
+        query: str,
+        parameters: Optional[List[Dict[str, Any]]] = None,
+    ) -> List[Dict[str, Any]]:
         """Query documents from a container"""
         await self.ensure_initialized()
 
@@ -642,7 +649,7 @@ class CosmosDBClient:
             items = container.query_items(
                 query=query,
                 parameters=parameters or [],
-                enable_cross_partition_query=True
+                enable_cross_partition_query=True,
             )
 
             results = []
@@ -675,6 +682,7 @@ class CosmosDBClient:
 # Global Cosmos DB client instance
 _global_client: Optional[CosmosDBClient] = None
 
+
 async def get_global_client() -> CosmosDBClient:
     """Get global Cosmos DB client instance"""
     global _global_client
@@ -683,9 +691,11 @@ async def get_global_client() -> CosmosDBClient:
         await _global_client.initialize()
     return _global_client
 
+
 def get_cosmos_container(container_name: str):
     """Synchronous helper to get container (for use in auth module)"""
     import asyncio
+
     try:
         # Try to get existing event loop
         loop = asyncio.get_event_loop()
@@ -694,9 +704,9 @@ def get_cosmos_container(container_name: str):
             # For now, return a container proxy directly
             settings = get_settings()
             from azure.cosmos import CosmosClient
+
             client = CosmosClient(
-                url=settings.COSMOS_DB_ENDPOINT,
-                credential=settings.COSMOS_DB_KEY
+                url=settings.COSMOS_DB_ENDPOINT, credential=settings.COSMOS_DB_KEY
             )
             database = client.get_database_client(settings.COSMOS_DB_DATABASE)
             return database.get_container_client(container_name)
@@ -711,9 +721,9 @@ def get_cosmos_container(container_name: str):
         # Fallback to direct connection
         settings = get_settings()
         from azure.cosmos import CosmosClient
+
         client = CosmosClient(
-            url=settings.COSMOS_DB_ENDPOINT,
-            credential=settings.COSMOS_DB_KEY
+            url=settings.COSMOS_DB_ENDPOINT, credential=settings.COSMOS_DB_KEY
         )
         database = client.get_database_client(settings.COSMOS_DB_DATABASE)
         return database.get_container_client(container_name)

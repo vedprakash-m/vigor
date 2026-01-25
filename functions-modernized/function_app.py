@@ -4,23 +4,19 @@ Single resource group (vigor-rg), Cosmos DB Serverless, Azure OpenAI gpt-4o-mini
 Production domain: vigor.vedprakash.net
 """
 
-import azure.functions as func
 import json
 import logging
-import os
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Any, Dict
+
+import azure.functions as func
 
 # Import shared modules
 from shared.auth import get_current_user_from_token, require_admin_user
+from shared.config import get_settings
 from shared.cosmos_db import CosmosDBClient
 from shared.openai_client import OpenAIClient
-from shared.models import (
-    UserProfile, WorkoutPlan, WorkoutLog, AICoachMessage,
-    WorkoutGenerationRequest, CoachChatRequest
-)
 from shared.rate_limiter import RateLimiter
-from shared.config import get_settings
 
 # Initialize components
 settings = get_settings()
@@ -39,6 +35,7 @@ logger = logging.getLogger(__name__)
 # AUTHENTICATION & USER MANAGEMENT
 # =============================================================================
 
+
 @app.route(route="auth/me", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
 async def get_current_user(req: func.HttpRequest) -> func.HttpResponse:
     """Get current user profile from Microsoft Entra ID token"""
@@ -46,9 +43,11 @@ async def get_current_user(req: func.HttpRequest) -> func.HttpResponse:
         current_user = await get_current_user_from_token(req)
         if not current_user:
             return func.HttpResponse(
-                json.dumps({"error": "Unauthorized - Valid Microsoft Entra ID token required"}),
+                json.dumps(
+                    {"error": "Unauthorized - Valid Microsoft Entra ID token required"}
+                ),
                 status_code=401,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         # Get full profile from Cosmos DB using email as key
@@ -58,17 +57,17 @@ async def get_current_user(req: func.HttpRequest) -> func.HttpResponse:
             profile = {
                 "id": current_user["email"],
                 "email": current_user["email"],
-                "username": current_user.get("username", current_user["email"].split("@")[0]),
+                "username": current_user.get(
+                    "username", current_user["email"].split("@")[0]
+                ),
                 "tier": current_user.get("tier", "free"),
                 "fitness_level": "beginner",
                 "fitness_goals": ["general_fitness"],
-                "available_equipment": ["none"]
+                "available_equipment": ["none"],
             }
 
         return func.HttpResponse(
-            json.dumps(profile),
-            status_code=200,
-            mimetype="application/json"
+            json.dumps(profile), status_code=200, mimetype="application/json"
         )
 
     except Exception as e:
@@ -76,10 +75,13 @@ async def get_current_user(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"error": "Internal server error"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
-@app.route(route="users/profile", methods=["GET", "PUT"], auth_level=func.AuthLevel.ANONYMOUS)
+
+@app.route(
+    route="users/profile", methods=["GET", "PUT"], auth_level=func.AuthLevel.ANONYMOUS
+)
 async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
     """Get or update user profile"""
     try:
@@ -88,15 +90,13 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"error": "Unauthorized"}),
                 status_code=401,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         if req.method == "GET":
             profile = await cosmos_db.get_user_profile(current_user["email"])
             return func.HttpResponse(
-                json.dumps(profile),
-                status_code=200,
-                mimetype="application/json"
+                json.dumps(profile), status_code=200, mimetype="application/json"
             )
 
         elif req.method == "PUT":
@@ -104,24 +104,23 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
             if not await rate_limiter.check_rate_limit(
                 key=f"profile_update:{current_user['email']}",
                 limit=10,
-                window=3600  # 10 updates per hour
+                window=3600,  # 10 updates per hour
             ):
                 return func.HttpResponse(
                     json.dumps({"error": "Rate limit exceeded"}),
                     status_code=429,
-                    mimetype="application/json"
+                    mimetype="application/json",
                 )
 
             profile_data = req.get_json()
             updated_profile = await cosmos_db.update_user_profile(
-                current_user["email"],
-                profile_data
+                current_user["email"], profile_data
             )
 
             return func.HttpResponse(
                 json.dumps(updated_profile),
                 status_code=200,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
     except Exception as e:
@@ -129,14 +128,18 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"error": "Internal server error"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
+
 
 # =============================================================================
 # AI-POWERED WORKOUT GENERATION
 # =============================================================================
 
-@app.route(route="workouts/generate", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+
+@app.route(
+    route="workouts/generate", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS
+)
 async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
     """Generate personalized workout using OpenAI gpt-4o-mini"""
     try:
@@ -145,19 +148,19 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"error": "Unauthorized"}),
                 status_code=401,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         # Rate limiting - 50 workout generations per day
         if not await rate_limiter.check_rate_limit(
             key=f"workout_gen:{current_user['email']}",
             limit=50,
-            window=86400  # 24 hours
+            window=86400,  # 24 hours
         ):
             return func.HttpResponse(
                 json.dumps({"error": "Rate limit exceeded. Please try again later."}),
                 status_code=429,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         workout_request = req.get_json()
@@ -166,12 +169,11 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
         budget_check = await validate_ai_budget(current_user["email"])
         if not budget_check["approved"]:
             return func.HttpResponse(
-                json.dumps({
-                    "error": "AI budget exceeded",
-                    "details": budget_check["reason"]
-                }),
+                json.dumps(
+                    {"error": "AI budget exceeded", "details": budget_check["reason"]}
+                ),
                 status_code=429,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         # Get user profile for context
@@ -179,20 +181,16 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
 
         # Generate workout with OpenAI
         workout = await ai_client.generate_workout(
-            user_profile=user_profile,
-            preferences=workout_request
+            user_profile=user_profile, preferences=workout_request
         )
 
         # Store in Cosmos DB
         saved_workout = await cosmos_db.create_workout(
-            user_id=current_user["email"],
-            workout_data=workout
+            user_id=current_user["email"], workout_data=workout
         )
 
         return func.HttpResponse(
-            json.dumps(saved_workout),
-            status_code=201,
-            mimetype="application/json"
+            json.dumps(saved_workout), status_code=201, mimetype="application/json"
         )
 
     except Exception as e:
@@ -200,12 +198,14 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"error": "Failed to generate workout"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
+
 
 # =============================================================================
 # AI COACH CHAT
 # =============================================================================
+
 
 @app.route(route="coach/chat", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
@@ -216,19 +216,19 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"error": "Unauthorized"}),
                 status_code=401,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         # Rate limiting - 50 chat messages per day
         if not await rate_limiter.check_rate_limit(
             key=f"coach_chat:{current_user['email']}",
             limit=50,
-            window=86400  # 24 hours
+            window=86400,  # 24 hours
         ):
             return func.HttpResponse(
                 json.dumps({"error": "Rate limit exceeded"}),
                 status_code=429,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         message_data = req.get_json()
@@ -239,13 +239,12 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"error": "AI budget exceeded"}),
                 status_code=429,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         # Get conversation history from Cosmos DB
         conversation_history = await cosmos_db.get_conversation_history(
-            current_user["email"],
-            limit=10
+            current_user["email"], limit=10
         )
 
         # Get user context
@@ -255,30 +254,32 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
         ai_response = await ai_client.coach_chat(
             message=message_data["message"],
             history=conversation_history,
-            user_context=user_profile
+            user_context=user_profile,
         )
 
         # Save both messages to Cosmos DB
-        await cosmos_db.save_chat_messages([
-            {
-                "role": "user",
-                "content": message_data["message"],
-                "userId": current_user["email"],
-                "createdAt": datetime.utcnow().isoformat()
-            },
-            {
-                "role": "assistant",
-                "content": ai_response,
-                "userId": current_user["email"],
-                "providerUsed": "gpt-4o-mini",
-                "createdAt": datetime.utcnow().isoformat()
-            }
-        ])
+        await cosmos_db.save_chat_messages(
+            [
+                {
+                    "role": "user",
+                    "content": message_data["message"],
+                    "userId": current_user["email"],
+                    "createdAt": datetime.utcnow().isoformat(),
+                },
+                {
+                    "role": "assistant",
+                    "content": ai_response,
+                    "userId": current_user["email"],
+                    "providerUsed": "gpt-4o-mini",
+                    "createdAt": datetime.utcnow().isoformat(),
+                },
+            ]
+        )
 
         return func.HttpResponse(
             json.dumps({"response": ai_response}),
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
     except Exception as e:
@@ -286,11 +287,15 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"error": "Failed to process chat message"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
 
-@app.route(route="coach/history", methods=["GET", "DELETE"], auth_level=func.AuthLevel.ANONYMOUS)
+@app.route(
+    route="coach/history",
+    methods=["GET", "DELETE"],
+    auth_level=func.AuthLevel.ANONYMOUS,
+)
 async def coach_history(req: func.HttpRequest) -> func.HttpResponse:
     """Get or clear coach conversation history"""
     try:
@@ -299,19 +304,16 @@ async def coach_history(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"error": "Unauthorized"}),
                 status_code=401,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         if req.method == "GET":
             limit = int(req.params.get("limit", 50))
             history = await cosmos_db.get_conversation_history(
-                current_user["email"],
-                limit=limit
+                current_user["email"], limit=limit
             )
             return func.HttpResponse(
-                json.dumps(history),
-                status_code=200,
-                mimetype="application/json"
+                json.dumps(history), status_code=200, mimetype="application/json"
             )
 
         elif req.method == "DELETE":
@@ -319,7 +321,7 @@ async def coach_history(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"message": "Conversation history cleared"}),
                 status_code=200,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
     except Exception as e:
@@ -327,13 +329,14 @@ async def coach_history(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"error": "Failed to process history request"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
 
 # =============================================================================
 # WORKOUT MANAGEMENT
 # =============================================================================
+
 
 @app.route(route="workouts", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
 async def get_user_workouts(req: func.HttpRequest) -> func.HttpResponse:
@@ -344,7 +347,7 @@ async def get_user_workouts(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"error": "Unauthorized"}),
                 status_code=401,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         # Get query parameters
@@ -352,15 +355,11 @@ async def get_user_workouts(req: func.HttpRequest) -> func.HttpResponse:
         offset = int(req.params.get("offset", 0))
 
         workouts = await cosmos_db.get_user_workouts(
-            user_id=current_user["email"],
-            limit=limit,
-            offset=offset
+            user_id=current_user["email"], limit=limit, offset=offset
         )
 
         return func.HttpResponse(
-            json.dumps(workouts),
-            status_code=200,
-            mimetype="application/json"
+            json.dumps(workouts), status_code=200, mimetype="application/json"
         )
 
     except Exception as e:
@@ -368,10 +367,15 @@ async def get_user_workouts(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"error": "Failed to retrieve workouts"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
-@app.route(route="workouts/{workout_id}", methods=["GET", "DELETE"], auth_level=func.AuthLevel.ANONYMOUS)
+
+@app.route(
+    route="workouts/{workout_id}",
+    methods=["GET", "DELETE"],
+    auth_level=func.AuthLevel.ANONYMOUS,
+)
 async def workout_detail(req: func.HttpRequest) -> func.HttpResponse:
     """Get or delete specific workout"""
     try:
@@ -380,7 +384,7 @@ async def workout_detail(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"error": "Unauthorized"}),
                 status_code=401,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         workout_id = req.route_params.get("workout_id")
@@ -391,13 +395,11 @@ async def workout_detail(req: func.HttpRequest) -> func.HttpResponse:
                 return func.HttpResponse(
                     json.dumps({"error": "Workout not found"}),
                     status_code=404,
-                    mimetype="application/json"
+                    mimetype="application/json",
                 )
 
             return func.HttpResponse(
-                json.dumps(workout),
-                status_code=200,
-                mimetype="application/json"
+                json.dumps(workout), status_code=200, mimetype="application/json"
             )
 
         elif req.method == "DELETE":
@@ -406,7 +408,7 @@ async def workout_detail(req: func.HttpRequest) -> func.HttpResponse:
                 return func.HttpResponse(
                     json.dumps({"error": "Workout not found"}),
                     status_code=404,
-                    mimetype="application/json"
+                    mimetype="application/json",
                 )
 
             return func.HttpResponse(status_code=204)
@@ -416,14 +418,20 @@ async def workout_detail(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"error": "Internal server error"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
+
 
 # =============================================================================
 # WORKOUT SESSION LOGGING
 # =============================================================================
 
-@app.route(route="workouts/{workout_id}/sessions", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+
+@app.route(
+    route="workouts/{workout_id}/sessions",
+    methods=["POST"],
+    auth_level=func.AuthLevel.ANONYMOUS,
+)
 async def log_workout_session(req: func.HttpRequest) -> func.HttpResponse:
     """Log completed workout session"""
     try:
@@ -432,7 +440,7 @@ async def log_workout_session(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"error": "Unauthorized"}),
                 status_code=401,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         workout_id = req.route_params.get("workout_id")
@@ -441,13 +449,11 @@ async def log_workout_session(req: func.HttpRequest) -> func.HttpResponse:
         workout_log = await cosmos_db.create_workout_log(
             user_id=current_user["email"],
             workout_id=workout_id,
-            session_data=session_data
+            session_data=session_data,
         )
 
         return func.HttpResponse(
-            json.dumps(workout_log),
-            status_code=201,
-            mimetype="application/json"
+            json.dumps(workout_log), status_code=201, mimetype="application/json"
         )
 
     except Exception as e:
@@ -455,11 +461,13 @@ async def log_workout_session(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"error": "Failed to log workout session"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
 
-@app.route(route="workouts/history", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+@app.route(
+    route="workouts/history", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS
+)
 async def get_workout_history(req: func.HttpRequest) -> func.HttpResponse:
     """Get user's workout log history"""
     try:
@@ -468,19 +476,16 @@ async def get_workout_history(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"error": "Unauthorized"}),
                 status_code=401,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         limit = int(req.params.get("limit", 50))
         logs = await cosmos_db.get_user_workout_logs(
-            user_id=current_user["email"],
-            limit=limit
+            user_id=current_user["email"], limit=limit
         )
 
         return func.HttpResponse(
-            json.dumps(logs),
-            status_code=200,
-            mimetype="application/json"
+            json.dumps(logs), status_code=200, mimetype="application/json"
         )
 
     except Exception as e:
@@ -488,7 +493,7 @@ async def get_workout_history(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"error": "Failed to retrieve workout history"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
 
@@ -496,7 +501,10 @@ async def get_workout_history(req: func.HttpRequest) -> func.HttpResponse:
 # ADMIN ENDPOINTS
 # =============================================================================
 
-@app.route(route="admin/ai/cost-metrics", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+
+@app.route(
+    route="admin/ai/cost-metrics", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS
+)
 async def get_cost_metrics(req: func.HttpRequest) -> func.HttpResponse:
     """Get AI cost metrics (admin only)"""
     try:
@@ -505,22 +513,26 @@ async def get_cost_metrics(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"error": "Admin access required"}),
                 status_code=403,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         # Query Cosmos DB for cost metrics
         cost_metrics = await cosmos_db.get_ai_cost_metrics()
 
         return func.HttpResponse(
-            json.dumps({
-                "daily_spend": cost_metrics.get("daily_spend", 0),
-                "monthly_budget": 50.0,  # Fixed budget for OpenAI gpt-4o-mini
-                "budget_utilization": cost_metrics.get("budget_utilization", 0),
-                "provider_breakdown": {"gpt-4o-mini": cost_metrics.get("total_spend", 0)},
-                "total_requests_today": cost_metrics.get("requests_today", 0)
-            }),
+            json.dumps(
+                {
+                    "daily_spend": cost_metrics.get("daily_spend", 0),
+                    "monthly_budget": 50.0,  # Fixed budget for OpenAI gpt-4o-mini
+                    "budget_utilization": cost_metrics.get("budget_utilization", 0),
+                    "provider_breakdown": {
+                        "gpt-4o-mini": cost_metrics.get("total_spend", 0)
+                    },
+                    "total_requests_today": cost_metrics.get("requests_today", 0),
+                }
+            ),
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
     except Exception as e:
@@ -528,12 +540,14 @@ async def get_cost_metrics(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"error": "Failed to retrieve cost metrics"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
+
 
 # =============================================================================
 # BUDGET VALIDATION & TIMER FUNCTIONS
 # =============================================================================
+
 
 async def validate_ai_budget(user_id: str) -> Dict[str, Any]:
     """Validate AI budget before operation"""
@@ -547,17 +561,15 @@ async def validate_ai_budget(user_id: str) -> Dict[str, Any]:
                 "approved": False,
                 "reason": "Daily AI budget nearly exceeded",
                 "current_spend": current_spend,
-                "daily_budget": daily_budget
+                "daily_budget": daily_budget,
             }
 
-        return {
-            "approved": True,
-            "remaining_budget": daily_budget - current_spend
-        }
+        return {"approved": True, "remaining_budget": daily_budget - current_spend}
 
     except Exception as e:
         logger.error(f"Error validating budget: {str(e)}")
         return {"approved": False, "reason": "Budget validation failed"}
+
 
 # Timer trigger for budget monitoring - runs hourly in production
 # Note: Requires Azure Storage for local development (Azurite emulator)
@@ -577,9 +589,11 @@ async def budget_monitoring_timer(timer: func.TimerRequest) -> None:
     except Exception as e:
         logger.error(f"Error in budget monitoring: {str(e)}")
 
+
 # =============================================================================
 # HEALTH CHECK
 # =============================================================================
+
 
 @app.route(route="health", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
 async def health_check(req: func.HttpRequest) -> func.HttpResponse:
@@ -596,9 +610,9 @@ async def health_check(req: func.HttpRequest) -> func.HttpResponse:
             "timestamp": datetime.utcnow().isoformat(),
             "services": {
                 "cosmos_db": "healthy" if cosmos_health else "unhealthy",
-                "azure_openai": "healthy" if ai_health else "unhealthy"
+                "azure_openai": "healthy" if ai_health else "unhealthy",
             },
-            "version": "2.0.0"
+            "version": "2.0.0",
         }
 
         status_code = 200 if cosmos_health and ai_health else 503
@@ -606,19 +620,21 @@ async def health_check(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps(health_status),
             status_code=status_code,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
         return func.HttpResponse(
-            json.dumps({
-                "status": "unhealthy",
-                "error": str(e),
-                "timestamp": datetime.utcnow().isoformat()
-            }),
+            json.dumps(
+                {
+                    "status": "unhealthy",
+                    "error": str(e),
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            ),
             status_code=503,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
 
@@ -628,18 +644,20 @@ async def health_simple(req: func.HttpRequest) -> func.HttpResponse:
     """Simple health check without external dependencies"""
     try:
         return func.HttpResponse(
-            json.dumps({
-                "status": "healthy",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "message": "Function App is running",
-                "version": "1.0.0-modernized-auth"
-            }),
+            json.dumps(
+                {
+                    "status": "healthy",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "message": "Function App is running",
+                    "version": "1.0.0-modernized-auth",
+                }
+            ),
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
         )
     except Exception as e:
         return func.HttpResponse(
             json.dumps({"status": "error", "error": str(e)}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )

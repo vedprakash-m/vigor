@@ -4,14 +4,15 @@ Pydantic models for request/response validation and Cosmos DB documents
 """
 
 from datetime import datetime
-from typing import List, Optional, Dict, Any, Union
-from pydantic import BaseModel, Field, EmailStr
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
+from pydantic import BaseModel, EmailStr, Field
 
 # =============================================================================
 # ENUMS
 # =============================================================================
+
 
 class FitnessLevel(str, Enum):
     BEGINNER = "beginner"
@@ -35,8 +36,10 @@ class WorkoutDifficulty(str, Enum):
 # USER MODELS
 # =============================================================================
 
+
 class UserProfileData(BaseModel):
     """User profile information"""
+
     fitnessLevel: FitnessLevel = FitnessLevel.BEGINNER
     goals: List[str] = Field(default_factory=list)
     equipment: str = "bodyweight"
@@ -45,6 +48,7 @@ class UserProfileData(BaseModel):
 
 class UserPreferences(BaseModel):
     """User preferences for workouts and app behavior"""
+
     workoutDuration: int = Field(default=45, ge=15, le=120)
     restDays: List[str] = Field(default_factory=list)
     notifications: bool = True
@@ -52,6 +56,7 @@ class UserPreferences(BaseModel):
 
 class UserProfile(BaseModel):
     """Complete user profile document"""
+
     id: str
     userId: str  # Partition key
     email: EmailStr
@@ -64,6 +69,7 @@ class UserProfile(BaseModel):
 
 class User(BaseModel):
     """User document for Cosmos DB with email as primary key"""
+
     id: str  # Email address as primary key
     email: EmailStr
     username: str
@@ -80,8 +86,10 @@ class User(BaseModel):
 # WORKOUT MODELS
 # =============================================================================
 
+
 class Exercise(BaseModel):
     """Individual exercise within a workout"""
+
     name: str
     sets: int = Field(ge=1, le=10)
     reps: Optional[int] = None
@@ -93,6 +101,7 @@ class Exercise(BaseModel):
 
 class WorkoutMetadata(BaseModel):
     """Metadata for workout plans"""
+
     difficulty: str
     estimatedDuration: int  # Minutes
     equipmentNeeded: List[str] = Field(default_factory=list)
@@ -102,6 +111,7 @@ class WorkoutMetadata(BaseModel):
 
 class WorkoutPlan(BaseModel):
     """Workout plan document"""
+
     id: str
     userId: str  # Partition key
     name: str
@@ -113,6 +123,7 @@ class WorkoutPlan(BaseModel):
 
 class ExerciseLog(BaseModel):
     """Log of completed exercise"""
+
     exerciseName: str
     completedSets: int
     actualReps: List[int] = Field(default_factory=list)
@@ -122,6 +133,7 @@ class ExerciseLog(BaseModel):
 
 class WorkoutLog(BaseModel):
     """Workout session log document"""
+
     id: str
     userId: str  # Partition key
     workoutPlanId: Optional[str] = None
@@ -136,8 +148,10 @@ class WorkoutLog(BaseModel):
 # AI MODELS
 # =============================================================================
 
+
 class AICoachMessage(BaseModel):
     """AI coach conversation message"""
+
     id: str
     userId: str  # Partition key
     role: str  # 'user' or 'assistant'
@@ -152,8 +166,10 @@ class AICoachMessage(BaseModel):
 # REQUEST/RESPONSE MODELS
 # =============================================================================
 
+
 class WorkoutGenerationRequest(BaseModel):
     """Request for workout generation"""
+
     fitnessLevel: Optional[FitnessLevel] = None
     goals: Optional[List[str]] = None
     equipment: Optional[str] = None
@@ -164,12 +180,14 @@ class WorkoutGenerationRequest(BaseModel):
 
 class CoachChatRequest(BaseModel):
     """Request for AI coach chat"""
+
     message: str = Field(min_length=1, max_length=1000)
     context: Optional[Dict[str, Any]] = None
 
 
 class WorkoutSessionRequest(BaseModel):
     """Request to log workout session"""
+
     workoutPlanId: Optional[str] = None
     exercises: List[ExerciseLog]
     durationMinutes: int = Field(ge=1, le=300)
@@ -181,8 +199,10 @@ class WorkoutSessionRequest(BaseModel):
 # RESPONSE MODELS
 # =============================================================================
 
+
 class ApiResponse(BaseModel):
     """Standard API response wrapper"""
+
     success: bool = True
     data: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
@@ -191,6 +211,7 @@ class ApiResponse(BaseModel):
 
 class PaginatedResponse(BaseModel):
     """Paginated response for list endpoints"""
+
     items: List[Dict[str, Any]]
     total: int
     page: int
@@ -200,6 +221,7 @@ class PaginatedResponse(BaseModel):
 
 class HealthCheckResponse(BaseModel):
     """Health check response"""
+
     status: str
     timestamp: datetime
     services: Dict[str, str]
@@ -210,8 +232,10 @@ class HealthCheckResponse(BaseModel):
 # COST MANAGEMENT MODELS
 # =============================================================================
 
+
 class BudgetStatus(BaseModel):
     """AI budget status"""
+
     approved: bool
     currentSpend: float
     dailyBudget: float
@@ -221,6 +245,7 @@ class BudgetStatus(BaseModel):
 
 class CostMetrics(BaseModel):
     """Cost tracking metrics"""
+
     dailySpend: float
     monthlySpend: float
     requestsToday: int

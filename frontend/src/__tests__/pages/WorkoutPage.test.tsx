@@ -26,9 +26,14 @@ jest.mock('@chakra-ui/react', () => ({
   HStack: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
     <div data-testid="hstack" {...props}>{children}</div>
   ),
-  Card: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
-    <div data-testid="card" {...props}>{children}</div>
-  ),
+  Card: {
+    Root: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
+      <div data-testid="card" {...props}>{children}</div>
+    ),
+    Body: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
+      <div data-testid="card-body" {...props}>{children}</div>
+    ),
+  },
   Input: (props: Record<string, unknown> & { onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
     <input data-testid="input" {...props} />
   ),
@@ -48,7 +53,17 @@ jest.mock('@chakra-ui/react', () => ({
   FormLabel: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
     <label {...props}>{children}</label>
   ),
-  Select: (props: Record<string, unknown>) => <select data-testid="select" {...props} />,
+  Select: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
+    <select data-testid="select" {...props}>{children}</select>
+  ),
+  NativeSelect: {
+    Root: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
+      <div data-testid="native-select-root" {...props}>{children}</div>
+    ),
+    Field: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
+      <select data-testid="native-select" {...props}>{children}</select>
+    ),
+  },
   useToast: () => jest.fn(),
   ChakraProvider: ({ children }: React.PropsWithChildren<unknown>) => <>{children}</>,
   defaultSystem: {},
@@ -81,16 +96,21 @@ const mockWorkoutPlan = {
 }
 
 // Mock AI service - using the actual api.ts module
-jest.mock('../../services/api', () => ({
-  api: {
+jest.mock('../../services/api', () => {
+  const mockApi = {
     workouts: {
       getWorkoutPlans: jest.fn().mockResolvedValue([mockWorkoutPlan]),
       generateWorkout: jest.fn().mockResolvedValue(mockWorkoutPlan),
       logWorkout: jest.fn().mockResolvedValue({ success: true }),
       saveWorkoutPlan: jest.fn().mockResolvedValue({ id: 'new-plan-1' }),
     },
-  },
-}))
+  }
+  return {
+    api: mockApi,
+    default: mockApi,
+    __esModule: true,
+  }
+})
 
 // Import after mocks
 import { WorkoutPage } from '../../pages/WorkoutPage';
@@ -104,7 +124,7 @@ describe('WorkoutPage', () => {
     render(<WorkoutPage />)
 
     await waitFor(() => {
-      expect(screen.getByText(/Workouts/i)).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /Workouts/i })).toBeInTheDocument()
     })
   })
 

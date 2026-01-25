@@ -3,10 +3,10 @@ Configuration management for Vigor Functions
 Centralized settings using Pydantic Settings
 """
 
-import os
 from typing import Optional
-from pydantic_settings import BaseSettings
+
 from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -14,13 +14,21 @@ class Settings(BaseSettings):
 
     # Cosmos DB Configuration - support both naming conventions
     COSMOS_DB_ENDPOINT: str = Field(default="", description="Cosmos DB endpoint URL")
-    COSMOS_ENDPOINT: str = Field(default="", description="Cosmos DB endpoint URL (alias)")
+    COSMOS_ENDPOINT: str = Field(
+        default="", description="Cosmos DB endpoint URL (alias)"
+    )
     COSMOS_DB_KEY: str = Field(default="", description="Cosmos DB primary key")
     COSMOS_KEY: str = Field(default="", description="Cosmos DB primary key (alias)")
-    COSMOS_DB_CONNECTION_STRING: str = Field(default="", description="Cosmos DB connection string")
+    COSMOS_DB_CONNECTION_STRING: str = Field(
+        default="", description="Cosmos DB connection string"
+    )
     COSMOS_DB_DATABASE: str = Field(default="vigor_db", description="Database name")
-    COSMOS_DATABASE: str = Field(default="vigor_db", description="Database name (alias)")
-    COSMOS_DB_DATABASE_NAME: str = Field(default="vigor_db", description="Database name (alias)")
+    COSMOS_DATABASE: str = Field(
+        default="vigor_db", description="Database name (alias)"
+    )
+    COSMOS_DB_DATABASE_NAME: str = Field(
+        default="vigor_db", description="Database name (alias)"
+    )
 
     @property
     def cosmos_endpoint(self) -> str:
@@ -35,28 +43,53 @@ class Settings(BaseSettings):
     @property
     def cosmos_database(self) -> str:
         """Get Cosmos DB database from any setting name"""
-        return self.COSMOS_DB_DATABASE or self.COSMOS_DATABASE or self.COSMOS_DB_DATABASE_NAME or "vigor_db"
+        return (
+            self.COSMOS_DB_DATABASE
+            or self.COSMOS_DATABASE
+            or self.COSMOS_DB_DATABASE_NAME
+            or "vigor_db"
+        )
 
     # Admin Configuration
-    ADMIN_EMAIL: str = Field(default="admin@vigor.com", description="Default admin email")
-    ADMIN_PASSWORD: str = Field(default="ChangeMe123!", description="Default admin password")
+    ADMIN_EMAIL: str = Field(
+        default="admin@vigor.com", description="Default admin email"
+    )
+    ADMIN_PASSWORD: str = Field(
+        default="ChangeMe123!", description="Default admin password"
+    )
 
     # Azure OpenAI Configuration (gpt-4o-mini deployed in rg-vemishra-rag, East US 2)
-    AZURE_OPENAI_ENDPOINT: str = Field(default="", description="Azure OpenAI endpoint URL")
+    AZURE_OPENAI_ENDPOINT: str = Field(
+        default="", description="Azure OpenAI endpoint URL"
+    )
     AZURE_OPENAI_API_KEY: str = Field(default="", description="Azure OpenAI API key")
-    AZURE_OPENAI_DEPLOYMENT: str = Field(default="gpt-4o-mini", description="Azure OpenAI deployment name")
+    AZURE_OPENAI_DEPLOYMENT: str = Field(
+        default="gpt-4o-mini", description="Azure OpenAI deployment name"
+    )
     AI_MONTHLY_BUDGET: str = Field(default="50", description="Monthly AI budget in USD")
-    AI_COST_THRESHOLD: str = Field(default="40", description="Cost alert threshold in USD")
+    AI_COST_THRESHOLD: str = Field(
+        default="40", description="Cost alert threshold in USD"
+    )
 
     # Legacy OpenAI settings (for backward compatibility during migration)
-    OPENAI_API_KEY: str = Field(default="", description="OpenAI API key (deprecated, use Azure OpenAI)")
-    OPENAI_MODEL: str = Field(default="gpt-4o-mini", description="OpenAI model name (deprecated)")
-    AI_PROVIDER: str = Field(default="azure-openai-gpt-4o-mini", description="AI provider identifier")
+    OPENAI_API_KEY: str = Field(
+        default="", description="OpenAI API key (deprecated, use Azure OpenAI)"
+    )
+    OPENAI_MODEL: str = Field(
+        default="gpt-4o-mini", description="OpenAI model name (deprecated)"
+    )
+    AI_PROVIDER: str = Field(
+        default="azure-openai-gpt-4o-mini", description="AI provider identifier"
+    )
 
     # Authentication
     JWT_SECRET_KEY: str = Field(default="", description="JWT secret key")
-    AZURE_TENANT_ID: str = Field(default="common", description="Azure tenant ID for default tenant")
-    AZURE_CLIENT_ID: str = Field(default="", description="Azure AD app registration client ID")
+    AZURE_TENANT_ID: str = Field(
+        default="common", description="Azure tenant ID for default tenant"
+    )
+    AZURE_CLIENT_ID: str = Field(
+        default="", description="Azure AD app registration client ID"
+    )
     SECRET_KEY: str = Field(default="", description="Application secret key")
 
     # Application Settings
@@ -64,7 +97,9 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = Field(default="INFO", description="Logging level")
 
     # Rate Limiting
-    RATE_LIMIT_STORAGE_TYPE: str = Field(default="memory", description="Rate limit storage")
+    RATE_LIMIT_STORAGE_TYPE: str = Field(
+        default="memory", description="Rate limit storage"
+    )
 
     class Config:
         env_file = ".env"

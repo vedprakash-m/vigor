@@ -3,31 +3,33 @@ Authentication module for Vigor Functions
 Microsoft Entra ID default tenant authentication with email-based user identification
 """
 
-import jwt
 import json
 import logging
-import requests
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 import azure.functions as func
+import jwt
+import requests
 
 from .config import get_settings
-from .models import User
 from .cosmos_db import get_cosmos_container
+from .models import User
 
 logger = logging.getLogger(__name__)
 
 
 class AuthenticationError(Exception):
     """Custom authentication error"""
+
     pass
 
 
-async def get_current_user_from_token(req: func.HttpRequest) -> Optional[Dict[str, Any]]:
+async def get_current_user_from_token(
+    req: func.HttpRequest,
+) -> Optional[Dict[str, Any]]:
     """Extract and validate user from Microsoft Entra ID JWT token"""
     try:
-        settings = get_settings()
-
         # Get token from Authorization header
         auth_header = req.headers.get("Authorization")
         if not auth_header:
@@ -87,7 +89,7 @@ async def validate_azure_entra_token(token: str) -> Optional[Dict[str, Any]]:
             public_key,
             algorithms=["RS256"],
             audience=settings.AZURE_CLIENT_ID,  # App registration client ID
-            options={"verify_exp": True}
+            options={"verify_exp": True},
         )
 
         # Extract user information from Microsoft Entra ID token
@@ -97,7 +99,7 @@ async def validate_azure_entra_token(token: str) -> Optional[Dict[str, Any]]:
             "username": payload.get("name") or payload.get("email", "").split("@")[0],
             "tier": "free",  # Default tier for new users
             "tenant_id": payload.get("tid"),
-            "exp": payload.get("exp")
+            "exp": payload.get("exp"),
         }
 
         # Validate required fields
@@ -128,11 +130,13 @@ async def ensure_user_exists(user_data: Dict[str, Any]) -> None:
         try:
             query = "SELECT * FROM c WHERE c.email = @email"
             parameters = [{"name": "@email", "value": email}]
-            items = list(container.query_items(
-                query=query,
-                parameters=parameters,
-                enable_cross_partition_query=True
-            ))
+            items = list(
+                container.query_items(
+                    query=query,
+                    parameters=parameters,
+                    enable_cross_partition_query=True,
+                )
+            )
 
             if items:
                 logger.info(f"User already exists: {email}")
@@ -152,7 +156,7 @@ async def ensure_user_exists(user_data: Dict[str, Any]) -> None:
             available_equipment=["none"],
             injury_history=[],
             created_at=datetime.now(timezone.utc).isoformat(),
-            updated_at=datetime.now(timezone.utc).isoformat()
+            updated_at=datetime.now(timezone.utc).isoformat(),
         )
 
         container.create_item(body=new_user.dict())
@@ -172,7 +176,9 @@ async def require_admin_user(req: func.HttpRequest) -> Optional[Dict[str, Any]]:
 
         # Check if user has admin privileges
         if user.get("tier") != "admin":
-            logger.warning(f"Non-admin user attempted admin access: {user.get('email')}")
+            logger.warning(
+                f"Non-admin user attempted admin access: {user.get('email')}"
+            )
             return None
 
         return user
@@ -213,6 +219,7 @@ def extract_user_from_request(req: func.HttpRequest) -> Optional[Dict[str, Any]]
 # Rate limiting helpers
 _rate_limit_cache = {}
 
+
 def check_rate_limit(key: str, limit: int, window: int) -> bool:
     """Simple in-memory rate limiting"""
     try:
@@ -223,7 +230,8 @@ def check_rate_limit(key: str, limit: int, window: int) -> bool:
 
         # Clean old entries
         _rate_limit_cache[key] = [
-            timestamp for timestamp in _rate_limit_cache[key]
+            timestamp
+            for timestamp in _rate_limit_cache[key]
             if now - timestamp < window
         ]
 
@@ -255,7 +263,7 @@ def create_jwt_response_token(user_data: Dict[str, Any]) -> str:
             "username": user_data.get("username"),
             "tier": user_data.get("tier", "free"),
             "iat": datetime.now(timezone.utc).timestamp(),
-            "exp": exp
+            "exp": exp,
         }
 
         # Encode token (simple JWT for internal use)

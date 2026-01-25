@@ -6,8 +6,8 @@ Deployed in vigor-rg alongside other Azure resources
 
 import json
 import logging
-from typing import Dict, Any, List, Optional
 import time
+from typing import Any, Dict, List, Optional
 
 from openai import AsyncAzureOpenAI
 
@@ -41,20 +41,20 @@ class OpenAIClient:
                 return
 
             self.client = AsyncAzureOpenAI(
-                azure_endpoint=endpoint,
-                api_key=api_key,
-                api_version="2024-02-01"
+                azure_endpoint=endpoint, api_key=api_key, api_version="2024-02-01"
             )
-            logger.info(f"Azure OpenAI client initialized with deployment: {self.deployment}")
+            logger.info(
+                f"Azure OpenAI client initialized with deployment: {self.deployment}"
+            )
 
         except Exception as e:
-            logger.error(f"Failed to initialize Azure OpenAI client: {type(e).__name__}: {str(e)}")
+            logger.error(
+                f"Failed to initialize Azure OpenAI client: {type(e).__name__}: {str(e)}"
+            )
             self.client = None
 
     async def generate_workout(
-        self,
-        user_profile: Dict[str, Any],
-        preferences: Dict[str, Any]
+        self, user_profile: Dict[str, Any], preferences: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Generate personalized workout using OpenAI gpt-4o-mini"""
         try:
@@ -81,7 +81,7 @@ class OpenAIClient:
                 equipment=equipment,
                 duration=duration,
                 focus_areas=focus_areas,
-                difficulty=difficulty
+                difficulty=difficulty,
             )
 
             # Generate content
@@ -90,13 +90,17 @@ class OpenAIClient:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert fitness coach. Create safe, effective workout plans. Always prioritize proper form and safety. Return only valid JSON."
+                        "content": (
+                            "You are an expert fitness coach. Create safe, "
+                            "effective workout plans. Always prioritize proper "
+                            "form and safety. Return only valid JSON."
+                        ),
                     },
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 response_format={"type": "json_object"},
                 max_tokens=2000,
-                temperature=0.7
+                temperature=0.7,
             )
 
             # Parse response
@@ -112,7 +116,8 @@ class OpenAIClient:
                 "equipmentNeeded": equipment if equipment else [],
                 "aiProviderUsed": "azure-openai-gpt-4o-mini",
                 "generationTime": time.time() - start_time,
-                "tags": (focus_areas or []) + (goals if isinstance(goals, list) else [goals])
+                "tags": (focus_areas or [])
+                + (goals if isinstance(goals, list) else [goals]),
             }
 
             # Ensure required fields exist
@@ -137,12 +142,12 @@ class OpenAIClient:
         equipment: List[str],
         duration: int,
         focus_areas: List[str],
-        difficulty: str
+        difficulty: str,
     ) -> str:
         """Build the workout generation prompt"""
-        goals_str = ', '.join(goals) if goals else 'general fitness'
-        equipment_str = ', '.join(equipment) if equipment else 'bodyweight only'
-        focus_str = ', '.join(focus_areas) if focus_areas else 'full body'
+        goals_str = ", ".join(goals) if goals else "general fitness"
+        equipment_str = ", ".join(equipment) if equipment else "bodyweight only"
+        focus_str = ", ".join(focus_areas) if focus_areas else "full body"
 
         return f"""Create a {duration}-minute workout plan for a {fitness_level} fitness level user.
 
@@ -181,10 +186,7 @@ Requirements:
 6. Include 6-10 exercises for a complete workout"""
 
     async def coach_chat(
-        self,
-        message: str,
-        history: List[Dict[str, Any]],
-        user_context: Dict[str, Any]
+        self, message: str, history: List[Dict[str, Any]], user_context: Dict[str, Any]
     ) -> str:
         """Generate AI coach response"""
         try:
@@ -207,16 +209,15 @@ Guidelines:
 4. Keep responses concise but helpful (2-4 paragraphs max)
 5. Reference the user's profile when relevant
 6. Use simple language, avoid jargon
-7. If asked about nutrition, give general healthy eating advice but recommend consulting a nutritionist for specific plans"""
+7. For nutrition, give general advice and recommend consulting a nutritionist"""
 
             messages = [{"role": "system", "content": system_prompt}]
 
             # Add conversation history (last 10 messages)
             for msg in history[-10:]:
-                messages.append({
-                    "role": msg.get("role", "user"),
-                    "content": msg.get("content", "")
-                })
+                messages.append(
+                    {"role": msg.get("role", "user"), "content": msg.get("content", "")}
+                )
 
             messages.append({"role": "user", "content": message})
 
@@ -224,19 +225,20 @@ Guidelines:
                 model=self.deployment,
                 messages=messages,  # type: ignore
                 max_tokens=500,
-                temperature=0.8
+                temperature=0.8,
             )
 
-            return response.choices[0].message.content or "I apologize, but I couldn't generate a response. Please try again."
+            return (
+                response.choices[0].message.content
+                or "I apologize, but I couldn't generate a response. Please try again."
+            )
 
         except Exception as e:
             logger.error(f"Error in coach chat: {type(e).__name__}: {str(e)}")
             raise
 
     async def analyze_workout(
-        self,
-        workout_data: Dict[str, Any],
-        user_feedback: str
+        self, workout_data: Dict[str, Any], user_feedback: str
     ) -> Dict[str, Any]:
         """Analyze completed workout and provide feedback"""
         try:
@@ -263,13 +265,17 @@ Provide a JSON response with:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert fitness coach providing workout analysis. Be encouraging but honest. Return only valid JSON."
+                        "content": (
+                            "You are an expert fitness coach providing workout "
+                            "analysis. Be encouraging but honest. Return only "
+                            "valid JSON."
+                        ),
                     },
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 response_format={"type": "json_object"},
                 max_tokens=1000,
-                temperature=0.7
+                temperature=0.7,
             )
 
             content = response.choices[0].message.content
