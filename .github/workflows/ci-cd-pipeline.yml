@@ -99,8 +99,9 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_API_URL: ${{ vars.API_URL || 'https://vigor-functions.azurewebsites.net' }}
-          VITE_AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID || '' }}
+          VITE_API_URL: ${{ vars.API_URL || 'https://vigor-functions.azurewebsites.net/api' }}
+          VITE_AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID || 'be183263-80c3-4191-bc84-2ee3c618cbcd' }}
+          VITE_AZURE_AD_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID || 'be183263-80c3-4191-bc84-2ee3c618cbcd' }}
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v6
