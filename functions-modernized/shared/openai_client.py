@@ -240,8 +240,17 @@ Guidelines:
                 max_completion_tokens=500,
             )
 
+            logger.info(f"Coach chat response: {response}")
+            message = response.choices[0].message
+            logger.info(f"Message object: {message}")
+
+            # Try content first, then check for reasoning_content (for reasoning models)
+            content = message.content
+            if not content and hasattr(message, 'reasoning_content'):
+                content = getattr(message, 'reasoning_content', None)
+
             return (
-                response.choices[0].message.content
+                content
                 or "I apologize, but I couldn't generate a response. Please try again."
             )
 
