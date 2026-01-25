@@ -106,17 +106,18 @@ class OpenAIClient:
                         "content": (
                             "You are an expert fitness coach. Create safe, "
                             "effective workout plans. Always prioritize proper "
-                            "form and safety. Return only valid JSON."
+                            "form and safety. You MUST respond with valid JSON only, no markdown."
                         ),
                     },
                     {"role": "user", "content": prompt},
                 ],
-                response_format={"type": "json_object"},
                 max_completion_tokens=2000,
             )
 
             # Parse response
+            logger.info(f"OpenAI response: {response}")
             content = response.choices[0].message.content
+            logger.info(f"Response content: {content}")
             if not content:
                 raise ValueError("Empty response from OpenAI")
             workout_data = json.loads(content)
@@ -278,13 +279,11 @@ Provide a JSON response with:
                         "role": "system",
                         "content": (
                             "You are an expert fitness coach providing workout "
-                            "analysis. Be encouraging but honest. Return only "
-                            "valid JSON."
+                            "analysis. Be encouraging but honest. You MUST respond with valid JSON only, no markdown."
                         ),
                     },
                     {"role": "user", "content": prompt},
                 ],
-                response_format={"type": "json_object"},
                 max_completion_tokens=1000,
             )
 
