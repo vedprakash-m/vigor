@@ -1,11 +1,16 @@
-name: Vigor CI/CD Pipeline
+name: Vigor CI/CD
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      deploy_infrastructure:
+        description: "Deploy infrastructure (Bicep)"
+        type: boolean
+        default: false
 
 env:
   PYTHON_VERSION: "3.11"
@@ -13,12 +18,17 @@ env:
   AZURE_FUNCTIONAPP_NAME: vigor-functions
   AZURE_RESOURCEGROUP_NAME: vigor-rg
 
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # =============================================================================
-  # BACKEND CHECKS (Azure Functions)
+  # QUALITY CHECKS (Run in parallel for speed)
   # =============================================================================
-  backend-lint:
-    name: Backend Linting
+  backend-quality:
+    name: Backend Quality
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -36,51 +46,29 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 black isort
+          pip install flake8 black isort bandit
           pip install -r requirements.txt
 
-      - name: Run Black (Code Formatting)
-        run: black --check --diff .
-        continue-on-error: true
+      - name: Code Quality Checks
+        run: |
+          echo "::group::Black (Formatting)"
+          black --check --diff . || echo "::warning::Black found formatting issues"
+          echo "::endgroup::"
 
-      - name: Run isort (Import Sorting)
-        run: isort --check-only --diff .
-        continue-on-error: true
+          echo "::group::isort (Import Sorting)"
+          isort --check-only --diff . || echo "::warning::isort found import issues"
+          echo "::endgroup::"
 
-      - name: Run Flake8 (Linting)
-        run: flake8 . --count --show-source --statistics --max-line-length=120 --exclude=.venv,__pycache__
-        continue-on-error: true
+          echo "::group::Flake8 (Linting)"
+          flake8 . --count --show-source --statistics --max-line-length=120 --exclude=.venv,__pycache__
+          echo "::endgroup::"
 
-  backend-security:
-    name: Backend Security Scan
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: functions-modernized
-    steps:
-      - uses: actions/checkout@v4
+          echo "::group::Bandit (Security)"
+          bandit -r . -ll -x ./.venv,./tests,./test_*.py || echo "::warning::Bandit found security issues"
+          echo "::endgroup::"
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install Security Tools
-        run: pip install bandit safety
-
-      - name: Run Bandit (Security Linter)
-        run: bandit -r . -ll -x ./.venv,./tests,./test_*.py
-        continue-on-error: true
-
-      - name: Run Safety (Dependency Check)
-        run: safety check -r requirements.txt
-        continue-on-error: true
-
-  # =============================================================================
-  # FRONTEND CHECKS
-  # =============================================================================
-  frontend-lint:
-    name: Frontend Linting
+  frontend-quality:
+    name: Frontend Quality
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -98,59 +86,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run ESLint
-        run: npm run lint
-
-      - name: Run TypeScript Check
-        run: npm run type-check
-        continue-on-error: true
-
-  frontend-test:
-    name: Frontend Tests
-    runs-on: ubuntu-latest
-    needs: frontend-lint
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
+      - name: Lint & Type Check
+        run: |
+          npm run lint
+          npm run type-check
 
       - name: Run Tests
         run: npm test -- --watchAll=false --passWithNoTests
         env:
           CI: true
 
-  frontend-build:
-    name: Frontend Build
-    runs-on: ubuntu-latest
-    needs: frontend-lint
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build Application
+      - name: Build
         run: npm run build
         env:
           VITE_API_URL: ${{ vars.API_URL || 'https://vigor-functions.azurewebsites.net' }}
@@ -161,29 +107,54 @@ jobs:
         with:
           name: frontend-build
           path: frontend/dist
-          retention-days: 7
+          retention-days: 3
 
-  # =============================================================================
-  # INFRASTRUCTURE VALIDATION
-  # =============================================================================
   infrastructure-validate:
     name: Validate Infrastructure
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate Bicep Syntax
-        run: |
-          az bicep build --file infrastructure/bicep/main-modernized.bicep --stdout > /dev/null
-        continue-on-error: true
+      - name: Validate Bicep
+        run: az bicep build --file infrastructure/bicep/main-modernized.bicep --stdout > /dev/null
 
   # =============================================================================
-  # DEPLOYMENT (Only on main branch push)
+  # DEPLOYMENT (Only on main branch push, after quality checks pass)
   # =============================================================================
-  deploy-functions:
-    name: Deploy Azure Functions
+  deploy-infrastructure:
+    name: Deploy Infrastructure
     runs-on: ubuntu-latest
-    needs: [backend-lint, backend-security, infrastructure-validate]
+    needs: [backend-quality, frontend-quality, infrastructure-validate]
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.deploy_infrastructure == 'true'
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Bicep
+        run: |
+          cd infrastructure/bicep
+          az deployment group create \
+            --resource-group ${{ env.AZURE_RESOURCEGROUP_NAME }} \
+            --name "vigor-$(date +%Y%m%d-%H%M%S)" \
+            --template-file main-modernized.bicep \
+            --parameters parameters-modernized.bicepparam
+
+  deploy-functions:
+    name: Deploy Functions
+    runs-on: ubuntu-latest
+    needs: [backend-quality, infrastructure-validate]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
     permissions:
@@ -197,41 +168,32 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Azure CLI Login
+      - name: Azure Login
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        continue-on-error: true
 
       - name: Install Azure Functions Core Tools
         run: npm install -g azure-functions-core-tools@4 --unsafe-perm true
 
-      - name: Prepare Functions Package
-        run: |
-          cd functions-modernized
-          pip install -r requirements.txt -t .python_packages/lib/site-packages
-
       - name: Deploy to Azure Functions
         run: |
           cd functions-modernized
+          pip install -r requirements.txt -t .python_packages/lib/site-packages
           func azure functionapp publish ${{ env.AZURE_FUNCTIONAPP_NAME }} --python
-        continue-on-error: true
 
   deploy-frontend:
-    name: Deploy Static Web App
+    name: Deploy Frontend
     runs-on: ubuntu-latest
-    needs: [frontend-build]
+    needs: [frontend-quality]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
-    permissions:
-      id-token: write
-      contents: read
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download Frontend Build
+      - name: Download Build
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
@@ -245,24 +207,24 @@ jobs:
           action: "upload"
           app_location: "frontend/dist"
           skip_app_build: true
-        continue-on-error: true
 
   # =============================================================================
-  # POST-DEPLOYMENT SUMMARY
+  # SUMMARY
   # =============================================================================
-  deployment-summary:
-    name: Deployment Summary
+  summary:
+    name: Summary
     runs-on: ubuntu-latest
     needs: [deploy-functions, deploy-frontend]
     if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Generate Summary
         run: |
-          echo "## 🚀 Vigor Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 Vigor Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Functions | ${{ needs.deploy-functions.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ needs.deploy-frontend.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Resources:" >> $GITHUB_STEP_SUMMARY
-          echo "- **Backend API**: https://${{ env.AZURE_FUNCTIONAPP_NAME }}.azurewebsites.net" >> $GITHUB_STEP_SUMMARY
-          echo "- **Architecture**: Azure Functions + Cosmos DB + OpenAI gpt-5-mini" >> $GITHUB_STEP_SUMMARY
+          echo "**API:** https://${{ env.AZURE_FUNCTIONAPP_NAME }}.azurewebsites.net" >> $GITHUB_STEP_SUMMARY
