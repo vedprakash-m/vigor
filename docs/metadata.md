@@ -22,7 +22,7 @@
 | Attribute          | Value                                           |
 | ------------------ | ----------------------------------------------- |
 | **Domain**         | `vigor.vedprakash.net`                          |
-| **AI Model**       | Azure OpenAI gpt-4o-mini (existing resource)    |
+| **AI Model**       | Azure OpenAI gpt-5-mini (AI Foundry)            |
 | **Authentication** | Microsoft Entra ID (default tenant, `common`)   |
 | **Database**       | Azure Cosmos DB Serverless                      |
 | **Backend**        | Azure Functions (Python 3.11, Flex Consumption) |
@@ -45,7 +45,7 @@
 │           ├──► Cosmos DB Serverless (vigor_db)                 │
 │           │    └── users, workouts, workout_logs, ai_messages  │
 │           │                                                     │
-│           ├──► Azure OpenAI (aoai-vemishra-rag, gpt-4o-mini)   │
+│           ├──► Azure OpenAI (vigor-openai, gpt-5-mini)        │
 │           │                                                     │
 │           └──► Key Vault (vigor-kv)                            │
 │                                                                 │
@@ -59,7 +59,7 @@
 
 | Decision           | Choice                             | Rationale                               |
 | ------------------ | ---------------------------------- | --------------------------------------- |
-| AI Model           | Azure OpenAI `gpt-4o-mini`         | Existing resource in rg-vemishra-rag    |
+| AI Model           | Azure OpenAI `gpt-5-mini`          | AI Foundry via vigor-openai             |
 | Authentication     | Entra ID default tenant (`common`) | Any Microsoft account can use the app   |
 | User Tier          | Free only (MVP)                    | Premium deferred to post-MVP            |
 | Rate Limits        | 50/day (workouts), 50/day (chats)  | Generous for early adopters             |

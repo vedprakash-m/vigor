@@ -1,6 +1,6 @@
 """
 Vigor Backend - Azure Functions App
-Single resource group (vigor-rg), Cosmos DB Serverless, Azure OpenAI gpt-4o-mini
+Single resource group (vigor-rg), Cosmos DB Serverless, Azure OpenAI gpt-5-mini
 Production domain: vigor.vedprakash.net
 """
 
@@ -141,7 +141,7 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
     route="workouts/generate", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS
 )
 async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
-    """Generate personalized workout using OpenAI gpt-4o-mini"""
+    """Generate personalized workout using OpenAI gpt-5-mini"""
     try:
         current_user = await get_current_user_from_token(req)
         if not current_user:
@@ -218,7 +218,7 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
 
 @app.route(route="coach/chat", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
-    """Chat with AI coach using OpenAI gpt-4o-mini"""
+    """Chat with AI coach using OpenAI gpt-5-mini"""
     try:
         current_user = await get_current_user_from_token(req)
         if not current_user:
@@ -279,7 +279,7 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
                     "role": "assistant",
                     "content": ai_response,
                     "userId": current_user["email"],
-                    "providerUsed": "gpt-4o-mini",
+                    "providerUsed": "gpt-5-mini",
                     "createdAt": datetime.utcnow().isoformat(),
                 },
             ]
@@ -532,10 +532,10 @@ async def get_cost_metrics(req: func.HttpRequest) -> func.HttpResponse:
             json.dumps(
                 {
                     "daily_spend": cost_metrics.get("daily_spend", 0),
-                    "monthly_budget": 50.0,  # Fixed budget for OpenAI gpt-4o-mini
+                    "monthly_budget": 50.0,  # Fixed budget for OpenAI gpt-5-mini
                     "budget_utilization": cost_metrics.get("budget_utilization", 0),
                     "provider_breakdown": {
-                        "gpt-4o-mini": cost_metrics.get("total_spend", 0)
+                        "gpt-5-mini": cost_metrics.get("total_spend", 0)
                     },
                     "total_requests_today": cost_metrics.get("requests_today", 0),
                 }

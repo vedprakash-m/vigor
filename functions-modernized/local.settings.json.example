@@ -9,9 +9,9 @@
     "COSMOS_DB_KEY": "your-cosmos-db-key",
     "COSMOS_DB_DATABASE": "vigor_db",
 
-    "AZURE_OPENAI_ENDPOINT": "https://aoai-vemishra-rag.openai.azure.com/",
+    "AZURE_OPENAI_ENDPOINT": "https://vigor-openai.services.ai.azure.com",
     "AZURE_OPENAI_API_KEY": "your-azure-openai-api-key",
-    "AZURE_OPENAI_DEPLOYMENT": "gpt-4o-mini",
+    "AZURE_OPENAI_DEPLOYMENT": "gpt-5-mini",
 
     "AI_MONTHLY_BUDGET": "50",
     "AI_COST_THRESHOLD": "40",

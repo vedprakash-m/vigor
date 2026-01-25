@@ -33,12 +33,11 @@ param cosmosDbKey string
 @description('Azure OpenAI endpoint')
 param azureOpenAiEndpoint string
 
-@description('Azure OpenAI API key')
-@secure()
-param azureOpenAiApiKey string
-
 @description('Azure OpenAI deployment name')
-param azureOpenAiDeployment string = 'gpt-4o-mini'
+param azureOpenAiDeployment string = 'gpt-5-mini'
+
+// Note: AZURE_OPENAI_API_KEY is set manually in Azure Portal
+// and not managed by Bicep to prevent accidental overwrites
 
 @description('Secret key for JWT tokens')
 @secure()
@@ -125,10 +124,8 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
           name: 'AZURE_OPENAI_ENDPOINT'
           value: azureOpenAiEndpoint
         }
-        {
-          name: 'AZURE_OPENAI_API_KEY'
-          value: azureOpenAiApiKey
-        }
+        // Note: AZURE_OPENAI_API_KEY is NOT included here
+        // It must be set manually in Azure Portal to prevent overwrites during deployment
         {
           name: 'AZURE_OPENAI_DEPLOYMENT'
           value: azureOpenAiDeployment

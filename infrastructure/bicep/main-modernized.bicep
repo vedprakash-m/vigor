@@ -13,15 +13,14 @@ param appName string = 'vigor'
 @secure()
 param secretKey string
 
-@description('Existing Azure OpenAI endpoint (uses existing resource in rg-vemishra-rag)')
-param azureOpenAiEndpoint string = 'https://aoai-vemishra-rag.openai.azure.com/'
+@description('Azure OpenAI endpoint (AI Foundry project)')
+param azureOpenAiEndpoint string = 'https://vigor-openai.services.ai.azure.com/api/projects/vigor-foundry'
 
 @description('Azure OpenAI deployment name')
-param azureOpenAiDeployment string = 'gpt-4o-mini'
+param azureOpenAiDeployment string = 'gpt-5-mini'
 
-@description('Azure OpenAI API key')
-@secure()
-param azureOpenAiApiKey string
+// Note: AZURE_OPENAI_API_KEY is set manually in Azure Portal and not managed by Bicep
+// This prevents accidental overwrites during deployments
 
 // Variables
 var commonTags = {
@@ -38,10 +37,9 @@ var functionAppName = 'vigor-functions'
 var staticWebAppName = 'vigor-frontend'
 var cosmosDbAccountName = 'vigor-cosmos-${environment}'
 var storageAccountName = 'vigorsa${uniqueString(resourceGroup().id)}'
-var keyVaultName = 'vigor-kv-${uniqueString(resourceGroup().id)}'
 var appInsightsName = 'vigor-insights'
 var logAnalyticsName = 'vigor-logs'
-// Note: Using existing Azure OpenAI resource (aoai-vemishra-rag in rg-vemishra-rag)
+// Note: Using Azure AI Foundry project (vigor-foundry) via vigor-openai.services.ai.azure.com
 
 // Log Analytics Workspace
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
@@ -196,29 +194,8 @@ resource aiMessagesContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases
   }
 }
 
-// Key Vault
-resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
-  name: keyVaultName
-  location: location
-  tags: commonTags
-  properties: {
-    sku: {
-      family: 'A'
-      name: 'standard'
-    }
-    tenantId: subscription().tenantId
-    enableRbacAuthorization: true
-    enabledForDeployment: false
-    enabledForTemplateDeployment: true
-    enabledForDiskEncryption: false
-    enableSoftDelete: true
-    softDeleteRetentionInDays: 7
-    enablePurgeProtection: true
-  }
-}
-
-// Note: Azure OpenAI uses existing resource (aoai-vemishra-rag in rg-vemishra-rag)
-// with gpt-4o-mini deployment. Endpoint and API key are passed as parameters.
+// Note: Azure OpenAI uses Azure AI Foundry project (vigor-foundry via vigor-openai.services.ai.azure.com)
+// with gpt-5-mini deployment. Endpoint and API key are passed as parameters.
 
 // Function App with Flex Consumption Plan
 module functionApp './function-app-modernized.bicep' = {
@@ -234,7 +211,6 @@ module functionApp './function-app-modernized.bicep' = {
     cosmosDbEndpoint: cosmosDbAccount.properties.documentEndpoint
     cosmosDbKey: cosmosDbAccount.listKeys().primaryMasterKey
     azureOpenAiEndpoint: azureOpenAiEndpoint
-    azureOpenAiApiKey: azureOpenAiApiKey
     azureOpenAiDeployment: azureOpenAiDeployment
     secretKey: secretKey
   }
@@ -248,45 +224,6 @@ module staticWebApp './static-web-app-modernized.bicep' = {
     location: location // Use same region as other resources (West US 2)
     tags: commonTags
     functionAppUrl: 'https://${functionAppName}.azurewebsites.net'
-  }
-}
-
-// Key Vault Secrets
-resource secretKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'secret-key'
-  properties: {
-    value: secretKey
-  }
-}
-
-resource azureOpenAiApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'azure-openai-api-key'
-  properties: {
-    value: azureOpenAiApiKey
-  }
-}
-
-resource cosmosConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'cosmos-connection-string'
-  properties: {
-    value: cosmosDbAccount.listConnectionStrings().connectionStrings[0].connectionString
-  }
-}
-
-// Grant Function App access to Key Vault
-resource functionAppKeyVaultAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.id, functionAppName, 'Key Vault Secrets User')
-  scope: keyVault
-  properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      '4633458b-17de-408a-b874-0445c86b69e6'
-    ) // Key Vault Secrets User
-    principalId: functionApp.outputs.functionAppPrincipalId
-    principalType: 'ServicePrincipal'
   }
 }
 
@@ -309,5 +246,4 @@ output functionAppName string = functionApp.outputs.functionAppName
 output functionAppUrl string = functionApp.outputs.functionAppUrl
 output staticWebAppUrl string = staticWebApp.outputs.staticWebAppUrl
 output cosmosDbEndpoint string = cosmosDbAccount.properties.documentEndpoint
-output keyVaultName string = keyVault.name
 output resourceGroupName string = resourceGroup().name

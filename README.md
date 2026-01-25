@@ -26,7 +26,7 @@
 
 ### Key Features
 
-- **🤖 AI Fitness Coach** - Conversational coaching powered by Azure OpenAI gpt-4o-mini
+- **🤖 AI Fitness Coach** - Conversational coaching powered by Azure OpenAI gpt-5-mini
 - **📋 Personalized Workouts** - AI-generated workout plans based on user goals and available equipment
 - **📊 Progress Tracking** - Comprehensive analytics with workout logs and performance metrics
 - **💬 Interactive Coaching** - Real-time chat interface for fitness guidance and form tips
@@ -40,7 +40,7 @@
 | **Frontend** | React 19, TypeScript 5, Vite, Chakra UI v3, MSAL.js |
 | **Backend**  | Azure Functions (Python 3.11, Flex Consumption)     |
 | **Database** | Azure Cosmos DB Serverless                          |
-| **AI**       | Azure OpenAI gpt-4o-mini (existing resource)        |
+| **AI**       | Azure OpenAI gpt-5-mini (AI Foundry)                |
 | **Auth**     | Microsoft Entra ID (default tenant)                 |
 | **Hosting**  | Azure Static Web Apps + Azure Functions             |
 | **IaC**      | Bicep                                               |
@@ -56,7 +56,7 @@ vigor-rg (West US 2)
 ├── vigor-functions          # Azure Functions (Flex Consumption)
 ├── vigor-frontend           # Static Web App
 ├── vigor-cosmos             # Cosmos DB Serverless
-├── (external)               # Azure OpenAI (gpt-4o-mini in rg-vemishra-rag)
+├── (external)               # Azure OpenAI (gpt-5-mini via AI Foundry)
 ├── vigor-kv                 # Key Vault (secrets)
 ├── vigor-insights           # Application Insights
 ├── vigor-logs               # Log Analytics

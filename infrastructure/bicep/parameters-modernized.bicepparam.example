@@ -5,7 +5,8 @@ param location = 'West US 2'
 param appName = 'vigor'
 // Generate a secure random key for JWT signing
 param secretKey = 'your-jwt-secret-key-here'
-// Use existing Azure OpenAI resource
-param azureOpenAiEndpoint = 'https://your-openai-resource.openai.azure.com/'
-param azureOpenAiDeployment = 'gpt-4o-mini'
-param azureOpenAiApiKey = 'your-azure-openai-api-key-here'
+// Use Azure AI Foundry project
+param azureOpenAiEndpoint = 'https://your-ai-foundry.services.ai.azure.com/api/projects/your-project'
+param azureOpenAiDeployment = 'gpt-5-mini'
+// Note: AZURE_OPENAI_API_KEY must be set manually in Azure Portal
+// It is not managed by Bicep to prevent accidental overwrites during deployment

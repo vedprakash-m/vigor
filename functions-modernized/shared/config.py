@@ -58,13 +58,16 @@ class Settings(BaseSettings):
         default="ChangeMe123!", description="Default admin password"
     )
 
-    # Azure OpenAI Configuration (gpt-4o-mini deployed in rg-vemishra-rag, East US 2)
+    # Azure OpenAI Configuration (gpt-5-mini via Azure AI Foundry)
     AZURE_OPENAI_ENDPOINT: str = Field(
         default="", description="Azure OpenAI endpoint URL"
     )
     AZURE_OPENAI_API_KEY: str = Field(default="", description="Azure OpenAI API key")
     AZURE_OPENAI_DEPLOYMENT: str = Field(
-        default="gpt-4o-mini", description="Azure OpenAI deployment name"
+        default="gpt-5-mini", description="Azure OpenAI deployment name"
+    )
+    AZURE_OPENAI_API_VERSION: str = Field(
+        default="2024-12-01-preview", description="Azure OpenAI API version (use preview versions for Azure AI Foundry)"
     )
     AI_MONTHLY_BUDGET: str = Field(default="50", description="Monthly AI budget in USD")
     AI_COST_THRESHOLD: str = Field(
@@ -76,10 +79,10 @@ class Settings(BaseSettings):
         default="", description="OpenAI API key (deprecated, use Azure OpenAI)"
     )
     OPENAI_MODEL: str = Field(
-        default="gpt-4o-mini", description="OpenAI model name (deprecated)"
+        default="gpt-5-mini", description="OpenAI model name (deprecated)"
     )
     AI_PROVIDER: str = Field(
-        default="azure-openai-gpt-4o-mini", description="AI provider identifier"
+        default="azure-openai-gpt-5-mini", description="AI provider identifier"
     )
 
     # Authentication

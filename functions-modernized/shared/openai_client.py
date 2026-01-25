@@ -1,7 +1,8 @@
 """
 Azure OpenAI client for Vigor Functions
-Single LLM provider using gpt-4o-mini for workout generation and AI coaching
+Single LLM provider using gpt-5-mini for workout generation and AI coaching
 Deployed in vigor-rg alongside other Azure resources
+Uses the v1 API pattern for Azure AI Foundry
 """
 
 import json
@@ -9,7 +10,7 @@ import logging
 import time
 from typing import Any, Dict, List, Optional
 
-from openai import AsyncAzureOpenAI
+from openai import AsyncOpenAI
 
 from .config import get_settings
 
@@ -17,16 +18,16 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAIClient:
-    """Azure OpenAI gpt-4o-mini client for AI operations"""
+    """Azure OpenAI gpt-5-mini client for AI operations"""
 
     def __init__(self):
         self.settings = get_settings()
-        self.deployment = self.settings.AZURE_OPENAI_DEPLOYMENT or "gpt-4o-mini"
-        self.client: Optional[AsyncAzureOpenAI] = None
+        self.deployment = self.settings.AZURE_OPENAI_DEPLOYMENT or "gpt-5-mini"
+        self.client: Optional[AsyncOpenAI] = None
         self._initialize_client()
 
     def _initialize_client(self):
-        """Initialize Azure OpenAI client"""
+        """Initialize Azure OpenAI client using v1 API pattern"""
         try:
             endpoint = self.settings.AZURE_OPENAI_ENDPOINT
             api_key = self.settings.AZURE_OPENAI_API_KEY
@@ -40,11 +41,23 @@ class OpenAIClient:
                 logger.warning("Azure OpenAI API key is not configured properly")
                 return
 
-            self.client = AsyncAzureOpenAI(
-                azure_endpoint=endpoint, api_key=api_key, api_version="2024-02-01"
+            # Build base_url for v1 API (append /openai/v1 to the base endpoint)
+            # Strip any trailing slashes and path segments first
+            base_endpoint = endpoint.rstrip("/")
+            # If endpoint contains /api/projects/, extract the base
+            if "/api/projects/" in base_endpoint:
+                # For Foundry endpoints like https://xxx.services.ai.azure.com/api/projects/xxx
+                # We need: https://xxx.services.ai.azure.com/openai/v1
+                base_endpoint = base_endpoint.split("/api/projects/")[0]
+            base_url = f"{base_endpoint}/openai/v1"
+
+            # Use OpenAI client with base_url (v1 API - no api_version needed)
+            self.client = AsyncOpenAI(
+                api_key=api_key,
+                base_url=base_url,
             )
             logger.info(
-                f"Azure OpenAI client initialized with deployment: {self.deployment}"
+                f"Azure OpenAI client initialized with deployment: {self.deployment}, base_url: {base_url}"
             )
 
         except Exception as e:
@@ -56,7 +69,7 @@ class OpenAIClient:
     async def generate_workout(
         self, user_profile: Dict[str, Any], preferences: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Generate personalized workout using OpenAI gpt-4o-mini"""
+        """Generate personalized workout using OpenAI gpt-5-mini"""
         try:
             start_time = time.time()
 
@@ -99,8 +112,7 @@ class OpenAIClient:
                     {"role": "user", "content": prompt},
                 ],
                 response_format={"type": "json_object"},
-                max_tokens=2000,
-                temperature=0.7,
+                max_completion_tokens=2000,
             )
 
             # Parse response
@@ -114,7 +126,7 @@ class OpenAIClient:
                 "difficulty": difficulty,
                 "estimatedDuration": duration,
                 "equipmentNeeded": equipment if equipment else [],
-                "aiProviderUsed": "azure-openai-gpt-4o-mini",
+                "aiProviderUsed": "azure-openai-gpt-5-mini",
                 "generationTime": time.time() - start_time,
                 "tags": (focus_areas or [])
                 + (goals if isinstance(goals, list) else [goals]),
@@ -224,8 +236,7 @@ Guidelines:
             response = await self.client.chat.completions.create(
                 model=self.deployment,
                 messages=messages,  # type: ignore
-                max_tokens=500,
-                temperature=0.8,
+                max_completion_tokens=500,
             )
 
             return (
@@ -274,8 +285,7 @@ Provide a JSON response with:
                     {"role": "user", "content": prompt},
                 ],
                 response_format={"type": "json_object"},
-                max_tokens=1000,
-                temperature=0.7,
+                max_completion_tokens=1000,
             )
 
             content = response.choices[0].message.content
