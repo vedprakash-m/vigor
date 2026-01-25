@@ -5,10 +5,13 @@
 
 import type { Configuration, PopupRequest, RedirectRequest } from '@azure/msal-browser';
 
-// Environment variables for Microsoft Entra ID
+// Client ID for the Vigor-App registration
 const clientId = import.meta.env.VITE_AZURE_CLIENT_ID || import.meta.env.VITE_AZURE_AD_CLIENT_ID || '';
 const tenantId = 'common'; // Default tenant for multi-tenant auth
 const authority = `https://login.microsoftonline.com/${tenantId}`;
+
+// API scope - request access token with our app as the audience
+const apiScope = clientId ? `api://${clientId}/access_as_user` : '';
 
 /**
  * MSAL Configuration for Microsoft Entra ID
@@ -45,17 +48,19 @@ export const loginRequest: RedirectRequest = {
 
 /**
  * API request configuration for accessing protected endpoints
+ * Uses /.default scope to get access token with app's client ID as audience
  */
 export const apiRequest: PopupRequest = {
-  scopes: ['openid', 'profile', 'email'],
+  scopes: clientId ? [apiScope] : ['openid', 'profile', 'email'],
   account: undefined
 };
 
 /**
  * Silent request configuration for token refresh
+ * Uses /.default scope to get access token with app's client ID as audience
  */
 export const silentRequest = {
-  scopes: ['openid', 'profile', 'email'],
+  scopes: clientId ? [apiScope] : ['openid', 'profile', 'email'],
   account: undefined
 };
 
