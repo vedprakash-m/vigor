@@ -85,12 +85,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             account: account
           };
 
-          const response = await instance.acquireTokenSilent(silentRequestWithAccount);
+          try {
+            const response = await instance.acquireTokenSilent(silentRequestWithAccount);
+            // Set API token for authenticated requests
+            api.setAccessToken(response.accessToken);
+          } catch (silentError) {
+            // If silent token acquisition fails (consent required, etc.),
+            // trigger interactive login for the new scope
+            console.warn('Silent token acquisition failed, triggering interactive login:', silentError);
+            await instance.acquireTokenRedirect(silentRequestWithAccount);
+            return; // Will redirect, so exit early
+          }
 
-          // Set API token for authenticated requests
-          api.setAccessToken(response.accessToken);
-
-          const extractedUser = extractUser(account, response.idTokenClaims as Record<string, unknown>);
+          const extractedUser = extractUser(account, account.idTokenClaims as Record<string, unknown>);
           setUser(extractedUser);
         } else {
           setUser(null);
