@@ -245,7 +245,7 @@ module staticWebApp './static-web-app-modernized.bicep' = {
   name: 'staticWebApp'
   params: {
     name: staticWebAppName
-    location: 'East US 2' // Static Web Apps have limited region support
+    location: location // Use same region as other resources (West US 2)
     tags: commonTags
     functionAppUrl: 'https://${functionAppName}.azurewebsites.net'
   }
