@@ -69,13 +69,27 @@ class CosmosDBClient:
     # =============================================================================
 
     async def get_user_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
-        """Get user profile by user ID"""
+        """Get user profile by user ID (email)"""
         await self.ensure_initialized()
 
         try:
             container = self.containers["users"]
-            response = await container.read_item(item=user_id, partition_key=user_id)
-            return response
+
+            # Query by email since id and partition key may not match
+            query = "SELECT * FROM c WHERE c.email = @email OR c.id = @email"
+            parameters = [{"name": "@email", "value": user_id}]
+
+            result = []
+            async for item in container.query_items(
+                query=query,
+                parameters=parameters,
+                enable_cross_partition_query=True
+            ):
+                result.append(item)
+
+            if result:
+                return result[0]
+            return None
 
         except CosmosHttpResponseError as e:
             if e.status_code == 404:
@@ -423,13 +437,12 @@ class CosmosDBClient:
         await self.ensure_initialized()
 
         try:
-            # For now, return a mock value
-            # In production, this would query usage metrics
             today = datetime.now(timezone.utc).date().isoformat()
 
             container = self.containers["ai_coach_messages"]
+            # Use VALUE for cross-partition aggregate queries
             query = """
-                SELECT COUNT(1) as message_count
+                SELECT VALUE COUNT(1)
                 FROM c
                 WHERE STARTSWITH(c.createdAt, @today)
             """
@@ -437,10 +450,14 @@ class CosmosDBClient:
             parameters = [{"name": "@today", "value": today}]
 
             result = []
-            async for item in container.query_items(query=query, parameters=parameters):
+            async for item in container.query_items(
+                query=query,
+                parameters=parameters,
+                enable_cross_partition_query=True
+            ):
                 result.append(item)
 
-            message_count = result[0]["message_count"] if result else 0
+            message_count = result[0] if result else 0
 
             # Estimate cost: $0.01 per message (rough estimate for OpenAI gpt-5-mini)
             estimated_cost = message_count * 0.01
@@ -461,8 +478,9 @@ class CosmosDBClient:
             today = datetime.now(timezone.utc).date().isoformat()
             container = self.containers["ai_coach_messages"]
 
+            # Use VALUE for cross-partition aggregate queries
             query = """
-                SELECT COUNT(1) as count
+                SELECT VALUE COUNT(1)
                 FROM c
                 WHERE STARTSWITH(c.createdAt, @today)
             """
@@ -470,10 +488,14 @@ class CosmosDBClient:
             parameters = [{"name": "@today", "value": today}]
 
             result = []
-            async for item in container.query_items(query=query, parameters=parameters):
+            async for item in container.query_items(
+                query=query,
+                parameters=parameters,
+                enable_cross_partition_query=True
+            ):
                 result.append(item)
 
-            requests_today = result[0]["count"] if result else 0
+            requests_today = result[0] if result else 0
 
             return {
                 "daily_spend": daily_spend,

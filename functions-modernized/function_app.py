@@ -179,6 +179,15 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
         # Get user profile for context
         user_profile = await cosmos_db.get_user_profile(current_user["email"])
 
+        # Use default profile if not found
+        if not user_profile:
+            user_profile = {
+                "email": current_user["email"],
+                "fitness_level": "beginner",
+                "fitness_goals": ["general_fitness"],
+                "available_equipment": ["bodyweight"],
+            }
+
         # Generate workout with OpenAI
         workout = await ai_client.generate_workout(
             user_profile=user_profile, preferences=workout_request
