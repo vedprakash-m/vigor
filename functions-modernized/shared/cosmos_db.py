@@ -83,7 +83,6 @@ class CosmosDBClient:
             async for item in container.query_items(
                 query=query,
                 parameters=parameters,
-                enable_cross_partition_query=True
             ):
                 result.append(item)
 
@@ -453,7 +452,6 @@ class CosmosDBClient:
             async for item in container.query_items(
                 query=query,
                 parameters=parameters,
-                enable_cross_partition_query=True
             ):
                 result.append(item)
 
@@ -491,7 +489,6 @@ class CosmosDBClient:
             async for item in container.query_items(
                 query=query,
                 parameters=parameters,
-                enable_cross_partition_query=True
             ):
                 result.append(item)
 
@@ -549,7 +546,8 @@ class CosmosDBClient:
             parameters = [{"name": "@email", "value": email}]
 
             items = container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
+                query=query,
+                parameters=parameters,
             )
 
             async for item in items:
@@ -610,7 +608,8 @@ class CosmosDBClient:
             parameters = [{"name": "@type", "value": document_type}]
 
             items = container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
+                query=query,
+                parameters=parameters,
             )
 
             async for item in items:
@@ -671,7 +670,6 @@ class CosmosDBClient:
             items = container.query_items(
                 query=query,
                 parameters=parameters or [],
-                enable_cross_partition_query=True,
             )
 
             results = []
