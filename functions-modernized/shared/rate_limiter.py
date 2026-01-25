@@ -83,6 +83,22 @@ class RateLimiter:
         except Exception as e:
             logger.error(f"Error resetting rate limit for key {key}: {str(e)}")
 
+    async def check_rate_limit(self, key: str, limit: int, window: int) -> bool:
+        """Async check if request is allowed based on rate limit
+
+        This is an async wrapper around is_allowed for compatibility with
+        function_app.py async functions.
+
+        Args:
+            key: Unique identifier for rate limiting (e.g., "workout_gen:user@email.com")
+            limit: Maximum number of requests allowed in the window
+            window: Time window in seconds
+
+        Returns:
+            True if request is allowed, False if rate limit exceeded
+        """
+        return self.is_allowed(key, limit, window)
+
 
 # Global rate limiter instance
 _rate_limiter = RateLimiter()
