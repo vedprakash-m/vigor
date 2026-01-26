@@ -1,6 +1,7 @@
 /**
  * Enhanced Progress Visualization Component
  * Advanced charts and progress tracking for fitness goals
+ * Uses real data from the backend API
  */
 
 import {
@@ -11,10 +12,12 @@ import {
     Heading,
     HStack,
     Progress,
+    Spinner,
     Text,
     VStack,
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import api, { WorkoutLog } from '../services/api'
 
 interface ProgressData {
     date: string
@@ -33,74 +36,175 @@ interface Milestone {
     completed: boolean
 }
 
-const mockProgressData: ProgressData[] = Array.from({ length: 30 }, (_, i) => ({
-    date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    workouts: Math.floor(Math.random() * 2),
-    minutes: Math.floor(Math.random() * 60) + 15,
-    calories: Math.floor(Math.random() * 400) + 100,
-}))
+// Helper function to estimate calories burned based on duration and intensity
+const estimateCalories = (durationMinutes: number, rating?: number): number => {
+    // Average calories per minute ranges from 5-10 depending on intensity
+    const caloriesPerMinute = rating ? 5 + (rating / 5) * 5 : 7
+    return Math.round(durationMinutes * caloriesPerMinute)
+}
 
-const mockMilestones: Milestone[] = [
-    {
-        id: '1',
-        title: 'First Workout',
-        description: 'Complete your first AI-generated workout',
-        target: 1,
-        current: 1,
-        unit: 'workout',
-        completed: true,
-    },
-    {
-        id: '2',
-        title: 'Week Warrior',
-        description: 'Complete 7 workouts',
-        target: 7,
-        current: 7,
-        unit: 'workouts',
-        completed: true,
-    },
-    {
-        id: '3',
-        title: 'Consistency King',
-        description: 'Maintain a 7-day streak',
-        target: 7,
-        current: 5,
-        unit: 'days',
-        completed: false,
-    },
-    {
-        id: '4',
-        title: 'Marathon Month',
-        description: 'Complete 20 workouts in a month',
-        target: 20,
-        current: 12,
-        unit: 'workouts',
-        completed: false,
-    },
-]
-
-const EnhancedProgressVisualization = () => {
-    const [progressData] = useState<ProgressData[]>(mockProgressData)
-    const [milestones] = useState<Milestone[]>(mockMilestones)
-
-    // Calculate stats
-    const totalWorkouts = progressData.reduce((sum, d) => sum + d.workouts, 0)
-    const totalMinutes = progressData.reduce((sum, d) => sum + (d.workouts > 0 ? d.minutes : 0), 0)
-    const totalCalories = progressData.reduce((sum, d) => sum + (d.workouts > 0 ? d.calories : 0), 0)
-    const avgMinutesPerWorkout = totalWorkouts > 0 ? Math.round(totalMinutes / totalWorkouts) : 0
-
-    // Calculate streak
-    let currentStreak = 0
+// Helper function to calculate streak from progress data
+const calculateStreak = (progressData: ProgressData[]): number => {
+    let streak = 0
+    // Start from today and go backwards
     for (let i = progressData.length - 1; i >= 0; i--) {
         if (progressData[i].workouts > 0) {
-            currentStreak++
+            streak++
         } else {
             break
         }
     }
+    return streak
+}
+
+// Helper function to calculate milestones from workout data
+const calculateMilestones = (
+    totalWorkouts: number,
+    currentStreak: number,
+    monthlyWorkouts: number
+): Milestone[] => {
+    return [
+        {
+            id: '1',
+            title: 'First Workout',
+            description: 'Complete your first AI-generated workout',
+            target: 1,
+            current: Math.min(totalWorkouts, 1),
+            unit: 'workout',
+            completed: totalWorkouts >= 1,
+        },
+        {
+            id: '2',
+            title: 'Week Warrior',
+            description: 'Complete 7 workouts',
+            target: 7,
+            current: Math.min(totalWorkouts, 7),
+            unit: 'workouts',
+            completed: totalWorkouts >= 7,
+        },
+        {
+            id: '3',
+            title: 'Consistency King',
+            description: 'Maintain a 7-day streak',
+            target: 7,
+            current: Math.min(currentStreak, 7),
+            unit: 'days',
+            completed: currentStreak >= 7,
+        },
+        {
+            id: '4',
+            title: 'Marathon Month',
+            description: 'Complete 20 workouts in a month',
+            target: 20,
+            current: Math.min(monthlyWorkouts, 20),
+            unit: 'workouts',
+            completed: monthlyWorkouts >= 20,
+        },
+    ]
+}
+
+const EnhancedProgressVisualization = () => {
+    const [progressData, setProgressData] = useState<ProgressData[]>([])
+    const [milestones, setMilestones] = useState<Milestone[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        const fetchProgressData = async () => {
+            try {
+                setLoading(true)
+                setError(null)
+
+                // Fetch workout history from the backend
+                const response = await api.workouts.history(100)
+                const logs: WorkoutLog[] = response.data || []
+
+                // Create a map of dates to workout data for the last 30 days
+                const dateMap = new Map<string, ProgressData>()
+
+                // Initialize all 30 days with zero values
+                for (let i = 0; i < 30; i++) {
+                    const date = new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000)
+                    const dateStr = date.toISOString().split('T')[0]
+                    dateMap.set(dateStr, {
+                        date: dateStr,
+                        workouts: 0,
+                        minutes: 0,
+                        calories: 0,
+                    })
+                }
+
+                // Populate with actual workout data
+                logs.forEach((log) => {
+                    const dateStr = new Date(log.completedAt).toISOString().split('T')[0]
+                    const existing = dateMap.get(dateStr)
+                    if (existing) {
+                        existing.workouts += 1
+                        existing.minutes += log.actualDuration || 0
+                        existing.calories += estimateCalories(log.actualDuration || 0, log.rating)
+                    }
+                })
+
+                // Convert map to sorted array
+                const progressArray = Array.from(dateMap.values()).sort(
+                    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+                )
+
+                setProgressData(progressArray)
+
+                // Calculate totals and milestones
+                const totalWorkouts = logs.length
+                const currentStreak = calculateStreak(progressArray)
+
+                // Calculate monthly workouts (workouts in the last 30 days)
+                const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                const monthlyWorkouts = logs.filter(
+                    (log) => new Date(log.completedAt) >= thirtyDaysAgo
+                ).length
+
+                setMilestones(calculateMilestones(totalWorkouts, currentStreak, monthlyWorkouts))
+            } catch (err) {
+                console.error('Error fetching progress data:', err)
+                setError('Failed to load progress data')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchProgressData()
+    }, [])
+
+    // Calculate stats from progress data
+    const totalWorkouts = progressData.reduce((sum, d) => sum + d.workouts, 0)
+    const totalMinutes = progressData.reduce((sum, d) => sum + d.minutes, 0)
+    const totalCalories = progressData.reduce((sum, d) => sum + d.calories, 0)
+    const avgMinutesPerWorkout = totalWorkouts > 0 ? Math.round(totalMinutes / totalWorkouts) : 0
+    const currentStreak = calculateStreak(progressData)
 
     // Get max for chart scaling
-    const maxCalories = Math.max(...progressData.map((d) => d.calories))
+    const maxCalories = Math.max(...progressData.map((d) => d.calories), 1)
+
+    if (loading) {
+        return (
+            <Box p={6} display="flex" justifyContent="center" alignItems="center" minH="400px">
+                <VStack gap={4}>
+                    <Spinner size="xl" color="blue.500" />
+                    <Text color="gray.500">Loading your progress...</Text>
+                </VStack>
+            </Box>
+        )
+    }
+
+    if (error) {
+        return (
+            <Box p={6}>
+                <VStack align="center" gap={4}>
+                    <Text color="red.500">{error}</Text>
+                    <Text color="gray.500">Please try refreshing the page.</Text>
+                </VStack>
+            </Box>
+        )
+    }
 
     return (
         <Box p={6}>
