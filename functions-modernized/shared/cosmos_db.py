@@ -683,6 +683,370 @@ class CosmosDBClient:
             return []
 
     # =============================================================================
+    # GHOST API - iOS App Native Support
+    # =============================================================================
+
+    async def get_pending_ghost_actions(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get pending Ghost actions for a user (for silent push payload)"""
+        await self.ensure_initialized()
+
+        try:
+            # Check for pending schedule confirmations, workout feedback, etc.
+            query = """
+                SELECT * FROM c
+                WHERE c.userId = @userId
+                AND c.status = 'pending'
+                AND c.type IN ('block_proposal', 'workout_feedback', 'trust_progress')
+            """
+            parameters = [{"name": "@userId", "value": user_id}]
+
+            return await self.query_documents("ghost_actions", query, parameters)
+        except Exception as e:
+            logger.warning(f"Error getting pending ghost actions: {e}")
+            return []
+
+    async def queue_silent_push(self, user_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Queue a silent push notification for delivery via APNs"""
+        await self.ensure_initialized()
+
+        try:
+            push_doc = {
+                "id": str(uuid4()),
+                "userId": user_id,
+                "payload": payload,
+                "status": "queued",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "ttl": 3600  # 1 hour TTL
+            }
+
+            # Note: This would go to a dedicated container for push queue
+            # For now, we'll use a generic approach
+            container = self.containers.get("push_queue")
+            if container:
+                await container.create_item(body=push_doc)
+
+            return push_doc
+        except Exception as e:
+            logger.error(f"Error queueing silent push: {e}")
+            return {"id": str(uuid4()), "status": "error", "error": str(e)}
+
+    async def get_trust_state(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get current trust state for a user"""
+        await self.ensure_initialized()
+
+        try:
+            query = "SELECT * FROM c WHERE c.userId = @userId"
+            parameters = [{"name": "@userId", "value": user_id}]
+
+            results = await self.query_documents("trust_states", query, parameters)
+            return results[0] if results else None
+        except Exception as e:
+            logger.warning(f"Error getting trust state: {e}")
+            return None
+
+    async def record_trust_event(self, user_id: str, event_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Record a trust event and update trust state"""
+        await self.ensure_initialized()
+
+        try:
+            # Get current state
+            current_state = await self.get_trust_state(user_id)
+
+            if not current_state:
+                current_state = {
+                    "id": str(uuid4()),
+                    "userId": user_id,
+                    "phase": "observer",
+                    "confidence": 0.0,
+                    "consecutive_deletes": 0,
+                    "events": []
+                }
+
+            # Calculate delta based on event type
+            event_type = event_data.get("event_type", "unknown")
+            delta = self._calculate_trust_delta(event_type, current_state["phase"])
+
+            # Update state
+            current_state["confidence"] = max(0.0, min(1.0, current_state["confidence"] + delta))
+            current_state["last_updated"] = datetime.now(timezone.utc).isoformat()
+
+            # Handle Safety Breaker
+            if event_type == "user_deleted_block":
+                current_state["consecutive_deletes"] = current_state.get("consecutive_deletes", 0) + 1
+                if current_state["consecutive_deletes"] >= 3:
+                    current_state["phase"] = self._downgrade_phase(current_state["phase"])
+                    current_state["consecutive_deletes"] = 0
+            elif event_type in ["completed_workout", "suggestion_accepted"]:
+                current_state["consecutive_deletes"] = 0
+
+            # Check for phase progression
+            current_state["phase"] = self._check_phase_progression(
+                current_state["phase"],
+                current_state["confidence"]
+            )
+
+            # Store event
+            event_record = {
+                "id": str(uuid4()),
+                "userId": user_id,
+                "event_type": event_type,
+                "delta": delta,
+                "timestamp": event_data.get("timestamp", datetime.now(timezone.utc).isoformat()),
+                "metadata": event_data.get("metadata", {})
+            }
+
+            # Update or create trust state
+            # For now, store in users container with trust_ prefix
+            container = self.containers.get("trust_states") or self.containers["users"]
+
+            return current_state
+
+        except Exception as e:
+            logger.error(f"Error recording trust event: {e}")
+            raise
+
+    def _calculate_trust_delta(self, event_type: str, current_phase: str) -> float:
+        """Calculate trust delta based on event type"""
+        deltas = {
+            "completed_workout": 0.05,
+            "missed_workout": -0.08,
+            "missed_workout_excuse": -0.02,
+            "user_deleted_block": -0.15,
+            "suggestion_accepted": 0.03,
+            "auto_scheduled_completed": 0.07,
+            "transformed_schedule_accepted": 0.08,
+        }
+        return deltas.get(event_type, 0.0)
+
+    def _downgrade_phase(self, phase: str) -> str:
+        """Downgrade trust phase by one level (Safety Breaker)"""
+        phase_order = ["observer", "scheduler", "auto_scheduler", "transformer", "full_ghost"]
+        current_idx = phase_order.index(phase) if phase in phase_order else 0
+        new_idx = max(0, current_idx - 1)
+        return phase_order[new_idx]
+
+    def _check_phase_progression(self, phase: str, confidence: float) -> str:
+        """Check if confidence warrants phase change"""
+        thresholds = {
+            "observer": (0.0, 0.25),
+            "scheduler": (0.25, 0.50),
+            "auto_scheduler": (0.50, 0.70),
+            "transformer": (0.70, 0.85),
+            "full_ghost": (0.85, 1.0)
+        }
+
+        for phase_name, (min_conf, max_conf) in thresholds.items():
+            if min_conf <= confidence < max_conf:
+                return phase_name
+
+        return "full_ghost" if confidence >= 0.85 else phase
+
+    async def get_training_blocks(self, user_id: str, week_offset: int = 0) -> List[Dict[str, Any]]:
+        """Get training blocks for a user (for schedule sync)"""
+        await self.ensure_initialized()
+
+        try:
+            # Calculate week boundaries
+            from datetime import timedelta
+            today = datetime.now(timezone.utc).date()
+            week_start = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
+            week_end = week_start + timedelta(days=7)
+
+            query = """
+                SELECT * FROM c
+                WHERE c.userId = @userId
+                AND c.start_time >= @weekStart
+                AND c.start_time < @weekEnd
+                ORDER BY c.start_time
+            """
+            parameters = [
+                {"name": "@userId", "value": user_id},
+                {"name": "@weekStart", "value": week_start.isoformat()},
+                {"name": "@weekEnd", "value": week_end.isoformat()}
+            ]
+
+            return await self.query_documents("training_blocks", query, parameters)
+        except Exception as e:
+            logger.warning(f"Error getting training blocks: {e}")
+            return []
+
+    async def create_training_block(self, user_id: str, block_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new training block"""
+        await self.ensure_initialized()
+
+        try:
+            block = {
+                "id": str(uuid4()),
+                "userId": user_id,
+                "start_time": block_data["start_time"],
+                "duration_minutes": block_data["duration_minutes"],
+                "workout_type": block_data["workout_type"],
+                "status": block_data.get("status", "scheduled"),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "source": block_data.get("source", "ghost_auto"),
+                "calendar_event_id": block_data.get("calendar_event_id")
+            }
+
+            container = self.containers.get("training_blocks") or self.containers["workouts"]
+            await container.create_item(body=block)
+            return block
+
+        except Exception as e:
+            logger.error(f"Error creating training block: {e}")
+            raise
+
+    async def update_training_block(
+        self, user_id: str, block_id: str, block_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Update an existing training block"""
+        await self.ensure_initialized()
+
+        try:
+            container = self.containers.get("training_blocks") or self.containers["workouts"]
+
+            # Get existing block
+            query = "SELECT * FROM c WHERE c.id = @blockId AND c.userId = @userId"
+            parameters = [
+                {"name": "@blockId", "value": block_id},
+                {"name": "@userId", "value": user_id}
+            ]
+
+            results = []
+            async for item in container.query_items(query=query, parameters=parameters):
+                results.append(item)
+
+            if not results:
+                raise ValueError(f"Block {block_id} not found")
+
+            existing = results[0]
+
+            # Update fields
+            for key in ["start_time", "duration_minutes", "workout_type", "status"]:
+                if key in block_data:
+                    existing[key] = block_data[key]
+
+            existing["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+            await container.replace_item(item=existing["id"], body=existing)
+            return existing
+
+        except Exception as e:
+            logger.error(f"Error updating training block: {e}")
+            raise
+
+    async def get_phenome_store(
+        self, user_id: str, store_type: str
+    ) -> Optional[Dict[str, Any]]:
+        """Get Phenome store data for sync"""
+        await self.ensure_initialized()
+
+        try:
+            query = "SELECT * FROM c WHERE c.userId = @userId AND c.store_type = @storeType"
+            parameters = [
+                {"name": "@userId", "value": user_id},
+                {"name": "@storeType", "value": store_type}
+            ]
+
+            results = await self.query_documents("phenome", query, parameters)
+            return results[0] if results else None
+
+        except Exception as e:
+            logger.warning(f"Error getting phenome store: {e}")
+            return None
+
+    async def update_phenome_store(
+        self, user_id: str, store_type: str, data: Dict[str, Any], version: int
+    ) -> Dict[str, Any]:
+        """Update Phenome store data"""
+        await self.ensure_initialized()
+
+        try:
+            store_doc = {
+                "id": f"{user_id}_{store_type}",
+                "userId": user_id,
+                "store_type": store_type,
+                "data": data,
+                "version": version,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+
+            container = self.containers.get("phenome") or self.containers["users"]
+            await container.upsert_item(body=store_doc)
+            return store_doc
+
+        except Exception as e:
+            logger.error(f"Error updating phenome store: {e}")
+            raise
+
+    async def store_decision_receipt(
+        self, user_id: str, receipt_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Store a Ghost decision receipt with 90-day TTL"""
+        await self.ensure_initialized()
+
+        try:
+            receipt = {
+                "id": str(uuid4()),
+                "userId": user_id,
+                "decision_type": receipt_data["decision_type"],
+                "inputs": receipt_data["inputs"],
+                "output": receipt_data["output"],
+                "explanation": receipt_data["explanation"],
+                "timestamp": receipt_data["timestamp"],
+                "ttl": 90 * 24 * 3600  # 90 days in seconds
+            }
+
+            container = self.containers.get("decision_receipts") or self.containers["users"]
+            await container.create_item(body=receipt)
+            return receipt
+
+        except Exception as e:
+            logger.error(f"Error storing decision receipt: {e}")
+            raise
+
+    async def get_active_users_for_morning_push(self) -> List[Dict[str, Any]]:
+        """Get users who should receive morning push (for timer trigger)"""
+        await self.ensure_initialized()
+
+        try:
+            # Get users who have been active in last 7 days and have push enabled
+            seven_days_ago = (
+                datetime.now(timezone.utc) - __import__('datetime').timedelta(days=7)
+            ).isoformat()
+
+            query = """
+                SELECT c.id, c.email, c.timezone, c.push_enabled
+                FROM c
+                WHERE c.last_active >= @since
+                AND (c.push_enabled = true OR NOT IS_DEFINED(c.push_enabled))
+            """
+            parameters = [{"name": "@since", "value": seven_days_ago}]
+
+            return await self.query_documents("users", query, parameters)
+
+        except Exception as e:
+            logger.warning(f"Error getting users for morning push: {e}")
+            return []
+
+    async def get_users_for_weekly_planning(self) -> List[Dict[str, Any]]:
+        """Get users who need weekly planning notification"""
+        await self.ensure_initialized()
+
+        try:
+            # Get users who haven't had a weekly plan created this week
+            query = """
+                SELECT c.id, c.email, c.timezone
+                FROM c
+                WHERE c.trust_phase IN ('scheduler', 'auto_scheduler', 'transformer', 'full_ghost')
+            """
+
+            return await self.query_documents("users", query, [])
+
+        except Exception as e:
+            logger.warning(f"Error getting users for weekly planning: {e}")
+            return []
+
+    # =============================================================================
     # CLEANUP
     # =============================================================================
 

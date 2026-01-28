@@ -2,15 +2,18 @@ import { Box, Drawer, Flex, Heading, HStack, IconButton, Portal, Text } from '@c
 import { useState } from 'react'
 import { Outlet, Link as RouterLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/useAuth'
-import PushNotificationSetup from './PushNotificationSetup'
 
-// Navigation links with icons for visual hierarchy
+// Admin Dashboard navigation links
 const Links = [
-  { name: 'Home', path: '/app/dashboard', icon: '🏠' },
-  { name: 'Workouts', path: '/app/workouts', icon: '💪' },
-  { name: 'Coach', path: '/app/coach', icon: '🤖' },
-  { name: 'Progress', path: '/app/progress', icon: '📊' },
-  { name: 'Settings', path: '/app/profile', icon: '⚙️' },
+  { name: 'Dashboard', path: '/admin', icon: '🏠' },
+  { name: 'Users', path: '/admin/users', icon: '👥' },
+  { name: 'LLM Health', path: '/admin/llm-health', icon: '🤖' },
+  { name: 'LLM Config', path: '/admin/llm-config', icon: '⚙️' },
+  { name: 'Analytics', path: '/admin/analytics', icon: '📊' },
+  { name: 'System', path: '/admin/system-analytics', icon: '📈' },
+  { name: 'Audit', path: '/admin/audit', icon: '🔒' },
+  { name: 'Bulk Ops', path: '/admin/bulk-ops', icon: '📦' },
+  { name: 'Tiers', path: '/admin/tiers', icon: '💎' },
 ]
 
 export const Layout = () => {
@@ -81,7 +84,7 @@ export const Layout = () => {
         display={{ base: 'none', md: 'block' }}
       >
         <Heading size="lg" color="blue.500" mb={8}>
-          Vigor
+          Vigor Admin
         </Heading>
         <NavContent />
       </Box>
@@ -97,7 +100,7 @@ export const Layout = () => {
           <Drawer.Positioner>
             <Drawer.Content bg="white" maxW="280px">
               <Drawer.Header borderBottomWidth="1px">
-                <Heading size="lg" color="blue.500">Vigor</Heading>
+                <Heading size="lg" color="blue.500">Vigor Admin</Heading>
                 <Drawer.CloseTrigger asChild>
                   <IconButton
                     aria-label="Close menu"
@@ -141,7 +144,7 @@ export const Layout = () => {
               ☰
             </IconButton>
             <Heading size="md" display={{ base: 'block', md: 'none' }}>
-              Vigor
+              Vigor Admin
             </Heading>
           </HStack>
 
@@ -154,7 +157,6 @@ export const Layout = () => {
 
         {/* Page content */}
         <Box p={{ base: 3, md: 6 }}>
-          <PushNotificationSetup />
           <Outlet />
         </Box>
       </Box>

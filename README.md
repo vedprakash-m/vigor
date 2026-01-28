@@ -1,49 +1,133 @@
-# 🏋️‍♂️ Vigor - AI Fitness Platform
+# 👻 The Ghost - Invisible Fitness System
 
-> **AI-powered fitness coaching with personalized workout generation and progress tracking.**
+> **"The best fitness app is the one you never have to open."**
+>
+> An AI fitness system that operates through your calendar, not an app interface. Apple Watch required.
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![React 19](https://img.shields.io/badge/react-19-blue.svg)](https://reactjs.org/)
+[![Swift 5.9](https://img.shields.io/badge/swift-5.9-orange.svg)](https://swift.org/)
+[![iOS 17+](https://img.shields.io/badge/iOS-17+-blue.svg)](https://developer.apple.com/ios/)
+[![watchOS 10+](https://img.shields.io/badge/watchOS-10+-green.svg)](https://developer.apple.com/watchos/)
 [![Azure Functions](https://img.shields.io/badge/Azure%20Functions-Serverless-green.svg)](https://azure.microsoft.com/en-us/services/functions/)
-[![Cosmos DB](https://img.shields.io/badge/Cosmos%20DB-NoSQL-blue.svg)](https://azure.microsoft.com/en-us/services/cosmos-db/)
 
 ---
 
-## 🌐 Live Deployment
+## 🎯 The Vision
 
-| Service          | URL                                                         |
-| ---------------- | ----------------------------------------------------------- |
-| **Frontend**     | https://vigor.vedprakash.net                                |
-| **Backend API**  | https://vigor-functions.azurewebsites.net                   |
-| **Health Check** | https://vigor-functions.azurewebsites.net/api/health-simple |
+**The Ghost** is an invisible fitness coach that lives in your calendar. Unlike traditional fitness apps that require constant engagement, The Ghost:
+
+- **Places workouts directly in your calendar** as time blocks
+- **Operates through silent notifications** (max 1/day)
+- **Learns your patterns** to predict when you'll skip
+- **Transforms your schedule** to prevent missed workouts
+- **Requires Apple Watch** for automatic workout detection
+
+### Core Philosophy
+
+> "Weekly structure, not daily nagging."
+
+The system earns trust progressively, graduating from suggestions to autonomous scheduling as you demonstrate consistency.
 
 ---
 
-## ✨ Overview
+## 🌐 Status
 
-**Vigor** is an AI-powered fitness platform built with serverless architecture on Azure. The application provides personalized workout generation, AI coaching conversations, and comprehensive progress tracking.
+| Platform          | Status        | Purpose                                    |
+| ----------------- | ------------- | ------------------------------------------ |
+| **iOS App**       | ✅ Production | Primary Ghost interface (calendar-centric) |
+| **watchOS**       | ✅ Production | Workout tracking & complications           |
+| **Backend**       | ✅ Production | Ghost API, Silent Push, AI                 |
+| **Web Dashboard** | ✅ Production | Admin dashboard & Phenome analytics        |
 
-### Key Features
+---
 
-- **🤖 AI Fitness Coach** - Conversational coaching powered by Azure OpenAI gpt-5-mini
-- **📋 Personalized Workouts** - AI-generated workout plans based on user goals and available equipment
-- **📊 Progress Tracking** - Comprehensive analytics with workout logs and performance metrics
-- **💬 Interactive Coaching** - Real-time chat interface for fitness guidance and form tips
-- **📱 Mobile-First Design** - Responsive interface optimized for mobile devices
-- **🔐 Secure Authentication** - Microsoft Entra ID integration with automatic user creation
+## ✨ Key Features
+
+### 🗓️ Calendar-Centric UX
+
+- Training blocks appear as real calendar events
+- Read ALL calendars, write to local "Vigor Training" calendar only
+- Shadow sync to work calendar ("Busy" blocks via MS Graph)
+
+### 🤖 Ghost Intelligence
+
+- **Skip Predictor**: Anticipates when you'll bail (6 weighted factors)
+- **Recovery Analyzer**: HRV + sleep + strain composite scoring
+- **Optimal Window Finder**: Best workout times from patterns
+- **Pattern Detector**: Learns your behavioral rhythms
+
+### 🔒 Trust State Machine
+
+5-phase progression with capabilities unlocking at each level:
+
+| Phase          | Capability                  | Confidence |
+| -------------- | --------------------------- | ---------- |
+| Observer       | Suggestions only            | 0-25%      |
+| Scheduler      | Create blocks with approval | 25-50%     |
+| Auto-Scheduler | Create blocks autonomously  | 50-70%     |
+| Transformer    | Move/reschedule blocks      | 70-85%     |
+| Full Ghost     | Transform week structure    | 85-100%    |
+
+**Safety Breaker**: 3 consecutive block deletes → immediate downgrade
+
+### ⌚ Apple Watch Integration
+
+- Mandatory hardware (not optional accessory)
+- Automatic workout detection with HKWorkoutSession
+- Complications for at-a-glance status
+- Watch = Authority for workouts, Phone = Authority for scheduling
+
+### 📊 Phenome Architecture
+
+3-store edge-first data model:
+
+- **RawSignalStore**: HealthKit data (sleep, HRV, workouts)
+- **DerivedStateStore**: Computed metrics with versioning
+- **BehavioralMemoryStore**: Preferences, patterns, sacred times
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         THE GHOST                            │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │   iPhone    │  │ Apple Watch │  │   Azure Backend     │  │
+│  │  SwiftUI    │◄─┤  watchOS    │  │  Functions + Cosmos │  │
+│  │  iOS 17+    │  │  10+        │  │  Silent Push (P0)   │  │
+│  └──────┬──────┘  └──────┬──────┘  └──────────┬──────────┘  │
+│         │                │                     │             │
+│         ▼                ▼                     ▼             │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │              Phenome (Core Data + CloudKit)             ││
+│  │  RawSignalStore │ DerivedStateStore │ BehavioralMemory  ││
+│  └─────────────────────────────────────────────────────────┘│
+│         │                                                    │
+│         ▼                                                    │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │              Calendar Integration (EventKit)            ││
+│  │    Read ALL calendars │ Write "Vigor Training" only     ││
+│  │              Shadow Sync via MS Graph API               ││
+│  └─────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+```
 
 ### Tech Stack
 
-| Layer        | Technology                                          |
-| ------------ | --------------------------------------------------- |
-| **Frontend** | React 19, TypeScript 5, Vite, Chakra UI v3, MSAL.js |
-| **Backend**  | Azure Functions (Python 3.11, Flex Consumption)     |
-| **Database** | Azure Cosmos DB Serverless                          |
-| **AI**       | Azure OpenAI gpt-5-mini (AI Foundry)                |
-| **Auth**     | Microsoft Entra ID (default tenant)                 |
-| **Hosting**  | Azure Static Web Apps + Azure Functions             |
-| **IaC**      | Bicep                                               |
+| Layer        | Technology                               |
+| ------------ | ---------------------------------------- |
+| **iOS App**  | Swift 5.9, SwiftUI, iOS 17+              |
+| **watchOS**  | SwiftUI, HealthKit, watchOS 10+          |
+| **Health**   | HealthKit (sleep, HRV, workouts, steps)  |
+| **Calendar** | EventKit + MS Graph API                  |
+| **Storage**  | Core Data + CloudKit                     |
+| **Auth**     | Microsoft Entra ID (MSAL)                |
+| **Backend**  | Azure Functions (Python 3.11)            |
+| **Database** | Azure Cosmos DB Serverless               |
+| **Push**     | APNs Silent Push (P0 for Ghost survival) |
+| **IaC**      | Bicep                                    |
 
 ---
 
@@ -74,18 +158,78 @@ vigor-rg (West US 2)
 
 ---
 
+## 📁 Project Structure
+
+```
+vigor/
+├── ios/                         # Native iOS/watchOS apps
+│   ├── Vigor/                   # iPhone app
+│   │   ├── App/                 # Entry point, AppDelegate
+│   │   ├── Core/                # Ghost Engine, Trust, Phenome, ML
+│   │   │   ├── GhostEngine/     # Central orchestration
+│   │   │   ├── Trust/           # 5-phase state machine
+│   │   │   ├── Phenome/         # 3-store data architecture
+│   │   │   ├── ML/              # Skip prediction, recovery analysis
+│   │   │   └── Auth/            # MSAL integration
+│   │   ├── Data/                # HealthKit, Calendar, API clients
+│   │   ├── UI/                  # SwiftUI views
+│   │   ├── Background/          # BGTaskScheduler, Silent Push
+│   │   └── Notifications/       # Notification orchestration
+│   │
+│   ├── VigorWatch/              # Apple Watch app
+│   │   ├── App/                 # Watch entry point
+│   │   ├── Views/               # Today, Active Workout views
+│   │   ├── Workout/             # HKWorkoutSession manager
+│   │   ├── Sync/                # Phone sync via WCSession
+│   │   └── Complications/       # Watch face complications
+│   │
+│   ├── Shared/                  # Shared code
+│   │   ├── Models/              # Common data models
+│   │   ├── WatchConnectivity/   # WCSession wrapper
+│   │   └── Sync/                # Authority conflict resolution
+│   │
+│   └── VigorTests/              # Test suites
+│       └── Trust/               # Trust state machine tests
+│
+├── functions-modernized/        # Azure Functions Python backend
+│   ├── function_app.py          # HTTP endpoints
+│   └── shared/                  # Auth, Cosmos, OpenAI clients
+│
+├── frontend/                    # Web dashboard (React/TypeScript)
+│   ├── src/                     # Admin dashboard & Phenome analytics
+│   └── ...                      # Vite, Chakra UI, React Query
+│
+├── infrastructure/bicep/        # Azure Bicep IaC
+│
+├── docs/                        # PRD, Tech Spec, UX Spec
+│
+└── .archive/                    # Archived legacy user-facing pages
+    └── frontend-web-app/        # Original user pages (replaced by iOS)
+```
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Python 3.11+
-- Node.js 18+
+- Xcode 15.2+ with iOS 17 SDK
+- Apple Developer Account (for HealthKit, Push)
 - Azure Functions Core Tools v4
-- Azure CLI (for deployment)
+- Python 3.11+
 
-### Local Development
+### iOS Development
 
-**1. Backend (Azure Functions)**
+```bash
+# Open Xcode project
+cd ios
+open Vigor.xcodeproj
+
+# Build and run on device (Simulator won't have HealthKit)
+# Requires physical iPhone + Apple Watch for full testing
+```
+
+### Backend Development
 
 ```bash
 cd functions-modernized
@@ -93,14 +237,14 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-# Copy and configure settings
+# Configure local settings
 cp local.settings.json.example local.settings.json
-# Edit local.settings.json with your Azure OpenAI credentials
+# Edit with your Azure OpenAI credentials
 
 func start  # http://localhost:7071
 ```
 
-**2. Frontend**
+### Web Dashboard Development
 
 ```bash
 cd frontend
@@ -113,16 +257,18 @@ npm run dev  # http://localhost:5173
 
 ## 🔌 API Endpoints
 
-| Method     | Endpoint                 | Description                |
-| ---------- | ------------------------ | -------------------------- |
-| GET        | `/api/auth/me`           | Get current user profile   |
-| GET/PUT    | `/api/users/profile`     | Get or update user profile |
-| POST       | `/api/workouts/generate` | Generate AI workout plan   |
-| GET        | `/api/workouts`          | List user's workouts       |
-| GET        | `/api/workouts/history`  | Get workout logs history   |
-| POST       | `/api/coach/chat`        | Chat with AI coach         |
-| GET/DELETE | `/api/coach/history`     | Get or clear chat history  |
-| GET        | `/api/health`            | Health check               |
+| Method  | Endpoint                 | Description                |
+| ------- | ------------------------ | -------------------------- |
+| GET     | `/api/auth/me`           | Get current user profile   |
+| GET/PUT | `/api/users/profile`     | Get or update user profile |
+| POST    | `/api/workouts/generate` | Generate AI workout plan   |
+| GET     | `/api/workouts`          | List user's workouts       |
+| GET     | `/api/workouts/history`  | Get workout logs history   |
+| POST    | `/api/coach/chat`        | Chat with AI coach         |
+| POST    | `/api/ghost/silent-push` | Silent push trigger (P0)   |
+| POST    | `/api/trust/event`       | Record trust event         |
+| POST    | `/api/schedule/sync`     | Sync training schedule     |
+| GET     | `/api/health`            | Health check               |
 
 ---
 
@@ -132,11 +278,11 @@ npm run dev  # http://localhost:5173
 # Backend tests
 cd functions-modernized && pytest -v
 
-# Frontend tests
-cd frontend && npm test
+# iOS tests (run from Xcode)
+# Cmd+U to run test suite
 
-# E2E tests
-cd frontend && npm run test:e2e
+# Trust state machine tests
+# ios/VigorTests/Trust/
 ```
 
 ---
@@ -159,57 +305,25 @@ cd functions-modernized
 func azure functionapp publish vigor-functions --python
 ```
 
----
+### iOS App Store
 
-## 📁 Project Structure
-
-```
-vigor/
-├── frontend/                    # React 19 + TypeScript SPA
-│   ├── src/
-│   │   ├── App.tsx             # Route definitions + ErrorBoundary
-│   │   ├── components/         # Layout, ErrorBoundary, ProtectedRoute, etc.
-│   │   ├── pages/              # WorkoutPage, CoachPage, DashboardPage, etc.
-│   │   ├── services/api.ts     # Unified API client
-│   │   ├── contexts/           # AuthContext (MSAL)
-│   │   └── config/             # authConfig.ts, environment
-│   ├── e2e/                    # Playwright E2E tests
-│   └── package.json
-│
-├── functions-modernized/        # Azure Functions Python backend
-│   ├── function_app.py         # All HTTP endpoints
-│   ├── shared/
-│   │   ├── auth.py             # Entra ID JWT validation
-│   │   ├── config.py           # Environment settings
-│   │   ├── cosmos_db.py        # Database operations
-│   │   ├── openai_client.py    # Azure OpenAI integration
-│   │   ├── models.py           # Pydantic models
-│   │   └── rate_limiter.py     # Rate limiting (50/day)
-│   └── requirements.txt
-│
-├── infrastructure/bicep/        # Azure Bicep IaC
-│   ├── main-modernized.bicep   # All resources (Functions, Cosmos, OpenAI, etc.)
-│   ├── function-app-modernized.bicep
-│   └── deploy-modernized.sh    # Deployment script
-│
-├── scripts/                     # Deployment & setup scripts
-├── docs/                        # PRD, Tech Spec, UX Spec, metadata
-└── .archive/                    # Archived legacy code (not deployed)
+```bash
+# Archive from Xcode
+# Product → Archive → Distribute App → App Store Connect
 ```
 
 ---
 
 ## 💰 Cost Estimates
 
-| Resource        | Tier             | Monthly Cost     |
-| --------------- | ---------------- | ---------------- |
-| Static Web App  | Free             | $0               |
-| Azure Functions | Flex Consumption | $5-15            |
-| Cosmos DB       | Serverless       | $5-20            |
-| Azure OpenAI    | Pay-per-token    | $5-15            |
-| Key Vault       | Standard         | ~$1              |
-| App Insights    | Free (5GB)       | $0               |
-| **Total**       |                  | **$16-51/month** |
+| Resource        | Tier              | Monthly Cost     |
+| --------------- | ----------------- | ---------------- |
+| Azure Functions | Flex Consumption  | $5-15            |
+| Cosmos DB       | Serverless        | $5-20            |
+| Azure OpenAI    | Pay-per-token     | $5-15            |
+| APNs            | Free              | $0               |
+| Apple Developer | Annual ($99/year) | ~$8              |
+| **Total**       |                   | **$23-58/month** |
 
 _Target: ≤$50/month for early adopter usage_
 
@@ -218,8 +332,8 @@ _Target: ≤$50/month for early adopter usage_
 ## 🔐 Authentication
 
 - **Provider**: Microsoft Entra ID (default tenant `common`)
-- **Flow**: MSAL.js browser authentication with JWT tokens
-- **User Creation**: Automatic on first login
+- **Flow**: MSAL iOS SDK with token caching
+- **Scopes**: Calendar.ReadWrite, User.Read (for Shadow Sync)
 
 ---
 
@@ -229,4 +343,4 @@ GNU Affero General Public License v3.0 - see [LICENSE](LICENSE).
 
 ---
 
-**🚀 Vigor: AI-powered fitness platform with personalized coaching**
+**👻 The Ghost: The fitness app you never have to open.**

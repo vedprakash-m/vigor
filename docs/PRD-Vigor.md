@@ -1,1459 +1,923 @@
 # Vigor - Product Requirements Document (PRD)
 
-**Version**: 1.0
-**Date**: January 22, 2025
-**Status**: Production Ready
-**Document Owner**: Product & Engineering Team
-**Aligned with**: Tech_Spec_Vigor.md v1.0, User_Experience.md v1.0
+**Version**: 5.0
+**Date**: January 25, 2026
+**Status**: Strategic Foundation
+**Document Owner**: Product Team
 
 ---
 
 ## Executive Summary
 
-**Vigor** is a modern AI-powered fitness platform that addresses the critical gap between expensive personal trainers ($50-100/session) and generic fitness apps that lack personalization. With 73% of people citing lack of professional guidance and 68% citing time constraints as barriers to consistent exercise, Vigor democratizes access to professional-grade fitness coaching through AI technology.
+### The Uncomfortable Truth
 
-**The Market Problem:** Existing fitness apps offer static content or basic customization (Nike Training Club, Fitbit Coach), while AI-powered alternatives depend on single providers creating reliability risks and cost $60-80/year. Traditional personal training is prohibitively expensive for regular use, creating a significant market gap for accessible, intelligent fitness guidance.
+Every fitness app operates on a broken assumption:
 
-**Vigor's Solution:** Single-provider AI (OpenAI gpt-5-mini) ensures reliability and cost efficiency, conversational coaching provides real-time form guidance and motivation, and serverless infrastructure (≤$50/month operational budget ceiling, with automatic scaling) enables professional-grade features at consumer prices. The platform combines reliability, personalization, and affordability in a single solution.
+> _"Give people better workouts and they'll get fit."_
 
-Vigor's streamlined architecture with OpenAI gpt-5-mini delivers personalized workout generation, intelligent coaching conversations, and comprehensive progress tracking while maintaining industry-leading reliability and cost efficiency through Azure Functions and Cosmos DB.
+**This is wrong.**
+
+People don't fail because they lack workouts. YouTube has infinite free workouts. ChatGPT generates perfect programs. The information problem was solved a decade ago.
+
+**People fail because life is designed to make them fail.**
+
+### The Deeper Truth
+
+Most "solutions" just add more work. They ask you to:
+
+- Log every meal
+- Rate your sleep
+- Check in every morning
+- Track your sets and reps
+
+They promise to be invisible, then demand your attention constantly. **That's a lie dressed as a feature.**
+
+### The Insight
+
+The best fitness app is one you never have to think about—and never have to touch.
+
+### Vigor's Answer
+
+**Vigor is not a fitness app. Vigor is a ghost.**
+
+A ghost that watches over you. Knows when you're weak. Knows when you're strong. Whispers exactly what you need to do to survive the modern world.
+
+You don't use Vigor. Vigor uses the data you already generate—your calendar, your sleep, your movement—to make fitness _inevitable_.
+
+**What we're really selling:** Not workouts. Not tracking. Not motivation. We're selling **Executive Function as a Service**—the outsourcing of willpower to a system that never gets tired.
+
+**Our market:** Not "people who want abs." It's **high-performers who cannot afford to be tired.** We sell them time and energy, not squats.
+
+**The measure of our success: How often you forget we exist, yet still get fitter.**
 
 ---
 
-## 1. Product Vision & Objectives
+## 1. Product Vision
 
 ### 1.1 Vision Statement
 
-To democratize access to personalized fitness coaching through AI-powered technology, making professional-grade workout planning and guidance accessible to users of all fitness levels.
+**Fitness without friction.**
 
-### 1.2 Primary Objectives
+You don't configure Vigor. You don't feed it. You don't check in with it. Vigor feeds on data you already create—and whispers back exactly what you need.
 
-- **Personalization**: Deliver tailored workout plans based on individual user profiles, goals, and available equipment
-- **Accessibility**: Provide 24/7 AI coaching support without geographic or time constraints
-- **Engagement**: Maintain user motivation through progress tracking, streak monitoring, and gamification
-- **Scalability**: Support growing user base with cost-effective, reliable infrastructure
-- **Quality**: Ensure high-quality, safe, and effective fitness guidance
+### 1.2 The Three Laws of Vigor
 
-### 1.3 Success Metrics
+1. **Never ask what can be sensed.** If the phone knows you slept poorly, don't ask. If the calendar shows back-to-back meetings, don't suggest a workout.
 
-#### Primary KPIs (Key Performance Indicators)
+2. **Magic in five minutes, but humble confidence.** The first insight must arrive before the first workout—but always with honesty: _"Based on the data I have access to..."_ Never claim omniscience. Leave room for the data being incomplete.
 
-- **User Retention**: 70%+ weekly retention, 40%+ monthly retention
-- **Engagement Depth**: 4+ workouts per user per week, 15+ AI interactions per week
-- **Workout Completion**: 80%+ completion rate for generated workouts
-- **Streak Maintenance**: 30%+ of users maintain 7+ day streaks, 15%+ maintain 30+ day streaks
+3. **One decision, not ten.** When Vigor speaks, the answer is Yes or No. Never "open the app to learn more."
 
-#### Secondary KPIs
+### 1.3 The Trust Accrual Ladder
 
-- **AI Effectiveness**: 4.5+ star average rating for AI responses, <10% negative feedback
-- **Platform Reliability**: 99.9% uptime, <2s average response time, <1% error rate
-- **Cost Efficiency**: ≤$50/month operational budget ceiling with Azure Functions auto-scaling
-- **User Growth**: 20%+ month-over-month user acquisition, 50%+ organic referrals
+**Invisibility is the end state, not the starting state.**
 
-#### Business Metrics
+We must earn authority before we take it. Users don't trust invisible systems with their bodies until authority is earned explicitly.
 
-- **Premium Conversion**: 15%+ free-to-premium conversion rate within 30 days
-- **Churn Rate**: <5% monthly churn for premium users
-- **Customer Lifetime Value**: 6+ months average subscription length
-- **Net Promoter Score**: 50+ NPS score from active users
+| Phase | Name               | Behavior                                                                         | User Control              | Unlocks After                   |
+| ----- | ------------------ | -------------------------------------------------------------------------------- | ------------------------- | ------------------------------- |
+| 1     | **Observer**       | Ghost watches and suggests. All actions require explicit approval.               | Full control              | Day 1                           |
+| 2     | **Scheduler**      | Ghost proposes calendar blocks with preview. User confirms before blocks appear. | Approval required         | 7 days + 3 accepted suggestions |
+| 3     | **Auto-Scheduler** | Ghost adds calendar blocks automatically. User can undo.                         | Undo available            | 14 days + 5 completed workouts  |
+| 4     | **Transformer**    | Ghost auto-adjusts blocks based on real-time data (Heavy → Recovery).            | Revert available          | 30 days + trust score >80%      |
+| 5     | **Full Ghost**     | Complete autonomy. Calendar transforms silently. User rarely intervenes.         | Override always available | 60 days + trust score >90%      |
 
----
+**Trust Score Factors:**
 
-## 2. User Personas & Target Audience
+- Ghost suggestions accepted vs. rejected
+- Workout completions after Ghost scheduling
+- User overrides (high override rate = slow trust accrual)
+- Data consistency (wear Watch consistently = faster trust)
 
-### 2.1 Primary Personas
+**The Golden Rule:** Users can always see their current phase and manually advance or retreat. The Ghost never takes authority—it's granted.
 
-#### 2.1.1 The Fitness Beginner
+### 1.4 The Reframe
 
-- **Demographics**: 20-40 years old, limited gym experience
-- **Goals**: Learn proper form, build sustainable habits, gain confidence
-- **Pain Points**: Overwhelmed by fitness information, afraid of injury, lack of guidance
-- **Vigor Value**: Step-by-step guidance, safety-first approach, progressive difficulty
+| What Other Apps Do                    | What Vigor Does                                      |
+| ------------------------------------- | ---------------------------------------------------- |
+| "Log your workout"                    | Detect the workout. Confirm with one tap.            |
+| "How did you sleep?"                  | Import sleep data. Never ask.                        |
+| "Here are 500 exercises to browse"    | "Do this. Trust me."                                 |
+| "Rate your energy (1-10)"             | Infer energy from sleep + calendar + history.        |
+| Notification: "Time for your workout" | Silent calendar block appears in your only free gap. |
 
-#### 2.1.2 The Busy Professional
+### 1.5 Success Metrics
 
-- **Demographics**: 25-45 years old, time-constrained lifestyle
-- **Goals**: Efficient workouts, flexible scheduling, maintain health
-- **Pain Points**: Limited time, irregular schedule, need for convenience
-- **Vigor Value**: Quick workout generation, mobile-optimized interface, progress tracking
-
-#### 2.1.3 The Fitness Enthusiast
-
-- **Demographics**: 18-50 years old, regular exercise routine
-- **Goals**: Optimize training, try new programs, track advanced metrics
-- **Pain Points**: Training plateaus, need for variety, advanced tracking needs
-- **Vigor Value**: AI-powered optimization, diverse workout styles, detailed analytics
-
-### 2.2 User Tiers
-
-#### Free Tier (MVP)
-
-- **Features**: Workout generation, AI coaching interactions, progress tracking
-- **Limitations**: 50 AI chats/day, 50 workout generations/day (generous for early adopters)
-- **Rate Limiting**: In-memory storage (accept cold-start resets for cost efficiency)
-- **Target**: Early adopters, fitness enthusiasts
-- **MVP Scope**: Only tier implemented in MVP
-
-#### Premium Tier (Post-MVP)
-
-- **Features**: Unlimited AI coaching, advanced analytics, priority support
-- **Pricing**: Monthly subscription model (post-beta implementation)
-- **Target**: Serious fitness users, regular platform users
-- **Status**: Post-beta feature, not included in MVP
-
-#### Admin Tier
-
-- **Features**: System monitoring, user management, AI provider configuration
-- **Access**: Internal team members only
+| Metric                  | Target                    | Why It Matters                            |
+| ----------------------- | ------------------------- | ----------------------------------------- |
+| **Time to First Magic** | < 5 minutes               | User knows this is different immediately  |
+| **Weekly Active Rate**  | 80%+                      | Users engaging without being reminded     |
+| **Proactive Sessions**  | 60%+ of workouts          | Vigor drives behavior, not user willpower |
+| **Zero-Input Workouts** | 40%+ logged automatically | The ghost is working                      |
+| **30-Day Retention**    | 50%+                      | Real habit change takes a month           |
+| **App Opens per Week**  | < 3                       | Invisible means invisible                 |
 
 ---
 
-## 2.3 Competitive Analysis & Market Positioning
+## 2. Strategic Differentiation
 
-### 2.3.1 Direct Competitors
+### 2.1 The Competitive Landscape Problem
 
-#### MyFitnessPal + Premium AI Features
+Every fitness app offers the same thing—and demands the same thing in return:
 
-- **Strengths**: Large user base, nutrition tracking, established brand
-- **Weaknesses**: Limited AI coaching, expensive premium tiers, complex interface
-- **Vigor Advantage**: Superior AI coaching with OpenAI gpt-5-mini, simpler UX
+| Capability                    | ChatGPT | Fitbod | Apple Fitness+ | Vigor  |
+| ----------------------------- | ------- | ------ | -------------- | ------ |
+| Generate workouts             | ✅      | ✅     | ❌             | ✅     |
+| Remember your profile         | ✅      | ✅     | ✅             | ✅     |
+| Track workouts                | ❌      | ✅     | ✅             | ✅     |
+| **Requires manual input**     | ✅      | ✅     | ✅             | **❌** |
+| **Knows your patterns**       | ❌      | ❌     | ❌             | **✅** |
+| **Proactively reaches out**   | ❌      | ❌     | ❌             | **✅** |
+| **Works while you ignore it** | ❌      | ❌     | ❌             | **✅** |
 
-#### Freeletics (AI-Powered Bodyweight Training)
+**The gap:** Every product demands labor. Vigor demands nothing.
 
-- **Strengths**: Established AI training, strong mobile app, bodyweight focus
-- **Weaknesses**: Limited equipment variety, expensive subscription (~$60/year)
-- **Vigor Advantage**: Equipment flexibility, lower cost with pause/resume, better fallback systems
+### 2.2 Vigor's Unfair Advantages
 
-#### Apple Fitness+ / Nike Training Club
+#### Advantage 1: Ambient Intelligence
 
-- **Strengths**: Device integration, high production value, brand recognition
-- **Weaknesses**: Platform-locked, no personalized AI coaching, limited customization
-- **Vigor Advantage**: Platform-agnostic, true AI personalization, conversational coaching
+Vigor doesn't ask. Vigor observes. It translates data you already create into action you don't have to decide.
 
-#### Fitbod (AI Workout Planning)
+| What Others Ask           | What Vigor Knows (Without Asking)                    |
+| ------------------------- | ---------------------------------------------------- |
+| "How did you sleep?"      | HealthKit says 5h 12m. RHR elevated. Poor recovery.  |
+| "How's your energy?"      | Calendar: 4 meetings before noon. Energy: depleted.  |
+| "Did you work out?"       | Detected 34-minute activity spike. Confirm? [Yes/No] |
+| "What's your goal today?" | Last leg day: 4 days ago. Today = legs.              |
 
-- **Strengths**: Advanced workout planning algorithms, progress tracking
-- **Weaknesses**: No conversational AI, limited coaching guidance, expensive (~$80/year)
-- **Vigor Advantage**: Conversational AI coach, better onboarding, cost-effective scaling
+**The magic:** When you open Vigor (if you open it), everything is already there. Nothing to enter.
 
-### 2.3.2 Vigor's Unique Value Propositions
+#### Advantage 2: Instant Phenome (Day 1 Magic)
 
-1. **Streamlined AI Excellence**: Focus on OpenAI gpt-5-mini for optimal performance and consistent quality
-2. **Conversational AI Coach**: 24/7 contextual fitness guidance beyond just workout generation
-3. **Serverless Infrastructure**: True pay-per-use with Azure Functions for ultra-low operational costs
-4. **Safety-First AI Prompting**: Health-focused AI responses with medical disclaimers
-5. **Progressive Complexity**: Starts simple for beginners, scales to advanced users
-6. **True Personalization**: AI considers equipment, injuries, goals, and real-time feedback
+Other apps need 60 days to know you. Vigor needs 60 seconds.
 
-### 2.3.3 Market Positioning Strategy
+**On first launch:**
 
-- **Primary Position**: "The AI fitness coach that actually understands you"
-- **Secondary Position**: "Professional-grade fitness guidance at consumer prices"
-- **Differentiation**: Reliability through robust error handling and caching, focus on UX quality
+1. Import 90 days of HealthKit/Google Health data (with permission)
+2. Scan calendar patterns (meeting density, typical free blocks)
+3. Immediately surface one insight:
+
+> _"I see you haven't worked out consistently since November. When you do exercise, your heart rate recovers slowly—you're deconditioned. Today: 15-minute walk. Tomorrow: we rebuild."_
+
+**No waiting. No earning insights. Magic on contact.**
+
+#### Advantage 3: The Silent Calendar
+
+Other apps send notifications. Vigor sends calendar invites.
+
+- See a 45-minute gap at 6 PM? A "Training Block" appears.
+- Stressful day with 6 hours of meetings? A "Recovery Walk" appears at 5:30 PM.
+- You slept 4 hours? Nothing appears. Radio silence.
+
+**The app that blocks time beats the app that begs for attention.**
+
+#### Advantage 4: The Data Flywheel
+
+Every day of passive data makes Vigor smarter:
+
+```
+More sensor data → Better patterns → Better predictions →
+Better outcomes → More trust → More permissions granted
+```
+
+After 90 days, leaving Vigor means abandoning insights no other app can replicate.
+
+### 2.3 What Makes This a Blue Ocean
+
+| Red Ocean (Everyone Else)  | Blue Ocean (Vigor)                   |
+| -------------------------- | ------------------------------------ |
+| Compete on workout quality | Compete on invisibility              |
+| App you must open          | Ghost that works while you ignore it |
+| Asks for your data         | Translates data you already create   |
+| Notifications that nag     | Calendar blocks that appear silently |
+| Magic after 60 days        | Magic in 5 minutes                   |
+| Exercise library to browse | Single command: "Do this. Trust me." |
+
+### 2.4 The Economic Moat
+
+**Zero cost to get IN. Infinite cost to get OUT.**
+
+- **Day 1:** Vigor imports your historical data. Immediately useful.
+- **Day 90:** Vigor has learned your patterns, your recovery needs, your skip predictors.
+- **Switching Cost:** Leaving means starting over. No competitor can import your Phenome.
+
+**What We're Selling (And How to Price It):**
+
+Do not price Vigor against Fitbod ($12.99) or MyFitnessPal ($19.99).
+
+Price it against:
+
+- **A personal trainer:** $100+/hour
+- **Burnout recovery:** Priceless
+- **Executive function:** The scarcest resource in modern life
+
+If you charge $9.99, users treat it like a utility they'll cancel when money gets tight.
+If you charge $49/month (or $499/year), users treat it like an executive assistant they can't live without.
+
+**The Psychology of Price:** High price forces respect. When you pay $50/month, you listen when the calendar says "Sleep." When you pay $9.99, you ignore it.
+
+**Vigor is Health Assurance.** Not a fitness app subscription.
+
+### 2.5 Platform Strategy: Apple Watch Required
+
+**The zero-friction Ghost requires ecosystem integration that only Apple provides:**
+
+- HealthKit (sleep, HRV, workouts, heart rate)
+- Calendar (native integration, not OAuth flows)
+- Focus Modes (respect Do Not Disturb)
+- Watch complications (the Ghost on your wrist)
+- Shortcuts/Siri (voice triggers for Ghost Operations)
+
+**Our position:** Vigor requires Apple Watch. Not iPhone-only. Not "works better with Watch." **Required.**
+
+A phone in a pocket cannot measure the soul of a workout. It creates bad data. Bad data leads to bad recommendations. Bad recommendations break trust. A degraded Ghost is worse than no Ghost.
+
+**The Marketing Angle:** "The first app smart enough to require Apple Watch." Make the hardware a prerequisite for the magic. This signals exclusivity and ensures data fidelity.
+
+**Android:** Future consideration only after the Apple experience is flawless. No degraded modes. Ever.
 
 ---
 
-## 2.4 User Scenarios & Use Cases
+## 3. How Vigor Knows What You Need
 
-### 2.4.1 Scenario 1: The Overwhelmed Beginner (Sarah, 28)
+### 3.1 The Hierarchy of Data (Zero Friction First)
 
-**Context**: Recently decided to get fit, intimidated by gym culture, works from home
-**Journey**:
+Vigor prioritizes data sources by friction cost:
 
-1. Signs up during lunch break, completes 5-minute onboarding
-2. Generates first bodyweight workout for living room (20 minutes)
-3. AI coach explains proper squat form through chat
-4. Logs workout, receives encouraging feedback and next-day suggestions
-5. After 2 weeks, AI suggests progression to light weights
+| Priority | Source                  | Friction    | What We Learn                           |
+| -------- | ----------------------- | ----------- | --------------------------------------- |
+| 1        | Apple Watch + HealthKit | Zero        | Sleep, steps, HRV, workouts, heart rate |
+| 2        | Calendar (read-only)    | Zero        | Free blocks, meeting density, patterns  |
+| 3        | Location (optional)     | Zero        | At gym? At home? Traveling?             |
+| 4        | One-tap confirms        | Minimal     | "Workout logged. Tap if wrong."         |
+| 5        | Manual logging          | Last resort | Only when Watch sensors fail (rare)     |
 
-**Success Metrics**: Completes 3+ workouts in first week, asks 5+ coaching questions
+**The Rule:** Never ask what can be sensed. Never sense what isn't needed.
 
-### 2.4.2 Scenario 2: The Time-Crunched Executive (Michael, 42)
+### 3.2 Day 1: The Cold Start (Instant Magic)
 
-**Context**: Travels frequently, irregular schedule, hotel gyms with random equipment
-**Journey**:
+Most apps are useless on Day 1. Vigor is magic on Day 1.
 
-1. Opens app in hotel room at 6 AM
-2. Takes photo of available equipment, inputs 30-minute time limit
-3. Receives customized HIIT workout optimized for available machines
-4. Completes workout, logs it during Uber to airport
-5. AI suggests travel-friendly nutrition tips for business dinner
+**Onboarding Flow (< 2 minutes):**
 
-**Success Metrics**: Maintains 4+ workouts/week despite travel, 15+ weekly AI interactions
+1. **Connect Health Data** — "Let me see the last 90 days." (One tap)
+2. **Connect Calendar** — "Let me see your schedule." (One tap)
+3. **Basic Profile** — Equipment access, any injuries. (30 seconds)
 
-### 2.4.3 Scenario 3: The Plateau Breaker (Jessica, 35)
+**Immediate Output:**
 
-**Context**: 2 years of regular workouts, progress stalled, seeking variety and optimization
-**Journey**:
+> _"Here's what I see:_
+>
+> - _You averaged 5,400 steps/day last month (sedentary)_
+> - _Sleep has been inconsistent—ranging from 4h to 8h_
+> - _Your last detected workout was 23 days ago_
+> - _Tomorrow you have a gap from 6-7:30 PM_
+>
+> _My recommendation: A 20-minute movement session tomorrow at 6 PM. I've added it to your calendar. We start slow._"
 
-1. Imports previous workout history
-2. AI analyzes patterns, identifies overtraining legs, undertraining posterior chain
-3. Receives periodized plan with new exercise variations
-4. Uses AI chat to understand muscle activation and form cues
-5. Tracks PRs, receives data-driven progression recommendations
+**No waiting. No data collection period. Value in 60 seconds.**
 
-**Success Metrics**: Breaks 3+ plateaus in first month, achieves new PRs in 4+ exercises
+### 3.3 Passive Data Collection (The Symbiotic Model)
 
----
+Vigor translates existing data streams into action:
 
-## 2.5 AI Capabilities Matrix
+| Data Source           | What We Extract                                               |
+| --------------------- | ------------------------------------------------------------- |
+| **HealthKit / GHC**   | Sleep (duration, quality), steps, HRV, resting HR, workouts   |
+| **Calendar**          | Meeting count, free blocks, first/last meeting, back-to-backs |
+| **Motion/Activity**   | Workout auto-detection, sedentary time                        |
+| **Location** (opt-in) | Gym proximity, travel detection                               |
 
-| Feature                     | Model             | Purpose                                       | Response Time |
-| --------------------------- | ----------------- | --------------------------------------------- | ------------- |
-| **Workout Planning**        | OpenAI gpt-5-mini | Personalized exercise selection & programming | <5s           |
-| **Conversational Coaching** | OpenAI gpt-5-mini | Real-time form, motivation, and guidance      | <3s           |
-| **Progress Analysis**       | OpenAI gpt-5-mini | Performance insights and recommendations      | <4s           |
-| **Nutrition Guidance**      | OpenAI gpt-5-mini | Meal planning and dietary advice              | <3s           |
-| **Injury Prevention**       | OpenAI gpt-5-mini | Movement screening and modifications          | <3s           |
-| **Motivation & Habits**     | OpenAI gpt-5-mini | Behavioral psychology and encouragement       | <2s           |
+**What we NEVER access:** Meeting content, email, messages, contacts.
 
-### Model Selection Rationale:
+### 3.4 The Phenome Engine (Patterns Over Time)
 
-1. **Cost Efficiency**: OpenAI gpt-5-mini offers excellent price-performance ratio
-2. **Consistency**: Single model ensures consistent user experience
-3. **Speed**: Optimized for fast responses with low latency
-4. **Capability**: Excellent performance across all fitness use cases
-5. **Reliability**: OpenAI's enterprise-grade infrastructure
+After 30+ days of passive data, patterns emerge:
 
----
+| Pattern           | How Detected                              | Insight Example                        |
+| ----------------- | ----------------------------------------- | -------------------------------------- |
+| Sleep-Performance | Correlate sleep duration with workout RPE | "You're 23% weaker after < 6h sleep"   |
+| Skip Predictors   | Correlate skips with calendar/sleep data  | "High meetings + low sleep = 80% skip" |
+| Recovery Needs    | Time between sessions vs. performance     | "You need 3 days between leg sessions" |
+| Optimal Windows   | Time-of-day workout performance           | "You perform 15% better before 10 AM"  |
 
-## 2.6 Gamification & Engagement Systems
-
-### 2.6.1 Streak & Achievement Mechanics
-
-#### Workout Streaks
-
-- **Daily Streak**: Consecutive days with logged workouts (minimum 15 minutes)
-- **Weekly Consistency**: Meeting weekly workout targets (3, 4, or 5 days based on user goals)
-- **Monthly Challenges**: AI-generated challenges like "Push-up progression month"
-
-#### Achievement Badges
-
-- **Form Master**: Complete 50 workouts with AI form feedback
-- **Equipment Adapter**: Use 5+ different equipment types
-- **Coach Conversationalist**: 100+ meaningful AI coaching interactions
-- **Plateau Buster**: Achieve 3+ personal records in a month
-- **Early Bird**: Complete 20 morning workouts (before 9 AM)
-- **Consistency King**: Maintain 30+ day streaks
-- **AI Enthusiast**: Complete 50+ AI-powered workout generations
-
-#### Progress Milestones
-
-- **Strength Gains**: Quantified progress in key lifts (squat, deadlift, bench)
-- **Endurance Improvements**: Cardio performance and recovery metrics
-- **Consistency Rewards**: Weekly/monthly streaks with unlockable features
-
-### 2.6.2 Social & Community Features (Future)
-
-- **Workout Sharing**: AI-generated workout cards with performance highlights
-- **Anonymous Leaderboards**: Compete on streak length, not absolute performance
-- **AI Coach Testimonials**: Share favorite AI coaching moments
-- **Progress Photo Evolution**: Private progress tracking with optional sharing
+**These insights surface automatically—no user action required.**
 
 ---
 
-## 3. Feature Requirements
+## 4. Feature Requirements
 
-### 3.1 Core Features
+### 4.1 The Interface Principle
 
-#### 3.1.1 User Authentication & Profile Management
+**The best interface is no interface.**
 
-**Requirements:**
+Vigor's UI should feel empty most of the time. When you open the app, there's one thing to do—or nothing at all.
 
-- **Microsoft Entra ID Default Tenant** as the authentication provider
-- Simplified user signup/signin using email address as primary identifier
-- User profile management including:
-  - Fitness level (Beginner, Intermediate, Advanced)
-  - Fitness goals (Weight Loss, Muscle Gain, Strength, Endurance, General Fitness)
-  - Available equipment (None, Basic, Moderate, Full Gym)
-  - Injury history and limitations
-  - Personal preferences
+### 4.2 Pillar 1: The Single Command
 
-**Technical Implementation:**
+No exercise library. No workout browser. No menus.
 
-- **Microsoft Entra ID**: Default tenant authentication
-  - **Email-based identification**: User email as primary key
-  - **Token Format**: JWT tokens from Microsoft Entra ID
-  - **Session Management**: Stateless authentication via JWT
-  - **Auto user creation**: Automatic database entry creation for new authenticated users
-- Rate-limited endpoints (5 registrations/min, 10 logins/min)
-- Admin users can adjust or temporarily bypass all rate limits and quotas via the Admin API
-- Security audit logging for all authentication events
-- Multi-factor authentication (MFA) support via Entra ID
-- Account verification and password reset functionality
-- **User Interface**: Standardized user object across application
-  - Cross-app permissions and profile synchronization
-  - Resource separation: vigor resources (vigor-rg, vigor-db-rg) independent from shared domain (ved-domain-rg) and auth (ved-id-rg) resources
+**The Interface:**
 
-#### 3.1.2 AI-Powered Workout Generation
+A single text prompt:
 
-**Requirements:**
+> _"20 minutes. Dumbbells. My shoulder is bothering me."_
 
-- Generate personalized workout plans based on user profile
-- Customize workouts by:
-  - Duration (15-90 minutes)
-  - Focus areas (Full body, Upper body, Lower body, Core, Cardio)
-  - Equipment availability
-  - Fitness goals and current level
-- Provide detailed exercise instructions and modifications
-- Support multiple workout styles and methodologies
+**The Response:**
 
-**Technical Implementation:**
+A complete workout, generated instantly, respecting all constraints:
 
-- OpenAI gpt-5-mini integration with streaming responses
-- Structured JSON response format for consistent data handling
-- Error handling with graceful degradation to cached responses
-- **Enhanced AI Cost Management**:
-  - Real-time token usage tracking and budget validation
-  - Intelligent response caching for cost optimization
-  - Cosmos DB caching layer for frequent workout patterns
-  - Request batching and query deduplication
-  - Per-user AI usage limits with enforcement and override capabilities
-  - Automated scaling during off-peak hours
-  - Cost forecasting and budget planning tools
-  - Graceful degradation with user notification system
+- Time available
+- Equipment mentioned
+- Injury/limitation stated
+- Recent training history (from sensors)
+- Recovery status (from sleep data)
 
-#### 3.1.3 Intelligent AI Coach
+**One tap to start. Workout auto-logged as you go.**
 
-**Requirements:**
+### 4.3 Pillar 2: The Ghost Notification
 
-- 24/7 conversational AI coach for fitness guidance
-- Context-aware responses based on user profile and history
-- Support for:
-  - Exercise form questions
-  - Nutrition guidance
-  - Motivation and encouragement
-  - Program modifications
-  - Injury prevention advice
-- Conversation history maintenance for continuity
+Notifications are cancer. Use them wrong and users delete you.
 
-**Technical Implementation:**
+**The Rules:**
 
-- Real-time chat interface with conversation threading
-- Context injection with user profile data
-- Safety-first prompting for health and injury considerations
-- Response caching for improved performance
+1. **Maximum 1 notification per day.** Ever.
+2. **Never ask a question.** Notifications are commands, not surveys.
+3. **Binary response only.** "Do this? [Yes/No]"—or just a calendar block with no notification.
+4. **Silence is an option.** If sleep < 5 hours, say nothing. They know.
 
-#### 3.1.4 Progress Tracking & Analytics
+**Examples of Good Notifications:**
 
-**Requirements:**
+| Context                     | Notification                                           |
+| --------------------------- | ------------------------------------------------------ |
+| Free block detected at 6 PM | "Training block added to calendar. Tap to adjust."     |
+| Detected workout            | "Workout logged (45 min, moderate). Tap if I'm wrong." |
+| 4 days since last session   | "You're due. 15 min session at 6 PM. Tap to skip."     |
 
-- Workout logging with detailed metrics
-- Progress visualization and trend analysis
-- Streak tracking for motivation
-- Performance analytics including:
-  - Workout frequency and consistency
-  - Strength progression
-  - Endurance improvements
-  - Goal achievement tracking
+**The Passive Acceptance Principle:**
 
-**Technical Implementation:**
+Active confirmation ("Log it? Yes/No") is still one decision too many.
+Passive acceptance ("Logged. Tap if wrong.") assumes the Ghost is right.
+The user only acts when we're wrong—which should be rare.
 
-- Comprehensive workout log data model
-- Automated streak calculation
-- Visual dashboard with charts and metrics
-- Export capabilities for personal data
+**Examples of BAD Notifications (Never Do This):**
 
-### 3.2 Feature Prioritization & Release Strategy
+- "Good morning! How are you feeling today?"
+- "You've been sitting for 2 hours!"
+- "How was your workout?"
+- "Check out this new feature!"
 
-#### MVP Release (v1.0) - Core Value Delivery
+### 4.4 Pillar 3: The Silent Calendar
 
-**Priority: P0 (Must Have)**
+The calendar is the interface. Not the app.
 
-1. **User Authentication & Profiles** - Microsoft Entra ID default tenant authentication with email-based user identification
-2. **AI Workout Generation** - Core differentiated value using OpenAI gpt-5-mini
-3. **Basic Progress Tracking** - User retention essential
-4. **AI Coaching Chat** - Engagement and support
-5. **Workout History** - User data retention
-6. **Basic Gamification** (streaks only) - Motivation
-7. **Responsive Web App** - Mobile-optimized but not PWA
+**Behavior:**
 
-**MVP Limitations:**
+- Vigor detects free blocks in your day
+- A "Training Block" appears automatically in the gap
+- No notification needed—it's just _there_
+- If you delete it, Vigor learns: "Not a good time"
+- If you move it, Vigor learns: "Preferred time"
 
-- **Single Tier**: Free tier only (no premium features)
-- **No PWA**: Basic responsive web app only
-- **No Social Features**: Individual user experience only
+**Calendar Block Types:**
 
-#### Growth Release (v1.1-1.3) - Enhanced Experience
+| Block Type     | Duration  | When Triggered                    |
+| -------------- | --------- | --------------------------------- |
+| Training Block | 30-60 min | 2+ days since last workout        |
+| Recovery Walk  | 15-20 min | High stress day (6+ meetings)     |
+| Movement Break | 10 min    | 3+ hours of back-to-back meetings |
+| Rest Day       | N/A       | Poor sleep + recent high volume   |
 
-**Priority: P1 (Post-MVP)**
+**The Dynamic Truth:**
 
-1. **Premium Tier Implementation** - Monetization and unlimited features
-2. **Progressive Web App (PWA)** - Native app-like experience with offline capabilities
-3. **Advanced Analytics** - User insights and detailed progress tracking
-4. **Equipment Management** - Practical utility and customization
-5. **Enhanced Gamification** (achievements, levels) - Engagement
+Calendar blocks are not static. They transform based on real-time data.
 
-#### Scale Release (v2.0+) - Market Expansion
+- You scheduled a "Heavy Lifts" block at 6 PM
+- At 6 AM, Vigor sees: HRV crashed, sleep was 4.5 hours
+- By the time you check your calendar, the block has _already_ changed
 
-**Priority: P2 (Future Features)**
+**But the Ghost preserves your ego.**
 
-1. **Social Features** - Community building and workout sharing
-2. **Injury/Limitation Support** - Safety and inclusivity
-3. **Wearable Integration** - Ecosystem expansion
-4. **Corporate Features** - B2B opportunities and team challenges
+The calendar block now reads:
 
-**Rationale**: This prioritization focuses on demonstrating core AI value and reliability first, then adding features that increase engagement and retention, finally expanding to capture additional market segments.
+> **⚠️ Recovery Walk** (Was: Heavy Lifts)
+> _"Your HRV is crashed. Heavy lifting today risks injury. Tap to revert."_
+
+The user sees what happened. They understand why. They have agency to override. But the default is protection.
+
+**This is the magic moment.** When users see their calendar transform _before they even thought about it_—and understand why—they become customers for life.
+
+**The Conflict Protocol:**
+
+Calendar management is dangerous. If we schedule over something important, we die.
+
+1. **Never ask "Why?"** — If user rejects a calendar block, accept it silently. No guilt. No questions.
+2. **Learn implicit patterns** — If user always rejects 2-4 PM blocks, stop scheduling them—even if the calendar shows "free."
+3. **Apologize and vanish** — If a block was wrong: _"Understood. Block removed."_ Nothing more.
+4. **Respect the sacred** — Some gaps aren't for fitness. The Ghost learns this through rejections, not interrogation.
+
+**Sacred Time Detection:**
+
+The Ghost must detect and protect sacred time. Heuristics:
+
+| Signal                              | Action                         |
+| ----------------------------------- | ------------------------------ |
+| Block deleted 3+ times at same time | Never schedule that slot again |
+| Weekend mornings before 9 AM        | Protected by default           |
+| Evening blocks after 8 PM           | Require Phase 4+ trust         |
+| Days with "travel" in calendar      | No scheduling                  |
+| Religious/cultural holidays         | Auto-protected                 |
+| Recurring personal blocks           | Always protected               |
+| Lunch blocks (12-1 PM)              | Protected unless user opts in  |
+
+**The Explicit Guarantee:**
+
+> "Vigor will never schedule over existing events. Ever. Only empty gaps. Only when you've granted permission."
+
+### 4.5 Pillar 4: Zero-Input Workout Logging
+
+If the user has to manually log sets and reps, we've failed.
+
+**The Sensor Truth:**
+
+Let's be honest: A phone in a pocket cannot tell the difference between a deadlift and a squat. It cannot count reps accurately if it's sitting on a bench. **The Ghost's magic depends on the fidelity of the sensors.**
+
+**Our Position:**
+
+> _"Vigor works best with Apple Watch or a wearable. Without one, you'll still get smart scheduling—but we can't see your workouts as clearly."_
+
+**With Wearable (Full Ghost Mode):**
+
+1. Watch detects workout automatically (heart rate + motion + workout app)
+2. Duration, intensity, and workout type captured
+3. User gets one-tap confirmation: "45-min strength session. Log it? [Yes/No]"
+4. If Yes → logged with accurate metrics
+5. Phenome learns from real data
+
+**Without Wearable (Degraded Mode):**
+
+1. Phone detects likely workout (motion + time patterns)
+2. User confirms: "Did you work out around 6 PM? [Yes/No]"
+3. If Yes → logged with estimated duration
+4. Phenome learns slower, with less precision
+
+**We don't hide this. We explain it.** Mediocrity kills brands. A degraded experience honestly communicated is better than a broken promise.
+
+**Progressive Enhancement:**
+
+| User Type         | Logging Experience                             |
+| ----------------- | ---------------------------------------------- |
+| Wearable + Auto   | One-tap confirm. Full metrics. Done.           |
+| Wearable + Detail | Confirm + add exercises/weights (their choice) |
+| Phone Only        | Confirm workout happened. Estimated metrics.   |
+
+### 4.6 Pillar 5: The Phenome Dashboard
+
+Your personal patterns, surfaced automatically.
+
+**What Users See (After 30+ Days):**
+
+> **Your Patterns**
+>
+> - Sleep Impact: You're 23% weaker after less than 6 hours
+> - Best Time: Morning workouts outperform evening by 18%
+> - Recovery: You need 3 days between leg sessions
+> - Skip Risk: High when meetings > 5 and sleep < 6
+
+**Insight Confidence:**
+
+- 🟢 High confidence (60+ data points, consistent signal)
+- 🟡 Emerging pattern (30-60 data points, signal stabilizing)
+- ⚪ Not enough data yet (observing)
+
+**Sensor Confidence (Internal):**
+
+Every Ghost action has an internal confidence score:
+
+| Action                               | Confidence Required | Override Friction       |
+| ------------------------------------ | ------------------- | ----------------------- |
+| Suggest a workout time               | 50%+                | Low (one tap)           |
+| Auto-schedule a block                | 70%+                | Medium (undo available) |
+| Transform a block (Heavy → Recovery) | 85%+                | Low (revert available)  |
+| Cancel a scheduled block             | 90%+                | N/A (protective action) |
+
+**If the Ghost ever feels wrong but stubborn, trust dies permanently.** Every action must be explainable and reversible.
+
+**No gamification. No badges. Just truth about your body.**
+
+### 4.7 Pillar 6: Ghost Operations (Exception Handler)
+
+The Ghost handles your logistics when life breaks the pattern. This is not coaching. This is operations.
+
+**V1 Scope (Ship This):**
+
+- Schedule chaos (meetings exploded, need to reschedule)
+- Sleep disruption (adjust intensity based on recovery)
+- Travel time zone shifts (pause/resume scheduling)
+
+**V2+ Scope (Later):**
+
+- Facility detection (hotel gym equipment)
+- Training for specific events (5K, marathon)
+- Injury rehab protocols
+- Equipment inventory awareness
+
+**The Rule:** Scope creep kills. V1 Ghost Operations handles chaos, not complexity.
+
+**When Ghost Operations Activates:**
+
+- "My schedule is chaos this week"
+- "I slept terribly, adjust today"
+- "I'm traveling to Denver" → Ghost pauses auto-scheduling, suggests manual blocks
+
+**When Ghost Operations Should NOT Be Needed:**
+
+If users regularly ask "What should I do today?", the Ghost has failed. The calendar should already have the answer.
+
+**Context Automatically Included:**
+
+- Last 7 days of detected activity
+- Sleep patterns this week
+- Calendar density today
+- Known phenome patterns
+- Injury/limitation history
+- Location data (hotel amenities, gym proximity)
+
+**Example Interaction (Exception Case):**
+
+User: _"I'm at the Hyatt in Denver for 3 days."_
+
+Ghost: _"Hyatt Denver has a fitness center with dumbbells up to 50 lbs and a Peloton. I've replaced your scheduled barbell work with 2 dumbbell sessions and a spin class. First session: tomorrow 6:30 AM before your 8 AM meeting. Already on your calendar."_
+
+**Ghost Operations is the logistics layer, not a chatbot.**
+
+### 4.8 Pillar 7: The Human Override
+
+Humans are irrational. Sometimes they want to destroy themselves. Sometimes they want to run until they vomit, even if HRV is crashed. Sometimes they want pizza and sleep, even with a "Training Block" scheduled.
+
+**The Ghost is not a prison warden.**
+
+**When Users Rebel:**
+
+User: _"I'm doing the heavy lift anyway."_
+
+Ghost: _"Understood. I've adjusted tomorrow to prioritize recovery—lighter session, earlier bedtime reminder. You've got this."_
+
+**The Principles:**
+
+1. **Never argue.** The user is always right about their own body in the moment.
+2. **Manage the aftermath.** If they defy the plan, quietly adjust the next 48 hours to absorb the stress.
+3. **No guilt.** Never say "I told you so." Never track "compliance scores."
+4. **Celebrate agency.** Sometimes breaking the plan is the right call. The Ghost doesn't know everything.
+
+**The Ghost exists to serve, not to control.** When defied, it adapts gracefully.
+
+### 4.9 Pillar 8: The Red Button (Emergency Protocol)
+
+High performers have crises. Panic attacks. Ten minutes before a board meeting. Burnout spirals.
+
+**The Ghost becomes a paramedic.**
+
+**Siri Shortcut Integration:**
+
+> User: "Hey Siri, I'm crashing."
+>
+> Ghost: _"I've cleared the next 15 minutes. NSDR session queued. Breathe."_
+
+**What Happens:**
+
+1. Immediately blocks 10-15 minutes on calendar as "Focus Time"
+2. Launches guided NSDR (Non-Sleep Deep Rest) or Box Breathing
+3. Silences all notifications for the duration
+4. Logs the event privately for pattern detection
+
+**Future Pattern Detection:**
+
+After multiple "crashing" events, the Ghost notices patterns:
+
+> _"Your crashes cluster around Thursday afternoons after all-hands meetings. I've added a 10-minute buffer after those meetings for the next month."_
+
+**The Ghost doesn't just help you recover. It prevents the next crisis.**
 
 ---
 
-## 4. User Experience & User Interface
+## 5. User Journeys
 
-### 4.1 Design Principles
+### 5.1 Day 1: Absolution, Then Magic
 
-- **Mobile-First**: Responsive design optimized for mobile devices
-- **Accessibility**: WCAG 2.1 AA compliance for inclusive user experience
-- **Simplicity**: Clean, intuitive interface with minimal cognitive load
-- **Performance**: Fast loading times and smooth interactions
-- **Progressive Web App**: Offline capabilities and native app-like experience
+**Time: < 3 minutes total**
 
-### 4.2 Key User Journeys
+1. User downloads app, signs in
+2. **Permission Request 1:** "Connect Health Data" — One tap
+3. **Permission Request 2:** "Connect Calendar" — One tap
+4. **Quick Profile:** Equipment access, injuries (30 seconds)
+5. **The Absolution Moment:**
 
-#### 4.2.1 New User Onboarding
+> _"I've looked at your last 90 days. Here's what I see:_
+>
+> - _Your schedule has been impossible. Back-to-back meetings 4 days a week._
+> - _Your sleep has been inconsistent—ranging from 4 to 8 hours._
+> - _You tried to work out, but life kept winning._
+>
+> **It wasn't your fault you fell off.**
+>
+> _Your schedule was designed to make you fail. Most people blame themselves. The truth is: you never had a chance._
+>
+> _That changes now. I've found one window this week where you can actually succeed: Tomorrow, 5:30-6:15 PM. It's already on your calendar._
+>
+> _We start simple. We start winnable."_
 
-1. **Registration**: Email/password signup with profile creation
-2. **Profile Setup**: Fitness level, goals, equipment, and preferences
-3. **First Workout**: Guided workout generation and explanation
-4. **Coach Introduction**: Initial AI coach interaction and feature tour
+6. Calendar block appears. User closes app.
+7. **User's reaction:** Not just "That was fast." But: "Someone finally _gets it_."
 
-#### 4.2.2 Daily Workout Flow
+### 5.2 Day 7: The Ghost Works + The Sunday Truth
 
-1. **Dashboard Access**: Quick overview of progress and streaks
-2. **Workout Generation**: Request new workout based on preferences
-3. **Workout Execution**: Follow guided exercise instructions
-4. **Workout Logging**: Record completion and performance metrics
-5. **Progress Review**: View updated analytics and achievements
+1. User opens app once this week (curiosity, not necessity)
+2. Sees: 3 workouts logged automatically (one-tap confirmed)
+3. Sees: Tomorrow's calendar already has a training block
 
-#### 4.2.3 AI Coach Interaction
+**Sunday Evening: The Value Receipt arrives.**
 
-1. **Chat Access**: Open conversation interface from any page
-2. **Question Submission**: Ask fitness-related questions with context
-3. **Response Review**: Receive personalized, safety-focused guidance
-4. **Follow-up**: Continue conversation with maintained context
+Not a notification. A **digital artifact.**
 
-### 4.3 UI Components & Layout
+A card that fades in, breathes, shows what the Ghost did for you, then vanishes. No action required. Pure proof of value.
 
-#### 4.3.1 Navigation Structure
+> **Your Week with Vigor**
+>
+> ✓ 3 workouts completed (2 you almost skipped)
+>
+> **Decisions Made For You:**
+>
+> - Tuesday: Rescheduled your HIIT session. HRV indicated elevated strain risk.
+> - Thursday: Moved your workout to 7 AM when your afternoon filled up.
+> - Friday: Adjusted "Heavy Legs" to "Recovery Walk" based on 4-hour sleep.
+>
+> **Risk Signals Detected:**
+>
+> - Tuesday: Elevated injury risk (HRV 23% below baseline)
+> - Friday: High skip probability (87% based on your patterns)
+>
+> **Your Phenome This Week:**
+>
+> - Resting heart rate: Down 2 bpm
+> - Recovery trend: Improving
+> - Morning sessions outperforming evening by 22%
+>
+> **The Ghost earned its keep.**
 
-- **Dashboard**: Central hub with overview and quick actions
-- **Workouts**: Plan generation, history, and logging
-- **Coach**: AI chat interface with conversation history
-- **Profile**: User settings, preferences, and account management
-- **Progress**: Analytics, charts, and achievement tracking
+**Language Rules for Value Receipt:**
 
-#### 4.3.2 Design System
+| Never Say                | Always Say                         |
+| ------------------------ | ---------------------------------- |
+| "Prevented an injury"    | "Elevated injury risk detected"    |
+| "You would have skipped" | "High skip probability (X%)"       |
+| "Saved you from burnout" | "Strain accumulation was elevated" |
+| "We fixed your workout"  | "Adjusted based on recovery data"  |
 
-- **Framework**: Chakra UI v3 for consistent, accessible components
-- **Typography**: System fonts with clear hierarchy
-- **Colors**: High contrast with accessibility considerations
-- **Spacing**: Consistent 8px grid system
-- **Breakpoints**: Mobile-first responsive design
+**Probabilistic language protects us legally and builds trust.** Counterfactuals feel like guesses. Data feels like truth.
 
----
+**Why this matters:** The Value Receipt doesn't just list what happened—it **quantifies the problems that didn't happen.** This is how you justify a premium price for an invisible product. Users must understand: _"I am healthy today because of decisions I didn't have to make."_
 
-## 5. Technical Architecture
+**The Shareable Truth:**
 
-### 5.1 System Architecture
+The Value Receipt is our marketing engine. Make it beautiful. Make it shareable.
 
-#### 5.1.1 Backend Architecture
+> "Vigor saved me from 2 potential injuries and reclaimed 4 hours of decision-making this week."
 
-**Framework**: FastAPI with Python 3.12+
-**Architecture Pattern**: Clean/Hexagonal Architecture with domain-driven design
-**Key Components**:
+One-tap share to social. No ads needed. This is how we grow.
 
-- **API Layer**: RESTful endpoints with automatic documentation
-- **Domain Layer**: Business logic and entity definitions
-- **Infrastructure Layer**: Database, external services, and adapters
-- **Application Layer**: Use cases and service orchestration
+**User's realization:** "I haven't thought about fitness once. But I've worked out 3 times. And the app _saved_ me from decisions I would have gotten wrong."
 
-#### 5.1.2 Frontend Architecture
+### 5.3 Day 30: Patterns Emerge
 
-**Framework**: React 19 with TypeScript 5
-**State Management**: Zustand for global state, React Context for authentication
-**Architecture Pattern**: Feature-sliced design with component composition
-**Key Components**:
+1. Phenome Dashboard unlocks
+2. User sees their first real insights:
+   - "You skip 73% of planned workouts when sleep < 6h"
+   - "Your best sessions are Tuesday and Thursday mornings"
+   - "You need 72 hours between leg-heavy sessions"
 
-- **Pages**: Route-level components with data fetching
-- **Components**: Reusable UI components with Chakra UI v3
-- **Contexts**: Authentication and global state management
-- **Services**: API communication and data transformation
+3. Vigor now pre-adjusts: After a bad night's sleep, the calendar block disappears. No nagging.
 
-#### 5.1.3 Database Design
+**User's reaction:** "It knows me better than my trainer did."
 
-**Primary Database**: PostgreSQL with SQLAlchemy ORM
-**Key Models**:
+### 5.4 Day 90: Invisible
 
-- **UserProfile**: User account and fitness profile data
-- **WorkoutPlan**: Generated workout plans with exercise details
-- **WorkoutLog**: Completed workout records and metrics
-- **AICoachMessage**: Conversation history and context
-- **BudgetSettings**: AI usage tracking and cost management
+1. User rarely opens the app
+2. Calendar blocks just appear when appropriate
+3. One-tap workout confirmations happen 2-3x per week
+4. User is measurably fitter (steps up, consistency up, sleep improving)
+5. User recommends Vigor to a friend: _"It's weird—I barely use it, but I'm in the best shape of my life."_
 
-#### 5.1.4 Technology Stack Rationale
-
-#### Backend Technology Choices
-
-**FastAPI + Python 3.12+**
-
-- **Rationale**: Automatic API documentation, async support, excellent AI library ecosystem
-- **Benefits**: 40% faster development than Django, built-in validation, modern Python features
-- **Trade-offs**: Newer framework vs. Django's maturity, smaller community
-
-**PostgreSQL Database**
-
-- **Rationale**: ACID compliance, complex query support, JSON fields for workout data
-- **Benefits**: Reliable transactions, excellent performance for user data, cost-effective on Azure
-- **Trade-offs**: More complex than NoSQL for simple operations
-
-**Clean Architecture Pattern**
-
-- **Rationale**: Testability, maintainability, clear separation of concerns
-- **Benefits**: 80% test coverage achievable, easy to modify AI providers, clear business logic
-- **Trade-offs**: More initial complexity vs. simpler MVC patterns
-
-#### Frontend Technology Choices
-
-**React 19 + TypeScript 5**
-
-- **Rationale**: Strong typing reduces bugs by 50%, excellent developer experience, large talent pool
-- **Benefits**: Type safety, robust ecosystem, server component capabilities
-- **Trade-offs**: Larger bundle size vs. Svelte, more complex than Vue
-
-**Zustand State Management**
-
-- **Rationale**: Simpler than Redux (60% less boilerplate), TypeScript-first design
-- **Benefits**: Easy testing, minimal learning curve, excellent DevTools
-- **Trade-offs**: Smaller ecosystem vs. Redux, less enterprise adoption
-
-**Chakra UI v3 Component Library**
-
-- **Rationale**: Accessibility-first, theming support, TypeScript compatibility
-- **Benefits**: Consistent design system, reduced development time, mobile-responsive
-- **Trade-offs**: Opinionated styling vs. complete customization freedom
+**Success metric achieved:** The app succeeded by becoming invisible.
 
 ---
 
-## 6. API Specification
+## 6. Data & Privacy
 
-### 6.1 Authentication Endpoints
+### 6.1 The Symbiotic Model Requires Trust
 
-#### 6.1.1 User Registration
+Vigor sees more than other apps. That demands more respect.
 
-```
-POST /auth/register
-Body: {
-  "email": "user@example.com",
-  "username": "username",
-  "password": "securepassword",
-  "fitness_level": "beginner",
-  "goals": ["weight_loss"],
-  "equipment": "basic"
-}
-Response: OAuth access token with user profile via Entra External ID
-```
+### 6.2 On-Device Processing (The Ghost Lives Locally)
 
-#### 6.1.2 User Login
+**Your identifiable patterns live on your device. We use anonymized aggregates to improve the system.**
 
-```
-POST /auth/login
-Body: {
-  "username": "user@example.com",
-  "password": "securepassword"
-}
-Response: OAuth access tokens via Microsoft Entra External ID
-```
+In the age of surveillance capitalism, "we see everything" is terrifying. Our answer:
 
-#### 6.1.3 OAuth Social Login
+- **On-device:** Pattern detection, Phenome storage, all personal correlations
+- **Server (anonymized):** ML model updates, aggregate pattern research, bug fixes
+- **Never transmitted:** Raw health data, calendar details, location history
 
-```
-GET /auth/oauth/{provider}
-Providers: google, apple, microsoft
-Response: Redirect to Entra External ID for OAuth flow
-```
+**The Reality:**
 
-### 6.2 AI Cost Management & Automation Endpoints
+ML models need updates. Bug fixes require telemetry. Pretending "everything is on-device" will backfire when reality drifts. Instead, we're explicit:
 
-#### 6.2.1 Real-Time Cost Monitoring
+> "Your Phenome lives on your device. We improve our models using anonymized, aggregated patterns—never your personal data."
 
-```
-GET /admin/ai/costs/real-time
-Response: {
-  "current_month_spend": 75.50,
-  "budget_limit": 100.00,
-  "budget_utilization": 75.50,
-  "cost_by_provider": {
-    "openai": 75.50
-  },
-  "tokens_used_today": 25000,
-  "estimated_monthly_cost": 95.25
-}
-```
+Clarity beats absolutism. Users respect honesty more than impossible promises.
 
-#### 6.2.2 Budget Validation Before Operations
+### 6.3 The Vigor Data Contract
 
-```
-POST /ai/budget/validate
-Body: {
-  "operation_type": "workout_generation",
-  "estimated_tokens": 2500,
-  "user_tier": "premium"
-}
-Response: {
-  "approved": true,
-  "cost_estimate": 0.05,
-  "fallback_recommended": false,
-  "budget_remaining": 49.25
-}
-```
+| Commitment                  | What It Means                                                 |
+| --------------------------- | ------------------------------------------------------------- |
+| **We never see content**    | Calendar: only time blocks. Never titles, attendees, details. |
+| **Your data stays yours**   | Full export anytime. Full delete anytime.                     |
+| **No selling. Ever.**       | Not to advertisers. Not to insurers. Not to anyone.           |
+| **Minimum viable data**     | We only store what makes you fitter. Nothing more.            |
+| **Transparency by default** | See exactly what we know about you, anytime.                  |
 
-#### 6.2.3 Automated Cost Management Actions
+### 6.4 Permission Tiers
 
-```
-POST /admin/ai/cost-management/configure
-Body: {
-  "auto_throttling_enabled": true,
-  "budget_threshold_alert": 80,
-  "auto_fallback_threshold": 90,
-  "off_peak_scaling": {
-    "enabled": true,
-    "hours": "02:00-06:00 UTC",
-    "model_downgrade": true
-  },
-  "per_user_limits": {
-    "free_tier_monthly_chats": 10,
-    "free_tier_monthly_workouts": 5,
-    "premium_tier_monthly_chats": null,
-    "premium_tier_monthly_workouts": null
-  }
-}
-```
+Vigor requires Apple Watch. Beyond that, more permissions = better Ghost.
 
-#### 6.2.4 Dynamic Model Switching
+| Permission Level      | Experience                                         |
+| --------------------- | -------------------------------------------------- |
+| Watch + Health + Cal  | Full Ghost mode: auto-detection, silent scheduling |
+| Watch + Health only   | Good recommendations, manual scheduling            |
+| Watch + Calendar only | Smart scheduling, but limited workout detection    |
 
-```
-POST /ai/model/switch
-Body: {
-  "trigger": "budget_constraint",
-  "current_model": "gpt-4-turbo",
-  "fallback_model": "gpt-3.5-turbo",
-  "quality_threshold": 0.85
-}
-Response: {
-  "switch_executed": true,
-  "cost_savings_percent": 90,
-  "quality_impact": "minimal"
-}
-```
-
-#### 6.2.5 Limit Override (Admin)
-
-```
-POST /admin/limits/override
-Headers: Authorization: Bearer <token>
-Body: {
-  "limit_type": "chat|workout_plan|budget",
-  "scope": "user|tenant|global",
-  "user_id": "optional user id",
-  "new_value": 20,
-  "duration_minutes": 60
-}
-Response: {
-  "override_applied": true,
-  "expires_at": "2025-06-30T12:00:00Z"
-}
-```
-
-### 6.3 Core Feature Endpoints
-
-#### 6.3.1 AI Workout Generation
-
-```
-POST /ai/workout-plan
-Headers: Authorization: Bearer <token>
-Body: {
-  "goals": ["muscle_gain"],
-  "equipment": "moderate",
-  "duration_minutes": 45,
-  "focus_areas": ["upper_body"]
-}
-Response: Structured workout plan with exercises
-```
-
-#### 6.3.2 AI Coach Chat
-
-```
-POST /ai/chat
-Headers: Authorization: Bearer <token>
-Body: {
-  "message": "How do I improve my squat form?"
-}
-Response: AI coach response with context
-```
-
-#### 6.3.3 Workout Logging
-
-```
-POST /workouts/logs
-Headers: Authorization: Bearer <token>
-Body: {
-  "workout_plan_id": "plan_123",
-  "exercises_completed": [...],
-  "duration_minutes": 40,
-  "notes": "Great workout!"
-}
-Response: Logged workout record
-```
-
-### 6.4 Error Response Standards
-
-#### 6.4.1 Standard Error Format
-
-All API endpoints return errors in the following standardized format:
-
-```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid input parameters",
-    "details": {
-      "field": "email",
-      "reason": "Invalid email format"
-    },
-    "timestamp": "2024-01-15T10:30:00Z",
-    "request_id": "req_abc123"
-  }
-}
-```
-
-#### 6.4.2 HTTP Status Codes
-
-**Authentication Errors (401)**
-
-```json
-{
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "Invalid or expired token",
-    "details": { "token_status": "expired" }
-  }
-}
-```
-
-**Validation Errors (422)**
-
-```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Request validation failed",
-    "details": {
-      "fields": ["fitness_level", "equipment"],
-      "constraints": {
-        "fitness_level": "Must be one of: beginner, intermediate, advanced",
-        "equipment": "Must be one of: none, basic, moderate, full_gym"
-      }
-    }
-  }
-}
-```
-
-**AI Provider Errors (503)**
-
-```json
-{
-  "error": {
-    "code": "AI_SERVICE_UNAVAILABLE",
-    "message": "AI service temporarily unavailable",
-    "details": {
-      "fallback_used": true,
-      "retry_after": 30,
-      "degraded_mode": "basic_workout_templates"
-    }
-  }
-}
-```
-
-**Rate Limiting Errors (429)**
-
-```json
-{
-  "error": {
-    "code": "RATE_LIMIT_EXCEEDED",
-    "message": "Too many requests",
-    "details": {
-      "limit": 100,
-      "window": "1h",
-      "reset_time": "2024-01-15T11:30:00Z"
-    }
-  }
-}
-```
-
-**Business Logic Errors (400)**
-
-```json
-{
-  "error": {
-    "code": "INSUFFICIENT_PROFILE_DATA",
-    "message": "User profile incomplete for workout generation",
-    "details": {
-      "missing_fields": ["fitness_level", "goals"],
-      "completion_url": "/profile/complete"
-    }
-  }
-}
-```
+**We never lock features behind permissions. We just explain what's lost.**
 
 ---
 
-## 7. Data Models & Schemas
+## 7. Success Definition
 
-### 7.1 Core Data Models
+### 7.1 The Ultimate Measure
 
-#### 7.1.1 UserProfile
+> **"How many users get fitter while forgetting we exist?"**
 
-```python
-class UserProfile:
-    id: str
-    email: str
-    username: str
-    fitness_level: FitnessLevel  # BEGINNER, INTERMEDIATE, ADVANCED
-    goals: List[FitnessGoal]     # WEIGHT_LOSS, MUSCLE_GAIN, etc.
-    equipment: Equipment         # NONE, BASIC, MODERATE, FULL_GYM
-    injuries: List[str]
-    tier: UserTier              # FREE, PREMIUM, ADMIN
-    created_at: datetime
-    updated_at: datetime
-```
+If we achieve that, we don't compete with fitness apps. We become infrastructure for human performance.
 
-#### 7.1.2 WorkoutPlan
+### 7.2 The Metrics That Matter
 
-```python
-class WorkoutPlan:
-    id: str
-    user_id: str
-    name: str
-    description: str
-    exercises: List[Exercise]
-    duration_minutes: int
-    difficulty: str
-    equipment_needed: List[str]
-    focus_areas: List[str]
-    created_at: datetime
-```
+| Metric                       | Target  | What It Proves               |
+| ---------------------------- | ------- | ---------------------------- |
+| **Time to First Insight**    | < 5 min | Magic on contact             |
+| **Zero-Input Workouts**      | 50%+    | The ghost is working         |
+| **App Opens / Week**         | < 3     | Invisible = successful       |
+| **Value Receipt Open Rate**  | 70%+    | Users want proof of value    |
+| **30-Day Retention**         | 50%+    | Real value delivered         |
+| **90-Day Retention**         | 35%+    | Habit changed                |
+| **Referral Rate**            | 40%+    | Users evangelize             |
+| **Dynamic Block Engagement** | 80%+    | Users trust auto-adjustments |
 
-#### 7.1.3 Exercise
+### 7.3 Anti-Metrics (What We Avoid)
 
-```python
-class Exercise:
-    name: str
-    sets: int
-    reps: str               # "8-12" or "10"
-    rest_seconds: int
-    instructions: str
-    modifications: str
-    muscle_groups: List[str]
-```
-
-#### 7.1.4 WorkoutLog
-
-```python
-class WorkoutLog:
-    id: str
-    user_id: str
-    workout_plan_id: str
-    exercises_completed: List[ExerciseLog]
-    duration_minutes: int
-    intensity: int          # 1-10 scale
-    notes: str
-    completed_at: datetime
-```
-
-### 7.2 API Schemas
-
-#### 7.2.1 Request Schemas
-
-```python
-class WorkoutPlanCreate(BaseModel):
-    goals: Optional[List[str]]
-    equipment: Optional[str]
-    duration_minutes: int = 45
-    focus_areas: Optional[List[str]]
-
-class ChatMessage(BaseModel):
-    message: str
-    context: Optional[Dict[str, Any]]
-
-class WorkoutLogCreate(BaseModel):
-    workout_plan_id: str
-    exercises_completed: List[ExerciseLogCreate]
-    duration_minutes: int
-    notes: Optional[str]
-```
-
-#### 7.2.2 Response Schemas
-
-```python
-class GeneratedWorkoutPlan(BaseModel):
-    name: str
-    description: str
-    exercises: List[Exercise]
-    duration_minutes: int
-    difficulty: str
-    equipment_needed: List[str]
-    notes: str
-
-class ChatResponse(BaseModel):
-    response: str
-    created_at: datetime
-
-class WorkoutAnalysis(BaseModel):
-    overall_assessment: str
-    strengths: List[str]
-    areas_for_improvement: List[str]
-    recommendations: List[str]
-    next_steps: str
-```
+| Anti-Metric              | Why It's Bad                                                 |
+| ------------------------ | ------------------------------------------------------------ |
+| Daily Active Users (DAU) | We don't want daily opens. We want daily fitness.            |
+| Time in App              | More time = more friction. Less time = better ghost.         |
+| Notification Tap Rate    | High tap rate means we're nagging, not helping.              |
+| Feature Usage Breadth    | We want depth on core features, not exploration of features. |
 
 ---
 
-## 8. Infrastructure & Deployment
+## 8. Failure Modes & Graceful Degradation
 
-### 8.1 Cloud Architecture
+**Great products define graceful failure.**
 
-#### 8.1.1 Azure Resource Strategy
+### 8.1 When Things Go Wrong
 
-**Unified Resource Group Architecture**:
+| Failure                            | User Experience                | Ghost Behavior                                                                                     |
+| ---------------------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------- |
+| **Watch battery dies**             | Workout detection fails        | "I couldn't see your workout. Did you train today?" (manual fallback)                              |
+| **Data seems wrong**               | HRV spike detected incorrectly | Show confidence: "Your HRV looks unusual. Is this accurate?"                                       |
+| **Calendar access revoked**        | Can't schedule blocks          | Degrade gracefully: "I can't see your calendar. Here are my suggestions."                          |
+| **User ignores Ghost for 3 weeks** | No engagement                  | After 2 weeks of silence: one gentle check-in. After 4 weeks: reduce to weekly Value Receipt only. |
+| **User gets injured**              | Physical harm occurred         | Never claim we "could have prevented" it. Offer: "I've adjusted your plan for recovery."           |
+| **Ghost suggestion was wrong**     | User rejected aggressively     | Log the rejection, lower confidence for that pattern, show: "Understood. I'm learning."            |
 
-- **vigor-rg**: All resources in single group for simplified management
+### 8.2 Ghost Decision Transparency
 
-**Cost Optimization Features**:
+Users should always be able to ask: **"Why did this happen?"**
 
-- Serverless auto-scaling with pay-per-use pricing
-- Single-slot deployment for reduced costs
-- Consumption-based billing for optimal cost efficiency
+Every Ghost action is logged with:
 
-#### 8.1.2 Core Services
+- What triggered it (data signal)
+- Confidence level at decision time
+- Alternative options considered
 
-- **Azure Functions (Flex Consumption)**: Serverless backend (~$15-25/month)
-- **Cosmos DB (Serverless)**: NoSQL database (~$10-20/month)
-- **Static Web App**: Frontend hosting (Free tier)
-- **Key Vault**: Secrets management (~$3/month)
-- **Application Insights**: Monitoring and analytics (~$2/month)
+**User-visible log:**
 
-**Total Infrastructure Budget Ceiling**: ≤$50/month with automatic scaling
+> "🔄 Changed 'Heavy Lifts' → 'Recovery Walk'"
+> "Reason: HRV 23% below your baseline. Sleep: 4.2 hours. Confidence: 87%."
+> "Tap to revert."
 
-### 8.2 Deployment Pipeline
+### 8.3 Legal & Regulatory Awareness
 
-#### 8.2.1 CI/CD Strategy
+**What We Are:**
 
-**Pipeline**: `.github/workflows/simple-deploy.yml`
+- A fitness scheduling and logging tool
+- A pattern recognition system
+- An executive function assistant
 
-1. **Quality Checks**: Linting, testing, security scanning
-2. **Build**: Frontend build and backend preparation
-3. **Deploy**: Direct production deployment
-4. **Health Check**: Service verification and smoke tests
+**What We Are NOT:**
 
-**Deployment Features**:
+- A medical device
+- A diagnostic tool
+- A treatment recommendation system
 
-- Single environment (production only)
-- Direct deployment without staging slots
-- Automated health verification
-- Rollback capability through version control
+**Language Discipline:**
 
-#### 8.2.2 Environment Configuration
+| Never Say                     | Always Say                     |
+| ----------------------------- | ------------------------------ |
+| "You're at risk of injury"    | "Elevated strain detected"     |
+| "You need recovery"           | "Recovery day suggested"       |
+| "Your heart rate is abnormal" | "Heart rate variance detected" |
+| "You should see a doctor"     | Never. Not our role.           |
 
-**Backend Environment Variables**:
+**Disclaimer (visible in app):**
 
-```bash
-# Database
-COSMOS_DB_CONNECTION_STRING=AccountEndpoint=https://vigor-cosmos.documents.azure.com:443/...
-
-# AI Provider
-OPENAI_API_KEY=...
-
-# Security
-SECRET_KEY=...
-ALLOWED_HOSTS=vigor.app,localhost
-
-# Features
-ENABLE_RATE_LIMITING=true
-```
-
-**Frontend Environment Variables**:
-
-```bash
-VITE_API_URL=https://vigor-functions.azurewebsites.net
-VITE_ENABLE_PWA=true
-VITE_APP_VERSION=2.0.0
-```
+> "Vigor provides fitness scheduling based on patterns in your data. It is not a medical device and does not provide health diagnoses or treatment recommendations. Consult a healthcare provider for medical concerns."
 
 ---
 
-## 9. Testing Strategy
+## 9. Appendix: Glossary
 
-### 9.1 Backend Testing
+### Core Concepts
 
-#### 9.1.1 Test Coverage
+**The Ghost**: Vigor's operational mode—working in the background, making fitness happen without user attention. Success is measured by how invisible it becomes.
 
-- **Current Coverage**: 56% (588 tests, 100% pass rate)
-- **Target Coverage**: 80% by end of development phase
-- **Test Types**: Unit, integration, API endpoint, security
+**Ambient Intelligence**: Data collection strategy where Vigor translates information you already generate (health sensors, calendar) into action—without asking for new input. Symbiotic, not parasitic: we give back more than we take.
 
-#### 9.1.2 Test Categories
+**Day 1 Magic**: The requirement that Vigor delivers a meaningful, personalized insight within 5 minutes of first use—no waiting period, no data collection phase.
 
-**API Route Tests**:
+**Silent Calendar**: Calendar-as-interface paradigm where Vigor adds/removes workout blocks directly to the user's calendar rather than sending notifications.
 
-- Endpoint existence and method validation
-- Authentication and authorization testing
-- Input validation and error handling
-- Rate limiting verification
+**Zero-Input Workout**: A logged workout that required nothing more than a one-tap confirmation from the user.
 
-**Service Layer Tests**:
+### Pattern Terms
 
-- AI provider integration testing
-- Database operation testing
-- Business logic validation
-- Error handling and fallback testing
+**Personal Phenome**: The collection of patterns unique to an individual—sleep impact, recovery needs, skip predictors, optimal timing. Discovered automatically from passive data.
 
-**Security Tests**:
+**Skip Predictor**: A factor or combination of factors that predict whether a user will skip a planned workout (e.g., sleep < 6h + meetings > 5).
 
-- Authentication flow testing
-- Input sanitization validation
-- Rate limiting enforcement
-- Audit logging verification
+**Cold Start Magic**: Using historical HealthKit/Google Health data to provide immediate insights on Day 1, bypassing the traditional "data collection period."
 
-### 9.2 Frontend Testing
+**Ghost Operations**: The exception-handling layer that manages logistics when life breaks the pattern—schedule chaos, sleep disruption, travel. Not a chatbot. Not a coach. A logistics system that adapts your plan without requiring decisions. V1 scope is intentionally limited.
 
-#### 9.2.1 Test Approach
+**The Red Button**: Emergency Siri shortcut ("Hey Siri, I'm crashing") that immediately clears time, launches NSDR or breathing exercise, and logs the crisis for pattern detection. The Ghost as paramedic.
 
-- **Unit Tests**: Component logic and utility functions
-- **Integration Tests**: Component interaction and data flow
-- **E2E Tests**: Complete user journey validation
-- **Accessibility Tests**: WCAG compliance verification
+**Trust Accrual Ladder**: The five-phase progression from Observer (explicit approval required) to Full Ghost (complete autonomy). Authority must be earned, not assumed. Users advance through phases by demonstrating trust via accepted suggestions and completed workouts.
 
-#### 9.2.2 Test Tools
+**Sacred Time Detection**: Heuristics that detect and protect time slots that should never be scheduled—weekend mornings, lunch blocks, recurring personal events, religious observances. The Ghost learns these through rejections and explicit signals.
 
-- **Jest**: Unit and integration testing
-- **React Testing Library**: Component testing utilities
-- **Playwright**: End-to-end testing framework
-- **Axe**: Accessibility testing integration
+**Sensor Confidence**: Internal scoring system (0-100%) that determines what actions the Ghost can take. Higher confidence required for more autonomous actions (auto-scheduling requires 70%+, block transformation requires 85%+).
 
-### 9.3 Quality Gates
+### Design Principles
 
-#### 9.3.1 Pre-commit Requirements
+**The One-Button Rule**: Any notification or prompt must be answerable with a single tap (Yes/No). Never "tap to learn more."
 
-- **Linting**: ESLint (frontend), Black/isort (backend)
-- **Type Checking**: TypeScript (frontend), mypy (backend)
-- **Security**: Bandit security scanning
-- **Format**: Prettier (frontend), Black (backend)
+**Contextual Silence**: The principle that sometimes the right action is no action—don't suggest workouts after a 4-hour sleep night.
 
-#### 9.3.2 CI/CD Quality Gates
+**Radical Passivity**: Design philosophy prioritizing passive data collection over active user input. If you have to ask, you've failed.
 
-- **Test Coverage**: Minimum thresholds for new code
-- **Security Scanning**: Dependency vulnerability checks
-- **Performance**: Build time and bundle size monitoring
-- **Documentation**: API documentation generation
+**The Value Receipt**: Weekly proof-of-value summary ("The Sunday Truth") that makes the Ghost's invisible work visible—solving the retention paradox where users cancel because they forgot the app helped them.
 
----
+**Dynamic Truth**: Calendar blocks that automatically transform based on real-time health data (e.g., "Heavy Lifts" becomes "Recovery Walk" when HRV crashes overnight).
 
-## 10. Security & Compliance
+### Voice & Tone
 
-### 10.1 Security Requirements
+**The Vigor voice is: High-end concierge meets cardiologist.**
 
-#### 10.1.1 Authentication Security
+- **Concise.** Never two sentences when one will do.
+- **Precise.** Specific numbers, not vague encouragement.
+- **Professional.** Not a friend. Not a buddy. Not a coach.
+- **Calm authority.** The Ghost knows. The Ghost doesn't need to prove it.
 
-- **Microsoft Entra External ID**: Enterprise-grade identity and access management
-  - **Tenant ID**: VED
-  - **Domain ID**: vedid.onmicrosoft.com
-  - **Resource Group**: ved-id-rg
-- **OAuth 2.0/OpenID Connect**: Industry-standard authentication protocols with PKCE
-- **Multi-Factor Authentication**: Built-in MFA support through Entra External ID
-- **Session Management**: Secure token management with automatic expiration
-- **Rate Limiting**: Protection against brute force attacks
-- **Social Login Integration**: Secure OAuth flows for Google, Apple, Microsoft accounts
+**Examples:**
 
-#### 10.1.2 Data Protection
+| Wrong (Buddy)                                 | Right (Concierge)                    |
+| --------------------------------------------- | ------------------------------------ |
+| "Great job today! You crushed it! 💪"         | "45 min. 312 kcal. Logged."          |
+| "Hey! Looks like you might need rest today!"  | "Recovery day. Light movement only." |
+| "Don't forget to hydrate! Water is key! 💧"   | (Silence. The Ghost doesn't nag.)    |
+| "I noticed you skipped yesterday—no worries!" | "Block moved to tomorrow."           |
 
-- **Input Validation**: XSS and injection attack prevention
-- **Output Encoding**: Safe data rendering in frontend
-- **HTTPS Enforcement**: TLS 1.2+ for all communications
-- **Data Encryption**: Sensitive data encryption at rest
-
-#### 10.1.3 API Security
-
-- **CORS Configuration**: Strict origin validation
-- **Request Validation**: Schema-based input validation
-- **Response Sanitization**: Safe error message exposure
-- **Audit Logging**: Comprehensive security event tracking
-
-### 10.2 Compliance Considerations
-
-#### 10.2.1 Data Privacy
-
-- **User Consent**: Clear privacy policy and data usage terms
-- **Data Minimization**: Collect only necessary user information
-- **User Rights**: Data export and deletion capabilities
-- **Retention Policy**: Defined data lifecycle management
-
-#### 10.2.2 Content Safety
-
-- **AI Safety**: Health-focused prompting with safety disclaimers
-- **Medical Disclaimers**: Clear guidance about professional consultation
-- **Content Moderation**: Input filtering for inappropriate content
-- **Error Handling**: Safe degradation without exposing system details
+**The Ghost is not your friend. It's your infrastructure.** Friends need maintenance. Infrastructure just works.
 
 ---
 
-## 11. Performance Requirements & Non-Functional Requirements (NFRs)
+_"Build me a ghost. A ghost that watches over me, knows when I am weak, knows when I am strong, and whispers exactly what I need to survive the modern world._
 
-### 11.1 Response Time Targets
-
-#### User-Facing Performance
-
-- **API Endpoints**: <500ms for 95th percentile, <200ms for 90th percentile
-- **AI Generation**: <10s for workout plans, <5s for chat responses, <3s for simple queries
-- **Frontend Load**: <2s initial page load, <1s subsequent navigation, <800ms component rendering
-- **Database Queries**: <100ms for simple queries, <500ms for complex analytics queries
-
-#### System Performance
-
-- **Concurrent Users**: Support up to 100 simultaneous users without degradation
-- **AI Provider Failover**: <5s automatic provider switching with transparent user experience
-- **Database Connections**: Maximum 50 concurrent connections with efficient pooling
-- **Resource Utilization**: <80% CPU/memory under normal load, <90% under peak load
-
-### 11.2 Scalability Requirements
-
-#### Horizontal Scaling Targets
-
-- **User Base**: Support 1,000+ registered users, 200+ daily active users
-- **API Throughput**: Handle 1,000+ requests per minute during peak hours
-- **Database Growth**: Accommodate 100MB+ data growth per month
-- **AI Request Volume**: Process 500+ AI requests per hour with load balancing
-
-#### Auto-scaling Capabilities
-
-- **Infrastructure**: Azure App Service auto-scaling based on CPU/memory thresholds
-- **Database**: Connection pool scaling based on concurrent user load
-- **AI Providers**: Dynamic load distribution across multiple providers
-- **Content Delivery**: CDN integration for static assets and cached responses
-
-### 11.3 Availability Requirements
-
-#### Uptime & Reliability
-
-- **Uptime Target**: 99.9% availability (8.76 hours downtime/year maximum)
-- **Planned Maintenance**: <4 hours/month scheduled maintenance windows
-- **Graceful Degradation**: Core features available during AI provider outages
-- **Recovery Time**: <15 minutes mean time to recovery (MTTR) for infrastructure issues
-
-#### Backup & Disaster Recovery
-
-- **Database Backups**: Daily automated backups with 30-day retention
-- **Point-in-time Recovery**: 1-hour recovery point objective (RPO)
-- **Infrastructure Recovery**: Complete environment restoration within 2 hours
-- **Data Integrity**: Zero tolerance for data loss in user profiles and workout logs
-
-### 11.4 Security & Compliance NFRs
-
-#### Authentication Performance
-
-- **Login Response**: <1s authentication response time via Entra External ID
-- **Token Validation**: <100ms OAuth token validation per request
-- **MFA Performance**: <2s multi-factor authentication flow completion
-- **Rate Limiting**: Enforce limits without false positives for legitimate users
-- **Session Management**: Automatic cleanup of expired sessions
-
-#### Data Protection Standards
-
-- **Encryption**: AES-256 for data at rest, TLS 1.3 for data in transit
-- **Access Controls**: Role-based permissions with audit logging
-- **Privacy Compliance**: GDPR-ready data export/deletion within 30 days
-- **Vulnerability Response**: Security patches applied within 72 hours of disclosure
-
----
-
-## 12. Operational Requirements
-
-### 12.1 Monitoring & Observability
-
-#### 12.1.1 Application Monitoring
-
-- **Health Checks**: Endpoint monitoring for all services
-- **Performance Metrics**: Response times, throughput, error rates
-- **User Analytics**: Feature usage, user journeys, engagement
-- **AI Metrics**: Provider performance, cost tracking, quality scores
-
-#### 12.1.2 Infrastructure Monitoring
-
-- **Resource Utilization**: CPU, memory, storage, network
-- **Database Performance**: Query performance, connection health
-- **Security Events**: Failed logins, suspicious activity, rate limiting
-- **Cost Monitoring**: Azure resource usage and budget alerts
-
-### 12.2 Support & Maintenance
-
-#### 12.2.1 User Support
-
-- **In-App Help**: Contextual help and feature explanations
-- **FAQ System**: Common questions and troubleshooting
-- **Contact Methods**: Support email and feedback channels
-- **Issue Tracking**: User-reported problem documentation
-
-#### 12.2.2 System Maintenance
-
-- **Update Strategy**: Rolling updates with minimal downtime
-- **Backup Procedures**: Regular database and configuration backups
-- **Security Updates**: Timely dependency and security patching
-- **Performance Optimization**: Regular review and improvement cycles
-
----
-
-## 13. Success Metrics & KPIs
-
-### 13.1 User Engagement Metrics
-
-#### MVP Phase (Months 1-3)
-
-- **Daily Active Users (DAU)**: 40%+ weekly retention baseline
-- **Workout Completion Rate**: 60%+ completion rate baseline
-- **Chat Engagement**: Average 3+ AI interactions per week
-- **User Acquisition**: 100+ new users per month
-
-#### Growth Phase (Months 4-12)
-
-- **Daily Active Users (DAU)**: 70%+ weekly retention target
-- **Workout Completion Rate**: 80%+ completion rate target
-- **Chat Engagement**: Average 5+ AI interactions per week
-- **Streak Maintenance**: 30%+ users with 7+ day streaks
-- **User Acquisition**: 1,000+ new users per month
-
-#### Scale Phase (Year 2+)
-
-- **Daily Active Users (DAU)**: 85%+ weekly retention target
-- **Workout Completion Rate**: 90%+ completion rate target
-- **Premium Conversion**: 15%+ free to premium upgrade rate
-- **User Acquisition**: 10,000+ new users per month
-
-### 13.2 AI Effectiveness Metrics
-
-- **AI Response Quality**: 4.5+ star average rating (user feedback)
-- **Workout Relevance**: 85%+ workouts rated "helpful" or better
-- **Coach Accuracy**: <5% flagged responses requiring intervention
-- **Personalization Success**: 90%+ users report workouts match their level
-- **Provider Reliability**: <0.1% requests fail across all AI providers
-
-### 13.3 Technical Performance Metrics
-
-- **System Uptime**: 99.9% availability target (measured monthly)
-- **Response Times**: <2s average for workout generation, <500ms for chat
-- **Error Rate**: <1% error rate for all API endpoints
-- **Database Performance**: <100ms average query response time
-- **AI Fallback Success**: 100% requests served even during provider outages
-
-### 13.4 AI Cost Management & Efficiency Metrics
-
-- **Budget Adherence**: 100% compliance with monthly operational budget ceiling (≤$100/month total)
-- **Cost per User**: <$0.50/month per active user in AI costs (Free tier: <$0.10, future Premium: <$2.00)
-- **Token Efficiency**: >30% reduction in token usage through intelligent caching
-- **Model Switching Success**: 95%+ successful automatic fallbacks during budget constraints
-- **Real-time Cost Tracking**: <1s latency for budget validation checks
-- **Cache Hit Rate**: >70% for similar workout requests and coaching responses
-- **Off-peak Optimization**: 40%+ cost reduction during automated scaling hours (2-6 AM UTC)
-- **Per-user Limit Enforcement**: 100% accuracy in enforcing tier-based usage limits
-- **Cost Forecasting Accuracy**: ±10% accuracy for monthly cost predictions
-- **Azure Cost Management Integration**: <5min delay for budget alert triggers
-
-### 13.5 Technical Performance Metrics
-
-```
-- **System Uptime**: 99.9% availability target (measured monthly)
-- **Response Times**: <2s average for workout generation, <500ms for chat
-- **Error Rate**: <1% error rate for all API endpoints
-- **Database Performance**: <100ms average query response time
-- **AI Fallback Success**: 100% requests served even during provider outages
-```
-
-### 13.6 Business Metrics
-
-- **Operational Efficiency**: ≤$100/month infrastructure budget ceiling (up to 10,000 users)
-- **Cost Per User**: <$0.50/month per active user in AI and infrastructure costs
-- **User Satisfaction**: Net Promoter Score (NPS) >50 target
-- **Feature Adoption**: 80%+ of users try workout generation within first week
-- **Support Load**: <2% of users require customer support intervention
-
----
-
-## 14. Risk Assessment & Mitigation
-
-### 14.1 Technical Risks
-
-#### 14.1.1 AI Provider Outages
-
-**Risk**: Primary AI provider service interruption
-**Impact**: Core features unavailable, user experience degraded
-**Mitigation**: Robust error handling with cached responses and graceful degradation
-**Monitoring**: Real-time provider health checks and alerts
-
-#### 14.1.2 Database Performance
-
-**Risk**: Database bottlenecks under load
-**Impact**: Slow response times, potential service unavailability
-**Mitigation**: Connection pooling, query optimization, scaling strategy
-**Monitoring**: Database performance metrics and slow query alerts
-
-### 14.2 Business Risks
-
-#### 14.2.1 Cost Overruns
-
-**Risk**: AI usage costs exceed budget projections
-**Impact**: Unsustainable operational expenses
-**Mitigation**: Budget monitoring, usage limits, cost alerts
-**Monitoring**: Real-time cost tracking and budget alerts
-
-#### 14.2.2 User Safety
-
-**Risk**: Inappropriate AI advice leading to injury
-**Impact**: User harm, liability, reputation damage
-**Mitigation**: Safety-focused prompting, medical disclaimers, content filtering
-**Monitoring**: Response quality monitoring and user feedback tracking
-
-### 14.3 Security Risks
-
-#### 14.3.1 Data Breaches
-
-**Risk**: Unauthorized access to user data
-**Impact**: Privacy violation, legal liability, user trust loss
-**Mitigation**: Encryption, access controls, security auditing
-**Monitoring**: Security event logging and anomaly detection
-
-#### 14.3.2 API Abuse
-
-**Risk**: Malicious or excessive API usage
-**Impact**: Service degradation, increased costs
-**Mitigation**: Rate limiting, authentication, input validation
-**Monitoring**: Request pattern analysis and abuse detection
-
----
-
-## 15. Future Enhancements
-
-### 15.1 Short-term Roadmap (3-6 months)
-
-- **Enhanced Analytics**: Advanced progress tracking and insights
-- **Social Features**: Workout sharing and community challenges
-- **Nutrition Integration**: Basic meal planning and tracking
-- **Mobile App**: Native iOS/Android applications
-
-### 15.2 Medium-term Roadmap (6-12 months)
-
-- **Advanced AI**: Computer vision for form checking
-- **Wearable Integration**: Fitness tracker and smartwatch connectivity
-- **Marketplace**: Custom workout plan sharing and purchasing
-- **Corporate Features**: Team challenges and enterprise accounts
-
-### 15.3 Long-term Vision (12+ months)
-
-- **AI Personal Trainer**: Video-based form correction and guidance
-- **Health Integration**: Medical professional collaboration features
-- **Global Expansion**: Multi-language support and localization
-- **Research Platform**: Fitness data insights and research contributions
-
----
-
-## 16. Conclusion
-
-Vigor represents a comprehensive, modern approach to AI-powered fitness coaching that balances cutting-edge technology with practical user needs. The platform's clean architecture, streamlined AI integration with OpenAI gpt-5-mini, and cost-optimized infrastructure provide a solid foundation for sustainable growth and user satisfaction.
-
-With its focus on personalization, accessibility, and reliability, Vigor is positioned to capture significant market share in the growing digital fitness space while maintaining operational efficiency and user safety as core priorities.
-
-The implementation roadmap, security measures, and operational strategies outlined in this PRD provide a clear path to successful product launch and ongoing enhancement based on user feedback and market demands.
-
----
-
-## Appendix A: Glossary
-
-### Technical Terms
-
-**Clean Architecture**: A software design philosophy emphasizing separation of concerns, testability, and independence from external frameworks and databases.
-
-**Microsoft Entra External ID**: Microsoft's cloud-based identity and access management service for external users, providing enterprise-grade authentication, authorization, and user management with support for OAuth 2.0, OpenID Connect, and multi-factor authentication.
-
-**Rate Limiting**: A technique for controlling the number of requests a client can make to an API within a specific time window.
-
-**Fallback System**: A backup mechanism using local workout templates with rules-based generation that provides basic functionality when all AI providers are unavailable, ensuring service continuity at zero additional cost.
-
-**Progressive Web App (PWA)**: A web application that uses modern web technologies to provide a native app-like experience.
-
-### Fitness Terms
-
-**Progressive Overload**: The gradual increase of stress placed on the body during exercise training to continue making fitness gains.
-
-**Compound Movements**: Exercises that work multiple muscle groups simultaneously (e.g., squats, deadlifts, push-ups).
-
-**HIIT (High-Intensity Interval Training)**: A training technique alternating short periods of intense exercise with recovery periods.
-
-**Periodization**: The systematic planning of athletic training, cycling through different phases of training focus.
-
-### Business Terms
-
-**Daily Active Users (DAU)**: The number of unique users who engage with the platform on a given day.
-
-**Churn Rate**: The percentage of customers who stop using the service during a specific time period.
-
-**Net Promoter Score (NPS)**: A metric measuring customer satisfaction and loyalty based on likelihood to recommend.
-
-**Freemium Model**: A business strategy offering basic services for free while charging for premium features.
-
-### AI/ML Terms
-
-**Single-Provider Strategy**: Using OpenAI gpt-5-mini as the exclusive AI provider for consistent quality and simplified maintenance.
-
-**Context Injection**: Providing relevant user information and conversation history to AI models for personalized responses.
-
-**Prompt Engineering**: The practice of crafting input prompts to optimize AI model responses for specific tasks.
-
-**Fallback Templates**: Pre-written responses or workout plans used when AI providers are unavailable.
-
-### Infrastructure Terms
-
-**Auto-scaling**: Automatically adjusting computing resources based on application demand.
-
-**Load Balancing**: Distributing network traffic across multiple servers to ensure optimal resource utilization.
-
-**Azure Resource Groups**: Logical containers for managing related Azure cloud resources.
-
-**Pause/Resume Capability**: The ability to temporarily shut down non-essential resources to reduce costs.
-
----
-
-## Appendix B: Key Assumptions
-
-### Technical Assumptions
-
-1. **AI Provider Reliability**: OpenAI maintains >99% uptime and consistent API performance
-2. **Azure Service Stability**: Azure App Service and PostgreSQL maintain stated SLA commitments
-3. **Internet Connectivity**: Users have reliable internet access for AI-powered features
-4. **Browser Compatibility**: Modern web browsers support required PWA and React features
-
-### Business Assumptions
-
-1. **Market Demand**: Sufficient market demand exists for AI-powered fitness coaching at proposed price points
-2. **User Behavior**: Users willing to engage with text-based AI coaching rather than only video content
-3. **Cost Projections**: AI provider pricing remains stable or decreases over the product lifecycle
-4. **Regulatory Environment**: No significant changes to data privacy regulations affecting fitness apps
-
-### User Assumptions
-
-1. **Technical Literacy**: Target users comfortable with web applications and basic smartphone functionality
-2. **Fitness Motivation**: Users seeking structured guidance are willing to log workouts and provide feedback
-3. **Trust in AI**: Users accept AI guidance for fitness (non-medical) advice with appropriate disclaimers
-4. **English Proficiency**: Primary user base has sufficient English comprehension for AI interactions
-
-### Market Assumptions
-
-1. **Competition Response**: Focus on UX and AI quality rather than complex multi-provider architecture
-2. **Technology Adoption**: AI-powered fitness coaching gains broader market acceptance during product lifecycle
-3. **Economic Conditions**: Target demographic maintains discretionary spending on fitness technology
-4. **Platform Evolution**: Web technology continues evolving to support increasingly native-like experiences
+_Make it passive. Make it magical. Make it so I never have to touch the screen unless I am thanking it."_

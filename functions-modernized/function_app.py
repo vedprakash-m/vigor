@@ -600,6 +600,399 @@ async def budget_monitoring_timer(timer: func.TimerRequest) -> None:
 
 
 # =============================================================================
+# GHOST API - iOS App Native Endpoints (P0 for Platform Survival)
+# =============================================================================
+
+
+@app.route(route="ghost/silent-push", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+async def ghost_silent_push(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Silent Push Trigger - P0 for Ghost survival
+    Called by Timer Function at 5:55 AM user-local-time to wake iOS app
+    Per PRD §3.4: "If not implemented as P0, Ghost dies after 3 days of non-use"
+    """
+    try:
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return func.HttpResponse(
+                json.dumps({"error": "Unauthorized"}),
+                status_code=401,
+                mimetype="application/json",
+            )
+
+        # Get user's pending actions from Phenome
+        user_id = current_user["email"]
+        pending_actions = await cosmos_db.get_pending_ghost_actions(user_id)
+
+        # Build silent push payload
+        push_payload = {
+            "user_id": user_id,
+            "trigger_type": "morning_cycle",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "actions": pending_actions or [],
+            "priority": "high"
+        }
+
+        # Note: Actual APNs push is handled by separate APNs integration
+        # This endpoint prepares the payload and queues the push
+        await cosmos_db.queue_silent_push(user_id, push_payload)
+
+        return func.HttpResponse(
+            json.dumps({
+                "status": "queued",
+                "actions_count": len(pending_actions or []),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }),
+            status_code=200,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Ghost silent push error: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Internal server error"}),
+            status_code=500,
+            mimetype="application/json",
+        )
+
+
+@app.route(route="ghost/trust", methods=["GET", "POST"], auth_level=func.AuthLevel.ANONYMOUS)
+async def ghost_trust(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Trust State API - Sync trust phase between device and server
+    Per PRD §2.2.2: 5-phase state machine with Safety Breaker
+    """
+    try:
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return func.HttpResponse(
+                json.dumps({"error": "Unauthorized"}),
+                status_code=401,
+                mimetype="application/json",
+            )
+
+        user_id = current_user["email"]
+
+        if req.method == "GET":
+            # Get current trust state
+            trust_state = await cosmos_db.get_trust_state(user_id)
+            if not trust_state:
+                trust_state = {
+                    "user_id": user_id,
+                    "phase": "observer",
+                    "confidence": 0.0,
+                    "consecutive_deletes": 0,
+                    "last_updated": datetime.now(timezone.utc).isoformat()
+                }
+            return func.HttpResponse(
+                json.dumps(trust_state),
+                status_code=200,
+                mimetype="application/json",
+            )
+
+        elif req.method == "POST":
+            # Record trust event
+            event_data = req.get_json()
+
+            # Validate event structure
+            required_fields = ["event_type", "timestamp"]
+            if not all(field in event_data for field in required_fields):
+                return func.HttpResponse(
+                    json.dumps({"error": "Missing required fields: event_type, timestamp"}),
+                    status_code=400,
+                    mimetype="application/json",
+                )
+
+            # Store event and update trust state
+            updated_state = await cosmos_db.record_trust_event(user_id, event_data)
+
+            return func.HttpResponse(
+                json.dumps(updated_state),
+                status_code=200,
+                mimetype="application/json",
+            )
+
+    except Exception as e:
+        logger.error(f"Ghost trust API error: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Internal server error"}),
+            status_code=500,
+            mimetype="application/json",
+        )
+
+
+@app.route(route="ghost/schedule", methods=["GET", "POST", "PUT"], auth_level=func.AuthLevel.ANONYMOUS)
+async def ghost_schedule(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Schedule Sync API - Bidirectional sync of training blocks
+    Per PRD §3.1: Calendar-centric UX with training blocks as events
+    """
+    try:
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return func.HttpResponse(
+                json.dumps({"error": "Unauthorized"}),
+                status_code=401,
+                mimetype="application/json",
+            )
+
+        user_id = current_user["email"]
+
+        if req.method == "GET":
+            # Get scheduled blocks
+            week_offset = int(req.params.get("week_offset", 0))
+            blocks = await cosmos_db.get_training_blocks(user_id, week_offset)
+            return func.HttpResponse(
+                json.dumps({"blocks": blocks, "week_offset": week_offset}),
+                status_code=200,
+                mimetype="application/json",
+            )
+
+        elif req.method == "POST":
+            # Create new training block
+            block_data = req.get_json()
+
+            # Validate block structure
+            required_fields = ["start_time", "duration_minutes", "workout_type"]
+            if not all(field in block_data for field in required_fields):
+                return func.HttpResponse(
+                    json.dumps({"error": f"Missing required fields: {required_fields}"}),
+                    status_code=400,
+                    mimetype="application/json",
+                )
+
+            created_block = await cosmos_db.create_training_block(user_id, block_data)
+            return func.HttpResponse(
+                json.dumps(created_block),
+                status_code=201,
+                mimetype="application/json",
+            )
+
+        elif req.method == "PUT":
+            # Update training block (reschedule/modify)
+            block_data = req.get_json()
+
+            if "block_id" not in block_data:
+                return func.HttpResponse(
+                    json.dumps({"error": "block_id required for update"}),
+                    status_code=400,
+                    mimetype="application/json",
+                )
+
+            updated_block = await cosmos_db.update_training_block(
+                user_id,
+                block_data["block_id"],
+                block_data
+            )
+            return func.HttpResponse(
+                json.dumps(updated_block),
+                status_code=200,
+                mimetype="application/json",
+            )
+
+    except Exception as e:
+        logger.error(f"Ghost schedule API error: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Internal server error"}),
+            status_code=500,
+            mimetype="application/json",
+        )
+
+
+@app.route(route="ghost/phenome/sync", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+async def ghost_phenome_sync(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Phenome Sync API - Bi-directional sync of user's Phenome data
+    Per Tech Spec §2.3: 3-store architecture (RawSignal, DerivedState, BehavioralMemory)
+    """
+    try:
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return func.HttpResponse(
+                json.dumps({"error": "Unauthorized"}),
+                status_code=401,
+                mimetype="application/json",
+            )
+
+        user_id = current_user["email"]
+        sync_data = req.get_json()
+
+        # Validate sync payload
+        if not sync_data or "store_type" not in sync_data:
+            return func.HttpResponse(
+                json.dumps({"error": "store_type required (raw_signal|derived_state|behavioral_memory)"}),
+                status_code=400,
+                mimetype="application/json",
+            )
+
+        store_type = sync_data["store_type"]
+        client_version = sync_data.get("version", 0)
+        client_data = sync_data.get("data", {})
+
+        # Get server version
+        server_data = await cosmos_db.get_phenome_store(user_id, store_type)
+        server_version = server_data.get("version", 0) if server_data else 0
+
+        if client_version > server_version:
+            # Client has newer data - update server
+            await cosmos_db.update_phenome_store(user_id, store_type, client_data, client_version)
+            return func.HttpResponse(
+                json.dumps({
+                    "status": "updated",
+                    "version": client_version,
+                    "conflicts": []
+                }),
+                status_code=200,
+                mimetype="application/json",
+            )
+        elif server_version > client_version:
+            # Server has newer data - send to client
+            return func.HttpResponse(
+                json.dumps({
+                    "status": "outdated",
+                    "version": server_version,
+                    "data": server_data.get("data", {}),
+                    "conflicts": []
+                }),
+                status_code=200,
+                mimetype="application/json",
+            )
+        else:
+            # Versions match - no sync needed
+            return func.HttpResponse(
+                json.dumps({
+                    "status": "synced",
+                    "version": server_version,
+                    "conflicts": []
+                }),
+                status_code=200,
+                mimetype="application/json",
+            )
+
+    except Exception as e:
+        logger.error(f"Ghost phenome sync error: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Internal server error"}),
+            status_code=500,
+            mimetype="application/json",
+        )
+
+
+@app.route(route="ghost/decision-receipt", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+async def ghost_decision_receipt(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Decision Receipt API - Store forensic log of Ghost decisions
+    Per PRD §4.2: "Why did my score change?" explainability
+    """
+    try:
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return func.HttpResponse(
+                json.dumps({"error": "Unauthorized"}),
+                status_code=401,
+                mimetype="application/json",
+            )
+
+        user_id = current_user["email"]
+        receipt_data = req.get_json()
+
+        # Validate receipt structure
+        required_fields = ["decision_type", "inputs", "output", "explanation", "timestamp"]
+        if not all(field in receipt_data for field in required_fields):
+            return func.HttpResponse(
+                json.dumps({"error": f"Missing required fields: {required_fields}"}),
+                status_code=400,
+                mimetype="application/json",
+            )
+
+        # Store with 90-day TTL
+        stored_receipt = await cosmos_db.store_decision_receipt(user_id, receipt_data)
+
+        return func.HttpResponse(
+            json.dumps(stored_receipt),
+            status_code=201,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Ghost decision receipt error: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Internal server error"}),
+            status_code=500,
+            mimetype="application/json",
+        )
+
+
+# =============================================================================
+# GHOST TIMER FUNCTIONS (Silent Push Triggers)
+# =============================================================================
+
+
+@app.timer_trigger(schedule="0 55 5 * * *", arg_name="timer", run_on_startup=False)
+async def ghost_morning_wake_trigger(timer: func.TimerRequest) -> None:
+    """
+    Timer trigger for morning Ghost wake cycle (5:55 AM UTC)
+    Per PRD §3.4: Silent push to wake iOS app for morning cycle
+
+    Note: This runs at 5:55 AM UTC. For user-local-time triggers,
+    each user's timezone must be tracked and individual pushes scheduled.
+    """
+    try:
+        logger.info("Ghost morning wake trigger fired")
+
+        # Get all active users with their timezones
+        active_users = await cosmos_db.get_active_users_for_morning_push()
+
+        for user in active_users:
+            try:
+                # Queue silent push for each user
+                push_payload = {
+                    "user_id": user["id"],
+                    "trigger_type": "morning_cycle",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "actions": ["run_morning_cycle", "check_schedule", "update_recovery"],
+                    "priority": "high"
+                }
+                await cosmos_db.queue_silent_push(user["id"], push_payload)
+                logger.info(f"Queued morning push for user {user['id']}")
+            except Exception as user_error:
+                logger.error(f"Error queueing push for user {user['id']}: {user_error}")
+
+    except Exception as e:
+        logger.error(f"Ghost morning wake trigger error: {str(e)}")
+
+
+@app.timer_trigger(schedule="0 0 21 * * 0", arg_name="timer", run_on_startup=False)
+async def ghost_sunday_evening_trigger(timer: func.TimerRequest) -> None:
+    """
+    Timer trigger for Sunday evening week planning (9 PM UTC Sunday)
+    Per PRD §3.2: Weekly structure, not daily nagging
+    """
+    try:
+        logger.info("Ghost Sunday evening trigger fired")
+
+        # Get users due for weekly planning
+        users_for_planning = await cosmos_db.get_users_for_weekly_planning()
+
+        for user in users_for_planning:
+            try:
+                push_payload = {
+                    "user_id": user["id"],
+                    "trigger_type": "weekly_planning",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "actions": ["propose_week_schedule", "show_value_receipt"],
+                    "priority": "normal"
+                }
+                await cosmos_db.queue_silent_push(user["id"], push_payload)
+                logger.info(f"Queued weekly planning push for user {user['id']}")
+            except Exception as user_error:
+                logger.error(f"Error queueing weekly push for user {user['id']}: {user_error}")
+
+    except Exception as e:
+        logger.error(f"Ghost Sunday evening trigger error: {str(e)}")
+
+
+# =============================================================================
 # HEALTH CHECK
 # =============================================================================
 
@@ -621,7 +1014,7 @@ async def health_check(req: func.HttpRequest) -> func.HttpResponse:
                 "cosmos_db": "healthy" if cosmos_health else "unhealthy",
                 "azure_openai": "healthy" if ai_health else "unhealthy",
             },
-            "version": "2.0.0",
+            "version": "3.0.0-ghost",
         }
 
         status_code = 200 if cosmos_health and ai_health else 503
@@ -658,7 +1051,7 @@ async def health_simple(req: func.HttpRequest) -> func.HttpResponse:
                     "status": "healthy",
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                     "message": "Function App is running",
-                    "version": "1.0.0-modernized-auth",
+                    "version": "3.0.0-ghost",
                 }
             ),
             status_code=200,
