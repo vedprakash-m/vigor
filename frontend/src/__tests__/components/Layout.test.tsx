@@ -2,13 +2,6 @@ import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 
-// Mock pwaService to avoid import.meta issues
-jest.mock('../../services/pwaService', () => ({
-  pwaService: { registerServiceWorker: jest.fn() },
-  isPushNotificationSupported: jest.fn().mockReturnValue(false),
-  setupPushNotifications: jest.fn(),
-}));
-
 // Mock the auth config to avoid import.meta issues in Jest
 jest.mock('../../config/authConfig', () => ({
   msalConfig: {
@@ -67,8 +60,8 @@ describe('Layout', () => {
       </MemoryRouter>
     );
 
-    // Check that the app name is displayed
-    expect(screen.getAllByText('Vigor').length).toBeGreaterThan(0);
+    // Check that the admin dashboard name is displayed
+    expect(screen.getAllByText(/Vigor Admin/i).length).toBeGreaterThan(0);
   });
 
   it('displays welcome message when user is logged in', () => {

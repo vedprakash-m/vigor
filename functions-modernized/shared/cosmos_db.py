@@ -785,19 +785,8 @@ class CosmosDBClient:
                 current_state["confidence"]
             )
 
-            # Store event
-            event_record = {
-                "id": str(uuid4()),
-                "userId": user_id,
-                "event_type": event_type,
-                "delta": delta,
-                "timestamp": event_data.get("timestamp", datetime.now(timezone.utc).isoformat()),
-                "metadata": event_data.get("metadata", {})
-            }
-
-            # Update or create trust state
-            # For now, store in users container with trust_ prefix
-            container = self.containers.get("trust_states") or self.containers["users"]
+            # TODO: Store event record when trust_events container is available
+            # Event would include: id, userId, event_type, delta, timestamp, metadata
 
             return current_state
 
