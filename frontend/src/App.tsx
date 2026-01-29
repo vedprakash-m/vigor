@@ -1,4 +1,3 @@
-import { PublicClientApplication } from '@azure/msal-browser'
 import { MsalProvider } from '@azure/msal-react'
 import { ChakraProvider, defaultSystem } from '@chakra-ui/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -14,8 +13,8 @@ import LLMHealthMonitoring from './components/LLMHealthMonitoring'
 import { OAuthCallback } from './components/OAuthCallback'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import UserManagement from './components/UserManagement'
-import { msalConfig } from './config/authConfig'
 import { AuthProvider } from './contexts/AuthContext'
+import { msalInstance } from './main'
 import AdminPage from './pages/AdminPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import LLMOrchestrationPage from './pages/LLMOrchestrationPage'
@@ -30,9 +29,6 @@ const OAuthCallbackWrapper = () => {
   const { provider } = useParams<{ provider: string }>()
   return <OAuthCallback provider={provider || ''} />
 }
-
-// Initialize MSAL instance
-const msalInstance = new PublicClientApplication(msalConfig);
 
 const queryClient = new QueryClient({
   defaultOptions: {
