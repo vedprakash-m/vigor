@@ -5213,7 +5213,7 @@ The backend leverages the deployed `vigor-rg` resources:
 # function_app.py - Ghost API with Hybrid Engine
 import azure.functions as func
 import json
-from shared.auth import validate_apple_token
+from shared.auth import get_current_user_from_token  # Microsoft Entra ID validation
 from shared.cosmos_db import CosmosClient
 from shared.openai_client import OpenAIClient
 from shared.rag import ExerciseRAG
@@ -5241,10 +5241,11 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
     3. Equipment/context changes require new plan
     """
     try:
-        # Validate Apple Sign-In token
-        user_id = await validate_apple_token(req.headers.get("Authorization"))
-        if not user_id:
+        # Validate Microsoft Entra ID token
+        user = await get_current_user_from_token(req)
+        if not user:
             return func.HttpResponse(status_code=401)
+        user_id = user["email"]  # Email used as user identifier
 
         body = req.get_json()
 
@@ -5368,9 +5369,10 @@ async def get_workout_library(req: func.HttpRequest) -> func.HttpResponse:
     Get user's workout library for offline caching.
     Ghost Engine caches these locally for offline operation.
     """
-    user_id = await validate_apple_token(req.headers.get("Authorization"))
-    if not user_id:
+    user = await get_current_user_from_token(req)
+    if not user:
         return func.HttpResponse(status_code=401)
+    user_id = user["email"]
 
     cosmos = CosmosClient()
     workouts = await cosmos.get_user_workouts(user_id, limit=50)
@@ -5396,9 +5398,10 @@ async def ghost_sync(req: func.HttpRequest) -> func.HttpResponse:
     - Location specifics
     - Personal identifiers
     """
-    user_id = await validate_apple_token(req.headers.get("Authorization"))
-    if not user_id:
+    user = await get_current_user_from_token(req)
+    if not user:
         return func.HttpResponse(status_code=401)
+    user_id = user["email"]
 
     body = req.get_json()
 
@@ -5472,9 +5475,10 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
     Get or update user profile.
     Profile data is minimal - most data lives on-device in Phenome.
     """
-    user_id = await validate_apple_token(req.headers.get("Authorization"))
-    if not user_id:
+    user = await get_current_user_from_token(req)
+    if not user:
         return func.HttpResponse(status_code=401)
+    user_id = user["email"]
 
     cosmos = CosmosClient()
 
@@ -6963,8 +6967,8 @@ final class WatchAutonomousSync: ObservableObject {
     }
 
     private func getAuthToken() -> String {
-        // Retrieve cached Apple Sign-In token
-        return UserDefaults.standard.string(forKey: "vigor_auth_token") ?? ""
+        // Retrieve cached Microsoft Entra ID (MSAL) token
+        return UserDefaults.standard.string(forKey: "cachedAccessToken") ?? ""
     }
 }
 
@@ -7003,9 +7007,10 @@ async def watch_workout_sync(req: func.HttpRequest) -> func.HttpResponse:
     Called when Watch has WiFi/Cellular but no iPhone.
     Handles duplicate detection in case both Watch and iPhone sync.
     """
-    user_id = await validate_apple_token(req.headers.get("Authorization"))
-    if not user_id:
+    user = await get_current_user_from_token(req)
+    if not user:
         return func.HttpResponse(status_code=401)
+    user_id = user["email"]
 
     body = req.get_json()
 
@@ -8149,50 +8154,82 @@ class BackgroundTaskManager {
 ### 9.2 Authentication Flow
 
 ```swift
-// Sign in with Apple (required)
-import AuthenticationServices
+// Microsoft Entra ID (MSAL) Authentication
+import MSAL
+import Foundation
 
-class AuthenticationManager: NSObject, ObservableObject, ASAuthorizationControllerDelegate {
+@MainActor
+final class AuthManager: ObservableObject {
 
-    @Published var isAuthenticated = false
-    @Published var userID: String?
+    static let shared = AuthManager()
 
-    func signIn() {
-        let request = ASAuthorizationAppleIDProvider().createRequest()
-        request.requestedScopes = [.email]
+    @Published private(set) var isAuthenticated = false
+    @Published private(set) var currentUser: VigorUser?
+    @Published private(set) var isLoading = false
 
-        let controller = ASAuthorizationController(authorizationRequests: [request])
-        controller.delegate = self
-        controller.performRequests()
+    private var msalClient: MSALPublicClientApplication?
+    private var currentAccount: MSALAccount?
+    private let config = MSALConfiguration.shared
+
+    private init() {
+        setupMSALClient()
+        checkExistingSession()
     }
 
-    func authorizationController(controller: ASAuthorizationController,
-                                  didCompleteWithAuthorization authorization: ASAuthorization) {
-        guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else { return }
-
-        let userID = credential.user
-        let identityToken = credential.identityToken
-
-        // Send to backend for verification
-        Task {
-            await authenticateWithBackend(userID: userID, token: identityToken)
+    private func setupMSALClient() {
+        do {
+            let authority = try MSALAADAuthority(url: config.authorityURL)
+            let msalConfig = MSALPublicClientApplicationConfig(
+                clientId: config.clientId,
+                redirectUri: config.redirectUri,
+                authority: authority
+            )
+            msalClient = try MSALPublicClientApplication(configuration: msalConfig)
+        } catch {
+            // Handle configuration error
         }
     }
 
-    private func authenticateWithBackend(userID: String, token: Data?) async {
-        guard let token = token,
-              let tokenString = String(data: token, encoding: .utf8) else { return }
+    func signIn() async throws {
+        guard let client = msalClient else { throw AuthError.notConfigured }
 
-        let response = try? await APIClient.shared.authenticate(appleToken: tokenString)
+        isLoading = true
+        defer { isLoading = false }
 
-        if response?.success == true {
-            self.userID = userID
-            self.isAuthenticated = true
-
-            // Store refresh token securely
-            try? KeychainManager.store(key: "refreshToken", value: response?.refreshToken ?? "")
+        guard let windowScene = await UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootViewController = await windowScene.windows.first?.rootViewController else {
+            throw AuthError.noViewController
         }
+
+        let webviewParameters = MSALWebviewParameters(authPresentationViewController: rootViewController)
+        let interactiveParameters = MSALInteractiveTokenParameters(
+            scopes: config.scopes,
+            webviewParameters: webviewParameters
+        )
+
+        let result = try await client.acquireToken(with: interactiveParameters)
+        await handleAuthResult(result)
     }
+
+    private func handleAuthResult(_ result: MSALResult) async {
+        currentAccount = result.account
+        isAuthenticated = true
+
+        // Token is sent to backend with all API requests
+        // Backend validates against Microsoft's public keys
+        UserDefaults.standard.set(result.accessToken, forKey: "cachedAccessToken")
+    }
+}
+
+// MSAL Configuration
+struct MSALConfiguration {
+    static let shared = MSALConfiguration()
+
+    let clientId: String        // Azure AD Application ID
+    let redirectUri: String     // msauth.<bundle_id>://auth
+    let authorityURL: URL       // https://login.microsoftonline.com/<tenant_id>
+    let scopes: [String]        // ["openid", "profile", "email", "Calendars.ReadWrite"]
+    let apiBaseURL: URL         // Backend API URL
 }
 ```
 
@@ -8454,7 +8491,7 @@ class AntiMetrics:
 
 ```
 POST /api/workouts/generate
-Authorization: Bearer <apple_token>
+Authorization: Bearer <entra_id_token>
 
 Request:
 {
@@ -8480,7 +8517,7 @@ Response:
 
 ```
 POST /api/ghost/sync
-Authorization: Bearer <apple_token>
+Authorization: Bearer <entra_id_token>
 
 Request:
 {

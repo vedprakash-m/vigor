@@ -2,7 +2,7 @@ import { PublicClientApplication } from '@azure/msal-browser'
 import { MsalProvider } from '@azure/msal-react'
 import { ChakraProvider, defaultSystem } from '@chakra-ui/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Route, BrowserRouter as Router, Routes, useParams } from 'react-router-dom'
+import { Navigate, Route, BrowserRouter as Router, Routes, useParams } from 'react-router-dom'
 import AdminAuditSecurity from './components/AdminAuditSecurity'
 import AnalyticsDashboard from './components/AnalyticsDashboard'
 import BulkUserOperations from './components/BulkUserOperations'
@@ -53,7 +53,7 @@ function App() {
               <Router>
                 <Routes>
                   {/* Public routes */}
-                  <Route path="/" element={<LoginPage />} />
+                  <Route path="/" element={<Navigate to="/admin" replace />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
