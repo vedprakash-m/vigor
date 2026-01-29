@@ -168,16 +168,24 @@ async def ensure_user_exists(user_data: Dict[str, Any]) -> None:
 
 
 async def require_admin_user(req: func.HttpRequest) -> Optional[Dict[str, Any]]:
-    """Require admin user authentication"""
+    """Require admin user authentication via email whitelist"""
+    # Admin email whitelist - keep in sync with frontend adminConfig.ts
+    ADMIN_EMAILS = [
+        "vedprakash.m@outlook.com",
+        # Add more admin emails as needed
+    ]
+
     try:
         user = await get_current_user_from_token(req)
         if not user:
             return None
 
-        # Check if user has admin privileges
-        if user.get("tier") != "admin":
+        email = user.get("email", "").lower()
+
+        # Check if user email is in admin whitelist
+        if email not in [e.lower() for e in ADMIN_EMAILS]:
             logger.warning(
-                f"Non-admin user attempted admin access: {user.get('email')}"
+                f"Non-admin user attempted admin access: {email}"
             )
             return None
 

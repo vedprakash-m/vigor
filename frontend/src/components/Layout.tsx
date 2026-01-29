@@ -3,16 +3,14 @@ import { useState } from 'react'
 import { Outlet, Link as RouterLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/useAuth'
 
-// Admin Dashboard navigation links
+// Admin Dashboard navigation links - Ghost-specific
 const Links = [
-  { name: 'Dashboard', path: '/admin', icon: '🏠' },
+  { name: 'Dashboard', path: '/admin', icon: '👻' },
   { name: 'Users', path: '/admin/users', icon: '👥' },
-  { name: 'LLM Health', path: '/admin/llm-health', icon: '🤖' },
-  { name: 'LLM Config', path: '/admin/llm-config', icon: '⚙️' },
-  { name: 'Analytics', path: '/admin/analytics', icon: '📊' },
-  { name: 'System', path: '/admin/system-analytics', icon: '📈' },
-  { name: 'Audit', path: '/admin/audit', icon: '🔒' },
-  { name: 'Bulk Ops', path: '/admin/bulk-ops', icon: '📦' },
+  { name: 'Ghost Health', path: '/admin/llm-health', icon: '💚' },
+  { name: 'AI Pipeline', path: '/admin/llm-config', icon: '🧠' },
+  { name: 'Ghost Analytics', path: '/admin/analytics', icon: '📊' },
+  { name: 'Decision Receipts', path: '/admin/audit', icon: '📋' },
   { name: 'Tiers', path: '/admin/tiers', icon: '💎' },
 ]
 
@@ -83,9 +81,12 @@ export const Layout = () => {
         borderRightColor="gray.200"
         display={{ base: 'none', md: 'block' }}
       >
-        <Heading size="lg" color="blue.500" mb={8}>
-          Vigor Admin
-        </Heading>
+        <HStack gap={2} mb={2}>
+          <Heading size="lg" color="orange.500">
+            Vigor Ghost
+          </Heading>
+        </HStack>
+        <Badge colorPalette="purple" mb={6}>Admin Console</Badge>
         <NavContent />
       </Box>
 
@@ -100,7 +101,8 @@ export const Layout = () => {
           <Drawer.Positioner>
             <Drawer.Content bg="white" maxW="280px">
               <Drawer.Header borderBottomWidth="1px">
-                <Heading size="lg" color="blue.500">Vigor Admin</Heading>
+                <Heading size="lg" color="orange.500">Vigor Ghost</Heading>
+                <Badge colorPalette="purple" mt={1}>Admin</Badge>
                 <Drawer.CloseTrigger asChild>
                   <IconButton
                     aria-label="Close menu"
@@ -144,11 +146,16 @@ export const Layout = () => {
               ☰
             </IconButton>
             <Heading size="md" display={{ base: 'block', md: 'none' }}>
-              Vigor Admin
+              Vigor Ghost
             </Heading>
           </HStack>
 
           <HStack gap={4}>
+            {isAdmin(user?.email) && (
+              <Badge colorPalette="purple" display={{ base: 'none', sm: 'block' }}>
+                Admin
+              </Badge>
+            )}
             <Text display={{ base: 'none', sm: 'block' }} color="gray.600">
               {user?.name || user?.email}
             </Text>

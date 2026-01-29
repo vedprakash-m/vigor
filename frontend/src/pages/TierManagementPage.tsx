@@ -1,6 +1,7 @@
 /**
  * Tier Management Page
- * Subscription tier overview and management for users
+ * Subscription tier overview with Ghost-specific features
+ * Per UX Spec Part V §5.10 and PRD §2.4 - $49/month Premium
  */
 
 import {
@@ -22,69 +23,59 @@ interface TierFeature {
     name: string
     free: boolean | string
     premium: boolean | string
-    enterprise: boolean | string
 }
 
+// Ghost-specific tier features per PRD
 const tierFeatures: TierFeature[] = [
     {
-        name: 'AI Workout Generation',
-        free: '5/month',
-        premium: 'Unlimited',
-        enterprise: 'Unlimited',
+        name: 'Ghost AI Mode',
+        free: 'Observer only',
+        premium: 'Full Ghost (5 phases)',
     },
     {
-        name: 'AI Coach Chat',
-        free: '10 messages/day',
-        premium: 'Unlimited',
-        enterprise: 'Unlimited',
+        name: 'Trust System',
+        free: 'Basic',
+        premium: 'Full progression',
     },
     {
-        name: 'Progress Tracking',
+        name: 'Workout Mutations',
+        free: false,
+        premium: 'Unlimited',
+    },
+    {
+        name: 'Decision Receipts',
+        free: false,
+        premium: true,
+    },
+    {
+        name: 'Apple Watch Integration',
+        free: 'Read only',
+        premium: 'Full (required)',
+    },
+    {
+        name: 'Phenome Data Store',
+        free: '30 days',
+        premium: 'Unlimited',
+    },
+    {
+        name: 'RAG-Enhanced Context',
+        free: false,
+        premium: true,
+    },
+    {
+        name: 'Safety Breakers',
         free: true,
         premium: true,
-        enterprise: true,
     },
     {
-        name: 'Advanced Analytics',
+        name: 'Progress Analytics',
+        free: 'Basic',
+        premium: 'Advanced',
+    },
+    {
+        name: 'Behavior Learning',
         free: false,
         premium: true,
-        enterprise: true,
-    },
-    {
-        name: 'Custom Workout Plans',
-        free: false,
-        premium: true,
-        enterprise: true,
-    },
-    {
-        name: 'Nutrition Guidance',
-        free: false,
-        premium: true,
-        enterprise: true,
-    },
-    {
-        name: 'Priority Support',
-        free: false,
-        premium: true,
-        enterprise: true,
-    },
-    {
-        name: 'API Access',
-        free: false,
-        premium: false,
-        enterprise: true,
-    },
-    {
-        name: 'Team Management',
-        free: false,
-        premium: false,
-        enterprise: true,
-    },
-    {
-        name: 'Custom Branding',
-        free: false,
-        premium: false,
-        enterprise: true,
     },
 ]
 
@@ -200,72 +191,98 @@ const TierManagementPage = () => {
                 </Text>
             </VStack>
 
-            {/* Tier Cards */}
+            {/* Tier Cards - Free and Premium only per PRD */}
             <Grid
-                templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }}
+                templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }}
                 gap={6}
                 mb={10}
+                maxW="800px"
+                mx="auto"
             >
                 <GridItem>
                     <TierCard
                         name="Free"
                         price="$0"
                         period="/month"
-                        description="Get started with basic features"
+                        description="Experience Ghost in Observer mode"
                         isCurrentTier={currentTier === 'free'}
                         onSelect={() => handleSelectTier('free')}
                         features={[
-                            '5 AI workouts/month',
-                            '10 coach messages/day',
+                            'Ghost Observer mode only',
+                            'Basic Trust progression',
+                            'Apple Watch read-only',
+                            '30-day Phenome storage',
                             'Basic progress tracking',
-                            'Community access',
+                            'Safety breaker protection',
                         ]}
                     />
                 </GridItem>
                 <GridItem>
                     <TierCard
                         name="Premium"
-                        price="$9.99"
+                        price={`$${TIER_PRICING.PREMIUM_MONTHLY}`}
                         period="/month"
-                        description="Unlock your full potential"
+                        description="Full Ghost AI with Apple Watch required"
                         isCurrentTier={currentTier === 'premium'}
                         isPopular
                         onSelect={() => handleSelectTier('premium')}
                         features={[
-                            'Unlimited AI workouts',
-                            'Unlimited coach chat',
-                            'Advanced analytics',
-                            'Custom workout plans',
-                            'Nutrition guidance',
+                            'Full Ghost (all 5 Trust phases)',
+                            'Unlimited workout mutations',
+                            'Full Apple Watch integration ⌚',
+                            'Unlimited Phenome storage',
+                            'RAG-enhanced personalization',
+                            'Decision receipts & transparency',
+                            'Behavior learning',
                             'Priority support',
-                        ]}
-                    />
-                </GridItem>
-                <GridItem>
-                    <TierCard
-                        name="Enterprise"
-                        price="$49.99"
-                        period="/month"
-                        description="For teams and organizations"
-                        isCurrentTier={currentTier === 'enterprise'}
-                        onSelect={() => handleSelectTier('enterprise')}
-                        features={[
-                            'Everything in Premium',
-                            'API access',
-                            'Team management',
-                            'Custom branding',
-                            'Dedicated support',
-                            'SLA guarantees',
                         ]}
                     />
                 </GridItem>
             </Grid>
 
+            {/* Apple Watch Requirement Note */}
+            <Card.Root bg="orange.50" borderColor="orange.200" border="1px" borderRadius="lg" mb={8} maxW="800px" mx="auto">
+                <Card.Body p={4}>
+                    <HStack gap={3}>
+                        <Text fontSize="xl">⌚</Text>
+                        <VStack align="start" gap={0}>
+                            <Text fontWeight="medium" color="orange.700">
+                                Apple Watch Required for Premium
+                            </Text>
+                            <Text fontSize="sm" color="orange.600">
+                                Ghost's full capabilities require Apple Watch for real-time biometric
+                                data collection (HRV, recovery, sleep). The Watch enables Ghost to
+                                make intelligent, context-aware decisions about your training.
+                            </Text>
+                        </VStack>
+                    </HStack>
+                </Card.Body>
+            </Card.Root>
+
+            {/* Annual Savings */}
+            <Card.Root bg="green.50" borderColor="green.200" border="1px" borderRadius="lg" mb={8} maxW="800px" mx="auto">
+                <Card.Body p={4}>
+                    <HStack justify="space-between" flexWrap="wrap" gap={4}>
+                        <VStack align="start" gap={0}>
+                            <Text fontWeight="bold" color="green.700">
+                                Save with Annual Billing
+                            </Text>
+                            <Text fontSize="sm" color="green.600">
+                                ${TIER_PRICING.PREMIUM_YEARLY}/year (save ${TIER_PRICING.PREMIUM_MONTHLY * 12 - TIER_PRICING.PREMIUM_YEARLY}/year)
+                            </Text>
+                        </VStack>
+                        <Badge colorPalette="green" p={2}>
+                            ~15% OFF
+                        </Badge>
+                    </HStack>
+                </Card.Body>
+            </Card.Root>
+
             {/* Feature Comparison Table */}
             <Card.Root bg="white" shadow="sm" borderRadius="lg">
                 <Card.Body p={6}>
                     <Heading size="md" mb={6}>
-                        Feature Comparison
+                        Ghost Feature Comparison
                     </Heading>
                     <Box overflowX="auto">
                         <Box as="table" w="full" fontSize="sm">
@@ -278,10 +295,7 @@ const TierManagementPage = () => {
                                         Free
                                     </Box>
                                     <Box as="th" p={3} textAlign="center" fontWeight="bold" color="blue.500">
-                                        Premium
-                                    </Box>
-                                    <Box as="th" p={3} textAlign="center" fontWeight="bold">
-                                        Enterprise
+                                        Premium ($49/mo)
                                     </Box>
                                 </Box>
                             </Box>
@@ -305,13 +319,6 @@ const TierManagementPage = () => {
                                                 feature.premium
                                             )}
                                         </Box>
-                                        <Box as="td" p={3} textAlign="center">
-                                            {typeof feature.enterprise === 'boolean' ? (
-                                                feature.enterprise ? '✓' : '—'
-                                            ) : (
-                                                feature.enterprise
-                                            )}
-                                        </Box>
                                     </Box>
                                 ))}
                             </Box>
@@ -329,11 +336,33 @@ const TierManagementPage = () => {
                     <VStack align="stretch" gap={4}>
                         <Box>
                             <Text fontWeight="bold" mb={1}>
+                                Why is Apple Watch required for Premium?
+                            </Text>
+                            <Text color="gray.600">
+                                Ghost uses real-time biometric data (HRV, recovery metrics, sleep
+                                quality) from Apple Watch to make intelligent training decisions.
+                                Without this data, Ghost cannot reliably progress through Trust phases.
+                            </Text>
+                        </Box>
+                        <Box>
+                            <Text fontWeight="bold" mb={1}>
+                                What are Trust phases?
+                            </Text>
+                            <Text color="gray.600">
+                                Trust phases (Observer → Scheduler → Auto-Scheduler → Transformer →
+                                Full Ghost) represent how much autonomy Ghost has to modify your
+                                training. You start in Observer mode and graduate based on workout
+                                completion and feedback consistency.
+                            </Text>
+                        </Box>
+                        <Box>
+                            <Text fontWeight="bold" mb={1}>
                                 Can I cancel anytime?
                             </Text>
                             <Text color="gray.600">
-                                Yes, you can cancel your subscription at any time. You'll
-                                continue to have access until the end of your billing period.
+                                Yes, you can cancel your subscription at any time. You'll continue
+                                to have access until the end of your billing period. Your Phenome
+                                data and Trust progress are preserved.
                             </Text>
                         </Box>
                         <Box>
@@ -341,18 +370,9 @@ const TierManagementPage = () => {
                                 What happens to my data if I downgrade?
                             </Text>
                             <Text color="gray.600">
-                                Your data is always safe. If you downgrade, you'll lose access
-                                to premium features but keep all your workout history and
-                                progress.
-                            </Text>
-                        </Box>
-                        <Box>
-                            <Text fontWeight="bold" mb={1}>
-                                Do you offer refunds?
-                            </Text>
-                            <Text color="gray.600">
-                                We offer a 14-day money-back guarantee if you're not satisfied
-                                with your subscription.
+                                Your Phenome data beyond 30 days becomes read-only. Ghost reverts
+                                to Observer mode. Your Trust progress is preserved if you upgrade
+                                again within 90 days.
                             </Text>
                         </Box>
                     </VStack>

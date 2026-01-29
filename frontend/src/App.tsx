@@ -11,7 +11,6 @@ import LLMAnalyticsSimple from './components/LLMAnalyticsSimple'
 import LLMConfigurationManagement from './components/LLMConfigurationSimple'
 import LLMHealthMonitoring from './components/LLMHealthMonitoring'
 import { OAuthCallback } from './components/OAuthCallback'
-import { ProtectedRoute } from './components/ProtectedRoute'
 import UserManagement from './components/UserManagement'
 import { msalInstance } from './config/msalInstance'
 import { AuthProvider } from './contexts/AuthContext'
@@ -55,8 +54,8 @@ function App() {
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
                   <Route path="/oauth/callback/:provider" element={<OAuthCallbackWrapper />} />
 
-                  {/* Admin Dashboard routes */}
-                  <Route path="/admin" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                  {/* Admin Dashboard routes - Admin access required */}
+                  <Route path="/admin" element={<AdminProtectedRoute><Layout /></AdminProtectedRoute>}>
                     <Route index element={<AdminPage />} />
                     <Route path="llm-health" element={<LLMHealthMonitoring />} />
                     <Route path="users" element={<UserManagement />} />
@@ -67,7 +66,7 @@ function App() {
                     <Route path="bulk-ops" element={<BulkUserOperations />} />
                     <Route path="tiers" element={<TierManagementPage />} />
                   </Route>
-                  <Route path="/llm" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                  <Route path="/llm" element={<AdminProtectedRoute><Layout /></AdminProtectedRoute>}>
                     <Route index element={<LLMOrchestrationPage />} />
                   </Route>
                 </Routes>

@@ -1,9 +1,17 @@
 /**
- * LLM Configuration Simple Component
- * Simple configuration interface for AI/LLM settings
+ * LLM Configuration Component
+ * AI Pipeline configuration for Ghost - gpt-5-mini with Structured Outputs
+ * Per UX Spec Part V §5.8 - AI Pipeline Configuration
+ *
+ * IMPORTANT: gpt-5-mini uses Structured Outputs mode which does NOT support:
+ * - temperature (always deterministic)
+ * - top_p / topP
+ * - frequency_penalty / frequencyPenalty
+ * - presence_penalty / presencePenalty
  */
 
 import {
+    Badge,
     Box,
     Button,
     Card,
@@ -12,168 +20,259 @@ import {
     Heading,
     HStack,
     Input,
+    Progress,
+    Spinner,
+    Switch,
     Text,
     VStack,
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { AdminAPI, AIPipelineStats } from '../services/adminApi'
 
-interface LLMSettings {
-    maxTokens: number
-    temperature: number
-    topP: number
-    frequencyPenalty: number
-    presencePenalty: number
-    timeout: number
+interface PipelineConfig {
+    maxOutputTokens: number
+    requestTimeoutMs: number
+    retryAttempts: number
+    workoutContractEnabled: boolean
+    ragCacheEnabled: boolean
+    phenomeQueryLimit: number
 }
 
 const LLMConfigurationManagement = () => {
-    const [settings, setSettings] = useState<LLMSettings>({
-        maxTokens: 4096,
-        temperature: 0.7,
-        topP: 1.0,
-        frequencyPenalty: 0.0,
-        presencePenalty: 0.0,
-        timeout: 30000,
+    const [config, setConfig] = useState<PipelineConfig>({
+        maxOutputTokens: 4096,
+        requestTimeoutMs: 30000,
+        retryAttempts: 3,
+        workoutContractEnabled: true,
+        ragCacheEnabled: true,
+        phenomeQueryLimit: 50,
     })
+    const [pipelineStats, setPipelineStats] = useState<AIPipelineStats | null>(null)
+    const [loading, setLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                setLoading(true)
+                const stats = await AdminAPI.getAIPipelineStats()
+                setPipelineStats(stats)
+            } catch (err) {
+                console.error('Failed to fetch pipeline stats:', err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchStats()
+        // Refresh every 30 seconds
+        const interval = setInterval(fetchStats, 30000)
+        return () => clearInterval(interval)
+    }, [])
 
     const handleSave = async () => {
         setIsSaving(true)
         try {
-            // In production, this would save to the backend
+            // TODO: Call AdminAPI.savePipelineConfig when backend ready
             await new Promise((resolve) => setTimeout(resolve, 1000))
-            alert('Settings saved successfully!')
+            alert('Configuration saved successfully!')
         } catch (error) {
-            console.error('Failed to save settings:', error)
-            alert('Failed to save settings')
+            console.error('Failed to save config:', error)
+            alert('Failed to save configuration')
         } finally {
             setIsSaving(false)
         }
     }
 
     const handleReset = () => {
-        setSettings({
-            maxTokens: 4096,
-            temperature: 0.7,
-            topP: 1.0,
-            frequencyPenalty: 0.0,
-            presencePenalty: 0.0,
-            timeout: 30000,
+        setConfig({
+            maxOutputTokens: 4096,
+            requestTimeoutMs: 30000,
+            retryAttempts: 3,
+            workoutContractEnabled: true,
+            ragCacheEnabled: true,
+            phenomeQueryLimit: 50,
         })
+    }
+
+    if (loading) {
+        return (
+            <Box p={6} display="flex" justifyContent="center" alignItems="center" minH="400px">
+                <VStack gap={4}>
+                    <Spinner size="xl" color="blue.500" />
+                    <Text color="gray.600">Loading AI Pipeline stats...</Text>
+                </VStack>
+            </Box>
+        )
     }
 
     return (
         <Box p={6}>
             <VStack align="start" mb={8} gap={2}>
-                <Heading size="xl">LLM Configuration</Heading>
+                <Heading size="xl">AI Pipeline Configuration</Heading>
                 <Text color="gray.600">
-                    Configure AI model parameters
+                    Ghost AI configuration using gpt-5-mini with Structured Outputs
                 </Text>
             </VStack>
 
-            {/* Current Model */}
+            {/* Model Info Card */}
             <Card.Root bg="blue.50" borderColor="blue.200" border="1px" borderRadius="lg" mb={6}>
                 <Card.Body p={4}>
-                    <HStack justify="space-between">
-                        <VStack align="start" gap={0}>
+                    <HStack justify="space-between" flexWrap="wrap" gap={4}>
+                        <VStack align="start" gap={1}>
                             <Text fontWeight="bold" color="blue.700">
                                 Active Model
                             </Text>
-                            <Text color="blue.600">
-                                OpenAI gpt-5-mini
+                            <HStack gap={2}>
+                                <Text color="blue.600" fontWeight="medium">
+                                    gpt-5-mini
+                                </Text>
+                                <Badge colorPalette="purple">Structured Outputs</Badge>
+                            </HStack>
+                            <Text fontSize="xs" color="blue.500">
+                                Azure OpenAI • West US 2
                             </Text>
                         </VStack>
-                        <Box
-                            w="12px"
-                            h="12px"
-                            borderRadius="full"
-                            bg="green.400"
-                            title="Connected"
-                        />
+                        <VStack align="end" gap={1}>
+                            <HStack gap={2}>
+                                <Box
+                                    w="10px"
+                                    h="10px"
+                                    borderRadius="full"
+                                    bg={pipelineStats?.modelStatus === 'healthy' ? 'green.400' : 'yellow.400'}
+                                />
+                                <Text fontSize="sm" color="gray.600">
+                                    {pipelineStats?.modelStatus === 'healthy' ? 'Healthy' : 'Degraded'}
+                                </Text>
+                            </HStack>
+                            <Text fontSize="xs" color="gray.500">
+                                Avg latency: {pipelineStats?.avgLatencyMs || 0}ms
+                            </Text>
+                        </VStack>
+                    </HStack>
+                </Card.Body>
+            </Card.Root>
+
+            {/* Important Note about Structured Outputs */}
+            <Card.Root bg="orange.50" borderColor="orange.200" border="1px" borderRadius="lg" mb={6}>
+                <Card.Body p={4}>
+                    <HStack gap={3}>
+                        <Text fontSize="lg">⚠️</Text>
+                        <VStack align="start" gap={1}>
+                            <Text fontWeight="medium" color="orange.700">
+                                Structured Outputs Mode
+                            </Text>
+                            <Text fontSize="sm" color="orange.600">
+                                gpt-5-mini operates in Structured Outputs mode, which guarantees JSON schema
+                                compliance. Temperature, top_p, and penalty parameters are not supported in
+                                this mode - all outputs are deterministic.
+                            </Text>
+                        </VStack>
                     </HStack>
                 </Card.Body>
             </Card.Root>
 
             <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap={6}>
-                {/* Generation Parameters */}
+                {/* Pipeline Configuration */}
                 <GridItem>
                     <Card.Root bg="white" shadow="sm" borderRadius="lg">
                         <Card.Body p={6}>
                             <Heading size="md" mb={6}>
-                                Generation Parameters
+                                Pipeline Configuration
                             </Heading>
-                            <VStack align="stretch" gap={4}>
+                            <VStack align="stretch" gap={5}>
                                 <Box>
                                     <HStack justify="space-between" mb={2}>
-                                        <Text fontWeight="medium">Max Tokens</Text>
+                                        <Text fontWeight="medium">Max Output Tokens</Text>
                                         <Text color="gray.500" fontSize="sm">
-                                            {settings.maxTokens}
+                                            {config.maxOutputTokens}
                                         </Text>
                                     </HStack>
                                     <Input
                                         type="number"
-                                        value={settings.maxTokens}
+                                        value={config.maxOutputTokens}
                                         onChange={(e) =>
-                                            setSettings({
-                                                ...settings,
-                                                maxTokens: parseInt(e.target.value) || 0,
+                                            setConfig({
+                                                ...config,
+                                                maxOutputTokens: parseInt(e.target.value) || 0,
                                             })
                                         }
-                                        min={1}
-                                        max={8192}
+                                        min={256}
+                                        max={16384}
                                     />
                                     <Text fontSize="xs" color="gray.500" mt={1}>
-                                        Maximum number of tokens to generate (1-8192)
+                                        Maximum tokens for workout plan generation (256-16384)
                                     </Text>
                                 </Box>
 
                                 <Box>
                                     <HStack justify="space-between" mb={2}>
-                                        <Text fontWeight="medium">Temperature</Text>
+                                        <Text fontWeight="medium">Request Timeout (ms)</Text>
                                         <Text color="gray.500" fontSize="sm">
-                                            {settings.temperature}
+                                            {config.requestTimeoutMs}
                                         </Text>
                                     </HStack>
                                     <Input
                                         type="number"
-                                        step="0.1"
-                                        value={settings.temperature}
+                                        value={config.requestTimeoutMs}
                                         onChange={(e) =>
-                                            setSettings({
-                                                ...settings,
-                                                temperature: parseFloat(e.target.value) || 0,
+                                            setConfig({
+                                                ...config,
+                                                requestTimeoutMs: parseInt(e.target.value) || 0,
                                             })
                                         }
-                                        min={0}
-                                        max={2}
+                                        min={5000}
+                                        max={120000}
                                     />
                                     <Text fontSize="xs" color="gray.500" mt={1}>
-                                        Controls randomness. Lower = more focused (0-2)
+                                        API request timeout (5000-120000ms)
                                     </Text>
                                 </Box>
 
                                 <Box>
                                     <HStack justify="space-between" mb={2}>
-                                        <Text fontWeight="medium">Top P</Text>
+                                        <Text fontWeight="medium">Retry Attempts</Text>
                                         <Text color="gray.500" fontSize="sm">
-                                            {settings.topP}
+                                            {config.retryAttempts}
                                         </Text>
                                     </HStack>
                                     <Input
                                         type="number"
-                                        step="0.1"
-                                        value={settings.topP}
+                                        value={config.retryAttempts}
                                         onChange={(e) =>
-                                            setSettings({
-                                                ...settings,
-                                                topP: parseFloat(e.target.value) || 0,
+                                            setConfig({
+                                                ...config,
+                                                retryAttempts: parseInt(e.target.value) || 0,
                                             })
                                         }
                                         min={0}
-                                        max={1}
+                                        max={5}
                                     />
                                     <Text fontSize="xs" color="gray.500" mt={1}>
-                                        Nucleus sampling threshold (0-1)
+                                        Number of retry attempts on failure (0-5)
+                                    </Text>
+                                </Box>
+
+                                <Box>
+                                    <HStack justify="space-between" mb={2}>
+                                        <Text fontWeight="medium">Phenome Query Limit</Text>
+                                        <Text color="gray.500" fontSize="sm">
+                                            {config.phenomeQueryLimit}
+                                        </Text>
+                                    </HStack>
+                                    <Input
+                                        type="number"
+                                        value={config.phenomeQueryLimit}
+                                        onChange={(e) =>
+                                            setConfig({
+                                                ...config,
+                                                phenomeQueryLimit: parseInt(e.target.value) || 0,
+                                            })
+                                        }
+                                        min={10}
+                                        max={200}
+                                    />
+                                    <Text fontSize="xs" color="gray.500" mt={1}>
+                                        Max Phenome records per RAG query (10-200)
                                     </Text>
                                 </Box>
                             </VStack>
@@ -181,90 +280,107 @@ const LLMConfigurationManagement = () => {
                     </Card.Root>
                 </GridItem>
 
-                {/* Advanced Parameters */}
+                {/* Feature Toggles & Stats */}
                 <GridItem>
-                    <Card.Root bg="white" shadow="sm" borderRadius="lg">
-                        <Card.Body p={6}>
-                            <Heading size="md" mb={6}>
-                                Advanced Parameters
-                            </Heading>
-                            <VStack align="stretch" gap={4}>
-                                <Box>
-                                    <HStack justify="space-between" mb={2}>
-                                        <Text fontWeight="medium">Frequency Penalty</Text>
-                                        <Text color="gray.500" fontSize="sm">
-                                            {settings.frequencyPenalty}
-                                        </Text>
+                    <VStack gap={6} align="stretch">
+                        <Card.Root bg="white" shadow="sm" borderRadius="lg">
+                            <Card.Body p={6}>
+                                <Heading size="md" mb={6}>
+                                    Feature Toggles
+                                </Heading>
+                                <VStack align="stretch" gap={5}>
+                                    <HStack justify="space-between">
+                                        <VStack align="start" gap={0}>
+                                            <Text fontWeight="medium">Workout Contract Validation</Text>
+                                            <Text fontSize="xs" color="gray.500">
+                                                Validate AI outputs against schema before accepting
+                                            </Text>
+                                        </VStack>
+                                        <Switch.Root
+                                            checked={config.workoutContractEnabled}
+                                            onCheckedChange={(e) =>
+                                                setConfig({ ...config, workoutContractEnabled: e.checked })
+                                            }
+                                            colorPalette="green"
+                                        >
+                                            <Switch.HiddenInput />
+                                            <Switch.Control>
+                                                <Switch.Thumb />
+                                            </Switch.Control>
+                                        </Switch.Root>
                                     </HStack>
-                                    <Input
-                                        type="number"
-                                        step="0.1"
-                                        value={settings.frequencyPenalty}
-                                        onChange={(e) =>
-                                            setSettings({
-                                                ...settings,
-                                                frequencyPenalty: parseFloat(e.target.value) || 0,
-                                            })
-                                        }
-                                        min={-2}
-                                        max={2}
-                                    />
-                                    <Text fontSize="xs" color="gray.500" mt={1}>
-                                        Penalize repeated tokens (-2 to 2)
-                                    </Text>
-                                </Box>
 
-                                <Box>
-                                    <HStack justify="space-between" mb={2}>
-                                        <Text fontWeight="medium">Presence Penalty</Text>
-                                        <Text color="gray.500" fontSize="sm">
-                                            {settings.presencePenalty}
-                                        </Text>
+                                    <HStack justify="space-between">
+                                        <VStack align="start" gap={0}>
+                                            <Text fontWeight="medium">RAG Cache</Text>
+                                            <Text fontSize="xs" color="gray.500">
+                                                Cache Phenome embeddings for faster queries
+                                            </Text>
+                                        </VStack>
+                                        <Switch.Root
+                                            checked={config.ragCacheEnabled}
+                                            onCheckedChange={(e) =>
+                                                setConfig({ ...config, ragCacheEnabled: e.checked })
+                                            }
+                                            colorPalette="green"
+                                        >
+                                            <Switch.HiddenInput />
+                                            <Switch.Control>
+                                                <Switch.Thumb />
+                                            </Switch.Control>
+                                        </Switch.Root>
                                     </HStack>
-                                    <Input
-                                        type="number"
-                                        step="0.1"
-                                        value={settings.presencePenalty}
-                                        onChange={(e) =>
-                                            setSettings({
-                                                ...settings,
-                                                presencePenalty: parseFloat(e.target.value) || 0,
-                                            })
-                                        }
-                                        min={-2}
-                                        max={2}
-                                    />
-                                    <Text fontSize="xs" color="gray.500" mt={1}>
-                                        Encourage new topics (-2 to 2)
-                                    </Text>
-                                </Box>
+                                </VStack>
+                            </Card.Body>
+                        </Card.Root>
 
-                                <Box>
-                                    <HStack justify="space-between" mb={2}>
-                                        <Text fontWeight="medium">Timeout (ms)</Text>
-                                        <Text color="gray.500" fontSize="sm">
-                                            {settings.timeout}
-                                        </Text>
-                                    </HStack>
-                                    <Input
-                                        type="number"
-                                        value={settings.timeout}
-                                        onChange={(e) =>
-                                            setSettings({
-                                                ...settings,
-                                                timeout: parseInt(e.target.value) || 0,
-                                            })
-                                        }
-                                        min={1000}
-                                        max={120000}
-                                    />
-                                    <Text fontSize="xs" color="gray.500" mt={1}>
-                                        Request timeout in milliseconds
-                                    </Text>
-                                </Box>
-                            </VStack>
-                        </Card.Body>
-                    </Card.Root>
+                        {/* Pipeline Stats */}
+                        {pipelineStats && (
+                            <Card.Root bg="white" shadow="sm" borderRadius="lg">
+                                <Card.Body p={6}>
+                                    <Heading size="md" mb={6}>
+                                        Pipeline Stats (24h)
+                                    </Heading>
+                                    <VStack align="stretch" gap={4}>
+                                        <HStack justify="space-between">
+                                            <Text fontSize="sm">Total Requests</Text>
+                                            <Text fontWeight="bold">{pipelineStats.totalRequests24h.toLocaleString()}</Text>
+                                        </HStack>
+                                        <HStack justify="space-between">
+                                            <Text fontSize="sm">Success Rate</Text>
+                                            <HStack gap={2}>
+                                                <Progress.Root
+                                                    value={pipelineStats.successRate}
+                                                    w="80px"
+                                                    size="sm"
+                                                    colorPalette={pipelineStats.successRate >= 95 ? 'green' : pipelineStats.successRate >= 80 ? 'yellow' : 'red'}
+                                                >
+                                                    <Progress.Track>
+                                                        <Progress.Range />
+                                                    </Progress.Track>
+                                                </Progress.Root>
+                                                <Text fontWeight="bold">{pipelineStats.successRate}%</Text>
+                                            </HStack>
+                                        </HStack>
+                                        <HStack justify="space-between">
+                                            <Text fontSize="sm">Avg Latency</Text>
+                                            <Text fontWeight="bold">{pipelineStats.avgLatencyMs}ms</Text>
+                                        </HStack>
+                                        <HStack justify="space-between">
+                                            <Text fontSize="sm">Contract Validations</Text>
+                                            <Text fontWeight="bold">{pipelineStats.contractValidations.toLocaleString()}</Text>
+                                        </HStack>
+                                        <HStack justify="space-between">
+                                            <Text fontSize="sm">Schema Rejections</Text>
+                                            <Text fontWeight="bold" color={pipelineStats.schemaRejections > 10 ? 'red.500' : 'gray.700'}>
+                                                {pipelineStats.schemaRejections}
+                                            </Text>
+                                        </HStack>
+                                    </VStack>
+                                </Card.Body>
+                            </Card.Root>
+                        )}
+                    </VStack>
                 </GridItem>
             </Grid>
 
@@ -282,9 +398,10 @@ const LLMConfigurationManagement = () => {
             <Card.Root bg="gray.50" borderRadius="lg" mt={8}>
                 <Card.Body p={4}>
                     <Text fontSize="sm" color="gray.600">
-                        <strong>Note:</strong> Changes to these settings will affect all AI-generated
-                        content including workout plans and coach responses. Test changes carefully
-                        before deploying to production.
+                        <strong>Note:</strong> Configuration changes affect all Ghost AI operations
+                        including workout generation, mutation decisions, and Phenome analysis.
+                        Changes are applied immediately but may take up to 5 minutes to propagate
+                        to all function instances.
                     </Text>
                 </Card.Body>
             </Card.Root>

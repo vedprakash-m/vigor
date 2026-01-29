@@ -1,6 +1,7 @@
 /**
  * Admin Audit & Security Component
- * Displays security logs and audit trails for administrators
+ * Displays Decision Receipts and Safety Breaker events
+ * Per UX Spec Part V §5.9 - Decision Receipts & Safety Breaker Log
  */
 
 import {
@@ -11,171 +12,193 @@ import {
     Heading,
     HStack,
     Input,
+    Spinner,
     Table,
     Text,
     VStack,
 } from '@chakra-ui/react'
-import { useState } from 'react'
-
-interface AuditLog {
-    id: string
-    timestamp: string
-    action: string
-    userId: string
-    userEmail: string
-    resource: string
-    ipAddress: string
-    status: 'success' | 'failure' | 'warning'
-    details?: string
-}
-
-// Mock audit data
-const mockAuditLogs: AuditLog[] = [
-    {
-        id: '1',
-        timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-        action: 'LOGIN',
-        userId: 'user-123',
-        userEmail: 'user@example.com',
-        resource: 'auth/login',
-        ipAddress: '192.168.1.1',
-        status: 'success',
-    },
-    {
-        id: '2',
-        timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-        action: 'WORKOUT_GENERATE',
-        userId: 'user-456',
-        userEmail: 'fitness@example.com',
-        resource: 'ai/generate',
-        ipAddress: '10.0.0.1',
-        status: 'success',
-        details: 'Generated 45-min bodyweight workout',
-    },
-    {
-        id: '3',
-        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-        action: 'API_RATE_LIMIT',
-        userId: 'user-789',
-        userEmail: 'heavy@example.com',
-        resource: 'ai/generate',
-        ipAddress: '172.16.0.1',
-        status: 'warning',
-        details: 'Rate limit exceeded: 10 requests/minute',
-    },
-    {
-        id: '4',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-        action: 'LOGIN_FAILED',
-        userId: 'unknown',
-        userEmail: 'attacker@example.com',
-        resource: 'auth/login',
-        ipAddress: '203.0.113.1',
-        status: 'failure',
-        details: 'Invalid credentials',
-    },
-]
+import { useEffect, useState } from 'react'
+import { DecisionOutcome, DecisionType } from '../config/adminConfig'
+import { AdminAPI, DecisionReceipt, SafetyBreakerEvent } from '../services/adminApi'
 
 const AdminAuditSecurity = () => {
-    const [logs] = useState<AuditLog[]>(mockAuditLogs)
+    const [receipts, setReceipts] = useState<DecisionReceipt[]>([])
+    const [safetyBreakers, setSafetyBreakers] = useState<SafetyBreakerEvent[]>([])
+    const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
-    const [filterStatus, setFilterStatus] = useState<string>('all')
+    const [filterOutcome, setFilterOutcome] = useState<string>('all')
+    const [activeTab, setActiveTab] = useState<'receipts' | 'safety'>('receipts')
 
-    const filteredLogs = logs.filter((log) => {
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setLoading(true)
+                const [receiptData, safetyData] = await Promise.all([
+                    AdminAPI.getDecisionReceipts(),
+                    AdminAPI.getSafetyBreakerEvents()
+                ])
+                setReceipts(receiptData)
+                setSafetyBreakers(safetyData)
+            } catch (err) {
+                console.error('Failed to fetch audit data:', err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchData()
+    }, [])
+
+    const filteredReceipts = receipts.filter((receipt) => {
         const matchesSearch =
-            log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            log.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            log.resource.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesStatus = filterStatus === 'all' || log.status === filterStatus
-        return matchesSearch && matchesStatus
+            receipt.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            receipt.decisionType.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesOutcome = filterOutcome === 'all' || receipt.outcome === filterOutcome
+        return matchesSearch && matchesOutcome
     })
 
-    const getStatusColor = (status: AuditLog['status']) => {
-        switch (status) {
-            case 'success':
-                return 'green'
-            case 'failure':
-                return 'red'
-            case 'warning':
-                return 'yellow'
+    const filteredBreakers = safetyBreakers.filter((breaker) => {
+        return breaker.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            breaker.reason.toLowerCase().includes(searchTerm.toLowerCase())
+    })
+
+    const getOutcomeColor = (outcome: DecisionOutcome) => {
+        switch (outcome) {
+            case DecisionOutcome.ACCEPTED: return 'green'
+            case DecisionOutcome.REJECTED: return 'red'
+            case DecisionOutcome.MODIFIED: return 'blue'
+            case DecisionOutcome.PENDING: return 'yellow'
         }
     }
 
-    const exportLogs = () => {
+    const getDecisionTypeLabel = (type: DecisionType) => {
+        switch (type) {
+            case DecisionType.WORKOUT_MUTATION: return 'Workout Mutation'
+            case DecisionType.SCHEDULE_CHANGE: return 'Schedule Change'
+            case DecisionType.REST_DAY: return 'Rest Day'
+            case DecisionType.INTENSITY_ADJUSTMENT: return 'Intensity Adj.'
+        }
+    }
+
+    const exportDecisionReceipts = () => {
         const csv = [
-            ['Timestamp', 'Action', 'User', 'Resource', 'IP', 'Status', 'Details'],
-            ...filteredLogs.map((log) => [
-                log.timestamp,
-                log.action,
-                log.userEmail,
-                log.resource,
-                log.ipAddress,
-                log.status,
-                log.details || '',
+            ['ID', 'Timestamp', 'User', 'Type', 'Confidence', 'Outcome', 'Alternatives', 'Context'],
+            ...filteredReceipts.map((r) => [
+                r.id,
+                r.timestamp,
+                r.userId,
+                r.decisionType,
+                `${(r.confidence * 100).toFixed(1)}%`,
+                r.outcome,
+                r.alternativesConsidered.toString(),
+                r.contextSnapshot.substring(0, 100)
             ]),
         ]
-            .map((row) => row.join(','))
+            .map((row) => row.map(c => `"${c}"`).join(','))
             .join('\n')
 
         const blob = new Blob([csv], { type: 'text/csv' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`
+        a.download = `decision-receipts-${new Date().toISOString().split('T')[0]}.csv`
         a.click()
     }
+
+    if (loading) {
+        return (
+            <Box p={6} display="flex" justifyContent="center" alignItems="center" minH="400px">
+                <VStack gap={4}>
+                    <Spinner size="xl" color="orange.500" />
+                    <Text color="gray.600">Loading audit data...</Text>
+                </VStack>
+            </Box>
+        )
+    }
+
+    // Stats
+    const totalDecisions = receipts.length
+    const acceptedDecisions = receipts.filter(r => r.outcome === DecisionOutcome.ACCEPTED).length
+    const rejectedDecisions = receipts.filter(r => r.outcome === DecisionOutcome.REJECTED).length
+    const avgConfidence = receipts.length > 0
+        ? (receipts.reduce((sum, r) => sum + r.confidence, 0) / receipts.length * 100).toFixed(1)
+        : 0
+    const totalBreakers = safetyBreakers.length
+    const autoResolvedBreakers = safetyBreakers.filter(b => b.autoResolved).length
 
     return (
         <Box p={6}>
             <VStack align="start" mb={8} gap={2}>
-                <Heading size="xl">Audit & Security</Heading>
+                <Heading size="xl">Decision Receipts & Safety Log</Heading>
                 <Text color="gray.600">
-                    Monitor security events and audit trails
+                    Full audit trail of Ghost decisions with context and alternatives
                 </Text>
             </VStack>
 
-            {/* Security Overview */}
+            {/* Stats Overview */}
             <HStack gap={4} mb={6} flexWrap="wrap">
+                <Card.Root bg="blue.50" borderColor="blue.200" border="1px">
+                    <Card.Body p={4}>
+                        <Text fontSize="sm" color="blue.700">Total Decisions</Text>
+                        <Text fontSize="2xl" fontWeight="bold" color="blue.600">
+                            {totalDecisions}
+                        </Text>
+                    </Card.Body>
+                </Card.Root>
                 <Card.Root bg="green.50" borderColor="green.200" border="1px">
                     <Card.Body p={4}>
-                        <Text fontSize="sm" color="green.700">
-                            Successful Logins (24h)
-                        </Text>
+                        <Text fontSize="sm" color="green.700">Accepted</Text>
                         <Text fontSize="2xl" fontWeight="bold" color="green.600">
-                            142
+                            {acceptedDecisions}
                         </Text>
                     </Card.Body>
                 </Card.Root>
                 <Card.Root bg="red.50" borderColor="red.200" border="1px">
                     <Card.Body p={4}>
-                        <Text fontSize="sm" color="red.700">
-                            Failed Logins (24h)
-                        </Text>
+                        <Text fontSize="sm" color="red.700">Rejected</Text>
                         <Text fontSize="2xl" fontWeight="bold" color="red.600">
-                            3
+                            {rejectedDecisions}
                         </Text>
                     </Card.Body>
                 </Card.Root>
-                <Card.Root bg="yellow.50" borderColor="yellow.200" border="1px">
+                <Card.Root bg="purple.50" borderColor="purple.200" border="1px">
                     <Card.Body p={4}>
-                        <Text fontSize="sm" color="yellow.700">
-                            Rate Limit Events
-                        </Text>
-                        <Text fontSize="2xl" fontWeight="bold" color="yellow.600">
-                            7
+                        <Text fontSize="sm" color="purple.700">Avg Confidence</Text>
+                        <Text fontSize="2xl" fontWeight="bold" color="purple.600">
+                            {avgConfidence}%
                         </Text>
                     </Card.Body>
                 </Card.Root>
-                <Card.Root bg="blue.50" borderColor="blue.200" border="1px">
+                <Card.Root bg="orange.50" borderColor="orange.200" border="1px">
                     <Card.Body p={4}>
-                        <Text fontSize="sm" color="blue.700">
-                            API Requests (24h)
+                        <Text fontSize="sm" color="orange.700">Safety Breakers</Text>
+                        <Text fontSize="2xl" fontWeight="bold" color="orange.600">
+                            {totalBreakers}
                         </Text>
-                        <Text fontSize="2xl" fontWeight="bold" color="blue.600">
-                            2,847
+                        <Text fontSize="xs" color="orange.500">
+                            {autoResolvedBreakers} auto-resolved
                         </Text>
                     </Card.Body>
                 </Card.Root>
+            </HStack>
+
+            {/* Tab Switcher */}
+            <HStack gap={2} mb={6}>
+                <Button
+                    size="md"
+                    variant={activeTab === 'receipts' ? 'solid' : 'outline'}
+                    colorScheme="blue"
+                    onClick={() => setActiveTab('receipts')}
+                >
+                    Decision Receipts ({receipts.length})
+                </Button>
+                <Button
+                    size="md"
+                    variant={activeTab === 'safety' ? 'solid' : 'outline'}
+                    colorScheme="orange"
+                    onClick={() => setActiveTab('safety')}
+                >
+                    Safety Breaker Log ({safetyBreakers.length})
+                </Button>
             </HStack>
 
             {/* Filters */}
@@ -183,82 +206,143 @@ const AdminAuditSecurity = () => {
                 <Card.Body p={4}>
                     <HStack gap={4} flexWrap="wrap">
                         <Input
-                            placeholder="Search logs..."
+                            placeholder="Search by user or type..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             maxW="300px"
                         />
-                        <HStack gap={2}>
-                            {['all', 'success', 'failure', 'warning'].map((status) => (
-                                <Button
-                                    key={status}
-                                    size="sm"
-                                    variant={filterStatus === status ? 'solid' : 'outline'}
-                                    colorScheme={
-                                        status === 'all'
-                                            ? 'gray'
-                                            : status === 'success'
-                                            ? 'green'
-                                            : status === 'failure'
-                                            ? 'red'
-                                            : 'yellow'
-                                    }
-                                    onClick={() => setFilterStatus(status)}
-                                >
-                                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                                </Button>
-                            ))}
-                        </HStack>
-                        <Button size="sm" colorScheme="blue" onClick={exportLogs}>
+                        {activeTab === 'receipts' && (
+                            <HStack gap={2}>
+                                {['all', DecisionOutcome.ACCEPTED, DecisionOutcome.REJECTED, DecisionOutcome.MODIFIED].map((outcome) => (
+                                    <Button
+                                        key={outcome}
+                                        size="sm"
+                                        variant={filterOutcome === outcome ? 'solid' : 'outline'}
+                                        colorScheme={outcome === 'all' ? 'gray' : getOutcomeColor(outcome as DecisionOutcome)}
+                                        onClick={() => setFilterOutcome(outcome)}
+                                    >
+                                        {outcome === 'all' ? 'All' : outcome}
+                                    </Button>
+                                ))}
+                            </HStack>
+                        )}
+                        <Button size="sm" colorScheme="blue" onClick={exportDecisionReceipts}>
                             Export CSV
                         </Button>
                     </HStack>
                 </Card.Body>
             </Card.Root>
 
-            {/* Audit Logs Table */}
-            <Card.Root bg="white" shadow="sm" borderRadius="lg">
-                <Card.Body p={0}>
-                    <Box overflowX="auto">
-                        <Table.Root>
-                            <Table.Header>
-                                <Table.Row>
-                                    <Table.ColumnHeader>Timestamp</Table.ColumnHeader>
-                                    <Table.ColumnHeader>Action</Table.ColumnHeader>
-                                    <Table.ColumnHeader>User</Table.ColumnHeader>
-                                    <Table.ColumnHeader>Resource</Table.ColumnHeader>
-                                    <Table.ColumnHeader>IP Address</Table.ColumnHeader>
-                                    <Table.ColumnHeader>Status</Table.ColumnHeader>
-                                    <Table.ColumnHeader>Details</Table.ColumnHeader>
-                                </Table.Row>
-                            </Table.Header>
-                            <Table.Body>
-                                {filteredLogs.map((log) => (
-                                    <Table.Row key={log.id}>
-                                        <Table.Cell fontSize="sm">
-                                            {new Date(log.timestamp).toLocaleString()}
-                                        </Table.Cell>
-                                        <Table.Cell fontWeight="medium">{log.action}</Table.Cell>
-                                        <Table.Cell fontSize="sm">{log.userEmail}</Table.Cell>
-                                        <Table.Cell fontSize="sm" fontFamily="mono">
-                                            {log.resource}
-                                        </Table.Cell>
-                                        <Table.Cell fontSize="sm" fontFamily="mono">
-                                            {log.ipAddress}
-                                        </Table.Cell>
-                                        <Table.Cell>
-                                            <Badge colorPalette={getStatusColor(log.status)}>
-                                                {log.status}
-                                            </Badge>
-                                        </Table.Cell>
-                                        <Table.Cell fontSize="sm" color="gray.600">
-                                            {log.details || '-'}
-                                        </Table.Cell>
+            {/* Decision Receipts Table */}
+            {activeTab === 'receipts' && (
+                <Card.Root bg="white" shadow="sm" borderRadius="lg">
+                    <Card.Body p={0}>
+                        <Box overflowX="auto">
+                            <Table.Root size="sm">
+                                <Table.Header>
+                                    <Table.Row>
+                                        <Table.ColumnHeader>Timestamp</Table.ColumnHeader>
+                                        <Table.ColumnHeader>User</Table.ColumnHeader>
+                                        <Table.ColumnHeader>Decision Type</Table.ColumnHeader>
+                                        <Table.ColumnHeader>Confidence</Table.ColumnHeader>
+                                        <Table.ColumnHeader>Alternatives</Table.ColumnHeader>
+                                        <Table.ColumnHeader>Outcome</Table.ColumnHeader>
+                                        <Table.ColumnHeader>Context</Table.ColumnHeader>
                                     </Table.Row>
-                                ))}
-                            </Table.Body>
-                        </Table.Root>
-                    </Box>
+                                </Table.Header>
+                                <Table.Body>
+                                    {filteredReceipts.map((receipt) => (
+                                        <Table.Row key={receipt.id}>
+                                            <Table.Cell fontSize="xs">
+                                                {new Date(receipt.timestamp).toLocaleString()}
+                                            </Table.Cell>
+                                            <Table.Cell fontSize="sm">{receipt.userId}</Table.Cell>
+                                            <Table.Cell>
+                                                <Badge colorPalette="blue">
+                                                    {getDecisionTypeLabel(receipt.decisionType)}
+                                                </Badge>
+                                            </Table.Cell>
+                                            <Table.Cell>
+                                                <Text
+                                                    fontWeight="medium"
+                                                    color={receipt.confidence >= 0.8 ? 'green.600' : receipt.confidence >= 0.6 ? 'yellow.600' : 'orange.600'}
+                                                >
+                                                    {(receipt.confidence * 100).toFixed(0)}%
+                                                </Text>
+                                            </Table.Cell>
+                                            <Table.Cell>
+                                                {receipt.alternativesConsidered}
+                                            </Table.Cell>
+                                            <Table.Cell>
+                                                <Badge colorPalette={getOutcomeColor(receipt.outcome)}>
+                                                    {receipt.outcome}
+                                                </Badge>
+                                            </Table.Cell>
+                                            <Table.Cell fontSize="xs" color="gray.600" maxW="200px">
+                                                <Text noOfLines={2}>{receipt.contextSnapshot}</Text>
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    ))}
+                                </Table.Body>
+                            </Table.Root>
+                        </Box>
+                    </Card.Body>
+                </Card.Root>
+            )}
+
+            {/* Safety Breaker Log Table */}
+            {activeTab === 'safety' && (
+                <Card.Root bg="white" shadow="sm" borderRadius="lg">
+                    <Card.Body p={0}>
+                        <Box overflowX="auto">
+                            <Table.Root size="sm">
+                                <Table.Header>
+                                    <Table.Row>
+                                        <Table.ColumnHeader>Timestamp</Table.ColumnHeader>
+                                        <Table.ColumnHeader>User</Table.ColumnHeader>
+                                        <Table.ColumnHeader>Breaker Type</Table.ColumnHeader>
+                                        <Table.ColumnHeader>Reason</Table.ColumnHeader>
+                                        <Table.ColumnHeader>Status</Table.ColumnHeader>
+                                    </Table.Row>
+                                </Table.Header>
+                                <Table.Body>
+                                    {filteredBreakers.map((breaker) => (
+                                        <Table.Row key={breaker.id}>
+                                            <Table.Cell fontSize="xs">
+                                                {new Date(breaker.timestamp).toLocaleString()}
+                                            </Table.Cell>
+                                            <Table.Cell fontSize="sm">{breaker.userId}</Table.Cell>
+                                            <Table.Cell>
+                                                <Badge colorPalette="orange">
+                                                    {breaker.breakerType}
+                                                </Badge>
+                                            </Table.Cell>
+                                            <Table.Cell fontSize="sm" maxW="300px">
+                                                <Text noOfLines={2}>{breaker.reason}</Text>
+                                            </Table.Cell>
+                                            <Table.Cell>
+                                                <Badge colorPalette={breaker.autoResolved ? 'green' : 'yellow'}>
+                                                    {breaker.autoResolved ? 'Auto-Resolved' : 'Manual Review'}
+                                                </Badge>
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    ))}
+                                </Table.Body>
+                            </Table.Root>
+                        </Box>
+                    </Card.Body>
+                </Card.Root>
+            )}
+
+            {/* Info Note */}
+            <Card.Root bg="gray.50" borderRadius="lg" mt={6}>
+                <Card.Body p={4}>
+                    <Text fontSize="sm" color="gray.600">
+                        <strong>Decision Receipts</strong> provide full transparency into Ghost's decision-making
+                        process. Each receipt includes the context used, alternatives considered, and confidence
+                        level. <strong>Safety Breakers</strong> are triggered when Ghost detects potentially
+                        harmful patterns like overtraining or injury risk.
+                    </Text>
                 </Card.Body>
             </Card.Root>
         </Box>

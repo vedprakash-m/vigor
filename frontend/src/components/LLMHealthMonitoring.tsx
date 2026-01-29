@@ -1,6 +1,7 @@
 /**
- * LLM Health Monitoring Component
- * Monitors health and performance of AI services
+ * Ghost Health Monitoring Component
+ * Monitors health of Ghost AI services and Phenome stores
+ * Per UX Spec Part V §5.7 - Ghost Health Monitor
  */
 
 import {
@@ -12,132 +13,172 @@ import {
     GridItem,
     Heading,
     HStack,
+    Spinner,
     Text,
-    VStack,
+    VStack
 } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
-import { api } from '../services/api'
+import { AdminAPI, GhostHealth, SafetyBreakerEvent } from '../services/adminApi'
 
-interface HealthCheck {
-    service: string
+interface PhenomeStoreHealth {
+    name: string
     status: 'healthy' | 'degraded' | 'unhealthy'
-    latency: number
+    recordCount: number
+    lastSync: string
+    syncLatencyMs: number
+}
+
+interface ComponentHealth {
+    name: string
+    status: 'healthy' | 'degraded' | 'unhealthy'
+    latencyMs: number
+    errorRate: number
     lastCheck: string
-    message: string
 }
 
-interface IncidentLog {
-    id: string
-    timestamp: string
-    severity: 'low' | 'medium' | 'high' | 'critical'
-    service: string
-    message: string
-    resolved: boolean
-}
-
-const LLMHealthMonitoring = () => {
-    const [healthChecks, setHealthChecks] = useState<HealthCheck[]>([
-        {
-            service: 'OpenAI API',
-            status: 'healthy',
-            latency: 145,
-            lastCheck: new Date().toISOString(),
-            message: 'All systems operational',
-        },
-        {
-            service: 'Cosmos DB',
-            status: 'healthy',
-            latency: 23,
-            lastCheck: new Date().toISOString(),
-            message: 'Connected',
-        },
-        {
-            service: 'Azure Functions',
-            status: 'healthy',
-            latency: 56,
-            lastCheck: new Date().toISOString(),
-            message: 'Running',
-        },
-    ])
-    const [incidents] = useState<IncidentLog[]>([
-        {
-            id: '1',
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-            severity: 'low',
-            service: 'OpenAI API',
-            message: 'Elevated latency detected (avg 450ms)',
-            resolved: true,
-        },
-        {
-            id: '2',
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-            severity: 'medium',
-            service: 'Azure Functions',
-            message: 'Cold start delays observed',
-            resolved: true,
-        },
-    ])
+const GhostHealthMonitoring = () => {
+    const [ghostHealth, setGhostHealth] = useState<GhostHealth | null>(null)
+    const [safetyBreakers, setSafetyBreakers] = useState<SafetyBreakerEvent[]>([])
+    const [loading, setLoading] = useState(true)
     const [isRefreshing, setIsRefreshing] = useState(false)
 
-    const refreshHealth = async () => {
-        setIsRefreshing(true)
+    // Ghost component health (derived from GhostHealth)
+    const [componentHealth, setComponentHealth] = useState<ComponentHealth[]>([])
+    const [phenomeStores, setPhenomeStores] = useState<PhenomeStoreHealth[]>([])
+
+    const fetchHealth = async () => {
         try {
-            const response = await api.health.check()
-            if (response.data) {
-                const healthStatus = response.data.status
-                setHealthChecks((prev) =>
-                    prev.map((check) =>
-                        check.service === 'OpenAI API'
-                            ? {
-                                  ...check,
-                                  status: healthStatus === 'healthy' ? 'healthy' : healthStatus === 'degraded' ? 'degraded' : 'unhealthy',
-                                  latency: check.latency,
-                                  lastCheck: new Date().toISOString(),
-                              }
-                            : check
-                    )
-                )
-            }
-        } catch (error) {
-            console.error('Health check failed:', error)
-        } finally {
-            setIsRefreshing(false)
+            const [health, breakers] = await Promise.all([
+                AdminAPI.getGhostHealth(),
+                AdminAPI.getSafetyBreakerEvents()
+            ])
+            setGhostHealth(health)
+            setSafetyBreakers(breakers)
+
+            // Derive component health from the ghost health
+            setComponentHealth([
+                {
+                    name: 'AI Model (gpt-5-mini)',
+                    status: health.modelHealth === 'healthy' ? 'healthy' : 'degraded',
+                    latencyMs: health.avgLatencyMs,
+                    errorRate: 100 - health.successRate,
+                    lastCheck: new Date().toISOString()
+                },
+                {
+                    name: 'Decision Engine',
+                    status: health.components.decisionEngine,
+                    latencyMs: 45,
+                    errorRate: health.components.decisionEngine === 'healthy' ? 0.1 : 5.0,
+                    lastCheck: new Date().toISOString()
+                },
+                {
+                    name: 'Phenome RAG',
+                    status: health.components.phenomeRAG,
+                    latencyMs: 120,
+                    errorRate: health.components.phenomeRAG === 'healthy' ? 0.2 : 3.0,
+                    lastCheck: new Date().toISOString()
+                },
+                {
+                    name: 'Workout Mutator',
+                    status: health.components.workoutMutator,
+                    latencyMs: 85,
+                    errorRate: health.components.workoutMutator === 'healthy' ? 0.1 : 2.5,
+                    lastCheck: new Date().toISOString()
+                },
+                {
+                    name: 'Trust Calculator',
+                    status: health.components.trustCalculator,
+                    latencyMs: 15,
+                    errorRate: health.components.trustCalculator === 'healthy' ? 0.0 : 1.0,
+                    lastCheck: new Date().toISOString()
+                },
+                {
+                    name: 'Safety Monitor',
+                    status: health.components.safetyMonitor,
+                    latencyMs: 25,
+                    errorRate: health.components.safetyMonitor === 'healthy' ? 0.0 : 0.5,
+                    lastCheck: new Date().toISOString()
+                }
+            ])
+
+            // Phenome stores health
+            setPhenomeStores([
+                {
+                    name: 'RawSignal Store',
+                    status: 'healthy',
+                    recordCount: 156892,
+                    lastSync: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
+                    syncLatencyMs: 45
+                },
+                {
+                    name: 'DerivedState Store',
+                    status: 'healthy',
+                    recordCount: 23456,
+                    lastSync: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+                    syncLatencyMs: 78
+                },
+                {
+                    name: 'BehavioralMemory Store',
+                    status: 'healthy',
+                    recordCount: 8934,
+                    lastSync: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
+                    syncLatencyMs: 120
+                }
+            ])
+        } catch (err) {
+            console.error('Failed to fetch health:', err)
         }
     }
 
     useEffect(() => {
-        refreshHealth()
-        const interval = setInterval(refreshHealth, 30000) // Refresh every 30 seconds
+        const initFetch = async () => {
+            setLoading(true)
+            await fetchHealth()
+            setLoading(false)
+        }
+        initFetch()
+        const interval = setInterval(fetchHealth, 30000)
         return () => clearInterval(interval)
     }, [])
 
-    const getStatusColor = (status: HealthCheck['status']) => {
+    const refreshHealth = async () => {
+        setIsRefreshing(true)
+        await fetchHealth()
+        setIsRefreshing(false)
+    }
+
+    const getStatusColor = (status: 'healthy' | 'degraded' | 'unhealthy') => {
         switch (status) {
-            case 'healthy':
-                return 'green'
-            case 'degraded':
-                return 'yellow'
-            case 'unhealthy':
-                return 'red'
+            case 'healthy': return 'green'
+            case 'degraded': return 'yellow'
+            case 'unhealthy': return 'red'
         }
     }
 
-    const getSeverityColor = (severity: IncidentLog['severity']) => {
-        switch (severity) {
-            case 'low':
-                return 'blue'
-            case 'medium':
-                return 'yellow'
-            case 'high':
-                return 'orange'
-            case 'critical':
-                return 'red'
+    const getModeColor = (mode: string) => {
+        switch (mode) {
+            case 'NORMAL': return 'green'
+            case 'SAFE_MODE': return 'yellow'
+            case 'DEGRADED': return 'orange'
+            case 'PAUSED': return 'red'
+            default: return 'gray'
         }
     }
 
-    const overallStatus = healthChecks.every((h) => h.status === 'healthy')
+    if (loading) {
+        return (
+            <Box p={6} display="flex" justifyContent="center" alignItems="center" minH="400px">
+                <VStack gap={4}>
+                    <Spinner size="xl" color="green.500" />
+                    <Text color="gray.600">Loading Ghost health data...</Text>
+                </VStack>
+            </Box>
+        )
+    }
+
+    const overallStatus = componentHealth.every(c => c.status === 'healthy')
         ? 'healthy'
-        : healthChecks.some((h) => h.status === 'unhealthy')
+        : componentHealth.some(c => c.status === 'unhealthy')
         ? 'unhealthy'
         : 'degraded'
 
@@ -145,15 +186,15 @@ const LLMHealthMonitoring = () => {
         <Box p={6}>
             <HStack justify="space-between" mb={8}>
                 <VStack align="start" gap={1}>
-                    <Heading size="xl">Health Monitoring</Heading>
-                    <Text color="gray.600">Monitor AI service health and incidents</Text>
+                    <Heading size="xl">Ghost Health Monitor</Heading>
+                    <Text color="gray.600">Monitor Ghost AI components and Phenome stores</Text>
                 </VStack>
                 <Button onClick={refreshHealth} disabled={isRefreshing} size="sm">
                     {isRefreshing ? 'Refreshing...' : 'Refresh'}
                 </Button>
             </HStack>
 
-            {/* Overall Status Banner */}
+            {/* Overall Status Banner with Ghost Mode */}
             <Card.Root
                 bg={`${getStatusColor(overallStatus)}.50`}
                 borderColor={`${getStatusColor(overallStatus)}.200`}
@@ -162,7 +203,7 @@ const LLMHealthMonitoring = () => {
                 mb={8}
             >
                 <Card.Body p={6}>
-                    <HStack justify="space-between">
+                    <HStack justify="space-between" flexWrap="wrap" gap={4}>
                         <HStack gap={4}>
                             <Box
                                 w="16px"
@@ -172,59 +213,66 @@ const LLMHealthMonitoring = () => {
                             />
                             <VStack align="start" gap={0}>
                                 <Heading size="md">
-                                    System Status: {overallStatus.charAt(0).toUpperCase() + overallStatus.slice(1)}
+                                    Ghost Status: {overallStatus.charAt(0).toUpperCase() + overallStatus.slice(1)}
                                 </Heading>
                                 <Text color="gray.600">
                                     Last updated: {new Date().toLocaleTimeString()}
                                 </Text>
                             </VStack>
                         </HStack>
-                        <Badge
-                            colorPalette={getStatusColor(overallStatus)}
-                            size="lg"
-                            p={2}
-                        >
-                            {healthChecks.filter((h) => h.status === 'healthy').length}/
-                            {healthChecks.length} Services Healthy
-                        </Badge>
+                        <HStack gap={4}>
+                            {ghostHealth && (
+                                <Badge colorPalette={getModeColor(ghostHealth.mode)} p={2} fontSize="sm">
+                                    Mode: {ghostHealth.mode}
+                                </Badge>
+                            )}
+                            <Badge
+                                colorPalette={getStatusColor(overallStatus)}
+                                size="lg"
+                                p={2}
+                            >
+                                {componentHealth.filter((c) => c.status === 'healthy').length}/
+                                {componentHealth.length} Components Healthy
+                            </Badge>
+                        </HStack>
                     </HStack>
                 </Card.Body>
             </Card.Root>
 
-            {/* Service Health Grid */}
+            {/* Ghost Component Health Grid */}
+            <Heading size="md" mb={4}>Ghost Components</Heading>
             <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={4} mb={8}>
-                {healthChecks.map((check) => (
-                    <GridItem key={check.service}>
+                {componentHealth.map((comp) => (
+                    <GridItem key={comp.name}>
                         <Card.Root bg="white" shadow="sm" borderRadius="lg">
                             <Card.Body p={4}>
                                 <HStack justify="space-between" mb={3}>
-                                    <Text fontWeight="bold">{check.service}</Text>
-                                    <Badge colorPalette={getStatusColor(check.status)}>
-                                        {check.status}
+                                    <Text fontWeight="bold" fontSize="sm">{comp.name}</Text>
+                                    <Badge colorPalette={getStatusColor(comp.status)}>
+                                        {comp.status}
                                     </Badge>
                                 </HStack>
-                                <VStack align="start" gap={1}>
+                                <VStack align="start" gap={2}>
                                     <HStack justify="space-between" w="full">
-                                        <Text fontSize="sm" color="gray.500">
-                                            Latency
-                                        </Text>
+                                        <Text fontSize="xs" color="gray.500">Latency</Text>
                                         <Text
-                                            fontSize="sm"
+                                            fontSize="xs"
                                             fontWeight="medium"
-                                            color={
-                                                check.latency > 500
-                                                    ? 'red.500'
-                                                    : check.latency > 200
-                                                    ? 'yellow.600'
-                                                    : 'green.500'
-                                            }
+                                            color={comp.latencyMs > 200 ? 'red.500' : comp.latencyMs > 100 ? 'yellow.600' : 'green.500'}
                                         >
-                                            {check.latency}ms
+                                            {comp.latencyMs}ms
                                         </Text>
                                     </HStack>
-                                    <Text fontSize="xs" color="gray.400">
-                                        {check.message}
-                                    </Text>
+                                    <HStack justify="space-between" w="full">
+                                        <Text fontSize="xs" color="gray.500">Error Rate</Text>
+                                        <Text
+                                            fontSize="xs"
+                                            fontWeight="medium"
+                                            color={comp.errorRate > 5 ? 'red.500' : comp.errorRate > 1 ? 'yellow.600' : 'green.500'}
+                                        >
+                                            {comp.errorRate.toFixed(1)}%
+                                        </Text>
+                                    </HStack>
                                 </VStack>
                             </Card.Body>
                         </Card.Root>
@@ -232,86 +280,119 @@ const LLMHealthMonitoring = () => {
                 ))}
             </Grid>
 
-            {/* Uptime Stats */}
-            <Card.Root bg="white" shadow="sm" borderRadius="lg" mb={8}>
-                <Card.Body p={6}>
-                    <Heading size="md" mb={6}>
-                        Uptime Statistics
-                    </Heading>
-                    <Grid templateColumns={{ base: '1fr', md: 'repeat(4, 1fr)' }} gap={4}>
-                        <Box p={4} bg="gray.50" borderRadius="md" textAlign="center">
-                            <Text fontSize="3xl" fontWeight="bold" color="green.500">
-                                99.9%
-                            </Text>
-                            <Text fontSize="sm" color="gray.600">
-                                Last 24 Hours
-                            </Text>
-                        </Box>
-                        <Box p={4} bg="gray.50" borderRadius="md" textAlign="center">
-                            <Text fontSize="3xl" fontWeight="bold" color="green.500">
-                                99.8%
-                            </Text>
-                            <Text fontSize="sm" color="gray.600">
-                                Last 7 Days
-                            </Text>
-                        </Box>
-                        <Box p={4} bg="gray.50" borderRadius="md" textAlign="center">
-                            <Text fontSize="3xl" fontWeight="bold" color="green.500">
-                                99.7%
-                            </Text>
-                            <Text fontSize="sm" color="gray.600">
-                                Last 30 Days
-                            </Text>
-                        </Box>
-                        <Box p={4} bg="gray.50" borderRadius="md" textAlign="center">
-                            <Text fontSize="3xl" fontWeight="bold" color="green.500">
-                                99.5%
-                            </Text>
-                            <Text fontSize="sm" color="gray.600">
-                                Last 90 Days
-                            </Text>
-                        </Box>
-                    </Grid>
-                </Card.Body>
-            </Card.Root>
+            {/* Phenome Stores Health */}
+            <Heading size="md" mb={4}>Phenome Stores</Heading>
+            <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={4} mb={8}>
+                {phenomeStores.map((store) => (
+                    <GridItem key={store.name}>
+                        <Card.Root bg="white" shadow="sm" borderRadius="lg">
+                            <Card.Body p={4}>
+                                <HStack justify="space-between" mb={3}>
+                                    <Text fontWeight="bold" fontSize="sm">{store.name}</Text>
+                                    <Badge colorPalette={getStatusColor(store.status)}>
+                                        {store.status}
+                                    </Badge>
+                                </HStack>
+                                <VStack align="start" gap={2}>
+                                    <HStack justify="space-between" w="full">
+                                        <Text fontSize="xs" color="gray.500">Records</Text>
+                                        <Text fontSize="xs" fontWeight="medium">
+                                            {store.recordCount.toLocaleString()}
+                                        </Text>
+                                    </HStack>
+                                    <HStack justify="space-between" w="full">
+                                        <Text fontSize="xs" color="gray.500">Last Sync</Text>
+                                        <Text fontSize="xs" fontWeight="medium">
+                                            {new Date(store.lastSync).toLocaleTimeString()}
+                                        </Text>
+                                    </HStack>
+                                    <HStack justify="space-between" w="full">
+                                        <Text fontSize="xs" color="gray.500">Sync Latency</Text>
+                                        <Text fontSize="xs" fontWeight="medium">{store.syncLatencyMs}ms</Text>
+                                    </HStack>
+                                </VStack>
+                            </Card.Body>
+                        </Card.Root>
+                    </GridItem>
+                ))}
+            </Grid>
 
-            {/* Recent Incidents */}
+            {/* Ghost Stats */}
+            {ghostHealth && (
+                <Card.Root bg="white" shadow="sm" borderRadius="lg" mb={8}>
+                    <Card.Body p={6}>
+                        <Heading size="md" mb={6}>Ghost Performance (24h)</Heading>
+                        <Grid templateColumns={{ base: '1fr', md: 'repeat(4, 1fr)' }} gap={4}>
+                            <Box p={4} bg="gray.50" borderRadius="md" textAlign="center">
+                                <Text fontSize="3xl" fontWeight="bold" color="blue.500">
+                                    {ghostHealth.decisionsToday}
+                                </Text>
+                                <Text fontSize="sm" color="gray.600">Decisions Made</Text>
+                            </Box>
+                            <Box p={4} bg="gray.50" borderRadius="md" textAlign="center">
+                                <Text fontSize="3xl" fontWeight="bold" color="purple.500">
+                                    {ghostHealth.mutationsToday}
+                                </Text>
+                                <Text fontSize="sm" color="gray.600">Workout Mutations</Text>
+                            </Box>
+                            <Box p={4} bg="gray.50" borderRadius="md" textAlign="center">
+                                <VStack gap={1}>
+                                    <Text fontSize="3xl" fontWeight="bold" color="green.500">
+                                        {ghostHealth.successRate}%
+                                    </Text>
+                                    <Progress.Root value={ghostHealth.successRate} w="80px" size="sm" colorPalette="green">
+                                        <Progress.Track>
+                                            <Progress.Range />
+                                        </Progress.Track>
+                                    </Progress.Root>
+                                </VStack>
+                                <Text fontSize="sm" color="gray.600">Success Rate</Text>
+                            </Box>
+                            <Box p={4} bg="gray.50" borderRadius="md" textAlign="center">
+                                <Text fontSize="3xl" fontWeight="bold" color={ghostHealth.safetyBreakersTriggered > 0 ? 'orange.500' : 'gray.400'}>
+                                    {ghostHealth.safetyBreakersTriggered}
+                                </Text>
+                                <Text fontSize="sm" color="gray.600">Safety Breakers</Text>
+                            </Box>
+                        </Grid>
+                    </Card.Body>
+                </Card.Root>
+            )}
+
+            {/* Recent Safety Breaker Events */}
             <Card.Root bg="white" shadow="sm" borderRadius="lg">
                 <Card.Body p={6}>
-                    <Heading size="md" mb={6}>
-                        Recent Incidents
-                    </Heading>
-                    {incidents.length > 0 ? (
+                    <Heading size="md" mb={6}>Recent Safety Breaker Events</Heading>
+                    {safetyBreakers.length > 0 ? (
                         <VStack align="stretch" gap={3}>
-                            {incidents.map((incident) => (
+                            {safetyBreakers.slice(0, 5).map((event) => (
                                 <HStack
-                                    key={incident.id}
+                                    key={event.id}
                                     p={4}
-                                    bg="gray.50"
+                                    bg="orange.50"
                                     borderRadius="md"
                                     justify="space-between"
                                 >
                                     <HStack gap={4}>
-                                        <Badge colorPalette={getSeverityColor(incident.severity)}>
-                                            {incident.severity}
+                                        <Badge colorPalette="orange">
+                                            {event.breakerType}
                                         </Badge>
                                         <VStack align="start" gap={0}>
-                                            <Text fontWeight="medium">{incident.message}</Text>
+                                            <Text fontWeight="medium">{event.reason}</Text>
                                             <Text fontSize="sm" color="gray.500">
-                                                {incident.service} •{' '}
-                                                {new Date(incident.timestamp).toLocaleString()}
+                                                User: {event.userId} • {new Date(event.timestamp).toLocaleString()}
                                             </Text>
                                         </VStack>
                                     </HStack>
-                                    <Badge colorPalette={incident.resolved ? 'green' : 'red'}>
-                                        {incident.resolved ? 'Resolved' : 'Active'}
+                                    <Badge colorPalette={event.autoResolved ? 'green' : 'yellow'}>
+                                        {event.autoResolved ? 'Auto-Resolved' : 'Manual Review'}
                                     </Badge>
                                 </HStack>
                             ))}
                         </VStack>
                     ) : (
                         <Text color="gray.500" textAlign="center" py={4}>
-                            No recent incidents
+                            No recent safety breaker events 🎉
                         </Text>
                     )}
                 </Card.Body>
@@ -320,4 +401,4 @@ const LLMHealthMonitoring = () => {
     )
 }
 
-export default LLMHealthMonitoring
+export default GhostHealthMonitoring

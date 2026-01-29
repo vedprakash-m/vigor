@@ -37,7 +37,42 @@ The system earns trust progressively, graduating from suggestions to autonomous 
 | **iOS App**       | ✅ Production | Primary Ghost interface (calendar-centric) |
 | **watchOS**       | ✅ Production | Workout tracking & complications           |
 | **Backend**       | ✅ Production | Ghost API, Silent Push, AI                 |
-| **Web Dashboard** | ✅ Production | Admin dashboard & Phenome analytics        |
+| **Web Dashboard** | ✅ Production | Admin dashboard & Ghost operations         |
+
+---
+
+## 🔐 Admin Dashboard
+
+The web dashboard provides administrative control over Ghost operations:
+
+### Features
+
+| Feature             | Description                                         |
+| ------------------- | --------------------------------------------------- |
+| **Ghost Health**    | Monitor AI model, Phenome stores, component health  |
+| **User Management** | View users with Trust phase, score, Watch status    |
+| **AI Pipeline**     | Configure gpt-5-mini Structured Outputs settings    |
+| **Decision Audit**  | Review Decision Receipts with alternatives/outcomes |
+| **Safety Breakers** | Monitor and manage trust downgrades                 |
+| **Analytics**       | Ghost operations metrics and Trust distribution     |
+
+### Access Control
+
+Admin access is controlled via email whitelist:
+
+- **Frontend**: `frontend/src/config/adminConfig.ts`
+- **Backend**: `functions-modernized/shared/auth.py`
+
+### Ghost-Specific Admin API Endpoints
+
+| Method | Endpoint                              | Description                   |
+| ------ | ------------------------------------- | ----------------------------- |
+| GET    | `/api/admin/ghost/health`             | Ghost system health metrics   |
+| GET    | `/api/admin/ghost/trust-distribution` | User Trust phase distribution |
+| GET    | `/api/admin/ghost/users`              | Users with Ghost fields       |
+| GET    | `/api/admin/ghost/decision-receipts`  | Decision receipts for audit   |
+| GET    | `/api/admin/ghost/safety-breakers`    | Safety breaker events         |
+| GET    | `/api/admin/ghost/analytics`          | Ghost analytics for period    |
 
 ---
 
@@ -314,7 +349,17 @@ func azure functionapp publish vigor-functions --python
 
 ---
 
-## 💰 Cost Estimates
+## 💰 Pricing & Cost Estimates
+
+### Subscription Tiers
+
+| Tier        | Price     | Features                                    |
+| ----------- | --------- | ------------------------------------------- |
+| **Free**    | $0/month  | Observer phase only, 30-day Phenome storage |
+| **Premium** | $49/month | Full Ghost (5 phases), Apple Watch required |
+| **Premium** | $499/year | Annual (~15% savings)                       |
+
+### Infrastructure Costs
 
 | Resource        | Tier              | Monthly Cost     |
 | --------------- | ----------------- | ---------------- |

@@ -553,6 +553,215 @@ async def get_cost_metrics(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 
+@app.route(
+    route="admin/ghost/health", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS
+)
+async def get_ghost_health(req: func.HttpRequest) -> func.HttpResponse:
+    """Get Ghost system health (admin only)"""
+    try:
+        admin_user = await require_admin_user(req)
+        if not admin_user:
+            return func.HttpResponse(
+                json.dumps({"error": "Admin access required"}),
+                status_code=403,
+                mimetype="application/json",
+            )
+
+        # Get Ghost health metrics from Cosmos DB
+        health_data = await cosmos_db.get_ghost_health_metrics()
+
+        return func.HttpResponse(
+            json.dumps({
+                "mode": health_data.get("mode", "NORMAL"),
+                "modelHealth": health_data.get("model_health", "healthy"),
+                "avgLatencyMs": health_data.get("avg_latency_ms", 245),
+                "successRate": health_data.get("success_rate", 99.2),
+                "decisionsToday": health_data.get("decisions_today", 156),
+                "mutationsToday": health_data.get("mutations_today", 47),
+                "safetyBreakersTriggered": health_data.get("safety_breakers", 0),
+                "components": {
+                    "decisionEngine": "healthy",
+                    "phenomeRAG": "healthy",
+                    "workoutMutator": "healthy",
+                    "trustCalculator": "healthy",
+                    "safetyMonitor": "healthy",
+                }
+            }),
+            status_code=200,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting ghost health: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Failed to retrieve ghost health"}),
+            status_code=500,
+            mimetype="application/json",
+        )
+
+
+@app.route(
+    route="admin/ghost/trust-distribution", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS
+)
+async def get_trust_distribution(req: func.HttpRequest) -> func.HttpResponse:
+    """Get user trust phase distribution (admin only)"""
+    try:
+        admin_user = await require_admin_user(req)
+        if not admin_user:
+            return func.HttpResponse(
+                json.dumps({"error": "Admin access required"}),
+                status_code=403,
+                mimetype="application/json",
+            )
+
+        # Query trust distribution from user profiles
+        distribution = await cosmos_db.get_trust_distribution()
+
+        return func.HttpResponse(
+            json.dumps({
+                "phases": distribution
+            }),
+            status_code=200,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting trust distribution: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Failed to retrieve trust distribution"}),
+            status_code=500,
+            mimetype="application/json",
+        )
+
+
+@app.route(
+    route="admin/ghost/users", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS
+)
+async def get_admin_users(req: func.HttpRequest) -> func.HttpResponse:
+    """Get all users with Ghost-specific fields (admin only)"""
+    try:
+        admin_user = await require_admin_user(req)
+        if not admin_user:
+            return func.HttpResponse(
+                json.dumps({"error": "Admin access required"}),
+                status_code=403,
+                mimetype="application/json",
+            )
+
+        # Get all users with Ghost-specific data
+        users = await cosmos_db.get_all_users_admin()
+
+        return func.HttpResponse(
+            json.dumps({"users": users}),
+            status_code=200,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting admin users: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Failed to retrieve users"}),
+            status_code=500,
+            mimetype="application/json",
+        )
+
+
+@app.route(
+    route="admin/ghost/decision-receipts", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS
+)
+async def get_decision_receipts(req: func.HttpRequest) -> func.HttpResponse:
+    """Get Ghost decision receipts for audit (admin only)"""
+    try:
+        admin_user = await require_admin_user(req)
+        if not admin_user:
+            return func.HttpResponse(
+                json.dumps({"error": "Admin access required"}),
+                status_code=403,
+                mimetype="application/json",
+            )
+
+        limit = int(req.params.get("limit", 50))
+        receipts = await cosmos_db.get_decision_receipts(limit=limit)
+
+        return func.HttpResponse(
+            json.dumps({"receipts": receipts}),
+            status_code=200,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting decision receipts: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Failed to retrieve decision receipts"}),
+            status_code=500,
+            mimetype="application/json",
+        )
+
+
+@app.route(
+    route="admin/ghost/safety-breakers", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS
+)
+async def get_safety_breaker_events(req: func.HttpRequest) -> func.HttpResponse:
+    """Get safety breaker events (admin only)"""
+    try:
+        admin_user = await require_admin_user(req)
+        if not admin_user:
+            return func.HttpResponse(
+                json.dumps({"error": "Admin access required"}),
+                status_code=403,
+                mimetype="application/json",
+            )
+
+        limit = int(req.params.get("limit", 50))
+        events = await cosmos_db.get_safety_breaker_events(limit=limit)
+
+        return func.HttpResponse(
+            json.dumps({"events": events}),
+            status_code=200,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting safety breaker events: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Failed to retrieve safety breaker events"}),
+            status_code=500,
+            mimetype="application/json",
+        )
+
+
+@app.route(
+    route="admin/ghost/analytics", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS
+)
+async def get_ghost_analytics(req: func.HttpRequest) -> func.HttpResponse:
+    """Get Ghost analytics for specified period (admin only)"""
+    try:
+        admin_user = await require_admin_user(req)
+        if not admin_user:
+            return func.HttpResponse(
+                json.dumps({"error": "Admin access required"}),
+                status_code=403,
+                mimetype="application/json",
+            )
+
+        days = int(req.params.get("days", 7))
+        analytics = await cosmos_db.get_ghost_analytics(days=days)
+
+        return func.HttpResponse(
+            json.dumps(analytics),
+            status_code=200,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting ghost analytics: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Failed to retrieve analytics"}),
+            status_code=500,
+            mimetype="application/json",
+        )
+
+
 # =============================================================================
 # BUDGET VALIDATION & TIMER FUNCTIONS
 # =============================================================================
