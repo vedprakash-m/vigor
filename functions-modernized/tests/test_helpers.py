@@ -3,10 +3,8 @@ Tests for shared/helpers.py — error_response, success_response, parse_request_
 """
 
 import json
-from unittest.mock import MagicMock
 
 import azure.functions as func
-import pytest
 from pydantic import BaseModel
 
 from shared.helpers import (

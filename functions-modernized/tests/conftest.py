@@ -3,8 +3,7 @@ Shared test fixtures for the functions-modernized test suite.
 """
 
 import json
-import os
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import azure.functions as func
 import pytest

@@ -18,9 +18,11 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
 
+
 # =============================================================================
 # Task 7.1.3: Structured Error Responses
 # =============================================================================
+
 
 def error_response(
     message: str,

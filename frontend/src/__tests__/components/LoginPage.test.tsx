@@ -29,6 +29,12 @@ jest.mock('../../contexts/useAuth', () => ({
   }),
 }))
 
+// Mock adminApi to avoid import.meta.env in Jest
+jest.mock('../../services/adminApi', () => ({
+  __esModule: true,
+  setAdminAccessToken: jest.fn(),
+}))
+
 // Mock Chakra UI
 jest.mock('@chakra-ui/react', () => ({
   Box: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <div {...props}>{children}</div>,

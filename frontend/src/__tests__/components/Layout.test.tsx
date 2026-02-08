@@ -23,6 +23,7 @@ jest.mock('../../contexts/useAuth', () => ({
 // Mock Chakra UI
 jest.mock('@chakra-ui/react', () => ({
   Box: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <div {...props}>{children}</div>,
+  Badge: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <span {...props}>{children}</span>,
   Button: ({ children, onClick, ...props }: React.PropsWithChildren<{ onClick?: () => void }>) => (
     <button onClick={onClick} {...props}>{children}</button>
   ),
@@ -50,6 +51,18 @@ jest.mock('@chakra-ui/react', () => ({
   },
 }));
 
+// Mock adminApi to avoid import.meta.env in Jest
+jest.mock('../../services/adminApi', () => ({
+  __esModule: true,
+  setAdminAccessToken: jest.fn(),
+}));
+
+// Mock adminConfig
+jest.mock('../../config/adminConfig', () => ({
+  __esModule: true,
+  isAdmin: jest.fn().mockReturnValue(true),
+}));
+
 import { Layout } from '../../components/Layout';
 
 describe('Layout', () => {
@@ -61,7 +74,7 @@ describe('Layout', () => {
     );
 
     // Check that the admin dashboard name is displayed
-    expect(screen.getAllByText(/Vigor Admin/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Vigor Ghost/i).length).toBeGreaterThan(0);
   });
 
   it('displays welcome message when user is logged in', () => {

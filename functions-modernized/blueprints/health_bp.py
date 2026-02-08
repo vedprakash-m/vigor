@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 import azure.functions as func
 
-from shared.helpers import error_response, success_response
+from shared.helpers import success_response
 
 logger = logging.getLogger(__name__)
 

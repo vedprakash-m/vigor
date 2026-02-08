@@ -1057,20 +1057,48 @@ class CosmosDBClient:
 
         try:
             # Get component health status
+            now_iso = datetime.now(timezone.utc).isoformat()
             components = [
-                {"name": "AI Model", "status": "healthy", "latencyMs": 450, "lastCheck": datetime.now(timezone.utc).isoformat()},
-                {"name": "Decision Engine", "status": "healthy", "latencyMs": 120, "lastCheck": datetime.now(timezone.utc).isoformat()},
-                {"name": "Phenome RAG", "status": "healthy", "latencyMs": 85, "lastCheck": datetime.now(timezone.utc).isoformat()},
-                {"name": "Workout Mutator", "status": "healthy", "latencyMs": 45, "lastCheck": datetime.now(timezone.utc).isoformat()},
-                {"name": "Trust Calculator", "status": "healthy", "latencyMs": 30, "lastCheck": datetime.now(timezone.utc).isoformat()},
-                {"name": "Safety Monitor", "status": "healthy", "latencyMs": 15, "lastCheck": datetime.now(timezone.utc).isoformat()},
+                {
+                    "name": "AI Model", "status": "healthy",
+                    "latencyMs": 450, "lastCheck": now_iso,
+                },
+                {
+                    "name": "Decision Engine", "status": "healthy",
+                    "latencyMs": 120, "lastCheck": now_iso,
+                },
+                {
+                    "name": "Phenome RAG", "status": "healthy",
+                    "latencyMs": 85, "lastCheck": now_iso,
+                },
+                {
+                    "name": "Workout Mutator", "status": "healthy",
+                    "latencyMs": 45, "lastCheck": now_iso,
+                },
+                {
+                    "name": "Trust Calculator", "status": "healthy",
+                    "latencyMs": 30, "lastCheck": now_iso,
+                },
+                {
+                    "name": "Safety Monitor", "status": "healthy",
+                    "latencyMs": 15, "lastCheck": now_iso,
+                },
             ]
 
             # Get Phenome store health
             phenome_stores = [
-                {"store": "RawSignal", "documentCount": 0, "lastSync": datetime.now(timezone.utc).isoformat(), "healthScore": 0.95},
-                {"store": "DerivedState", "documentCount": 0, "lastSync": datetime.now(timezone.utc).isoformat(), "healthScore": 0.92},
-                {"store": "BehavioralMemory", "documentCount": 0, "lastSync": datetime.now(timezone.utc).isoformat(), "healthScore": 0.88},
+                {
+                    "store": "RawSignal", "documentCount": 0,
+                    "lastSync": now_iso, "healthScore": 0.95,
+                },
+                {
+                    "store": "DerivedState", "documentCount": 0,
+                    "lastSync": now_iso, "healthScore": 0.92,
+                },
+                {
+                    "store": "BehavioralMemory", "documentCount": 0,
+                    "lastSync": now_iso, "healthScore": 0.88,
+                },
             ]
 
             # Try to get actual document counts
@@ -1093,7 +1121,10 @@ class CosmosDBClient:
                     AND c.timestamp >= @since
                     ORDER BY c.timestamp DESC
                 """
-                safety_breakers = await self.query_documents("users", query, [{"name": "@since", "value": twenty_four_hours_ago}])
+                safety_breakers = await self.query_documents(
+                    "users", query,
+                    [{"name": "@since", "value": twenty_four_hours_ago}],
+                )
             except Exception:
                 pass
 
@@ -1282,7 +1313,10 @@ class CosmosDBClient:
                 AND c.timestamp >= @since
                 GROUP BY c.outcome
             """
-            decision_results = await self.query_documents("users", decision_query, [{"name": "@since", "value": since_iso}])
+            decision_results = await self.query_documents(
+                "users", decision_query,
+                [{"name": "@since", "value": since_iso}],
+            )
 
             total_decisions = 0
             accept_count = 0
@@ -1312,7 +1346,10 @@ class CosmosDBClient:
                 WHERE c.type = 'workout_mutation'
                 AND c.timestamp >= @since
             """
-            mutation_results = await self.query_documents("workouts", mutation_query, [{"name": "@since", "value": since_iso}])
+            mutation_results = await self.query_documents(
+                "workouts", mutation_query,
+                [{"name": "@since", "value": since_iso}],
+            )
             total_mutations = mutation_results[0] if mutation_results else 0
 
             # Get safety breaker count

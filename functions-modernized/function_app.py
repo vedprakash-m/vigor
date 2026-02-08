@@ -18,6 +18,12 @@ import logging
 
 import azure.functions as func
 
+from blueprints.admin_bp import admin_bp
+from blueprints.auth_bp import auth_bp
+from blueprints.coach_bp import coach_bp
+from blueprints.ghost_bp import ghost_bp
+from blueprints.health_bp import health_bp
+from blueprints.workouts_bp import workouts_bp
 from shared.config import get_settings
 
 # Initialize settings early so validation runs at startup
@@ -33,12 +39,6 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # Register Blueprints
 # =============================================================================
-from blueprints.auth_bp import auth_bp
-from blueprints.workouts_bp import workouts_bp
-from blueprints.coach_bp import coach_bp
-from blueprints.ghost_bp import ghost_bp
-from blueprints.admin_bp import admin_bp
-from blueprints.health_bp import health_bp
 
 app.register_functions(auth_bp)
 app.register_functions(workouts_bp)

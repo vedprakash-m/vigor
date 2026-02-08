@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 import azure.functions as func
 
 from shared.auth import get_current_user_from_token
-from shared.helpers import error_response, parse_pagination, success_response
+from shared.helpers import error_response, success_response
 
 logger = logging.getLogger(__name__)
 

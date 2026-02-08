@@ -5,13 +5,7 @@ Tests for shared/auth.py — JWKS caching, issuer validation
 import time
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from shared.auth import (
-    _get_jwks_keys,
-    _jwks_cache,
-    _JWKS_CACHE_TTL_SECONDS,
-)
+from shared.auth import _get_jwks_keys
 
 
 class TestJWKSCaching:

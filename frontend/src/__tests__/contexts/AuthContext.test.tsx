@@ -47,6 +47,12 @@ jest.mock('../../services/api', () => ({
   api: mockApi,
 }))
 
+// Mock adminApi to avoid import.meta.env in Jest
+jest.mock('../../services/adminApi', () => ({
+  __esModule: true,
+  setAdminAccessToken: jest.fn(),
+}))
+
 import { AuthProvider } from '../../contexts/AuthContext'
 import { useAuth } from '../../contexts/useAuth'
 
