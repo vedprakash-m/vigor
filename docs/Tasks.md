@@ -3469,3 +3469,221 @@ A comprehensive architecture review on February 7, 2026 revealed that while Phas
 - [x] `npm run build` succeeds with `strict: true` — zero TS errors
 - [x] No dead routes in App.tsx — removed /llm, /forgot-password, /reset-password
 - [x] 4 dead files deleted (ForgotPasswordPage, ResetPasswordPage, LLMOrchestrationPage, chatStore)
+
+---
+
+## Phase 8: Integration Wiring & Data Integrity
+
+**Date**: February 7, 2026
+**Status**: ✅ Complete
+**Goal**: Wire disconnected subsystems, fix data integrity bugs, add push delivery pipeline, and establish test coverage on critical business logic.
+
+> **"A system that compiles is a wish. A system that delivers push notifications at 5:55 AM is a Ghost."**
+
+### Assessment Summary
+
+Phase 7 hardened security, decomposed the monolithic backend, cleaned the frontend, and established baseline tests. But the deep-dive gap analysis revealed that while individual components are well-built, they are **not connected end-to-end**. The system has:
+
+- 🔴 **Trust state never persists** — `record_trust_event()` computes the updated trust state but never upserts it back to Cosmos
+- 🔴 **Decision receipts container mismatch** — writes go to `decision_receipts`, reads query `users` container
+- 🔴 **`chat_sessions` container never initialized** — `create_chat_session()` and `count_documents()` reference `chat_sessions` which doesn't exist in `self.containers` → `KeyError` at runtime
+- 🔴 **APNs client never invoked** — `apns_client.py` (300 lines, production-quality) exists but no blueprint calls it, no config for credentials, no device token storage
+- 🔴 **Pytest not in CI** — 22 backend tests exist but are never run in the pipeline
+- 🟡 **Zero endpoint test coverage** — all 6 blueprints have zero tests; trust state machine has zero tests
+- 🟡 **Admin analytics hardcoded** — ghost health, analytics responses contain static latency/success rate values
+
+### Phase 8 Progress
+
+| Sub-Phase     | Description                          | Status         | Progress |
+| ------------- | ------------------------------------ | -------------- | -------- |
+| **Phase 8.0** | Data Integrity & CI/CD               | ✅ Complete     | 100%     |
+| **Phase 8.1** | APNs Push Delivery Pipeline          | ✅ Complete     | 100%     |
+| **Phase 8.2** | Test Coverage & Admin Contract Fixes | ✅ Complete     | 100%     |
+
+---
+
+### Phase 8.0: Data Integrity & CI/CD
+
+**Priority**: P0 — Data bugs cause silent data loss in production
+**Scope**: Fix every path where data is computed but not stored, or stored in the wrong container
+
+#### Task 8.0.1: Fix Trust State Persistence ✅
+
+**File**: `functions-modernized/shared/cosmos_db.py` (line ~800)
+**Issue**: `record_trust_event()` computes the updated trust state (confidence, phase, safety breaker) and returns it, but **never calls `upsert_document()`** to persist the new state. Every trust event is lost on the next request.
+**Fix**:
+
+- [x] Add `await self.upsert_document("trust_states", current_state)` before the return
+- [x] Ensure the document has `id` and `userId` partition key fields set
+- [x] Store the event record to `trust_states` container (resolves the TODO at line 800)
+
+#### Task 8.0.2: Fix Decision Receipts Container Mismatch ✅
+
+**File**: `functions-modernized/shared/cosmos_db.py`
+**Issue**: `store_decision_receipt()` (line 1000) writes to `decision_receipts` container, but `get_decision_receipts()` (line 1253) and `get_ghost_analytics()` (line 1312) query the `users` container with `WHERE c.type = 'decision_receipt'`. Data written to one container is never read.
+**Fix**:
+
+- [x] Change `get_decision_receipts()` to query `"decision_receipts"` container instead of `"users"`
+- [x] Change `get_ghost_analytics()` decision query to use `"decision_receipts"` container
+- [x] Verify `store_decision_receipt()` sets `type: 'decision_receipt'` for consistent filtering
+
+#### Task 8.0.3: Fix `chat_sessions` Container Reference ✅
+
+**File**: `functions-modernized/shared/cosmos_db.py` (lines 601, 615)
+**Issue**: `create_chat_session()` and `count_documents()` reference `"chat_sessions"` container which is **not in `self.containers`** dict — will raise `KeyError` at runtime.
+**Fix**:
+
+- [x] Change `"chat_sessions"` → `"ai_coach_messages"` in `create_chat_session()` (line 601)
+- [x] Change `"chat_sessions"` → `"ai_coach_messages"` in `count_documents()` (line 615)
+- [x] These containers store the same data type — messages — so use the initialized container name
+
+#### Task 8.0.4: Add Pytest to CI Pipeline ✅
+
+**File**: `.github/workflows/ci-cd-pipeline.yml`
+**Issue**: The `backend-quality` job runs black, isort, flake8, bandit — but **never runs pytest**. The 22 tests we wrote in Phase 7 are never executed in CI.
+**Fix**:
+
+- [x] Add `pip install pytest pytest-asyncio` to the Install dependencies step
+- [x] Add a new step after Code Quality Checks: `pytest tests/ -v --tb=short`
+- [x] Ensure the step fails the build if any test fails
+
+#### Task 8.0.5: Fix Duplicate Except Block in CosmosDB ✅
+
+**File**: `functions-modernized/shared/cosmos_db.py`
+**Issue**: Multiple methods have duplicate `except Exception` blocks where the second is unreachable dead code
+**Fix**:
+
+- [x] Audit all methods for duplicate `except` blocks and remove the unreachable ones
+
+---
+
+### Phase 8.1: APNs Push Delivery Pipeline
+
+**Priority**: P0 — Silent push is the Ghost's primary survival mechanism (PRD §3.1, Tech Spec §2.3)
+**Scope**: Wire `apns_client.py` into the system with config, device token storage, and delivery
+
+#### Task 8.1.1: Add APNs Configuration to Settings ✅
+
+**File**: `functions-modernized/shared/config.py`
+**Issue**: `apns_client.py` reads APNs credentials from environment variables, but `Settings` class has zero APNs fields — no validation, no defaults, no documentation.
+**Fix**:
+
+- [x] Add `APNS_KEY_ID: str = ""` — The Key ID from Apple Developer portal
+- [x] Add `APNS_TEAM_ID: str = ""` — Apple Developer Team ID
+- [x] Add `APNS_PRIVATE_KEY: str = ""` — .p8 private key contents (stored in Key Vault)
+- [x] Add `APNS_BUNDLE_ID: str = "com.vedprakash.vigor"` — iOS app bundle identifier
+- [x] Add `APNS_USE_SANDBOX: bool = True` — Sandbox vs production APNs endpoint
+
+#### Task 8.1.2: Add Device Token Registration Endpoint ✅
+
+**File**: `functions-modernized/blueprints/ghost_bp.py`
+**Issue**: No endpoint exists for the iOS app to register its APNs device token. Without stored tokens, pushes cannot be delivered.
+**Fix**:
+
+- [x] Add `POST /api/ghost/device-token` endpoint
+- [x] Accept `{ "device_token": "...", "platform": "ios" }` body
+- [x] Store token on the user document in the `users` container (field: `apns_device_token`)
+- [x] Add `DELETE /api/ghost/device-token` for token removal on logout/uninstall
+- [x] Validate token format (64-char hex string)
+
+#### Task 8.1.3: Wire Push Delivery into Timer Triggers ✅
+
+**File**: `functions-modernized/blueprints/ghost_bp.py`
+**Issue**: The morning (5:55 AM UTC) and Sunday (9 PM UTC) timer triggers queue push documents to `push_queue` container but **never actually send via APNs**. The `apns_client.py` is never imported or called.
+**Fix**:
+
+- [x] Import `get_apns_client` from `shared.apns_client` in ghost_bp.py
+- [x] After queueing to `push_queue`, retrieve user device tokens and call `apns_client.send_silent_push()`
+- [x] Handle delivery failures gracefully (log, mark as failed in push_queue, don't crash the timer)
+- [x] Add token invalidation: if APNs returns 410 (unregistered), clear the user's stored token
+
+#### Task 8.1.4: Wire Push into Silent-Push Endpoint ✅
+
+**File**: `functions-modernized/blueprints/ghost_bp.py`
+**Issue**: `POST /ghost/silent-push` writes to `push_queue` but doesn't deliver. This endpoint is meant for immediate push delivery (admin trigger or scheduled ad-hoc).
+**Fix**:
+
+- [x] After writing to `push_queue`, call `apns_client.send_silent_push()` for immediate delivery
+- [x] Return delivery status in the response (sent/failed/no_token)
+
+---
+
+### Phase 8.2: Test Coverage & Admin Contract Fixes
+
+**Priority**: P1 — Prevent regressions, fix frontend-backend contract mismatches
+**Scope**: Endpoint tests for critical paths, trust state machine tests, admin API alignment
+
+#### Task 8.2.1: Trust State Machine Unit Tests ✅
+
+**File**: `functions-modernized/tests/test_trust.py` (new)
+**Issue**: The trust state machine (`record_trust_event`, `_calculate_trust_delta`, `_check_phase_progression`, `_downgrade_phase`) is the Ghost's core intelligence — and has zero tests.
+**Fix**:
+
+- [x] Test phase progression thresholds (Observer→Scheduler at 0.25, etc.)
+- [x] Test Safety Breaker: 3 consecutive deletes → downgrade
+- [x] Test confidence clamping (never below 0.0 or above 1.0)
+- [x] Test each event type produces correct delta
+- [x] Test phase downgrade chain (Full Ghost→Transformer→Auto-Scheduler→Scheduler→Observer)
+- [x] Test reset of consecutive_deletes on positive events
+
+#### Task 8.2.2: Ghost Blueprint Endpoint Tests ✅
+
+**File**: `functions-modernized/tests/test_ghost_endpoints.py` (new)
+**Issue**: ghost_bp has 7 HTTP endpoints + 2 timer triggers — all untested
+**Fix**:
+
+- [x] Test `GET /ghost/trust` returns default state for new user
+- [x] Test `POST /ghost/trust` with valid event updates state
+- [x] Test `POST /ghost/phenome/sync` with version conflict handling
+- [x] Test `POST /ghost/decision-receipt` stores and returns receipt
+- [x] Test `POST /ghost/device-token` registration and validation
+- [x] Test auth rejection on unauthenticated requests
+
+#### Task 8.2.3: Fix Admin Analytics Response Contract ✅
+
+**File**: `functions-modernized/shared/cosmos_db.py`
+**Issue**: `get_ghost_health()` returns hardcoded component health (static `"healthy"` status, fixed latency) and `get_ghost_analytics()` returns hardcoded `avg_latency_ms: 520`, `success_rate: 99.2`. The frontend AIPipelineStats interface expects different field names.
+**Fix**:
+
+- [x] Replace hardcoded ghost health component statuses with real Application Insights query or at minimum a Cosmos-based heartbeat check
+- [x] Align `get_ghost_analytics()` response fields to match frontend `GhostAnalytics` interface
+- [x] Fix analytics `period` parameter: frontend sends `period=24h|7d|30d` string, backend converts to hours — verify parsing
+
+#### Task 8.2.4: Add Backend Test Step Verification ✅
+
+**File**: `functions-modernized/tests/test_cosmos_db.py` (new)
+**Issue**: CosmosDBClient (1,467 lines) is the data layer for everything — zero tests
+**Fix**:
+
+- [x] Test `store_decision_receipt()` writes to correct container
+- [x] Test `get_decision_receipts()` reads from correct container (after 8.0.2 fix)
+- [x] Test `create_chat_session()` uses `ai_coach_messages` container (after 8.0.3 fix)
+- [x] Test `record_trust_event()` persists updated state (after 8.0.1 fix)
+- [x] Mock Cosmos container operations with AsyncMock fixtures from conftest.py
+
+---
+
+### Phase 8 Validation Gates
+
+**Before declaring Phase 8.0 complete:**
+
+- [x] `record_trust_event()` persists updated state to `trust_states` container
+- [x] `get_decision_receipts()` queries `decision_receipts` container (matching writes)
+- [x] `create_chat_session()` uses initialized `ai_coach_messages` container
+- [x] `pytest tests/ -v` passes in CI pipeline (GitHub Actions)
+- [x] No duplicate `except` blocks in `cosmos_db.py`
+
+**Before declaring Phase 8.1 complete:**
+
+- [x] `shared/config.py` has all APNs fields with validation
+- [x] `POST /ghost/device-token` stores token on user document
+- [x] Morning timer trigger sends pushes via APNs (not just queues them)
+- [x] Silent-push endpoint delivers immediately via APNs
+- [x] APNs 410 (unregistered) clears stored device token
+
+**Before declaring Phase 8.2 complete:**
+
+- [x] Trust state machine has ≥10 tests covering all phases and Safety Breaker
+- [x] Ghost blueprint has ≥6 endpoint tests
+- [x] All backend tests pass (`pytest tests/ -v`)
+- [x] `get_ghost_analytics()` response fields match frontend interface

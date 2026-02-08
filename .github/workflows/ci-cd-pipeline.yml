@@ -46,7 +46,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 black isort bandit
+          pip install flake8 black isort bandit pytest pytest-asyncio
           pip install -r requirements.txt
 
       - name: Code Quality Checks
@@ -65,6 +65,12 @@ jobs:
 
           echo "::group::Bandit (Security)"
           bandit -r . -ll -x ./.venv,./tests,./test_*.py || echo "::warning::Bandit found security issues"
+          echo "::endgroup::"
+
+      - name: Run Backend Tests
+        run: |
+          echo "::group::Pytest (Unit Tests)"
+          pytest tests/ -v --tb=short
           echo "::endgroup::"
 
   # NOTE: iOS builds are handled by separate ios-build.yml and ios-deploy.yml workflows

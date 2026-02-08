@@ -103,6 +103,25 @@ class Settings(BaseSettings):
         default="memory", description="Rate limit storage"
     )
 
+    # Apple Push Notification Service (APNs) — Ghost silent push (PRD §3.4)
+    APNS_KEY_ID: str = Field(
+        default="", description="APNs Auth Key ID from Apple Developer portal"
+    )
+    APNS_TEAM_ID: str = Field(
+        default="", description="Apple Developer Team ID"
+    )
+    APNS_PRIVATE_KEY: str = Field(
+        default="", description="APNs .p8 private key contents (from Key Vault)"
+    )
+    APNS_BUNDLE_ID: str = Field(
+        default="com.vedprakash.vigor",
+        description="iOS app bundle identifier for APNs topic",
+    )
+    APNS_USE_SANDBOX: bool = Field(
+        default=True,
+        description="Use APNs sandbox (True) or production (False) endpoint",
+    )
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

@@ -257,9 +257,6 @@ class CosmosDBClient:
                 return None
             logger.error(f"Error getting workout: {str(e)}")
             raise
-        except Exception as e:
-            logger.error(f"Unexpected error getting workout: {str(e)}")
-            raise
 
     async def delete_workout(self, workout_id: str, user_id: str) -> bool:
         """Delete workout plan"""
@@ -598,7 +595,7 @@ class CosmosDBClient:
         await self.ensure_initialized()
 
         try:
-            return await self.upsert_document("chat_sessions", chat_data)
+            return await self.upsert_document("ai_coach_messages", chat_data)
         except Exception as e:
             logger.error(f"Error creating chat session: {str(e)}")
             raise
@@ -612,7 +609,7 @@ class CosmosDBClient:
             container_name = (
                 "users"
                 if document_type == "user"
-                else "workouts" if document_type == "workout" else "chat_sessions"
+                else "workouts" if document_type == "workout" else "ai_coach_messages"
             )
 
             container = self.containers[container_name]
@@ -797,8 +794,12 @@ class CosmosDBClient:
                 current_state["confidence"]
             )
 
-            # TODO: Store event record when trust_events container is available
-            # Event would include: id, userId, event_type, delta, timestamp, metadata
+            # Persist updated trust state back to Cosmos DB
+            await self.upsert_document("trust_states", current_state)
+            logger.info(
+                f"Trust state persisted for {user_id}: "
+                f"phase={current_state['phase']}, confidence={current_state['confidence']:.2f}"
+            )
 
             return current_state
 
@@ -1056,33 +1057,33 @@ class CosmosDBClient:
         await self.ensure_initialized()
 
         try:
-            # Get component health status
+            # Get component health — test actual container accessibility
             now_iso = datetime.now(timezone.utc).isoformat()
+
+            async def _check_component(name: str, container_name: str) -> dict:
+                """Probe a container to determine component health."""
+                try:
+                    import time
+                    t0 = time.monotonic()
+                    container = self.containers.get(container_name)
+                    if container:
+                        # Lightweight probe: count query
+                        async for _ in container.query_items(
+                            "SELECT VALUE COUNT(1) FROM c OFFSET 0 LIMIT 1", []
+                        ):
+                            pass
+                    latency = int((time.monotonic() - t0) * 1000)
+                    return {"name": name, "status": "healthy", "latencyMs": latency, "lastCheck": now_iso}
+                except Exception:
+                    return {"name": name, "status": "degraded", "latencyMs": -1, "lastCheck": now_iso}
+
             components = [
-                {
-                    "name": "AI Model", "status": "healthy",
-                    "latencyMs": 450, "lastCheck": now_iso,
-                },
-                {
-                    "name": "Decision Engine", "status": "healthy",
-                    "latencyMs": 120, "lastCheck": now_iso,
-                },
-                {
-                    "name": "Phenome RAG", "status": "healthy",
-                    "latencyMs": 85, "lastCheck": now_iso,
-                },
-                {
-                    "name": "Workout Mutator", "status": "healthy",
-                    "latencyMs": 45, "lastCheck": now_iso,
-                },
-                {
-                    "name": "Trust Calculator", "status": "healthy",
-                    "latencyMs": 30, "lastCheck": now_iso,
-                },
-                {
-                    "name": "Safety Monitor", "status": "healthy",
-                    "latencyMs": 15, "lastCheck": now_iso,
-                },
+                await _check_component("Trust Calculator", "trust_states"),
+                await _check_component("Decision Engine", "decision_receipts"),
+                await _check_component("Phenome RAG", "phenome"),
+                await _check_component("Workout Mutator", "workouts"),
+                await _check_component("Safety Monitor", "ghost_actions"),
+                await _check_component("Push Queue", "push_queue"),
             ]
 
             # Get Phenome store health
@@ -1128,11 +1129,15 @@ class CosmosDBClient:
             except Exception:
                 pass
 
+            # Derive overall status from component health
+            degraded_count = sum(1 for c in components if c["status"] != "healthy")
+            overall = "healthy" if degraded_count == 0 else "degraded" if degraded_count <= 2 else "unhealthy"
+
             return {
                 "components": components,
                 "phenome_stores": phenome_stores,
                 "safety_breakers": safety_breakers[:10],  # Last 10 events
-                "overall_status": "healthy",
+                "overall_status": overall,
                 "last_updated": datetime.now(timezone.utc).isoformat()
             }
 
@@ -1250,7 +1255,7 @@ class CosmosDBClient:
                 """
                 parameters = [{"name": "@limit", "value": limit}]
 
-            return await self.query_documents("users", query, parameters)
+            return await self.query_documents("decision_receipts", query, parameters)
 
         except Exception as e:
             logger.error(f"Error getting decision receipts: {e}")
@@ -1314,7 +1319,7 @@ class CosmosDBClient:
                 GROUP BY c.outcome
             """
             decision_results = await self.query_documents(
-                "users", decision_query,
+                "decision_receipts", decision_query,
                 [{"name": "@since", "value": since_iso}],
             )
 
@@ -1365,6 +1370,19 @@ class CosmosDBClient:
             # Get trust distribution
             trust_distribution = await self.get_trust_distribution()
 
+            # Compute avg_confidence from decision receipts
+            conf_query = """
+                SELECT VALUE AVG(c.confidence)
+                FROM c
+                WHERE c.timestamp >= @since
+                AND IS_DEFINED(c.confidence)
+            """
+            conf_results = await self.query_documents(
+                "decision_receipts", conf_query,
+                [{"name": "@since", "value": since_iso}],
+            )
+            avg_confidence = round(conf_results[0], 2) if conf_results and conf_results[0] is not None else 0.0
+
             return {
                 "period": period,
                 "total_decisions": total_decisions,
@@ -1373,12 +1391,8 @@ class CosmosDBClient:
                 "modify_rate": round(modify_rate, 1),
                 "reject_rate": round(reject_rate, 1),
                 "safety_breakers": safety_breakers if isinstance(safety_breakers, int) else 0,
-                "avg_latency_ms": 520,  # Would come from metrics tracking
-                "success_rate": 99.2,   # Would come from error tracking
-                "phenome_queries_per_decision": 3.2,  # Would come from metrics
-                "avg_confidence": 0.87,  # Would come from decision receipts
+                "avg_confidence": avg_confidence,
                 "trust_distribution": trust_distribution,
-                "weekly_stats": []  # Would be populated with daily breakdowns
             }
 
         except Exception as e:
@@ -1391,12 +1405,8 @@ class CosmosDBClient:
                 "modify_rate": 0,
                 "reject_rate": 0,
                 "safety_breakers": 0,
-                "avg_latency_ms": 0,
-                "success_rate": 0,
-                "phenome_queries_per_decision": 0,
                 "avg_confidence": 0,
                 "trust_distribution": {},
-                "weekly_stats": []
             }
 
     # =============================================================================

@@ -1,10 +1,11 @@
 """
 Ghost Engine Blueprint
 Endpoints: ghost/silent-push, ghost/trust, ghost/schedule, ghost/phenome/sync,
-           ghost/decision-receipt, timer triggers
+           ghost/decision-receipt, ghost/device-token, timer triggers
 """
 
 import logging
+import re
 from datetime import datetime, timezone
 
 import azure.functions as func
@@ -15,6 +16,48 @@ from shared.helpers import error_response, success_response
 logger = logging.getLogger(__name__)
 
 ghost_bp = func.Blueprint()
+
+
+# =============================================================================
+# APNs push delivery helper
+# =============================================================================
+
+
+async def _deliver_push_to_user(
+    user_id: str, payload: dict, cosmos_client
+) -> dict:
+    """
+    Deliver a silent push to a single user via APNs.
+    Returns delivery result dict. Clears stored token on APNs 410 (Unregistered).
+    """
+    try:
+        # Get user's device token
+        user_profile = await cosmos_client.get_user_profile(user_id)
+        device_token = (user_profile or {}).get("apns_device_token")
+
+        if not device_token:
+            return {"user_id": user_id, "status": "skipped", "reason": "no_device_token"}
+
+        from shared.apns_client import get_apns_client
+
+        apns = await get_apns_client()
+        result = await apns.send_silent_push(device_token, payload)
+
+        # Handle APNs 410 Unregistered — clear stale token
+        if result.get("code") == 410:
+            logger.warning(f"Device token unregistered for {user_id}, clearing")
+            await cosmos_client.upsert_document(
+                "users",
+                {**user_profile, "apns_device_token": None},
+            )
+            result["token_cleared"] = True
+
+        result["user_id"] = user_id
+        return result
+
+    except Exception as e:
+        logger.error(f"Push delivery failed for {user_id}: {e}")
+        return {"user_id": user_id, "status": "error", "error": str(e)}
 
 
 @ghost_bp.route(
@@ -42,9 +85,13 @@ async def ghost_silent_push(req: func.HttpRequest) -> func.HttpResponse:
         }
         await client.queue_silent_push(user_id, push_payload)
 
+        # Deliver immediately via APNs
+        delivery = await _deliver_push_to_user(user_id, push_payload, client)
+
         return success_response(
             {
                 "status": "queued",
+                "delivery": delivery.get("status", "unknown"),
                 "actions_count": len(pending_actions or []),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
@@ -291,6 +338,80 @@ async def ghost_decision_receipt(req: func.HttpRequest) -> func.HttpResponse:
 
 
 # =============================================================================
+# Device Token Management
+# =============================================================================
+
+_DEVICE_TOKEN_RE = re.compile(r"^[0-9a-fA-F]{64}$")
+
+
+@ghost_bp.route(
+    route="ghost/device-token",
+    methods=["POST", "DELETE"],
+    auth_level=func.AuthLevel.ANONYMOUS,
+)
+async def ghost_device_token(req: func.HttpRequest) -> func.HttpResponse:
+    """Device Token API — register/remove APNs token for push delivery"""
+    try:
+        from shared.cosmos_db import get_global_client
+
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return error_response("Unauthorized", status_code=401, code="UNAUTHORIZED")
+
+        client = await get_global_client()
+        user_id = current_user["email"]
+
+        if req.method == "POST":
+            try:
+                body = req.get_json()
+            except ValueError:
+                return error_response(
+                    "Invalid JSON", status_code=400, code="INVALID_JSON"
+                )
+
+            device_token = (body or {}).get("device_token", "")
+            if not device_token or not _DEVICE_TOKEN_RE.match(device_token):
+                return error_response(
+                    "device_token must be a 64-character hex string",
+                    status_code=400,
+                    code="INVALID_TOKEN",
+                )
+
+            # Store token on the user document
+            user_profile = await client.get_user_profile(user_id)
+            if not user_profile:
+                user_profile = {"id": user_id, "email": user_id}
+
+            user_profile["apns_device_token"] = device_token
+            user_profile["apns_platform"] = body.get("platform", "ios")
+            user_profile["apns_registered_at"] = datetime.now(
+                timezone.utc
+            ).isoformat()
+            await client.upsert_document("users", user_profile)
+
+            logger.info(f"Device token registered for {user_id}")
+            return success_response(
+                {"status": "registered", "token_prefix": device_token[:8] + "..."}
+            )
+
+        elif req.method == "DELETE":
+            user_profile = await client.get_user_profile(user_id)
+            if user_profile:
+                user_profile["apns_device_token"] = None
+                user_profile["apns_platform"] = None
+                await client.upsert_document("users", user_profile)
+
+            logger.info(f"Device token removed for {user_id}")
+            return success_response({"status": "removed"})
+
+        return error_response("Method not allowed", status_code=405)
+
+    except Exception as e:
+        logger.error(f"Ghost device token error: {str(e)}")
+        return error_response("Internal server error", status_code=500)
+
+
+# =============================================================================
 # Timer triggers
 # =============================================================================
 
@@ -321,10 +442,17 @@ async def ghost_morning_wake_trigger(timer: func.TimerRequest) -> None:
                     "priority": "high",
                 }
                 await client.queue_silent_push(user["id"], push_payload)
-                logger.info(f"Queued morning push for user {user['id']}")
+
+                # Deliver via APNs
+                delivery = await _deliver_push_to_user(
+                    user["id"], push_payload, client
+                )
+                logger.info(
+                    f"Morning push for {user['id']}: {delivery.get('status')}"
+                )
             except Exception as user_error:
                 logger.error(
-                    f"Error queueing push for user {user['id']}: {user_error}"
+                    f"Error processing morning push for {user['id']}: {user_error}"
                 )
 
     except Exception as e:
@@ -353,10 +481,17 @@ async def ghost_sunday_evening_trigger(timer: func.TimerRequest) -> None:
                     "priority": "normal",
                 }
                 await client.queue_silent_push(user["id"], push_payload)
-                logger.info(f"Queued weekly planning push for user {user['id']}")
+
+                # Deliver via APNs
+                delivery = await _deliver_push_to_user(
+                    user["id"], push_payload, client
+                )
+                logger.info(
+                    f"Weekly push for {user['id']}: {delivery.get('status')}"
+                )
             except Exception as user_error:
                 logger.error(
-                    f"Error queueing weekly push for user {user['id']}: {user_error}"
+                    f"Error processing weekly push for {user['id']}: {user_error}"
                 )
 
     except Exception as e:

@@ -38,13 +38,13 @@ class APNsClient:
     @property
     def base_url(self) -> str:
         """Get APNs base URL based on environment"""
-        is_sandbox = getattr(self.settings, 'APNS_SANDBOX', True)
+        is_sandbox = getattr(self.settings, 'APNS_USE_SANDBOX', True)
         return self.SANDBOX_URL if is_sandbox else self.PRODUCTION_URL
 
     @property
     def bundle_id(self) -> str:
         """Get app bundle ID for APNs topic"""
-        return getattr(self.settings, 'APNS_BUNDLE_ID', 'com.vigor.app')
+        return getattr(self.settings, 'APNS_BUNDLE_ID', 'com.vedprakash.vigor')
 
     async def _get_http_client(self) -> httpx.AsyncClient:
         """Get or create HTTP/2 client for APNs"""
