@@ -3494,11 +3494,11 @@ Phase 7 hardened security, decomposed the monolithic backend, cleaned the fronte
 
 ### Phase 8 Progress
 
-| Sub-Phase     | Description                          | Status         | Progress |
-| ------------- | ------------------------------------ | -------------- | -------- |
-| **Phase 8.0** | Data Integrity & CI/CD               | ✅ Complete     | 100%     |
-| **Phase 8.1** | APNs Push Delivery Pipeline          | ✅ Complete     | 100%     |
-| **Phase 8.2** | Test Coverage & Admin Contract Fixes | ✅ Complete     | 100%     |
+| Sub-Phase     | Description                          | Status      | Progress |
+| ------------- | ------------------------------------ | ----------- | -------- |
+| **Phase 8.0** | Data Integrity & CI/CD               | ✅ Complete | 100%     |
+| **Phase 8.1** | APNs Push Delivery Pipeline          | ✅ Complete | 100%     |
+| **Phase 8.2** | Test Coverage & Admin Contract Fixes | ✅ Complete | 100%     |
 
 ---
 
@@ -3687,3 +3687,160 @@ Phase 7 hardened security, decomposed the monolithic backend, cleaned the fronte
 - [x] Ghost blueprint has ≥6 endpoint tests
 - [x] All backend tests pass (`pytest tests/ -v`)
 - [x] `get_ghost_analytics()` response fields match frontend interface
+
+---
+
+## Phase 9: API Contract Alignment & Test Coverage
+
+> **Goal**: Reconcile iOS ↔ Backend route mismatches so the iOS app can communicate with the server, expand test coverage to all 8 blueprints, and close remaining production-readiness gaps.
+>
+> **Status**: ✅ COMPLETE
+>
+> **Started**: 2026-02-07
+> **Completed**: 2026-02-07
+
+### Phase 9 Progress
+
+| Sub-Phase | Focus                         | Tasks | Status |
+| --------- | ----------------------------- | ----- | ------ |
+| 9.0       | iOS ↔ Backend Route Alignment | 5     | ✅     |
+| 9.1       | Test Coverage Expansion       | 4     | ✅     |
+| 9.2       | Admin Config & README Cleanup | 3     | ✅     |
+
+---
+
+### Phase 9.0 — iOS ↔ Backend Route Alignment (P0)
+
+> **Problem**: The iOS `VigorAPIClient.swift` calls ~12 endpoints at paths that
+> don't exist on the backend. The app cannot talk to the server.
+>
+> **Strategy**: Add backend route aliases / new endpoints to match the iOS
+> contract. We do NOT modify the iOS Swift code — it is the published client
+> contract. All changes are backend-only.
+
+#### Task 9.0.1 — Add `ghost/sync` endpoint (P0) ✅
+
+- [x] Add `POST /ghost/sync` to `ghost_bp.py`
+- [x] Accepts `GhostStateDTO` body (`trustScore`, `trustPhase`, `healthMode`, `lastWakeTime`, `deviceId`)
+- [x] Returns `GhostSyncResponse` (`trustScore`, `trustPhase`, `pendingActions`, `serverTime`)
+- [x] Reads current trust state from Cosmos, returns pending actions from `ghost_actions`
+- [x] Stores device health snapshot on user doc
+
+#### Task 9.0.2 — Add workout recording & block lifecycle endpoints (P0) ✅
+
+- [x] Add `POST /workouts` — record a completed workout (iOS `recordWorkout`)
+- [x] Add `POST /blocks/sync` — sync training blocks (iOS `syncTrainingBlocks`)
+- [x] Add `POST /blocks/outcome` — record block outcome (iOS `reportBlockOutcome`)
+- [x] All endpoints: auth-gated, Cosmos-backed, proper error handling
+
+#### Task 9.0.3 — Add trust event & history aliases (P0) ✅
+
+- [x] Add `POST /trust/event` — alias that delegates to `ghost_trust` POST logic
+- [x] Add `GET /trust/history` — returns trust history entries + phase transitions
+- [x] Adds new Cosmos method `get_trust_history()` that queries `trust_states` container
+- [x] Response shape matches iOS `TrustHistoryResponse`
+
+#### Task 9.0.4 — Add coach & device endpoints (P0) ✅
+
+- [x] Add `POST /coach/recommend` — workout recommendation using OpenAI + context
+- [x] Add `GET /coach/recovery` — recovery assessment from recent data
+- [x] Add `POST /devices/register` — device registration (stores on user doc)
+- [x] Add `POST /devices/push-token` — alias that delegates to `ghost/device-token` POST
+- [x] Add `GET /user/profile` & `PUT /user/profile` — alias to `users/profile`
+
+#### Task 9.0.5 — Compile & smoke test all new endpoints ✅
+
+- [x] All 8 blueprints compile cleanly (`python -c "import ..."`)
+- [x] `flake8` passes on all modified files — 0 issues
+- [x] `pytest tests/ -v` still passes — 66 existing tests unbroken
+
+---
+
+### Phase 9.1 — Test Coverage Expansion (P1)
+
+> **Problem**: Only ghost_bp and auth have tests. Workouts, coach, admin, and
+> health blueprints have zero test coverage. The new Phase 9.0 endpoints also
+> need tests.
+
+#### Task 9.1.1 — Workout & blocks endpoint tests ✅
+
+- [x] Test `POST /workouts` (record workout — valid, missing type 400, unauth 401)
+- [x] Test `GET /workouts` (list user workouts)
+- [x] Test `GET /workouts/{id}` (get + 404)
+- [x] Test `POST /blocks/sync` (sync training blocks + empty array)
+- [x] Test `POST /blocks/outcome` (record outcome + missing fields 400)
+- [x] 10 tests total for workouts + blocks ✅
+
+#### Task 9.1.2 — Coach endpoint tests ✅
+
+- [x] Test `POST /coach/chat` (valid message, missing field 400, unauth 401)
+- [x] Test `GET /coach/history` (returns history)
+- [x] Test `POST /coach/recommend` (recommendation with context, empty body 400)
+- [x] Test `GET /coach/recovery` (fully rested, fatigued)
+- [x] 8 tests total for coach ✅
+
+#### Task 9.1.3 — Admin endpoint tests ✅
+
+- [x] Test `GET /admin/ghost/health` (returns health structure)
+- [x] Test `GET /admin/ghost/trust-distribution` (returns phases)
+- [x] Test `GET /admin/ghost/analytics` (returns analytics)
+- [x] Test `GET /admin/ghost/users` (returns user list)
+- [x] Test `GET/PUT /admin/ai-pipeline-config` (get, defaults, put update, put reject)
+- [x] Test admin auth gate rejects non-admin users (cost-metrics, safety-breakers)
+- [x] 12 tests total for admin ✅
+
+#### Task 9.1.4 — Auth & new alias endpoint tests ✅
+
+- [x] Test `GET /auth/me` (returns profile, new user default, unauth 401)
+- [x] Test `GET /user/profile` (alias delegates correctly)
+- [x] Test `POST /trust/event` (records event, missing event_type 400)
+- [x] Test `GET /trust/history` (returns history with score, phase, transitions)
+- [x] Test `POST /devices/register` (stores device, missing deviceId 400)
+- [x] Test `POST /devices/push-token` (valid token, invalid token 400)
+- [x] 11 tests total ✅
+
+---
+
+### Phase 9.2 — Admin Config & README Cleanup (P1)
+
+#### Task 9.2.1 — Add `PUT /admin/ai-pipeline-config` endpoint ✅
+
+- [x] Add endpoint to `admin_bp.py` — admin-gated, GET + PUT
+- [x] Accepts config body (maxExercisesPerWorkout, maxWorkoutDuration, requestTimeout)
+- [x] Stores config in Cosmos `users` container with well-known ID
+- [x] Adds `get_ai_pipeline_config()` and `upsert_ai_pipeline_config()` to cosmos_db.py
+- [x] Frontend `updateAIPipelineConfig()` already calls this path — contract matched
+
+#### Task 9.2.2 — Update README with accurate metrics ✅
+
+- [x] Update test count from "22" to 107
+- [x] Update endpoint table with all new routes (18 core + 6 ghost + 8 admin)
+- [x] Update blueprints listing (8 blueprints, including trust_bp and devices_bp)
+
+#### Task 9.2.3 — Final validation gate ✅
+
+- [x] All 107 backend tests pass (`pytest tests/ -v`)
+- [x] `flake8` reports 0 issues
+- [x] Git commit & push (pending)
+
+---
+
+### Phase 9 Validation Gates
+
+**Before declaring Phase 9.0 complete:** ✅
+
+- [x] Every iOS `VigorAPIClient.swift` endpoint has a matching backend route
+- [x] All 8 blueprints import successfully
+- [x] No existing tests broken
+
+**Before declaring Phase 9.1 complete:** ✅
+
+- [x] 41 new endpoint tests across workouts, coach, admin, auth, trust, devices
+- [x] All 107 backend tests pass (`pytest tests/ -v`)
+- [x] Blueprint test coverage: 8/8 blueprints have tests
+
+**Before declaring Phase 9.2 complete:** ✅
+
+- [x] `PUT /admin/ai-pipeline-config` callable from frontend
+- [x] README test count matches reality (107)
+- [x] All 107 backend tests pass

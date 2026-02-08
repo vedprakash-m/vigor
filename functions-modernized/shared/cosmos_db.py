@@ -521,6 +521,35 @@ class CosmosDBClient:
             }
 
     # =============================================================================
+    # AI PIPELINE CONFIG
+    # =============================================================================
+
+    async def get_ai_pipeline_config(self) -> Optional[Dict[str, Any]]:
+        """Retrieve the singleton AI pipeline configuration document."""
+        await self.ensure_initialized()
+        try:
+            container = self.containers["users"]  # lightweight config store
+            item = await container.read_item(
+                item="ai_pipeline_config", partition_key="ai_pipeline_config"
+            )
+            # Strip Cosmos metadata before returning
+            return {
+                k: v for k, v in item.items() if not k.startswith("_") and k != "id"
+            }
+        except Exception:
+            return None
+
+    async def upsert_ai_pipeline_config(self, config: Dict[str, Any]) -> None:
+        """Create or replace the AI pipeline configuration document."""
+        await self.ensure_initialized()
+        container = self.containers["users"]
+        doc = {
+            "id": "ai_pipeline_config",
+            **config,
+        }
+        await container.upsert_item(doc)
+
+    # =============================================================================
     # HEALTH CHECK
     # =============================================================================
 
@@ -842,6 +871,27 @@ class CosmosDBClient:
                 return phase_name
 
         return "full_ghost" if confidence >= 0.85 else phase
+
+    async def get_trust_history(self, user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """Get trust event history for a user (for iOS trust/history endpoint)"""
+        await self.ensure_initialized()
+
+        try:
+            query = """
+                SELECT * FROM c
+                WHERE c.userId = @userId
+                ORDER BY c.timestamp DESC
+                OFFSET 0 LIMIT @limit
+            """
+            parameters = [
+                {"name": "@userId", "value": user_id},
+                {"name": "@limit", "value": limit},
+            ]
+
+            return await self.query_documents("trust_states", query, parameters)
+        except Exception as e:
+            logger.warning(f"Error getting trust history: {e}")
+            return []
 
     async def get_training_blocks(self, user_id: str, week_offset: int = 0) -> List[Dict[str, Any]]:
         """Get training blocks for a user (for schedule sync)"""

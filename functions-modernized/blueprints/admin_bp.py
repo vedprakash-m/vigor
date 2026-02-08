@@ -1,8 +1,9 @@
 """
 Admin Dashboard Blueprint
-Endpoints: admin/ai/cost-metrics, admin/ghost/health, admin/ghost/trust-distribution,
-           admin/ghost/users, admin/ghost/decision-receipts, admin/ghost/safety-breakers,
-           admin/ghost/analytics
+Endpoints: admin/ai/cost-metrics, admin/ai-pipeline-config,
+           admin/ghost/health, admin/ghost/trust-distribution,
+           admin/ghost/users, admin/ghost/decision-receipts,
+           admin/ghost/safety-breakers, admin/ghost/analytics
 """
 
 import logging
@@ -238,3 +239,86 @@ async def get_ghost_analytics(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logger.error(f"Error getting ghost analytics: {str(e)}")
         return error_response("Failed to retrieve analytics", status_code=500)
+
+
+@admin_bp.route(
+    route="admin/ai-pipeline-config",
+    methods=["GET", "PUT"],
+    auth_level=func.AuthLevel.ANONYMOUS,
+)
+async def ai_pipeline_config(req: func.HttpRequest) -> func.HttpResponse:
+    """Get or update AI pipeline configuration (admin only).
+
+    Frontend ``updateAIPipelineConfig`` calls PUT with:
+        maxExercisesPerWorkout, maxWorkoutDuration, requestTimeout
+    """
+    try:
+        from shared.cosmos_db import get_global_client
+
+        admin_user = await require_admin_user(req)
+        if not admin_user:
+            return error_response(
+                "Admin access required", status_code=403, code="FORBIDDEN"
+            )
+
+        client = await get_global_client()
+
+        if req.method == "GET":
+            config = await client.get_ai_pipeline_config()
+            return success_response(config or _default_pipeline_config())
+
+        # PUT — update config
+        try:
+            body = req.get_json()
+        except ValueError:
+            return error_response(
+                "Invalid JSON", status_code=400, code="INVALID_JSON"
+            )
+
+        if not body:
+            return error_response(
+                "Request body required", status_code=400, code="EMPTY_BODY"
+            )
+
+        # Validate & sanitise accepted keys
+        allowed_keys = {
+            "maxExercisesPerWorkout",
+            "maxWorkoutDuration",
+            "requestTimeout",
+        }
+        sanitised = {k: v for k, v in body.items() if k in allowed_keys}
+
+        if not sanitised:
+            return error_response(
+                "No recognised configuration keys provided",
+                status_code=400,
+                code="NO_VALID_KEYS",
+            )
+
+        # Merge with existing config
+        existing = await client.get_ai_pipeline_config() or _default_pipeline_config()
+        existing.update(sanitised)
+        await client.upsert_ai_pipeline_config(existing)
+
+        logger.info(
+            "AI pipeline config updated by %s: %s",
+            admin_user.get("email", "unknown"),
+            list(sanitised.keys()),
+        )
+
+        return success_response(existing)
+
+    except Exception as e:
+        logger.error(f"Error in AI pipeline config: {str(e)}")
+        return error_response(
+            "Failed to process AI pipeline configuration", status_code=500
+        )
+
+
+def _default_pipeline_config() -> dict:
+    """Return sensible defaults for the AI pipeline."""
+    return {
+        "maxExercisesPerWorkout": 8,
+        "maxWorkoutDuration": 90,
+        "requestTimeout": 30,
+    }

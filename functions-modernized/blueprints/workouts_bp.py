@@ -1,10 +1,13 @@
 """
 Workout Management Blueprint
-Endpoints: workouts/generate, workouts, workouts/{id}, workouts/{id}/sessions, workouts/history
+Endpoints: workouts/generate, workouts, workouts/{id}, workouts/{id}/sessions,
+           workouts/history, blocks/sync, blocks/outcome
 """
 
 import logging
+from datetime import datetime, timezone
 from typing import Any, Dict
+from uuid import uuid4
 
 import azure.functions as func
 
@@ -205,6 +208,153 @@ async def get_workout_history(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logger.error(f"Error getting workout history: {str(e)}")
         return error_response("Failed to retrieve workout history", status_code=500)
+
+
+# =============================================================================
+# iOS-facing endpoints (VigorAPIClient.swift contract)
+# =============================================================================
+
+
+@workouts_bp.route(
+    route="workouts", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS
+)
+async def record_workout(req: func.HttpRequest) -> func.HttpResponse:
+    """Record a completed workout — iOS ``recordWorkout``"""
+    try:
+        from shared.cosmos_db import get_global_client
+
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return error_response("Unauthorized", status_code=401, code="UNAUTHORIZED")
+
+        try:
+            workout_data = req.get_json()
+        except ValueError:
+            return error_response("Invalid JSON", status_code=400, code="INVALID_JSON")
+
+        if not workout_data or "type" not in workout_data:
+            return error_response(
+                "Missing required field: type",
+                status_code=400,
+                code="MISSING_FIELD",
+            )
+
+        client = await get_global_client()
+        workout_log = await client.create_workout_log(
+            user_id=current_user["email"],
+            workout_id=workout_data.get("id", str(uuid4())),
+            session_data=workout_data,
+        )
+        return success_response(workout_log, status_code=201)
+
+    except Exception as e:
+        logger.error(f"Error recording workout: {str(e)}")
+        return error_response("Failed to record workout", status_code=500)
+
+
+@workouts_bp.route(
+    route="blocks/sync", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS
+)
+async def sync_training_blocks(req: func.HttpRequest) -> func.HttpResponse:
+    """Sync training blocks — iOS ``syncTrainingBlocks``"""
+    try:
+        from shared.cosmos_db import get_global_client
+
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return error_response("Unauthorized", status_code=401, code="UNAUTHORIZED")
+
+        try:
+            body = req.get_json()
+        except ValueError:
+            return error_response("Invalid JSON", status_code=400, code="INVALID_JSON")
+
+        blocks = (body or {}).get("blocks", [])
+        if not isinstance(blocks, list):
+            return error_response(
+                "blocks must be an array", status_code=400, code="INVALID_BODY"
+            )
+
+        client = await get_global_client()
+        user_id = current_user["email"]
+
+        synced_blocks = []
+        conflict_resolutions = []
+        for block in blocks:
+            block_id = block.get("id")
+            if block_id:
+                # Try update
+                try:
+                    updated = await client.update_training_block(
+                        user_id, block_id, block
+                    )
+                    synced_blocks.append(updated)
+                except ValueError:
+                    # Block doesn't exist — create it
+                    created = await client.create_training_block(user_id, block)
+                    synced_blocks.append(created)
+            else:
+                created = await client.create_training_block(user_id, block)
+                synced_blocks.append(created)
+
+        return success_response({
+            "blocks": synced_blocks,
+            "conflictResolutions": conflict_resolutions,
+        })
+
+    except Exception as e:
+        logger.error(f"Error syncing training blocks: {str(e)}")
+        return error_response("Failed to sync training blocks", status_code=500)
+
+
+@workouts_bp.route(
+    route="blocks/outcome", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS
+)
+async def record_block_outcome(req: func.HttpRequest) -> func.HttpResponse:
+    """Record block outcome — iOS ``reportBlockOutcome``"""
+    try:
+        from shared.cosmos_db import get_global_client
+
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return error_response("Unauthorized", status_code=401, code="UNAUTHORIZED")
+
+        try:
+            body = req.get_json()
+        except ValueError:
+            return error_response("Invalid JSON", status_code=400, code="INVALID_JSON")
+
+        block_id = (body or {}).get("blockId")
+        outcome = (body or {}).get("outcome")
+        if not block_id or not outcome:
+            return error_response(
+                "Missing required fields: blockId, outcome",
+                status_code=400,
+                code="MISSING_FIELDS",
+            )
+
+        client = await get_global_client()
+        user_id = current_user["email"]
+
+        update_data = {
+            "status": outcome,
+            "outcome_recorded_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if body.get("completedWorkoutId"):
+            update_data["completed_workout_id"] = body["completedWorkoutId"]
+        if body.get("missedReason"):
+            update_data["missed_reason"] = body["missedReason"]
+
+        updated_block = await client.update_training_block(
+            user_id, block_id, update_data
+        )
+        return success_response(updated_block)
+
+    except ValueError:
+        return error_response("Block not found", status_code=404, code="NOT_FOUND")
+    except Exception as e:
+        logger.error(f"Error recording block outcome: {str(e)}")
+        return error_response("Failed to record block outcome", status_code=500)
 
 
 # Private helper

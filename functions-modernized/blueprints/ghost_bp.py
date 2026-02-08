@@ -61,6 +61,70 @@ async def _deliver_push_to_user(
 
 
 @ghost_bp.route(
+    route="ghost/sync", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS
+)
+async def ghost_sync(req: func.HttpRequest) -> func.HttpResponse:
+    """Ghost State Sync — iOS cold-start & periodic sync (PRD §3.2)
+
+    iOS ``VigorAPIClient.syncGhostState()`` POSTs a ``GhostStateDTO`` and
+    expects a ``GhostSyncResponse`` back (trust score, phase, pending actions,
+    server time).
+    """
+    try:
+        from shared.cosmos_db import get_global_client
+
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return error_response("Unauthorized", status_code=401, code="UNAUTHORIZED")
+
+        client = await get_global_client()
+        user_id = current_user["email"]
+
+        # Parse optional client state
+        try:
+            body = req.get_json()
+        except ValueError:
+            body = {}
+
+        # Store device health snapshot on user doc if provided
+        if body:
+            user_profile = await client.get_user_profile(user_id)
+            if user_profile:
+                user_profile["last_ghost_sync"] = datetime.now(timezone.utc).isoformat()
+                user_profile["ghost_health_mode"] = body.get("healthMode", "NORMAL")
+                user_profile["device_id"] = body.get("deviceId")
+                await client.upsert_document("users", user_profile)
+
+        # Get current trust state
+        trust_state = await client.get_trust_state(user_id)
+        trust_score = (trust_state or {}).get("confidence", 0.0)
+        trust_phase = (trust_state or {}).get("phase", "observer")
+
+        # Get pending actions
+        pending_actions = await client.get_pending_ghost_actions(user_id)
+        actions_out = [
+            {
+                "id": a.get("id", ""),
+                "type": a.get("trigger_type", a.get("type", "")),
+                "payload": a.get("payload", {}),
+                "expiresAt": a.get("expires_at", datetime.now(timezone.utc).isoformat()),
+            }
+            for a in (pending_actions or [])
+        ]
+
+        return success_response({
+            "trustScore": trust_score,
+            "trustPhase": trust_phase,
+            "pendingActions": actions_out,
+            "serverTime": datetime.now(timezone.utc).isoformat(),
+        })
+
+    except Exception as e:
+        logger.error(f"Ghost sync error: {str(e)}")
+        return error_response("Internal server error", status_code=500)
+
+
+@ghost_bp.route(
     route="ghost/silent-push", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS
 )
 async def ghost_silent_push(req: func.HttpRequest) -> func.HttpResponse:

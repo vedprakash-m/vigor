@@ -1,6 +1,6 @@
 """
 Authentication & User Management Blueprint
-Endpoints: auth/me, users/profile
+Endpoints: auth/me, users/profile, user/profile
 """
 
 import logging
@@ -100,3 +100,11 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logger.error(f"Error in user profile: {str(e)}")
         return error_response("Internal server error", status_code=500)
+
+
+@auth_bp.route(
+    route="user/profile", methods=["GET", "PUT"], auth_level=func.AuthLevel.ANONYMOUS
+)
+async def user_profile_alias(req: func.HttpRequest) -> func.HttpResponse:
+    """Alias for users/profile — iOS ``fetchUserProfile`` / ``updateUserProfile``"""
+    return await user_profile(req)

@@ -65,14 +65,16 @@ Admin access is controlled via email whitelist:
 
 ### Ghost-Specific Admin API Endpoints
 
-| Method | Endpoint                              | Description                   |
-| ------ | ------------------------------------- | ----------------------------- |
-| GET    | `/api/admin/ghost/health`             | Ghost system health metrics   |
-| GET    | `/api/admin/ghost/trust-distribution` | User Trust phase distribution |
-| GET    | `/api/admin/ghost/users`              | Users with Ghost fields       |
-| GET    | `/api/admin/ghost/decision-receipts`  | Decision receipts for audit   |
-| GET    | `/api/admin/ghost/safety-breakers`    | Safety breaker events         |
-| GET    | `/api/admin/ghost/analytics`          | Ghost analytics for period    |
+| Method  | Endpoint                              | Description                   |
+| ------- | ------------------------------------- | ----------------------------- |
+| GET     | `/api/admin/ghost/health`             | Ghost system health metrics   |
+| GET     | `/api/admin/ghost/trust-distribution` | User Trust phase distribution |
+| GET     | `/api/admin/ghost/users`              | Users with Ghost fields       |
+| GET     | `/api/admin/ghost/decision-receipts`  | Decision receipts for audit   |
+| GET     | `/api/admin/ghost/safety-breakers`    | Safety breaker events         |
+| GET     | `/api/admin/ghost/analytics`          | Ghost analytics for period    |
+| GET     | `/api/admin/ai/cost-metrics`          | AI cost & budget metrics      |
+| GET/PUT | `/api/admin/ai-pipeline-config`       | AI pipeline configuration     |
 
 ---
 
@@ -235,16 +237,18 @@ vigor/
 │       └── Trust/               # Trust state machine tests
 │
 ├── functions-modernized/        # Azure Functions Python backend
-│   ├── function_app.py          # Entry point (~55 lines, blueprint registration)
-│   ├── blueprints/              # Route modules
-│   │   ├── auth_bp.py           # Authentication & user management
-│   │   ├── workouts_bp.py       # Workout CRUD & session logging
-│   │   ├── coach_bp.py          # AI coach chat
+│   ├── function_app.py          # Entry point (~60 lines, 8 blueprint registrations)
+│   ├── blueprints/              # Route modules (8 blueprints)
+│   │   ├── auth_bp.py           # Authentication & user profile
+│   │   ├── workouts_bp.py       # Workout CRUD, training blocks & session logging
+│   │   ├── coach_bp.py          # AI coach chat, recommendations & recovery
 │   │   ├── ghost_bp.py          # Ghost Engine APIs + timer triggers
-│   │   ├── admin_bp.py          # Admin dashboard APIs
-│   │   └── health_bp.py         # Health check endpoints
+│   │   ├── admin_bp.py          # Admin dashboard & AI pipeline config
+│   │   ├── health_bp.py         # Health check endpoints
+│   │   ├── trust_bp.py          # Trust event recording & history
+│   │   └── devices_bp.py        # Device registration & push tokens
 │   ├── shared/                  # Auth, Cosmos, OpenAI, helpers
-│   └── tests/                   # pytest suite (22 tests)
+│   └── tests/                   # pytest suite (107 tests)
 │
 ├── frontend/                    # Web dashboard (React/TypeScript, strict mode)
 │   ├── src/                     # Admin dashboard & Ghost operations
@@ -314,15 +318,26 @@ npm run dev  # http://localhost:5173
 
 ### Core APIs
 
-| Method  | Endpoint                 | Description                |
-| ------- | ------------------------ | -------------------------- |
-| GET     | `/api/auth/me`           | Get current user profile   |
-| GET/PUT | `/api/users/profile`     | Get or update user profile |
-| POST    | `/api/workouts/generate` | Generate AI workout plan   |
-| GET     | `/api/workouts`          | List user's workouts       |
-| GET     | `/api/workouts/history`  | Get workout logs history   |
-| POST    | `/api/coach/chat`        | Chat with AI coach         |
-| GET     | `/api/health`            | Health check               |
+| Method  | Endpoint                  | Description                    |
+| ------- | ------------------------- | ------------------------------ |
+| GET     | `/api/auth/me`            | Get current user profile       |
+| GET/PUT | `/api/user/profile`       | Get or update user profile     |
+| POST    | `/api/workouts/generate`  | Generate AI workout plan       |
+| POST    | `/api/workouts`           | Record completed workout       |
+| GET     | `/api/workouts`           | List user's workouts           |
+| GET     | `/api/workouts/{id}`      | Get single workout             |
+| GET     | `/api/workouts/history`   | Get workout logs history       |
+| POST    | `/api/blocks/sync`        | Sync training blocks           |
+| POST    | `/api/blocks/outcome`     | Record training block outcome  |
+| POST    | `/api/coach/chat`         | Chat with AI coach             |
+| GET     | `/api/coach/history`      | Get coach conversation history |
+| POST    | `/api/coach/recommend`    | Get AI workout recommendation  |
+| GET     | `/api/coach/recovery`     | Get recovery assessment        |
+| POST    | `/api/trust/event`        | Record trust event             |
+| GET     | `/api/trust/history`      | Get trust score history        |
+| POST    | `/api/devices/register`   | Register device                |
+| POST    | `/api/devices/push-token` | Register APNs push token       |
+| GET     | `/api/health`             | Health check                   |
 
 ### Ghost APIs
 
@@ -330,6 +345,7 @@ npm run dev  # http://localhost:5173
 | ------ | ----------------------------- | ------------------------- |
 | POST   | `/api/ghost/silent-push`      | Silent push trigger (P0)  |
 | GET    | `/api/ghost/trust`            | Get user trust state      |
+| POST   | `/api/ghost/sync`             | Ghost state sync (iOS)    |
 | POST   | `/api/ghost/schedule`         | Sync training schedule    |
 | POST   | `/api/ghost/phenome/sync`     | Sync Phenome stores       |
 | POST   | `/api/ghost/decision-receipt` | Record a Decision Receipt |
@@ -339,7 +355,7 @@ npm run dev  # http://localhost:5173
 ## 🧪 Testing
 
 ```bash
-# Backend tests (22 tests — auth, helpers, pagination)
+# Backend tests (107 tests — endpoints, auth, trust, helpers)
 cd functions-modernized
 source .venv/bin/activate
 pytest tests/ -v

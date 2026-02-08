@@ -21,8 +21,10 @@ import azure.functions as func
 from blueprints.admin_bp import admin_bp
 from blueprints.auth_bp import auth_bp
 from blueprints.coach_bp import coach_bp
+from blueprints.devices_bp import devices_bp
 from blueprints.ghost_bp import ghost_bp
 from blueprints.health_bp import health_bp
+from blueprints.trust_bp import trust_bp
 from blueprints.workouts_bp import workouts_bp
 from shared.config import get_settings
 
@@ -46,5 +48,7 @@ app.register_functions(coach_bp)
 app.register_functions(ghost_bp)
 app.register_functions(admin_bp)
 app.register_functions(health_bp)
+app.register_functions(trust_bp)
+app.register_functions(devices_bp)
 
 logger.info("Vigor Function App initialized with Blueprint modules")
