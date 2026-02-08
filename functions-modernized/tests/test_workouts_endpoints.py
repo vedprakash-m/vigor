@@ -6,7 +6,6 @@ POST /blocks/sync, POST /blocks/outcome
 
 import json
 import sys
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import azure.functions as func
