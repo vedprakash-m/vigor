@@ -8,13 +8,13 @@
  */
 
 import axios from 'axios';
-import type {
+import {
     DecisionOutcome,
     DecisionType,
-    GhostMode,
-    PhenomeStoreStatus,
-    TrustPhase,
-    WatchStatus,
+    type GhostMode,
+    type PhenomeStoreStatus,
+    type TrustPhase,
+    type WatchStatus,
 } from '../config/adminConfig';
 
 // API base URL
@@ -57,6 +57,13 @@ export interface GhostHealth {
   components: ComponentHealth[];
   phenomeStores: PhenomeStoreHealth[];
   metrics: GhostMetrics;
+  // Top-level convenience fields used by health monitoring views
+  modelHealth: 'healthy' | 'degraded' | 'unhealthy';
+  avgLatencyMs: number;
+  successRate: number;
+  decisionsToday: number;
+  mutationsToday: number;
+  safetyBreakersTriggered: number;
 }
 
 export interface ComponentHealth {
@@ -107,6 +114,8 @@ export interface DecisionReceipt {
   userEmail: string;
   trustPhase: TrustPhase;
   type: DecisionType;
+  /** Alias for `type` used by audit views */
+  decisionType: DecisionType;
   outcome: DecisionOutcome;
   confidence: number;
   trustImpact: {
@@ -115,10 +124,15 @@ export interface DecisionReceipt {
   };
   inputs: Record<string, string | number>;
   decision: string;
-  alternativesConsidered: Array<{
+  /** Count of alternatives considered (derived from details) */
+  alternativesConsidered: number;
+  /** Detailed alternative options */
+  alternativesDetails: Array<{
     option: string;
     rejected: string;
   }>;
+  /** JSON-serialised context snapshot for audit trail */
+  contextSnapshot: string;
 }
 
 /**
@@ -130,9 +144,13 @@ export interface SafetyBreakerEvent {
   userId: string;
   userEmail: string;
   trigger: string;
+  /** Breaker category label used by UI views */
+  breakerType: string;
   previousPhase: TrustPhase;
   newPhase: TrustPhase;
   reason: string;
+  /** Whether the breaker was automatically resolved */
+  autoResolved: boolean;
 }
 
 /**
@@ -172,6 +190,13 @@ export interface AIPipelineStats {
   workoutsGenerated24h: number;
   contractViolations24h: number;
   violationBreakdown: Record<string, number>;
+  // Fields used by the LLM Configuration view
+  modelStatus: 'healthy' | 'degraded' | 'unhealthy';
+  avgLatencyMs: number;
+  successRate: number;
+  totalRequests24h: number;
+  contractValidations: number;
+  schemaRejections: number;
 }
 
 /**
@@ -240,8 +265,8 @@ export const AdminAPI = {
       return response.data;
     } catch (error) {
       console.error('Failed to fetch Ghost health:', error);
-      // Return mock data for development
-      return getMockGhostHealth();
+      if (import.meta.env.DEV) return getMockGhostHealth();
+      throw error;
     }
   },
 
@@ -254,7 +279,8 @@ export const AdminAPI = {
       return response.data;
     } catch (error) {
       console.error('Failed to fetch trust distribution:', error);
-      return getMockTrustDistribution();
+      if (import.meta.env.DEV) return getMockTrustDistribution();
+      throw error;
     }
   },
 
@@ -278,7 +304,8 @@ export const AdminAPI = {
       return response.data.receipts;
     } catch (error) {
       console.error('Failed to fetch decision receipts:', error);
-      return getMockDecisionReceipts();
+      if (import.meta.env.DEV) return getMockDecisionReceipts();
+      throw error;
     }
   },
 
@@ -291,7 +318,8 @@ export const AdminAPI = {
       return response.data.events;
     } catch (error) {
       console.error('Failed to fetch safety breaker events:', error);
-      return getMockSafetyBreakerEvents();
+      if (import.meta.env.DEV) return getMockSafetyBreakerEvents();
+      throw error;
     }
   },
 
@@ -315,7 +343,8 @@ export const AdminAPI = {
       return response.data.users;
     } catch (error) {
       console.error('Failed to fetch users:', error);
-      return getMockAdminUsers();
+      if (import.meta.env.DEV) return getMockAdminUsers();
+      throw error;
     }
   },
 
@@ -328,7 +357,8 @@ export const AdminAPI = {
       return response.data;
     } catch (error) {
       console.error('Failed to fetch AI pipeline stats:', error);
-      return getMockAIPipelineStats();
+      if (import.meta.env.DEV) return getMockAIPipelineStats();
+      throw error;
     }
   },
 
@@ -342,7 +372,8 @@ export const AdminAPI = {
       return response.data;
     } catch (error) {
       console.error('Failed to fetch Ghost analytics:', error);
-      return getMockGhostAnalytics();
+      if (import.meta.env.DEV) return getMockGhostAnalytics();
+      throw error;
     }
   },
 
@@ -366,6 +397,12 @@ function getMockGhostHealth(): GhostHealth {
   return {
     mode: 'NORMAL',
     lastUpdated: new Date().toISOString(),
+    modelHealth: 'healthy',
+    avgLatencyMs: 180,
+    successRate: 99.2,
+    decisionsToday: 2847,
+    mutationsToday: 1234,
+    safetyBreakersTriggered: 3,
     components: [
       { name: 'RAG Retrieval', status: 'healthy', latency: 45, errorRate: 0.1, details: 'Exercise DB' },
       { name: 'gpt-5-mini', status: 'healthy', latency: 180, errorRate: 0.3, details: 'Structured outputs' },
@@ -411,6 +448,7 @@ function getMockDecisionReceipts(): DecisionReceipt[] {
       userEmail: 'john.doe@example.com',
       trustPhase: 'Scheduler',
       type: 'TRANSFORM',
+      decisionType: 'TRANSFORM',
       outcome: 'ACCEPTED',
       confidence: 89,
       trustImpact: { ifAccepted: 2, ifRejected: -5 },
@@ -422,11 +460,13 @@ function getMockDecisionReceipts(): DecisionReceipt[] {
         'Scheduled block': 'Heavy Lifts',
       },
       decision: 'Transform block from "Heavy Lifts" → "Recovery Walk"',
-      alternativesConsidered: [
+      alternativesConsidered: 3,
+      alternativesDetails: [
         { option: 'Keep Heavy Lifts', rejected: 'Injury risk 78%' },
         { option: 'Cancel block', rejected: '3-day gap too long' },
         { option: 'Light mobility', rejected: 'User prefers walks' },
       ],
+      contextSnapshot: '{"sleep":"5h 12m","hrv":"32ms","gap":"6:00-7:30 PM","block":"Heavy Lifts"}',
     },
     {
       id: 'DR-2026-01-28-002',
@@ -435,6 +475,7 @@ function getMockDecisionReceipts(): DecisionReceipt[] {
       userEmail: 'jane.smith@example.com',
       trustPhase: 'Observer',
       type: 'SCHEDULE',
+      decisionType: 'SCHEDULE',
       outcome: 'REJECTED',
       confidence: 72,
       trustImpact: { ifAccepted: 3, ifRejected: -2 },
@@ -444,7 +485,9 @@ function getMockDecisionReceipts(): DecisionReceipt[] {
         'Recovery score': '78%',
       },
       decision: 'Schedule Upper Body block at 5:00 PM',
-      alternativesConsidered: [],
+      alternativesConsidered: 0,
+      alternativesDetails: [],
+      contextSnapshot: '{"gap":"5:00-6:00 PM","days_since":2,"recovery":"78%"}',
     },
   ];
 }
@@ -457,9 +500,11 @@ function getMockSafetyBreakerEvents(): SafetyBreakerEvent[] {
       userId: 'user-042',
       userEmail: 'stress@example.com',
       trigger: '3 consecutive block deletions',
+      breakerType: 'TRUST_REGRESSION',
       previousPhase: 'Auto-Scheduler',
       newPhase: 'Observer',
       reason: 'User rejected 3 Ghost-scheduled blocks in a row',
+      autoResolved: false,
     },
   ];
 }
@@ -528,6 +573,12 @@ function getMockAIPipelineStats(): AIPipelineStats {
       unsafe_exercise: 5,
       missing_warmup: 0,
     },
+    modelStatus: 'healthy',
+    avgLatencyMs: 180,
+    successRate: 99.2,
+    totalRequests24h: 1245,
+    contractValidations: 1233,
+    schemaRejections: 4,
   };
 }
 
@@ -580,10 +631,15 @@ function getMockGhostAnalytics(): GhostAnalytics {
       RESCHEDULE: 189,
       SKIP_PREDICT: 567,
       SAFETY_BREAKER: 12,
+      WORKOUT_MUTATION: 89,
+      SCHEDULE_CHANGE: 45,
+      REST_DAY: 23,
+      INTENSITY_ADJUSTMENT: 34,
     },
     outcomesByType: {
       ACCEPTED: 2103,
       REJECTED: 287,
+      MODIFIED: 56,
       OVERRIDDEN: 156,
       PENDING: 45,
     },

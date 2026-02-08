@@ -43,6 +43,9 @@ param azureOpenAiDeployment string = 'gpt-5-mini'
 @secure()
 param secretKey string
 
+@description('Environment name for conditional config')
+param envName string = 'prod'
+
 // Flex Consumption Plan (Y1)
 resource hostingPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: '${name}-plan'
@@ -140,12 +143,17 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         }
       ]
       cors: {
-        allowedOrigins: [
-          'https://vigor.vedprakash.net'
-          'https://yellow-mushroom-04726a70f.1.azurestaticapps.net'
-          'http://localhost:5173'
-          'http://localhost:3000'
-        ]
+        allowedOrigins: envName == 'prod'
+          ? [
+              'https://vigor.vedprakash.net'
+              'https://yellow-mushroom-04726a70f.1.azurestaticapps.net'
+            ]
+          : [
+              'https://vigor.vedprakash.net'
+              'https://yellow-mushroom-04726a70f.1.azurestaticapps.net'
+              'http://localhost:5173'
+              'http://localhost:3000'
+            ]
         supportCredentials: true
       }
       // Note: Python version is set in functionAppConfig.runtime for Flex Consumption

@@ -151,18 +151,20 @@ Admin access is controlled via email whitelist:
 
 ### Tech Stack
 
-| Layer        | Technology                               |
-| ------------ | ---------------------------------------- |
-| **iOS App**  | Swift 5.9, SwiftUI, iOS 17+              |
-| **watchOS**  | SwiftUI, HealthKit, watchOS 10+          |
-| **Health**   | HealthKit (sleep, HRV, workouts, steps)  |
-| **Calendar** | EventKit + MS Graph API                  |
-| **Storage**  | Core Data + CloudKit                     |
-| **Auth**     | Microsoft Entra ID (MSAL)                |
-| **Backend**  | Azure Functions (Python 3.11)            |
-| **Database** | Azure Cosmos DB Serverless               |
-| **Push**     | APNs Silent Push (P0 for Ghost survival) |
-| **IaC**      | Bicep                                    |
+| Layer        | Technology                                            |
+| ------------ | ----------------------------------------------------- |
+| **iOS App**  | Swift 5.9, SwiftUI, iOS 17+                           |
+| **watchOS**  | SwiftUI, HealthKit, watchOS 10+                       |
+| **Health**   | HealthKit (sleep, HRV, workouts, steps)               |
+| **Calendar** | EventKit + MS Graph API                               |
+| **Storage**  | Core Data + CloudKit                                  |
+| **Auth**     | Microsoft Entra ID (MSAL)                             |
+| **Backend**  | Azure Functions v2 (Python 3.11, Blueprints)          |
+| **Database** | Azure Cosmos DB Serverless (10 containers)            |
+| **AI**       | Azure OpenAI gpt-5-mini (Structured Outputs)          |
+| **Push**     | APNs Silent Push (P0 for Ghost survival)              |
+| **Frontend** | React 19, TypeScript 5.8 (strict), Vite, Chakra UI v3 |
+| **IaC**      | Bicep                                                 |
 
 ---
 
@@ -184,12 +186,18 @@ vigor-rg (West US 2)
 
 ### Database Schema (Cosmos DB)
 
-| Container           | Partition Key | Purpose                       |
-| ------------------- | ------------- | ----------------------------- |
-| `users`             | `/userId`     | User profiles and preferences |
-| `workouts`          | `/userId`     | AI-generated workout plans    |
-| `workout_logs`      | `/userId`     | Exercise completion tracking  |
-| `ai_coach_messages` | `/userId`     | Chat history (30-day TTL)     |
+| Container           | Partition Key | Purpose                             | TTL    |
+| ------------------- | ------------- | ----------------------------------- | ------ |
+| `users`             | `/userId`     | User profiles and preferences       | —      |
+| `workouts`          | `/userId`     | AI-generated workout plans          | —      |
+| `workout_logs`      | `/userId`     | Exercise completion tracking        | —      |
+| `ai_coach_messages` | `/userId`     | Chat history                        | 30 day |
+| `ghost_actions`     | `/userId`     | Ghost autonomous actions log        | —      |
+| `trust_states`      | `/userId`     | Trust phase transitions & scores    | —      |
+| `training_blocks`   | `/userId`     | Calendar training block definitions | —      |
+| `phenome`           | `/userId`     | Phenome store sync (3-store model)  | —      |
+| `decision_receipts` | `/userId`     | Decision Receipts for audit         | 90 day |
+| `push_queue`        | `/userId`     | Silent push delivery queue          | 7 day  |
 
 ---
 
@@ -227,12 +235,24 @@ vigor/
 │       └── Trust/               # Trust state machine tests
 │
 ├── functions-modernized/        # Azure Functions Python backend
-│   ├── function_app.py          # HTTP endpoints
-│   └── shared/                  # Auth, Cosmos, OpenAI clients
+│   ├── function_app.py          # Entry point (~55 lines, blueprint registration)
+│   ├── blueprints/              # Route modules
+│   │   ├── auth_bp.py           # Authentication & user management
+│   │   ├── workouts_bp.py       # Workout CRUD & session logging
+│   │   ├── coach_bp.py          # AI coach chat
+│   │   ├── ghost_bp.py          # Ghost Engine APIs + timer triggers
+│   │   ├── admin_bp.py          # Admin dashboard APIs
+│   │   └── health_bp.py         # Health check endpoints
+│   ├── shared/                  # Auth, Cosmos, OpenAI, helpers
+│   └── tests/                   # pytest suite (22 tests)
 │
-├── frontend/                    # Web dashboard (React/TypeScript)
-│   ├── src/                     # Admin dashboard & Phenome analytics
-│   └── ...                      # Vite, Chakra UI, React Query
+├── frontend/                    # Web dashboard (React/TypeScript, strict mode)
+│   ├── src/                     # Admin dashboard & Ghost operations
+│   │   ├── components/          # Ghost health, audit, LLM config, user mgmt
+│   │   ├── pages/               # Lazy-loaded via React.lazy() code-splitting
+│   │   ├── services/            # Admin API client (dev-only mock fallbacks)
+│   │   └── config/              # Admin config, tier pricing
+│   └── ...                      # Vite, Chakra UI v3, MSAL
 │
 ├── infrastructure/bicep/        # Azure Bicep IaC
 │
@@ -292,6 +312,8 @@ npm run dev  # http://localhost:5173
 
 ## 🔌 API Endpoints
 
+### Core APIs
+
 | Method  | Endpoint                 | Description                |
 | ------- | ------------------------ | -------------------------- |
 | GET     | `/api/auth/me`           | Get current user profile   |
@@ -300,18 +322,34 @@ npm run dev  # http://localhost:5173
 | GET     | `/api/workouts`          | List user's workouts       |
 | GET     | `/api/workouts/history`  | Get workout logs history   |
 | POST    | `/api/coach/chat`        | Chat with AI coach         |
-| POST    | `/api/ghost/silent-push` | Silent push trigger (P0)   |
-| POST    | `/api/trust/event`       | Record trust event         |
-| POST    | `/api/schedule/sync`     | Sync training schedule     |
 | GET     | `/api/health`            | Health check               |
+
+### Ghost APIs
+
+| Method | Endpoint                      | Description               |
+| ------ | ----------------------------- | ------------------------- |
+| POST   | `/api/ghost/silent-push`      | Silent push trigger (P0)  |
+| GET    | `/api/ghost/trust`            | Get user trust state      |
+| POST   | `/api/ghost/schedule`         | Sync training schedule    |
+| POST   | `/api/ghost/phenome/sync`     | Sync Phenome stores       |
+| POST   | `/api/ghost/decision-receipt` | Record a Decision Receipt |
 
 ---
 
 ## 🧪 Testing
 
 ```bash
-# Backend tests
-cd functions-modernized && pytest -v
+# Backend tests (22 tests — auth, helpers, pagination)
+cd functions-modernized
+source .venv/bin/activate
+pytest tests/ -v
+
+# Frontend type-check (strict mode)
+cd frontend
+npx tsc --noEmit
+
+# Frontend build
+npm run build
 
 # iOS tests (run from Xcode)
 # Cmd+U to run test suite

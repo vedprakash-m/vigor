@@ -17,6 +17,7 @@ import {
     Text,
     VStack,
 } from '@chakra-ui/react'
+import { TIER_PRICING } from '../config/adminConfig'
 import { useAuth } from '../contexts/useAuth'
 
 interface TierFeature {
@@ -220,7 +221,7 @@ const TierManagementPage = () => {
                 <GridItem>
                     <TierCard
                         name="Premium"
-                        price={`$${TIER_PRICING.PREMIUM_MONTHLY}`}
+                        price={`$${TIER_PRICING.premium.price}`}
                         period="/month"
                         description="Full Ghost AI with Apple Watch required"
                         isCurrentTier={currentTier === 'premium'}
@@ -268,7 +269,7 @@ const TierManagementPage = () => {
                                 Save with Annual Billing
                             </Text>
                             <Text fontSize="sm" color="green.600">
-                                ${TIER_PRICING.PREMIUM_YEARLY}/year (save ${TIER_PRICING.PREMIUM_MONTHLY * 12 - TIER_PRICING.PREMIUM_YEARLY}/year)
+                                ${TIER_PRICING.premium.yearlyPrice}/year (save ${TIER_PRICING.premium.price * 12 - (TIER_PRICING.premium.yearlyPrice ?? 0)}/year)
                             </Text>
                         </VStack>
                         <Badge colorPalette="green" p={2}>

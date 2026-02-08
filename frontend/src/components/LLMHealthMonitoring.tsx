@@ -13,6 +13,7 @@ import {
     GridItem,
     Heading,
     HStack,
+    Progress,
     Spinner,
     Text,
     VStack
@@ -55,6 +56,12 @@ const GhostHealthMonitoring = () => {
             setGhostHealth(health)
             setSafetyBreakers(breakers)
 
+            // Helper to look up component status by name from the components array
+            const getComponentStatus = (name: string): 'healthy' | 'degraded' | 'unhealthy' => {
+                const comp = health.components.find(c => c.name === name)
+                return comp?.status ?? 'healthy'
+            }
+
             // Derive component health from the ghost health
             setComponentHealth([
                 {
@@ -66,37 +73,37 @@ const GhostHealthMonitoring = () => {
                 },
                 {
                     name: 'Decision Engine',
-                    status: health.components.decisionEngine,
+                    status: getComponentStatus('Decision Engine'),
                     latencyMs: 45,
-                    errorRate: health.components.decisionEngine === 'healthy' ? 0.1 : 5.0,
+                    errorRate: getComponentStatus('Decision Engine') === 'healthy' ? 0.1 : 5.0,
                     lastCheck: new Date().toISOString()
                 },
                 {
                     name: 'Phenome RAG',
-                    status: health.components.phenomeRAG,
+                    status: getComponentStatus('Phenome RAG'),
                     latencyMs: 120,
-                    errorRate: health.components.phenomeRAG === 'healthy' ? 0.2 : 3.0,
+                    errorRate: getComponentStatus('Phenome RAG') === 'healthy' ? 0.2 : 3.0,
                     lastCheck: new Date().toISOString()
                 },
                 {
                     name: 'Workout Mutator',
-                    status: health.components.workoutMutator,
+                    status: getComponentStatus('Workout Mutator'),
                     latencyMs: 85,
-                    errorRate: health.components.workoutMutator === 'healthy' ? 0.1 : 2.5,
+                    errorRate: getComponentStatus('Workout Mutator') === 'healthy' ? 0.1 : 2.5,
                     lastCheck: new Date().toISOString()
                 },
                 {
                     name: 'Trust Calculator',
-                    status: health.components.trustCalculator,
+                    status: getComponentStatus('Trust Calculator'),
                     latencyMs: 15,
-                    errorRate: health.components.trustCalculator === 'healthy' ? 0.0 : 1.0,
+                    errorRate: getComponentStatus('Trust Calculator') === 'healthy' ? 0.0 : 1.0,
                     lastCheck: new Date().toISOString()
                 },
                 {
                     name: 'Safety Monitor',
-                    status: health.components.safetyMonitor,
+                    status: getComponentStatus('Safety Monitor'),
                     latencyMs: 25,
-                    errorRate: health.components.safetyMonitor === 'healthy' ? 0.0 : 0.5,
+                    errorRate: getComponentStatus('Safety Monitor') === 'healthy' ? 0.0 : 0.5,
                     lastCheck: new Date().toISOString()
                 }
             ])

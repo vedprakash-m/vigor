@@ -44,6 +44,7 @@ class CosmosDBClient:
             self.database = self.client.get_database_client(database)
 
             # Initialize container references
+            # Core containers
             self.containers = {
                 "users": self.database.get_container_client("users"),
                 "workouts": self.database.get_container_client("workouts"),
@@ -51,6 +52,17 @@ class CosmosDBClient:
                 "ai_coach_messages": self.database.get_container_client(
                     "ai_coach_messages"
                 ),
+                # Ghost containers (Task 7.1.1)
+                "ghost_actions": self.database.get_container_client("ghost_actions"),
+                "trust_states": self.database.get_container_client("trust_states"),
+                "training_blocks": self.database.get_container_client(
+                    "training_blocks"
+                ),
+                "phenome": self.database.get_container_client("phenome"),
+                "decision_receipts": self.database.get_container_client(
+                    "decision_receipts"
+                ),
+                "push_queue": self.database.get_container_client("push_queue"),
             }
 
             logger.info("Cosmos DB client initialized successfully")

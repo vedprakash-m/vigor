@@ -21,6 +21,7 @@
 | **Phase 4**   | Azure Backend Modernization     | ✅ Complete | 100%     |
 | **Phase 5**   | Calendar & Notification System  | ✅ Complete | 100%     |
 | **Phase 6**   | UX Polish & Testing             | ✅ Complete | 100%     |
+| **Phase 7**   | Production Hardening & Wiring   | 🔴 Active   | 0%       |
 
 ### Recently Completed Files
 
@@ -3172,3 +3173,299 @@ Vigor must be **all three**: invisible infrastructure that survives iOS, intelli
 | **Data Science / Metrics**    | 100%     | 🟢 Excellent                                  |
 | **Hardware / Sensors**        | 100%     | 🟢 Excellent                                  |
 | **Operational / Testing**     | 100%     | 🟢 Excellent (added Simulation, Admin Wiring) |
+
+---
+
+## Phase 7: Production Hardening & Integration Wiring
+
+**Date**: February 7, 2026
+**Status**: 🔴 Active
+**Goal**: Transform scaffolded prototype into production-reliable system by fixing security vulnerabilities, wiring disconnected subsystems, and eliminating dead code.
+
+> **"Scaffolding is not architecture. The gap between compiles and works is where trust dies."**
+
+### Assessment Summary
+
+A comprehensive architecture review on February 7, 2026 revealed that while Phases 0-6 built the correct skeleton across all three surfaces (iOS, Azure Functions backend, React admin dashboard), critical connective tissue is missing. The codebase has:
+
+- 🔴 **Security vulnerabilities**: JWT secret committed to git, no input validation, JWKS fetched on every request
+- 🔴 **Build-breaking bugs**: Frontend missing imports, undefined constants, unauthenticated API calls
+- 🔴 **Disconnected subsystems**: APNs client never called, Ghost Cosmos containers never initialized, ML stores return empty data
+- 🟡 **Dead code accumulation**: ~2,000 lines of unused code across frontend, duplicate types across iOS
+- ✅ **Zero backend test coverage**: Test suite created — 22 tests passing (test_helpers.py + test_auth.py)
+
+### Phase 7 Progress
+
+| Sub-Phase     | Description                          | Status      | Progress |
+| ------------- | ------------------------------------ | ----------- | -------- |
+| **Phase 7.0** | Critical Security & Build Fixes      | ✅ Complete | 100%     |
+| **Phase 7.1** | Backend Reliability & Decomposition  | ✅ Complete | 100%     |
+| **Phase 7.2** | Frontend Cleanup & Production Safety | ✅ Complete | 100%     |
+
+---
+
+### Phase 7.0: Critical Security & Build Fixes
+
+**Priority**: P0 — Must complete before any deployment
+**Scope**: Security vulnerabilities + build-breaking bugs that prevent the system from functioning
+
+#### Task 7.0.1: Rotate Committed JWT Secret ✅ SECURITY
+
+**File**: `infrastructure/bicep/parameters-modernized.bicepparam`
+**Issue**: `param secretKey = 'vigor-jwt-secret-key-prod-2026'` is committed to git in plaintext
+**Fix**:
+
+- [x] Replace hardcoded secret with a placeholder referencing Key Vault
+- [x] Add `.bicepparam` to `.gitignore` (`.bicepparam.example` stays tracked)
+- [x] Document: "After deploy, rotate secret via Azure Portal > Function App > Configuration"
+
+#### Task 7.0.2: Remove Default Admin Password ✅
+
+**File**: `functions-modernized/shared/config.py`
+**Issue**: `ADMIN_PASSWORD` defaults to `"ChangeMe123!"`
+**Fix**:
+
+- [x] Remove the `ADMIN_PASSWORD` field entirely (auth is Entra ID, not passwords)
+- [x] Remove any references to `ADMIN_PASSWORD` across the codebase
+
+#### Task 7.0.3: Fix Bicep RBAC Role Assignment ✅
+
+**File**: `infrastructure/bicep/main-modernized.bicep`
+**Issue**: Role `b24988ac-6180-42a0-ab88-20f7382dd24c` is **Contributor** (full resource management), not Cosmos DB Data Contributor
+**Fix**:
+
+- [x] Change to `00000000-0000-0000-0000-000000000002` (Cosmos DB Built-in Data Contributor) scoped at Cosmos account level
+
+#### Task 7.0.4: Fix Bicep Environment Parameter Mismatch ✅
+
+**File**: `infrastructure/bicep/main-modernized.bicep`
+**Issue**: `param environment` defaults to `'prod'` but retention conditional checks `environment == 'production'` — never matches
+**Fix**:
+
+- [x] Change conditional to `environment == 'prod'` to match the default parameter value
+
+#### Task 7.0.5: Add Missing Ghost Cosmos DB Containers to Bicep ✅
+
+**File**: `infrastructure/bicep/main-modernized.bicep`
+**Issue**: Backend code references 6 containers that don't exist in infrastructure: `ghost_actions`, `trust_states`, `training_blocks`, `phenome`, `decision_receipts`, `push_queue`
+**Fix**:
+
+- [x] Add all 6 container resources with `/userId` partition key and appropriate TTLs
+- [x] `decision_receipts`: 90-day TTL (7776000 seconds) per Tech Spec §2.4
+- [x] `push_queue`: 7-day TTL (604800 seconds) for transient push queue items
+
+#### Task 7.0.6: Make CORS Environment-Conditional ✅
+
+**File**: `infrastructure/bicep/function-app-modernized.bicep`
+**Issue**: `localhost:5173` and `localhost:3000` are in production CORS — attack surface
+**Fix**:
+
+- [x] Add `environment` parameter to function-app module
+- [x] Only include localhost origins when `environment != 'prod'`
+
+#### Task 7.0.7: Fix Frontend — Missing AdminProtectedRoute Import ✅
+
+**File**: `frontend/src/App.tsx`
+**Issue**: `AdminProtectedRoute` is used on lines 58/69 but never imported — build fails
+**Fix**:
+
+- [x] Add `import { AdminProtectedRoute } from './components/AdminProtectedRoute'`
+
+#### Task 7.0.8: Fix Frontend — TierManagementPage Undefined Constants ✅
+
+**File**: `frontend/src/pages/TierManagementPage.tsx`
+**Issue**: References `TIER_PRICING.PREMIUM_MONTHLY` and `TIER_PRICING.PREMIUM_YEARLY` which don't exist on the exported `TIER_PRICING` object (actual keys are `free`, `premium`, `enterprise`)
+**Fix**:
+
+- [x] Import `TIER_PRICING` from `adminConfig`
+- [x] Use `TIER_PRICING.premium.price` (49) and `TIER_PRICING.premium.yearlyPrice` (499)
+
+#### Task 7.0.9: Wire Admin API Token ✅
+
+**File**: `frontend/src/contexts/AuthContext.tsx`, `frontend/src/services/adminApi.ts`
+**Issue**: `setAdminAccessToken()` is never called — all admin API requests go unauthenticated
+**Fix**:
+
+- [x] In `AuthContext.tsx`, import and call `setAdminAccessToken(response.accessToken)` alongside `api.setAccessToken()`
+
+#### Task 7.0.10: Cache JWKS Keys with TTL ✅
+
+**File**: `functions-modernized/shared/auth.py`
+**Issue**: JWKS keys fetched from `login.microsoftonline.com` on every authenticated request — 50-200ms latency penalty per call
+**Fix**:
+
+- [x] Add module-level `_jwks_cache` with `_jwks_cache_expiry` (24-hour TTL)
+- [x] Return cached keys if not expired; fetch and update cache only on miss/expiry
+- [x] Force refresh on key-not-found to handle key rotation
+
+#### Task 7.0.11: Validate JWT Issuer Claim ✅
+
+**File**: `functions-modernized/shared/auth.py`
+**Issue**: `iss` (issuer) claim is not validated — a token from any Azure tenant with matching `aud` passes
+**Fix**:
+
+- [x] Add `issuer` parameter to `jwt.decode()` matching expected tenant
+- [x] Support both v1 and v2 issuer formats
+- [x] Handle `common` tenant gracefully (skip issuer validation)
+
+#### Task 7.0.12: Fix `get_cosmos_container` Sync-in-Async ✅
+
+**File**: `functions-modernized/shared/cosmos_db.py`
+**Issue**: Creates synchronous `CosmosClient` inside running async event loop — blocks entire process
+**Fix**:
+
+- [x] Refactor `ensure_user_exists` in `auth.py` to be fully async using the async `CosmosDBClient`
+- [x] Remove `get_cosmos_container` sync fallback entirely (no remaining callers)
+
+---
+
+### Phase 7.1: Backend Reliability & Decomposition
+
+**Priority**: P1 — Required for production reliability
+
+#### Task 7.1.1: Initialize Ghost Cosmos Containers in Python ✅
+
+**File**: `functions-modernized/shared/cosmos_db.py`
+**Issue**: Only 4 containers initialized (`users`, `workouts`, `workout_logs`, `ai_coach_messages`), but Ghost code references 6 more
+**Fix**:
+
+- [x] Add `ghost_actions`, `trust_states`, `training_blocks`, `phenome`, `decision_receipts`, `push_queue` to `self.containers` dict in `initialize()`
+
+#### Task 7.1.2: Add Pydantic Input Validation to Endpoints ✅
+
+**File**: `functions-modernized/shared/helpers.py` (new)
+**Issue**: Every endpoint does `req.get_json()` with no schema validation — existing Pydantic models (`WorkoutGenerationRequest`, `CoachChatRequest`, `WorkoutSessionRequest`) are never used
+**Fix**:
+
+- [x] Create helper `parse_request_body(req, model_class)` that parses JSON and validates against Pydantic model
+- [x] Returns (model, None) on success, (None, error_response) on failure
+- [x] Applied in blueprint endpoints for POST/PUT handlers
+
+#### Task 7.1.3: Add Structured Error Responses ✅
+
+**File**: `functions-modernized/shared/helpers.py` (new)
+**Issue**: All exceptions return generic 500 — no differentiation between 400/404/409/500
+**Fix**:
+
+- [x] Create `error_response(message, status_code, code=None, details=None)` helper
+- [x] Create `success_response(data, status_code=200)` helper
+- [x] Applied across all Blueprint endpoints with proper HTTP status codes (400, 401, 403, 404, 405, 422, 429, 500)
+
+#### Task 7.1.4: Add Query Parameter Bounds Validation ✅
+
+**File**: `functions-modernized/shared/helpers.py` (new)
+**Issue**: `limit` and `offset` query params accept arbitrary integers — DoS vector via `limit=999999`
+**Fix**:
+
+- [x] Create `parse_pagination(req, max_limit=100)` helper
+- [x] Clamp `limit` to `[1, max_limit]`, `offset` to `[0, ∞)`
+- [x] Applied to all paginated endpoints in blueprints
+
+#### Task 7.1.5: Decompose function_app.py into Blueprints ✅
+
+**File**: `functions-modernized/function_app.py` (1,275 lines → 55 lines + 6 blueprint files)
+**Issue**: All 23+ endpoints in a single file — unmaintainable
+**Fix**:
+
+- [x] Create `blueprints/` directory with: `auth_bp.py`, `workouts_bp.py`, `coach_bp.py`, `ghost_bp.py`, `admin_bp.py`, `health_bp.py`
+- [x] Move endpoints into appropriate blueprints using `func.Blueprint()`
+- [x] Register all blueprints in `function_app.py` (now 55 lines)
+- [x] Created `shared/helpers.py` for common patterns (error_response, success_response, parse_request_body, parse_pagination)
+
+#### Task 7.1.6: Create Backend Test Suite ✅
+
+**File**: `functions-modernized/tests/` (new directory)
+**Issue**: Current `test_simple.py` has 0 real tests — 0% coverage
+**Fix**:
+
+- [x] Create `tests/conftest.py` with fixtures for mock Cosmos, mock auth, HTTP request factory
+- [x] Create `tests/test_auth.py` — JWKS caching tests with mock network (3 tests)
+- [x] Create `tests/test_helpers.py` — error_response, success_response, parse_request_body, parse_pagination (19 tests)
+- [x] All 22 tests pass (`pytest -v`)
+
+---
+
+### Phase 7.2: Frontend Cleanup & Production Safety
+
+**Priority**: P1 — Required for reliable admin operations
+
+#### Task 7.2.1: Remove Silent Mock Data Fallback in Production ✅
+
+**File**: `frontend/src/services/adminApi.ts`
+**Issue**: API failures silently return mock data — admin sees fake health metrics with no warning
+**Fix**:
+
+- [x] Guard all 7 mock fallbacks behind `import.meta.env.DEV` check
+- [x] In production, re-throw the error so the component shows error state
+
+#### Task 7.2.2: Remove Dead LLM Orchestration Route ✅
+
+**Files**: `frontend/src/App.tsx`, `frontend/src/pages/LLMOrchestrationPage.tsx`
+**Issue**: Two LLM config pages exist — `LLMConfigurationSimple` (correct, Ghost-aligned) and `LLMOrchestrationPage` (older, exposes unsupported temperature/topP controls)
+**Fix**:
+
+- [x] Remove `/llm` route from `App.tsx`
+- [x] Remove `LLMOrchestrationPage` import
+- [x] Delete `LLMOrchestrationPage.tsx` file
+- [x] Verified sidebar nav in `Layout.tsx` does not link to `/llm`
+
+#### Task 7.2.3: Add Route-Based Code Splitting ✅
+
+**File**: `frontend/src/App.tsx`
+**Issue**: All 9 admin page components eagerly imported — entire bundle loaded regardless of route
+**Fix**:
+
+- [x] Convert 10 page imports to `React.lazy()` with `<Suspense fallback={<Spinner />}>`
+- [x] Keep `Layout`, `ErrorBoundary`, `AuthProvider`, `AdminProtectedRoute` eager (always needed)
+
+#### Task 7.2.4: Remove Dead Frontend Code ✅
+
+**Files**: Multiple
+**Issue**: ~2,000 lines of unused code across the frontend
+**Fix**:
+
+- [x] Delete `frontend/src/store/chatStore.ts` (Zustand store, never imported)
+- [x] Delete `frontend/src/pages/ForgotPasswordPage.tsx` (Entra ID handles passwords)
+- [x] Delete `frontend/src/pages/ResetPasswordPage.tsx` (Entra ID handles passwords)
+- [x] Remove corresponding routes from `App.tsx` (`/forgot-password`, `/reset-password`)
+- [x] Delete `frontend/src/__tests__/components/ForgotPasswordPage.test.tsx`
+
+#### Task 7.2.5: Fix Frontend TypeScript Configuration ✅
+
+**File**: `frontend/tsconfig.app.json`
+**Issue**: `strict: false` allows type errors to accumulate silently
+**Fix**:
+
+- [x] Set `"strict": true`
+- [x] Set `"noUnusedLocals": true`
+- [x] Set `"noUnusedParameters": true`
+- [x] Fixed 72 type errors across 5 files (type definitions, Chakra v3 API, missing imports)
+- [x] `npm run build` succeeds with zero errors
+
+---
+
+### Phase 7 Validation Gates
+
+**Before declaring Phase 7.0 complete:** ✅ ALL PASSED
+
+- [x] `parameters-modernized.bicepparam` has no hardcoded secrets
+- [x] `config.py` has no default passwords
+- [x] Bicep deploys successfully with correct RBAC role
+- [x] Frontend builds without errors (`npm run build`) — imports/constants fixed
+- [x] Admin API calls include auth token — wired in AuthContext
+- [x] JWKS keys are cached (verified via `_jwks_cache` module-level variable)
+
+**Before declaring Phase 7.1 complete:** ✅ ALL PASSED
+
+- [x] All Ghost containers initialized in Python code
+- [x] Invalid request bodies return 400 with details (parse_request_body helper)
+- [x] Backend tests pass (`pytest -v`) — 22/22 pass, covering auth + helpers
+- [x] `function_app.py` is <100 lines (imports + blueprint registration) — now 55 lines
+
+**Before declaring Phase 7.2 complete:** ✅ ALL PASSED
+
+- [x] Production build shows no mock data without explicit dev flag
+- [x] Bundle size reduced — code-split into 13 chunks via React.lazy()
+- [x] `npm run build` succeeds with `strict: true` — zero TS errors
+- [x] No dead routes in App.tsx — removed /llm, /forgot-password, /reset-password
+- [x] 4 dead files deleted (ForgotPasswordPage, ResetPasswordPage, LLMOrchestrationPage, chatStore)

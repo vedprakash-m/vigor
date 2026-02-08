@@ -246,22 +246,25 @@ const QuickLinksCard = () => {
             <Card.Body pt={0}>
                 <HStack gap={3} flexWrap="wrap">
                     {links.map((link) => (
-                        <Box
+                        <RouterLink
                             key={link.path}
-                            as={RouterLink}
                             to={link.path}
-                            p={3}
-                            bg="gray.50"
-                            borderRadius="md"
-                            _hover={{ bg: 'blue.50', transform: 'translateY(-1px)' }}
-                            transition="all 0.2s"
-                            cursor="pointer"
+                            style={{ textDecoration: 'none' }}
                         >
-                            <VStack gap={1}>
-                                <Text fontSize="xl">{link.icon}</Text>
-                                <Text fontSize="sm" fontWeight="medium">{link.label}</Text>
-                            </VStack>
-                        </Box>
+                            <Box
+                                p={3}
+                                bg="gray.50"
+                                borderRadius="md"
+                                _hover={{ bg: 'blue.50', transform: 'translateY(-1px)' }}
+                                transition="all 0.2s"
+                                cursor="pointer"
+                            >
+                                <VStack gap={1}>
+                                    <Text fontSize="xl">{link.icon}</Text>
+                                    <Text fontSize="sm" fontWeight="medium">{link.label}</Text>
+                                </VStack>
+                            </Box>
+                        </RouterLink>
                     ))}
                 </HStack>
             </Card.Body>

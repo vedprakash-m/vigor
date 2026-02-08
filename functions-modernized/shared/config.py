@@ -54,9 +54,8 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = Field(
         default="admin@vigor.com", description="Default admin email"
     )
-    ADMIN_PASSWORD: str = Field(
-        default="ChangeMe123!", description="Default admin password"
-    )
+    # Note: Authentication is handled by Microsoft Entra ID JWT validation.
+    # No password field needed — admin access is gated by email whitelist in auth.py.
 
     # Azure OpenAI Configuration (gpt-5-mini via Azure AI Foundry)
     AZURE_OPENAI_ENDPOINT: str = Field(

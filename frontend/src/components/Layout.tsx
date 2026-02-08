@@ -1,6 +1,7 @@
-import { Box, Drawer, Flex, Heading, HStack, IconButton, Portal, Text } from '@chakra-ui/react'
+import { Badge, Box, Drawer, Flex, Heading, HStack, IconButton, Portal, Text } from '@chakra-ui/react'
 import { useState } from 'react'
 import { Outlet, Link as RouterLink, useLocation } from 'react-router-dom'
+import { isAdmin } from '../config/adminConfig'
 import { useAuth } from '../contexts/useAuth'
 
 // Admin Dashboard navigation links - Ghost-specific

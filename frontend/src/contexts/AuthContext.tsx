@@ -11,6 +11,7 @@ import {
 } from '@azure/msal-react';
 import React, { createContext, useEffect, useState } from 'react';
 import { loginRequest, logoutRequest, silentRequest } from '../config/authConfig';
+import { setAdminAccessToken } from '../services/adminApi';
 import api from '../services/api';
 import type { User } from '../types/auth';
 
@@ -89,6 +90,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const response = await instance.acquireTokenSilent(silentRequestWithAccount);
             // Set API token for authenticated requests
             api.setAccessToken(response.accessToken);
+            setAdminAccessToken(response.accessToken);
           } catch (silentError) {
             // If silent token acquisition fails (consent required, etc.),
             // trigger interactive login for the new scope
@@ -102,12 +104,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } else {
           setUser(null);
           api.setAccessToken(null);
+          setAdminAccessToken(null);
         }
       } catch (error) {
         console.error('Failed to initialize user:', error);
         setError('Failed to load user profile');
         setUser(null);
         api.setAccessToken(null);
+        setAdminAccessToken(null);
       } finally {
         setIsLoading(false);
       }

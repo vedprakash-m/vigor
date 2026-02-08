@@ -50,7 +50,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09
     sku: {
       name: 'PerGB2018'
     }
-    retentionInDays: environment == 'production' ? 90 : 30
+    retentionInDays: environment == 'prod' ? 90 : 30
   }
 }
 
@@ -194,6 +194,119 @@ resource aiMessagesContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases
   }
 }
 
+// Ghost Engine Cosmos DB Containers (Phase 7.0.5)
+// These containers store Ghost intelligence data per Tech Spec §2.4
+
+resource ghostActionsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  parent: cosmosDatabase
+  name: 'ghost_actions'
+  properties: {
+    resource: {
+      id: 'ghost_actions'
+      partitionKey: {
+        paths: ['/userId']
+        kind: 'Hash'
+      }
+      indexingPolicy: {
+        indexingMode: 'consistent'
+        automatic: true
+      }
+    }
+  }
+}
+
+resource trustStatesContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  parent: cosmosDatabase
+  name: 'trust_states'
+  properties: {
+    resource: {
+      id: 'trust_states'
+      partitionKey: {
+        paths: ['/userId']
+        kind: 'Hash'
+      }
+      indexingPolicy: {
+        indexingMode: 'consistent'
+        automatic: true
+      }
+    }
+  }
+}
+
+resource trainingBlocksContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  parent: cosmosDatabase
+  name: 'training_blocks'
+  properties: {
+    resource: {
+      id: 'training_blocks'
+      partitionKey: {
+        paths: ['/userId']
+        kind: 'Hash'
+      }
+      indexingPolicy: {
+        indexingMode: 'consistent'
+        automatic: true
+      }
+    }
+  }
+}
+
+resource phenomeContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  parent: cosmosDatabase
+  name: 'phenome'
+  properties: {
+    resource: {
+      id: 'phenome'
+      partitionKey: {
+        paths: ['/userId']
+        kind: 'Hash'
+      }
+      indexingPolicy: {
+        indexingMode: 'consistent'
+        automatic: true
+      }
+    }
+  }
+}
+
+resource decisionReceiptsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  parent: cosmosDatabase
+  name: 'decision_receipts'
+  properties: {
+    resource: {
+      id: 'decision_receipts'
+      partitionKey: {
+        paths: ['/userId']
+        kind: 'Hash'
+      }
+      indexingPolicy: {
+        indexingMode: 'consistent'
+        automatic: true
+      }
+      defaultTtl: 7776000 // 90-day TTL per Tech Spec §2.4
+    }
+  }
+}
+
+resource pushQueueContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  parent: cosmosDatabase
+  name: 'push_queue'
+  properties: {
+    resource: {
+      id: 'push_queue'
+      partitionKey: {
+        paths: ['/userId']
+        kind: 'Hash'
+      }
+      indexingPolicy: {
+        indexingMode: 'consistent'
+        automatic: true
+      }
+      defaultTtl: 604800 // 7-day TTL for transient push queue items
+    }
+  }
+}
+
 // Note: Azure OpenAI uses Azure AI Foundry project (vigor-foundry via vigor-openai.services.ai.azure.com)
 // with gpt-5-mini deployment. Endpoint and API key are passed as parameters.
 
@@ -213,6 +326,7 @@ module functionApp './function-app-modernized.bicep' = {
     azureOpenAiEndpoint: azureOpenAiEndpoint
     azureOpenAiDeployment: azureOpenAiDeployment
     secretKey: secretKey
+    envName: environment
   }
 }
 
@@ -234,8 +348,8 @@ resource functionAppCosmosAccess 'Microsoft.Authorization/roleAssignments@2022-0
   properties: {
     roleDefinitionId: subscriptionResourceId(
       'Microsoft.Authorization/roleDefinitions',
-      'b24988ac-6180-42a0-ab88-20f7382dd24c'
-    ) // Cosmos DB Data Contributor
+      '00000000-0000-0000-0000-000000000002'
+    ) // Cosmos DB Built-in Data Contributor (NOT the generic 'Contributor' role)
     principalId: functionApp.outputs.functionAppPrincipalId
     principalType: 'ServicePrincipal'
   }

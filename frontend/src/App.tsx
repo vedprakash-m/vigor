@@ -1,27 +1,28 @@
 import { MsalProvider } from '@azure/msal-react'
-import { ChakraProvider, defaultSystem } from '@chakra-ui/react'
+import { ChakraProvider, defaultSystem, Spinner } from '@chakra-ui/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, BrowserRouter as Router, Routes, useParams } from 'react-router-dom'
-import AdminAuditSecurity from './components/AdminAuditSecurity'
-import AnalyticsDashboard from './components/AnalyticsDashboard'
-import BulkUserOperations from './components/BulkUserOperations'
+import { AdminProtectedRoute } from './components/AdminProtectedRoute'
 import ErrorBoundary from './components/ErrorBoundary'
 import { Layout } from './components/Layout'
-import LLMAnalyticsSimple from './components/LLMAnalyticsSimple'
-import LLMConfigurationManagement from './components/LLMConfigurationSimple'
-import LLMHealthMonitoring from './components/LLMHealthMonitoring'
 import { OAuthCallback } from './components/OAuthCallback'
-import UserManagement from './components/UserManagement'
 import { msalInstance } from './config/msalInstance'
 import { AuthProvider } from './contexts/AuthContext'
-import AdminPage from './pages/AdminPage'
-import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
-import LLMOrchestrationPage from './pages/LLMOrchestrationPage'
-import { LoginPage } from './pages/LoginPage'
-import { ResetPasswordPage } from './pages/ResetPasswordPage'
-import TierManagementPage from './pages/TierManagementPage'
 // Import the animations CSS
 import './styles/animations.css'
+
+// Task 7.2.3: Lazy-load page components for code splitting
+const AdminPage = lazy(() => import('./pages/AdminPage'))
+const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })))
+const TierManagementPage = lazy(() => import('./pages/TierManagementPage'))
+const AdminAuditSecurity = lazy(() => import('./components/AdminAuditSecurity'))
+const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'))
+const BulkUserOperations = lazy(() => import('./components/BulkUserOperations'))
+const LLMAnalyticsSimple = lazy(() => import('./components/LLMAnalyticsSimple'))
+const LLMConfigurationManagement = lazy(() => import('./components/LLMConfigurationSimple'))
+const LLMHealthMonitoring = lazy(() => import('./components/LLMHealthMonitoring'))
+const UserManagement = lazy(() => import('./components/UserManagement'))
 
 // Wrapper component to extract provider from URL params
 const OAuthCallbackWrapper = () => {
@@ -46,30 +47,27 @@ function App() {
           <MsalProvider instance={msalInstance}>
             <AuthProvider>
               <Router>
-                <Routes>
-                  {/* Public routes */}
-                  <Route path="/" element={<Navigate to="/admin" replace />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                  <Route path="/reset-password" element={<ResetPasswordPage />} />
-                  <Route path="/oauth/callback/:provider" element={<OAuthCallbackWrapper />} />
+                <Suspense fallback={<Spinner size="xl" />}>
+                  <Routes>
+                    {/* Public routes */}
+                    <Route path="/" element={<Navigate to="/admin" replace />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/oauth/callback/:provider" element={<OAuthCallbackWrapper />} />
 
-                  {/* Admin Dashboard routes - Admin access required */}
-                  <Route path="/admin" element={<AdminProtectedRoute><Layout /></AdminProtectedRoute>}>
-                    <Route index element={<AdminPage />} />
-                    <Route path="llm-health" element={<LLMHealthMonitoring />} />
-                    <Route path="users" element={<UserManagement />} />
-                    <Route path="llm-config" element={<LLMConfigurationManagement />} />
-                    <Route path="analytics" element={<LLMAnalyticsSimple />} />
-                    <Route path="system-analytics" element={<AnalyticsDashboard />} />
-                    <Route path="audit" element={<AdminAuditSecurity />} />
-                    <Route path="bulk-ops" element={<BulkUserOperations />} />
-                    <Route path="tiers" element={<TierManagementPage />} />
-                  </Route>
-                  <Route path="/llm" element={<AdminProtectedRoute><Layout /></AdminProtectedRoute>}>
-                    <Route index element={<LLMOrchestrationPage />} />
-                  </Route>
-                </Routes>
+                    {/* Admin Dashboard routes - Admin access required */}
+                    <Route path="/admin" element={<AdminProtectedRoute><Layout /></AdminProtectedRoute>}>
+                      <Route index element={<AdminPage />} />
+                      <Route path="llm-health" element={<LLMHealthMonitoring />} />
+                      <Route path="users" element={<UserManagement />} />
+                      <Route path="llm-config" element={<LLMConfigurationManagement />} />
+                      <Route path="analytics" element={<LLMAnalyticsSimple />} />
+                      <Route path="system-analytics" element={<AnalyticsDashboard />} />
+                      <Route path="audit" element={<AdminAuditSecurity />} />
+                      <Route path="bulk-ops" element={<BulkUserOperations />} />
+                      <Route path="tiers" element={<TierManagementPage />} />
+                    </Route>
+                  </Routes>
+                </Suspense>
               </Router>
             </AuthProvider>
           </MsalProvider>

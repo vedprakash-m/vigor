@@ -279,7 +279,7 @@ const AdminAuditSecurity = () => {
                                                 </Badge>
                                             </Table.Cell>
                                             <Table.Cell fontSize="xs" color="gray.600" maxW="200px">
-                                                <Text noOfLines={2}>{receipt.contextSnapshot}</Text>
+                                                <Text lineClamp={2}>{receipt.contextSnapshot}</Text>
                                             </Table.Cell>
                                         </Table.Row>
                                     ))}
@@ -318,7 +318,7 @@ const AdminAuditSecurity = () => {
                                                 </Badge>
                                             </Table.Cell>
                                             <Table.Cell fontSize="sm" maxW="300px">
-                                                <Text noOfLines={2}>{breaker.reason}</Text>
+                                                <Text lineClamp={2}>{breaker.reason}</Text>
                                             </Table.Cell>
                                             <Table.Cell>
                                                 <Badge colorPalette={breaker.autoResolved ? 'green' : 'yellow'}>

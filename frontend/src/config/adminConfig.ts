@@ -59,19 +59,30 @@ export type TrustPhase = typeof TRUST_PHASES[number]['name'];
 /**
  * Decision Receipt types per Tech Spec §2.4
  */
-export type DecisionType =
-  | 'SCHEDULE'       // Ghost scheduled a new block
-  | 'TRANSFORM'      // Ghost transformed a block (e.g., Heavy → Recovery)
-  | 'REMOVE'         // Ghost removed a block
-  | 'RESCHEDULE'     // Ghost moved a block to different time
-  | 'SKIP_PREDICT'   // Ghost predicted a skip
-  | 'SAFETY_BREAKER'; // Safety breaker triggered
+export const DecisionType = {
+  SCHEDULE: 'SCHEDULE',
+  TRANSFORM: 'TRANSFORM',
+  REMOVE: 'REMOVE',
+  RESCHEDULE: 'RESCHEDULE',
+  SKIP_PREDICT: 'SKIP_PREDICT',
+  SAFETY_BREAKER: 'SAFETY_BREAKER',
+  WORKOUT_MUTATION: 'WORKOUT_MUTATION',
+  SCHEDULE_CHANGE: 'SCHEDULE_CHANGE',
+  REST_DAY: 'REST_DAY',
+  INTENSITY_ADJUSTMENT: 'INTENSITY_ADJUSTMENT',
+} as const;
 
-export type DecisionOutcome =
-  | 'ACCEPTED'       // User accepted (or didn't modify)
-  | 'REJECTED'       // User rejected the decision
-  | 'OVERRIDDEN'     // User modified the result
-  | 'PENDING';       // Awaiting user action
+export type DecisionType = (typeof DecisionType)[keyof typeof DecisionType];
+
+export const DecisionOutcome = {
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED',
+  MODIFIED: 'MODIFIED',
+  OVERRIDDEN: 'OVERRIDDEN',
+  PENDING: 'PENDING',
+} as const;
+
+export type DecisionOutcome = (typeof DecisionOutcome)[keyof typeof DecisionOutcome];
 
 /**
  * Phenome store status per Tech Spec §2.4
