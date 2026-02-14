@@ -243,15 +243,16 @@ actor SilentPushReceiver {
             return
         }
 
+        let startDate = Date(timeIntervalSince1970: timestamp)
         let workout = DetectedWorkout(
             id: data["id"] as? String ?? UUID().uuidString,
             type: type,
-            startTime: Date(timeIntervalSince1970: timestamp),
-            durationMinutes: duration,
-            estimatedCalories: data["calories"] as? Int ?? 0,
-            heartRateAvg: data["hr_avg"] as? Int,
-            heartRateMax: data["hr_max"] as? Int,
-            source: .watch
+            startDate: startDate,
+            endDate: startDate.addingTimeInterval(TimeInterval(duration * 60)),
+            duration: TimeInterval(duration * 60),
+            activeCalories: Double(data["calories"] as? Int ?? 0),
+            averageHeartRate: (data["hr_avg"] as? Int).map { Double($0) },
+            source: "watch"
         )
 
         await GhostEngine.shared.handleWorkoutCompletion(workout)
@@ -271,8 +272,8 @@ actor SilentPushReceiver {
 
     private func processRemoteTrustUpdate(_ data: [String: Any]) async throws {
         guard let score = data["score"] as? Double,
-              let phaseStr = data["phase"] as? String,
-              let phase = TrustPhase(rawValue: phaseStr) else {
+              let phaseRaw = data["phase"] as? Int,
+              let phase = TrustPhase(rawValue: phaseRaw) else {
             return
         }
 
@@ -284,9 +285,8 @@ actor SilentPushReceiver {
 
         switch typeStr {
         case "illness":
-            // Clear all upcoming workouts
-            try await CalendarScheduler.shared.clearUpcomingBlocks()
-            await TrustStateMachine.shared.recordEvent(.healthEmergency)
+            // Clear all upcoming workouts — safe mode
+            await GhostEngine.shared.enterSafeMode(reason: "Illness detected")
 
         case "injury":
             // Pause Ghost
@@ -350,14 +350,10 @@ extension GhostEngine {
 
     func recordWake(source: WakeSource) async {
         // Track wake sources for survival analytics
-        await DecisionReceiptStore.shared.logReceipt(DecisionReceipt(
-            action: "ghost_wake",
-            explanation: "Ghost awakened via \(source.rawValue)",
-            timestamp: Date(),
-            confidence: 1.0,
-            affectedBlocks: [],
-            trustImpact: 0
-        ))
+        var receipt = DecisionReceipt(action: .workoutDetected)
+        receipt.addInput("wake_source", value: source.rawValue)
+        receipt.outcome = .success
+        await DecisionReceiptStore.shared.store(receipt)
     }
 
     func performQuickCycle() async {
@@ -373,19 +369,85 @@ extension GhostEngine {
         }
     }
 
+    func handleWorkoutCompletion(_ workout: DetectedWorkout) async {
+        // Log the workout
+        await PhenomeCoordinator.shared.logWorkout(workout)
+
+        // Update trust (positive signal)
+        await TrustStateMachine.shared.recordEvent(.workoutCompleted(workout))
+
+        // Send passive confirmation
+        await NotificationOrchestrator.shared.sendWorkoutConfirmation(workout)
+    }
+
     func processPendingTransformations() async {
         // Process any queued block transformations
         // This runs during BGProcessingTask with more time budget
+        guard TrustStateMachine.shared.currentPhase.canTransformBlocks else { return }
+
+        let calendar = Calendar.current
+        let startOfWeek = calendar.startOfWeek(for: Date())
+        let endOfWeek = calendar.date(byAdding: .day, value: 7, to: startOfWeek)!
+
+        guard let blocks = try? await CalendarScheduler.shared.fetchBlocks(from: startOfWeek, to: endOfWeek) else { return }
+
+        for block in blocks where block.status == .scheduled && block.startTime > Date() {
+            // Check if recovery data suggests modification
+            let recovery = await PhenomeCoordinator.shared.getCurrentRecoveryScore()
+            if recovery < 40 {
+                // Low recovery — reduce intensity
+                var modified = block
+                modified.intensity = max(1, block.intensity - 1)
+                try? await CalendarScheduler.shared.updateBlock(modified)
+
+                var receipt = DecisionReceipt(action: .blockTransformed)
+                receipt.addInput("reason", value: "low_recovery")
+                receipt.addInput("recovery_score", value: recovery)
+                receipt.outcome = .success
+                await DecisionReceiptStore.shared.store(receipt)
+            }
+        }
     }
 
     func enterSafeMode(reason: String) async {
+        // Clear upcoming auto-scheduled blocks and pause Ghost scheduling
         await GhostHealthMonitor.shared.recordSystemFailure(reason)
+
+        // Cancel upcoming auto-scheduled blocks
+        let calendar = Calendar.current
+        let endOfWeek = calendar.date(byAdding: .day, value: 7, to: Date())!
+        if let blocks = try? await CalendarScheduler.shared.fetchBlocks(from: Date(), to: endOfWeek) {
+            for block in blocks where block.wasAutoScheduled && block.status == .scheduled {
+                try? await CalendarScheduler.shared.cancelBlock(block)
+            }
+        }
+
+        var receipt = DecisionReceipt(action: .trustRetreated)
+        receipt.addInput("reason", value: reason)
+        receipt.addInput("action", value: "safe_mode")
+        receipt.outcome = .success
+        await DecisionReceiptStore.shared.store(receipt)
     }
 
     func enterVacationMode(days: Int) async {
         // Pause all scheduling for specified days
+        let vacationEnd = Calendar.current.date(byAdding: .day, value: days, to: Date())!
+
+        // Cancel upcoming auto-scheduled blocks within vacation period
+        if let blocks = try? await CalendarScheduler.shared.fetchBlocks(from: Date(), to: vacationEnd) {
+            for block in blocks where block.wasAutoScheduled && block.status == .scheduled {
+                try? await CalendarScheduler.shared.cancelBlock(block)
+            }
+        }
+
         // Mark as vacation in behavioral memory
         await BehavioralMemoryStore.shared.recordVacation(days: days)
+
+        var receipt = DecisionReceipt(action: .trustRetreated)
+        receipt.addInput("action", value: "vacation_mode")
+        receipt.addInput("days", value: days)
+        receipt.outcome = .success
+        await DecisionReceiptStore.shared.store(receipt)
     }
 }
 
@@ -394,9 +456,15 @@ extension GhostEngine {
 extension HealthKitObserver {
 
     func checkRecentWorkout() async -> DetectedWorkout? {
-        // Quick check for workouts in the last hour
-        // Used during background refresh
-        return nil // Placeholder
+        // Quick check for workouts completed in the last hour
+        // Used during background refresh with 30-second budget
+        let oneHourAgo = Date().addingTimeInterval(-60 * 60)
+        let recentWorkouts = await fetchWorkouts(since: oneHourAgo)
+
+        // Return the most recent unprocessed workout
+        return recentWorkouts.first { workout in
+            !workout.hasBeenProcessed
+        }
     }
 }
 
@@ -405,21 +473,40 @@ extension HealthKitObserver {
 extension BehavioralMemoryStore {
 
     func recordVacation(days: Int) async {
-        // Mark vacation period
+        // Mark vacation period in behavioral memory
+        let vacationEnd = Calendar.current.date(byAdding: .day, value: days, to: Date())!
+        let memory = BehavioralMemory(
+            type: .vacation,
+            startDate: Date(),
+            endDate: vacationEnd,
+            metadata: ["days": days]
+        )
+        await store(memory)
     }
 
     func consolidatePatterns() async {
-        // Long-running pattern consolidation
-        // Runs during BGProcessingTask
+        // Long-running pattern consolidation for BGProcessingTask
+        // Analyze workout history to identify preferred times, durations, types
+        let memories = await fetchAll(ofType: .workoutPattern)
+
+        // Group by day of week to find preferred workout days
+        var dayFrequency: [Int: Int] = [:]
+        for memory in memories {
+            let weekday = Calendar.current.component(.weekday, from: memory.startDate)
+            dayFrequency[weekday, default: 0] += 1
+        }
+
+        // Store consolidated pattern as a derived memory
+        if !dayFrequency.isEmpty {
+            let consolidated = BehavioralMemory(
+                type: .consolidatedPattern,
+                startDate: Date(),
+                endDate: Date(),
+                metadata: ["preferredDays": dayFrequency]
+            )
+            await store(consolidated)
+        }
     }
 }
 
-// MARK: - TrustStateMachine Extension
-
-extension TrustStateMachine {
-
-    func applyRemoteState(score: Double, phase: TrustPhase) async {
-        // Apply trust state from backend
-        // Used for device sync
-    }
-}
+// Note: TrustStateMachine.applyRemoteState is defined in TrustStateMachine.swift

@@ -114,12 +114,12 @@ actor SacredTimeDetector {
         userDeclaredTimes.removeAll { $0.id == id }
     }
 
-    func getAllSacredTimes() -> [SacredTime] {
-        var allTimes: [SacredTime] = []
+    func getAllSacredTimes() -> [DetectedSacredTime] {
+        var allTimes: [DetectedSacredTime] = []
 
         // Add detected patterns
         for pattern in detectedPatterns {
-            allTimes.append(SacredTime(
+            allTimes.append(DetectedSacredTime(
                 id: pattern.id,
                 name: pattern.name,
                 dayOfWeek: pattern.dayOfWeek,
@@ -133,7 +133,7 @@ actor SacredTimeDetector {
 
         // Add user-declared times (higher priority)
         for declared in userDeclaredTimes {
-            allTimes.append(SacredTime(
+            allTimes.append(DetectedSacredTime(
                 id: declared.id,
                 name: declared.name,
                 dayOfWeek: declared.dayOfWeek,
@@ -176,7 +176,7 @@ actor SacredTimeDetector {
         return false
     }
 
-    func getSacredTimesFor(date: Date) -> [SacredTime] {
+    func getSacredTimesFor(date: Date) -> [DetectedSacredTime] {
         let dayOfWeek = Calendar.current.component(.weekday, from: date)
         return getAllSacredTimes().filter { $0.dayOfWeek == dayOfWeek }
     }
@@ -256,7 +256,7 @@ struct DeclaredSacredTime: Codable, Identifiable {
     }
 }
 
-struct SacredTime: Identifiable {
+struct DetectedSacredTime: Identifiable {
     let id: UUID
     let name: String
     let dayOfWeek: Int

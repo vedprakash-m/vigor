@@ -2,96 +2,185 @@
 //  RawSignalStore.swift
 //  Vigor
 //
-//  Created by Vigor Team on January 27, 2026.
-//  Copyright © 2026 Vigor. All rights reserved.
-//
 //  Raw signal storage for HealthKit data and calendar events.
 //  First tier of the Phenome storage system.
 //
+//  Backed by Core Data for persistence across app launches.
+//
 
 import Foundation
+import CoreData
 
 actor RawSignalStore {
 
-    // MARK: - Storage
+    // MARK: - Singleton
+    static let shared = RawSignalStore()
 
-    private var sleepData: [SleepData] = []
-    private var hrvData: [HRVData] = []
-    private var workouts: [DetectedWorkout] = []
+    // MARK: - Core Data
 
-    // MARK: - Aggregates
+    private var stack: CoreDataStack { CoreDataStack.shared }
+
+    // MARK: - Aggregates (computed from Core Data)
 
     var averageSleepHours: Double {
-        guard !sleepData.isEmpty else { return 0 }
-        return sleepData.reduce(0) { $0 + $1.totalHours } / Double(sleepData.count)
+        get async {
+            let ctx = stack.viewContext
+            return await ctx.perform {
+                let req = SleepDataEntity.recentRequest(days: 30)
+                let results = (try? ctx.fetch(req)) ?? []
+                guard !results.isEmpty else { return 0.0 }
+                return results.reduce(0.0) { $0 + $1.totalHours } / Double(results.count)
+            }
+        }
     }
 
     var averageHRV: Double {
-        guard !hrvData.isEmpty else { return 0 }
-        return hrvData.reduce(0) { $0 + $1.averageHRV } / Double(hrvData.count)
+        get async {
+            let ctx = stack.viewContext
+            return await ctx.perform {
+                let req = HRVDataEntity.recentRequest(days: 30)
+                let results = (try? ctx.fetch(req)) ?? []
+                guard !results.isEmpty else { return 0.0 }
+                return results.reduce(0.0) { $0 + $1.averageHRV } / Double(results.count)
+            }
+        }
     }
 
     // MARK: - Sleep Data
 
     func storeSleepData(_ data: [SleepData]) {
-        sleepData.append(contentsOf: data)
-        pruneOldData()
+        let ctx = stack.newBackgroundContext()
+        ctx.performAndWait {
+            for item in data {
+                _ = SleepDataEntity.from(item, context: ctx)
+            }
+            CoreDataStack.save(ctx)
+        }
+    }
+
+    func storeSleepData(_ data: SleepData) {
+        let ctx = stack.newBackgroundContext()
+        ctx.performAndWait {
+            _ = SleepDataEntity.from(data, context: ctx)
+            CoreDataStack.save(ctx)
+        }
     }
 
     func getRecentSleep(days: Int) -> [SleepData] {
-        let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date())!
-        return sleepData.filter { sleep in
-            guard let firstStage = sleep.stages.first else { return false }
-            return firstStage.startDate >= cutoff
+        let ctx = stack.viewContext
+        var result: [SleepData] = []
+        ctx.performAndWait {
+            let req = SleepDataEntity.recentRequest(days: days)
+            result = ((try? ctx.fetch(req)) ?? []).map { $0.toDomain() }
         }
+        return result
     }
 
     // MARK: - HRV Data
 
     func storeHRVData(_ data: [HRVData]) {
-        hrvData.append(contentsOf: data)
-        pruneOldData()
+        let ctx = stack.newBackgroundContext()
+        ctx.performAndWait {
+            for item in data {
+                _ = HRVDataEntity.from(item, context: ctx)
+            }
+            CoreDataStack.save(ctx)
+        }
+    }
+
+    func storeHRVData(_ data: HRVData) {
+        let ctx = stack.newBackgroundContext()
+        ctx.performAndWait {
+            _ = HRVDataEntity.from(data, context: ctx)
+            CoreDataStack.save(ctx)
+        }
     }
 
     func getRecentHRV(days: Int) -> [HRVData] {
-        let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date())!
-        return hrvData.filter { hrv in
-            guard let firstReading = hrv.readings.first else { return false }
-            return firstReading.date >= cutoff
+        let ctx = stack.viewContext
+        var result: [HRVData] = []
+        ctx.performAndWait {
+            let req = HRVDataEntity.recentRequest(days: days)
+            result = ((try? ctx.fetch(req)) ?? []).map { $0.toDomain() }
+        }
+        return result
+    }
+
+    func getBaselineHRV(days: Int) -> [HRVData] {
+        getRecentHRV(days: days)
+    }
+
+    func getRecentRestingHR(days: Int) -> [Int] {
+        let ctx = stack.viewContext
+        var result: [Int] = []
+        ctx.performAndWait {
+            let req = RestingHREntity.recentRequest(days: days)
+            let entities = (try? ctx.fetch(req)) ?? []
+            result = entities.map { Int($0.bpm) }
+        }
+        return result
+    }
+
+    func getBaselineRestingHR(days: Int) -> [Int] {
+        getRecentRestingHR(days: days)
+    }
+
+    // MARK: - Resting HR Storage
+
+    func storeRestingHR(_ samples: [(bpm: Int, date: Date)]) {
+        guard !samples.isEmpty else { return }
+        let ctx = stack.newBackgroundContext()
+        ctx.performAndWait {
+            for sample in samples {
+                _ = RestingHREntity.from(bpm: sample.bpm, date: sample.date, context: ctx)
+            }
+            CoreDataStack.save(ctx)
         }
     }
 
     // MARK: - Workouts
 
     func storeWorkouts(_ data: [DetectedWorkout]) {
-        workouts.append(contentsOf: data)
-        pruneOldData()
+        let ctx = stack.newBackgroundContext()
+        ctx.performAndWait {
+            for item in data {
+                _ = WorkoutEntity.from(item, context: ctx)
+            }
+            CoreDataStack.save(ctx)
+        }
     }
 
     func storeWorkout(_ workout: DetectedWorkout) {
-        workouts.append(workout)
+        let ctx = stack.newBackgroundContext()
+        ctx.performAndWait {
+            _ = WorkoutEntity.from(workout, context: ctx)
+            CoreDataStack.save(ctx)
+        }
     }
 
     func getRecentWorkouts(days: Int) -> [DetectedWorkout] {
-        let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date())!
-        return workouts.filter { $0.startDate >= cutoff }
+        let ctx = stack.viewContext
+        var result: [DetectedWorkout] = []
+        ctx.performAndWait {
+            let req = WorkoutEntity.recentRequest(days: days)
+            result = ((try? ctx.fetch(req)) ?? []).map { $0.toDomain() }
+        }
+        return result
     }
 
-    // MARK: - Cleanup
+    // MARK: - Cleanup (90-day retention)
 
-    private func pruneOldData() {
-        let cutoff = Calendar.current.date(byAdding: .day, value: -90, to: Date())!
+    func pruneOldData() {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -90, to: Date())! as NSDate
+        let pred = NSPredicate(format: "date < %@", cutoff)
+        let pred2 = NSPredicate(format: "startDate < %@", cutoff)
 
-        sleepData.removeAll { sleep in
-            guard let firstStage = sleep.stages.first else { return true }
-            return firstStage.startDate < cutoff
+        let ctx = stack.newBackgroundContext()
+        ctx.performAndWait {
+            CoreDataStack.batchDelete(entityName: "SleepDataEntity", predicate: pred, in: ctx)
+            CoreDataStack.batchDelete(entityName: "HRVDataEntity", predicate: pred, in: ctx)
+            CoreDataStack.batchDelete(entityName: "WorkoutEntity", predicate: pred2, in: ctx)
+            CoreDataStack.batchDelete(entityName: "RestingHREntity", predicate: pred, in: ctx)
         }
-
-        hrvData.removeAll { hrv in
-            guard let firstReading = hrv.readings.first else { return true }
-            return firstReading.date < cutoff
-        }
-
-        workouts.removeAll { $0.startDate < cutoff }
     }
 }

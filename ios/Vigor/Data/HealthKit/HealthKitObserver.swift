@@ -37,6 +37,10 @@ final class HealthKitObserver: ObservableObject {
 
     private var importState: HealthKitImportState?
 
+    /// Debounce timer for background delivery (Tech Spec §2.5: 60s)
+    private var backgroundDeliveryDebounceTask: Task<Void, Never>?
+    private let debounceInterval: TimeInterval = 60
+
     // MARK: - Data Types
 
     private var readTypes: Set<HKObjectType> {
@@ -89,20 +93,16 @@ final class HealthKitObserver: ObservableObject {
         try await healthStore.requestAuthorization(toShare: [], read: readTypes)
 
         isAuthorized = true
+        UserDefaults.standard.set(true, forKey: "healthKitAuthorized")
 
         // Setup background delivery
         await setupBackgroundDelivery()
     }
 
     private func checkAuthorizationStatus() {
-        // Check if we have authorization for key types
-        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
-            isAuthorized = false
-            return
-        }
-
-        let status = healthStore.authorizationStatus(for: sleepType)
-        isAuthorized = status == .sharingAuthorized
+        // HealthKit never reveals read authorization status for privacy.
+        // We track authorization via a UserDefaults flag set after successful requestAuthorization().
+        isAuthorized = UserDefaults.standard.bool(forKey: "healthKitAuthorized")
     }
 
     // MARK: - Background Delivery
@@ -136,35 +136,63 @@ final class HealthKitObserver: ObservableObject {
     // MARK: - Initial Import
 
     func performInitialImport() async throws {
-        importProgress = 0.0
+        // Resume from last savepoint if available
+        let savedState = loadImportState()
+        let startDaysBack = savedState?.daysImported ?? 0
 
-        // Phase 1: Import last 7 days (quick start)
-        try await importData(daysBack: 7)
-        importProgress = 0.3
+        if startDaysBack == 0 {
+            // Phase 1: Import last 7 days (quick start)
+            importProgress = 0.0
+            try await importDataChunked(fromDaysBack: 0, toDaysBack: 7)
+            saveImportState(daysImported: 7)
+            importProgress = 0.3
+        }
 
-        // Phase 2: Import remaining 83 days (background)
-        try await importData(from: 7, to: 90)
+        if startDaysBack < 90 {
+            // Phase 2: Import remaining days up to 90 in 7-day chunks
+            let resumeFrom = max(startDaysBack, 7)
+            let totalRemaining = 90 - resumeFrom
+            var imported = 0
+
+            var chunkStart = resumeFrom
+            while chunkStart < 90 {
+                let chunkEnd = min(chunkStart + 7, 90)
+                try await importDataChunked(fromDaysBack: chunkStart, toDaysBack: chunkEnd)
+
+                // Savepoint after each chunk
+                saveImportState(daysImported: chunkEnd)
+                imported += (chunkEnd - chunkStart)
+                importProgress = 0.3 + 0.7 * (Double(imported) / Double(max(totalRemaining, 1)))
+                chunkStart = chunkEnd
+            }
+        }
+
         importProgress = 1.0
-
-        // Save import completion
-        importState = HealthKitImportState(
-            lastFullImport: Date(),
-            daysImported: 90
-        )
+        importState = HealthKitImportState(lastFullImport: Date(), daysImported: 90)
+        saveImportState(daysImported: 90)
     }
 
-    private func importData(daysBack: Int) async throws {
-        let endDate = Date()
-        let startDate = Calendar.current.date(byAdding: .day, value: -daysBack, to: endDate)!
-
+    /// Import a single chunk defined by days-back range.
+    private func importDataChunked(fromDaysBack: Int, toDaysBack: Int) async throws {
+        let endDate = Calendar.current.date(byAdding: .day, value: -fromDaysBack, to: Date())!
+        let startDate = Calendar.current.date(byAdding: .day, value: -toDaysBack, to: Date())!
         try await importData(startDate: startDate, endDate: endDate)
     }
 
-    private func importData(from startDaysBack: Int, to endDaysBack: Int) async throws {
-        let endDate = Calendar.current.date(byAdding: .day, value: -startDaysBack, to: Date())!
-        let startDate = Calendar.current.date(byAdding: .day, value: -endDaysBack, to: Date())!
+    // MARK: - Import State Persistence
 
-        try await importData(startDate: startDate, endDate: endDate)
+    private static let importStateKey = "healthKitImportState"
+
+    private func saveImportState(daysImported: Int) {
+        let state = HealthKitImportState(lastFullImport: Date(), daysImported: daysImported)
+        if let data = try? JSONEncoder().encode(state) {
+            UserDefaults.standard.set(data, forKey: Self.importStateKey)
+        }
+    }
+
+    private func loadImportState() -> HealthKitImportState? {
+        guard let data = UserDefaults.standard.data(forKey: Self.importStateKey) else { return nil }
+        return try? JSONDecoder().decode(HealthKitImportState.self, from: data)
     }
 
     private func importData(startDate: Date, endDate: Date) async throws {
@@ -179,6 +207,10 @@ final class HealthKitObserver: ObservableObject {
         // Import workouts
         let workouts = try await fetchWorkouts(from: startDate, to: endDate)
         await PhenomeCoordinator.shared.importWorkouts(workouts)
+
+        // Import resting heart rate
+        let restingHR = try await fetchRestingHR(from: startDate, to: endDate)
+        await RawSignalStore.shared.storeRestingHR(restingHR)
 
         lastSyncDate = Date()
     }
@@ -381,6 +413,41 @@ final class HealthKitObserver: ObservableObject {
         }
     }
 
+    // MARK: - Resting Heart Rate
+
+    private func fetchRestingHR(from startDate: Date, to endDate: Date) async throws -> [(bpm: Int, date: Date)] {
+        guard let restingHRType = HKObjectType.quantityType(forIdentifier: .restingHeartRate) else {
+            throw HealthKitError.typeNotAvailable
+        }
+
+        let predicate = HKQuery.predicateForSamples(
+            withStart: startDate,
+            end: endDate,
+            options: .strictStartDate
+        )
+
+        let samples = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[HKQuantitySample], Error>) in
+            let query = HKSampleQuery(
+                sampleType: restingHRType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: samples as? [HKQuantitySample] ?? [])
+                }
+            }
+            healthStore.execute(query)
+        }
+
+        return samples.map { sample in
+            let bpm = Int(sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute())))
+            return (bpm: bpm, date: sample.startDate)
+        }
+    }
+
     // MARK: - Workouts
 
     private func fetchWorkouts(from startDate: Date, to endDate: Date) async throws -> [DetectedWorkout] {
@@ -439,10 +506,26 @@ final class HealthKitObserver: ObservableObject {
 
     // MARK: - Background Delivery Handler
 
+    /// Called by HKObserverQuery callbacks. Debounces at 60s to avoid
+    /// redundant imports when HealthKit fires multiple deliveries in quick
+    /// succession (e.g. watch syncs several sample types at once).
     func processBackgroundDelivery() async {
-        // Process any new data since last sync
+        // Cancel any previously scheduled debounce
+        backgroundDeliveryDebounceTask?.cancel()
+
+        backgroundDeliveryDebounceTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: UInt64(60 * 1_000_000_000)) // 60s
+            } catch {
+                return // Cancelled
+            }
+            await self?.executeBackgroundSync()
+        }
+    }
+
+    /// Actual sync logic — only runs after the debounce window elapses.
+    private func executeBackgroundSync() async {
         guard let lastSync = lastSyncDate else {
-            // First time - do initial import
             try? await performInitialImport()
             return
         }
@@ -450,7 +533,7 @@ final class HealthKitObserver: ObservableObject {
         do {
             try await importData(startDate: lastSync, endDate: Date())
         } catch {
-            // Log error but don't throw - background delivery should be resilient
+            // Background delivery should be resilient — log but don't throw
         }
     }
 

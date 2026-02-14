@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Bundle Configuration -->
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleDisplayName</key>
+    <string>Vigor</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+
+    <!-- HealthKit Usage Descriptions -->
+    <key>NSHealthShareUsageDescription</key>
+    <string>The Ghost Watch app records your workouts and heart rate to sync with your iPhone for better scheduling.</string>
+
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>The Ghost records workouts completed on your Apple Watch.</string>
+
+    <!-- Complications -->
+    <key>CLKComplicationPrincipalClass</key>
+    <string>$(PRODUCT_MODULE_NAME).ComplicationController</string>
+
+    <key>CLKComplicationSupportedFamilies</key>
+    <array>
+        <string>CLKComplicationFamilyCircularSmall</string>
+        <string>CLKComplicationFamilyGraphicCircular</string>
+        <string>CLKComplicationFamilyGraphicCorner</string>
+        <string>CLKComplicationFamilyGraphicRectangular</string>
+        <string>CLKComplicationFamilyModularSmall</string>
+    </array>
+
+    <!-- Watch-specific -->
+    <key>WKApplication</key>
+    <true/>
+    <key>WKWatchOnly</key>
+    <true/>
+</dict>
+</plist>

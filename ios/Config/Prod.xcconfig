@@ -1,0 +1,17 @@
+// Prod.xcconfig
+// Production configuration for Vigor
+//
+// Requires paid Apple Developer Program membership ($99/yr)
+
+// API Configuration
+API_BASE_URL = https:/$()/vigor-functions.azurewebsites.net
+AZURE_AD_CLIENT_ID = YOUR_CLIENT_ID_HERE
+AZURE_AD_TENANT_ID = YOUR_TENANT_ID_HERE
+
+// Feature Flags (1 = enabled with paid membership)
+ENABLE_MSAL = 1
+ENABLE_PUSH_NOTIFICATIONS = 1
+ENABLE_CLOUDKIT = 1
+
+// Build Settings
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = ENABLE_MSAL ENABLE_PUSH_NOTIFICATIONS ENABLE_CLOUDKIT

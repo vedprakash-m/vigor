@@ -21,13 +21,15 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        #if ENABLE_PUSH_NOTIFICATIONS
         // Register for remote notifications (silent push for Ghost wake)
         registerForRemoteNotifications(application)
+        #endif
 
         // Register background tasks
         registerBackgroundTasks()
 
-        // Configure notification delegate
+        // Configure notification delegate (local notifications — works with free provisioning)
         UNUserNotificationCenter.current().delegate = self
 
         return true
@@ -35,6 +37,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
     // MARK: - Remote Notifications (Silent Push)
 
+    #if ENABLE_PUSH_NOTIFICATIONS
     private func registerForRemoteNotifications(_ application: UIApplication) {
         application.registerForRemoteNotifications()
     }
@@ -74,32 +77,45 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             completionHandler(result)
         }
     }
+    #endif
 
     // MARK: - Background Tasks
 
     private func registerBackgroundTasks() {
         // Morning cycle background task
         BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: "com.vigor.ghost.morningCycle",
+            forTaskWithIdentifier: BackgroundTaskIdentifiers.morningCycle,
             using: nil
         ) { task in
-            self.handleMorningCycleTask(task as! BGProcessingTask)
+            guard let processingTask = task as? BGProcessingTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            self.handleMorningCycleTask(processingTask)
         }
 
         // Evening cycle background task
         BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: "com.vigor.ghost.eveningCycle",
+            forTaskWithIdentifier: BackgroundTaskIdentifiers.eveningCycle,
             using: nil
         ) { task in
-            self.handleEveningCycleTask(task as! BGProcessingTask)
+            guard let processingTask = task as? BGProcessingTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            self.handleEveningCycleTask(processingTask)
         }
 
         // HealthKit background delivery
         BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: "com.vigor.ghost.healthKitDelivery",
+            forTaskWithIdentifier: BackgroundTaskIdentifiers.healthKitDelivery,
             using: nil
         ) { task in
-            self.handleHealthKitDeliveryTask(task as! BGAppRefreshTask)
+            guard let refreshTask = task as? BGAppRefreshTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            self.handleHealthKitDeliveryTask(refreshTask)
         }
     }
 
@@ -144,8 +160,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         open url: URL,
         options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
+        #if ENABLE_MSAL
         // Handle MSAL authentication callback
         return AuthManager.shared.handleAuthCallback(url: url)
+        #else
+        return false
+        #endif
     }
 }
 

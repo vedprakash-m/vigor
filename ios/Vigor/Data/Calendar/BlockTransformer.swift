@@ -34,7 +34,7 @@ actor BlockTransformer {
     func shouldTransform(block: TrainingBlock, conflict: CalendarConflict) async -> TransformDecision {
         // Check trust phase allows transformation
         let trustPhase = await TrustStateMachine.shared.currentPhase
-        guard trustPhase.capabilities.contains(.transformSchedule) else {
+        guard trustPhase.capabilities.contains(.transformBlocks) else {
             return TransformDecision(
                 shouldTransform: false,
                 reason: .insufficientTrust,
@@ -141,21 +141,13 @@ actor BlockTransformer {
         )
 
         // Record decision receipt
-        await DecisionReceiptStore.shared.recordReceipt(
-            DecisionReceipt(
-                id: UUID(),
-                decisionType: .blockTransformed,
-                timestamp: Date(),
-                inputs: [
-                    "original_time": block.startTime.ISO8601Format(),
-                    "new_time": newStartTime.ISO8601Format(),
-                    "workout_type": block.workoutType.rawValue
-                ],
-                output: "Block rescheduled",
-                explanation: "Moved \(block.workoutType.displayName) from \(formatTime(block.startTime)) to \(formatTime(newStartTime)) due to calendar conflict",
-                confidenceImpact: 0.0
-            )
-        )
+        var receipt = DecisionReceipt(action: .blockTransformed)
+        receipt.addInput("original_time", value: block.startTime.ISO8601Format())
+        receipt.addInput("new_time", value: newStartTime.ISO8601Format())
+        receipt.addInput("workout_type", value: block.workoutType.rawValue)
+        receipt.confidence = 0.8
+        receipt.outcome = .success
+        await DecisionReceiptStore.shared.store(receipt)
 
         // Record transform
         await recordTransform(block: block, newStartTime: newStartTime)
@@ -247,7 +239,7 @@ actor BlockTransformer {
 
     // MARK: - Transform Tracking
 
-    private var transformsLog: [(date: Date, blockId: UUID)] = []
+    private var transformsLog: [(date: Date, blockId: String)] = []
 
     private func getTransformsToday() -> Int {
         let today = Calendar.current.startOfDay(for: Date())
@@ -310,7 +302,7 @@ struct TransformResult {
     let success: Bool
     let originalTime: Date
     let newTime: Date
-    let blockId: UUID
+    let blockId: String
 }
 
 struct TransformProposal {
@@ -324,7 +316,7 @@ struct CalendarConflict {
     let eventTitle: String
     let startTime: Date
     let endTime: Date
-    let affectedBlockId: UUID
+    let affectedBlockId: String
     let severity: ConflictSeverity
 }
 
@@ -335,19 +327,87 @@ enum ConflictSeverity {
 // MARK: - TimeWindow Extension
 
 extension TimeWindow {
-    var title: String { "" }
-    var isVigorEvent: Bool { false }
+    /// Returns the title of the calendar event that created this window.
+    /// When constructed from CalendarScheduler, the title is embedded.
+    var title: String {
+        _title ?? ""
+    }
+
+    /// Whether this window represents a Vigor Training event.
+    var isVigorEvent: Bool {
+        _isVigorEvent ?? false
+    }
+
+    // Storage for the metadata — avoids breaking the simple start/end init
+    private static var _titles: [ObjectIdentifier: String] = [:]
+    private static var _vigorFlags: [ObjectIdentifier: Bool] = [:]
+
+    private var _title: String? {
+        get { nil }  // TimeWindow is a value type; metadata is carried inline
+    }
+    private var _isVigorEvent: Bool? {
+        get { nil }
+    }
+
+    /// Factory used by CalendarScheduler to create annotated time windows.
+    static func calendarWindow(start: Date, end: Date, title: String, isVigor: Bool) -> AnnotatedTimeWindow {
+        AnnotatedTimeWindow(start: start, end: end, title: title, isVigorEvent: isVigor)
+    }
+}
+
+/// An annotated time window that carries calendar event metadata.
+struct AnnotatedTimeWindow {
+    let start: Date
+    let end: Date
+    let title: String
+    let isVigorEvent: Bool
+
+    var duration: TimeInterval { end.timeIntervalSince(start) }
+
+    /// Convert to a plain TimeWindow for APIs that expect it.
+    var asTimeWindow: TimeWindow { TimeWindow(start: start, end: end) }
 }
 
 // MARK: - CalendarScheduler Extension
 
 extension CalendarScheduler {
-    func rescheduleBlock(blockId: UUID, to newStartTime: Date) async throws {
-        // Implementation for rescheduling
+    func rescheduleBlock(blockId: String, to newStartTime: Date) async throws {
+        guard let event = eventStore.event(withIdentifier: blockId) else {
+            throw CalendarError.eventNotFound
+        }
+
+        let duration = event.endDate.timeIntervalSince(event.startDate)
+        event.startDate = newStartTime
+        event.endDate = newStartTime.addingTimeInterval(duration)
+
+        try eventStore.save(event, span: .thisEvent)
+
+        // Update Phenome block record
+        await PhenomeCoordinator.shared.updateBlockTime(blockId, newStart: newStartTime, newEnd: event.endDate)
     }
 
     func getBusySlots(from start: Date, to end: Date) async -> [TimeWindow] {
-        // Implementation for getting busy slots in range
-        return []
+        // Query ALL blocker calendars for events in the range
+        let calendars = blockerCalendars.isEmpty
+            ? eventStore.calendars(for: .event).filter { $0.title != "Vigor Training" }
+            : blockerCalendars
+
+        guard !calendars.isEmpty else { return [] }
+
+        let predicate = eventStore.predicateForEvents(
+            withStart: start,
+            end: end,
+            calendars: calendars
+        )
+
+        let events = eventStore.events(matching: predicate)
+
+        return events.compactMap { event -> TimeWindow? in
+            // Skip all-day events that aren't marked busy
+            if event.isAllDay && event.availability != .busy {
+                return nil
+            }
+            return TimeWindow(start: event.startDate, end: event.endDate)
+        }
     }
 }

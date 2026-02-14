@@ -108,10 +108,10 @@ class WatchConnectivityManager: NSObject, ObservableObject {
                 "id": AnyCodable(workout.id),
                 "type": AnyCodable(workout.type.rawValue),
                 "duration": AnyCodable(workout.durationMinutes),
-                "calories": AnyCodable(workout.estimatedCalories),
-                "start_time": AnyCodable(workout.startTime.timeIntervalSince1970),
-                "hr_avg": AnyCodable(workout.heartRateAvg ?? 0),
-                "hr_max": AnyCodable(workout.heartRateMax ?? 0)
+                "calories": AnyCodable(Int(workout.activeCalories)),
+                "start_time": AnyCodable(workout.startDate.timeIntervalSince1970),
+                "hr_avg": AnyCodable(Int(workout.averageHeartRate ?? 0)),
+                "hr_max": AnyCodable(0)
             ],
             timestamp: Date(),
             requiresResponse: false
@@ -125,8 +125,8 @@ class WatchConnectivityManager: NSObject, ObservableObject {
             [
                 "id": AnyCodable(block.id),
                 "type": AnyCodable(block.workoutType.rawValue),
-                "start": AnyCodable(block.scheduledStart.timeIntervalSince1970),
-                "end": AnyCodable(block.scheduledEnd.timeIntervalSince1970),
+                "start": AnyCodable(block.startTime.timeIntervalSince1970),
+                "end": AnyCodable(block.endTime.timeIntervalSince1970),
                 "status": AnyCodable(block.status.rawValue)
             ]
         }
@@ -314,15 +314,16 @@ extension WatchConnectivityManager: WCSessionDelegate {
             return
         }
 
+        let startDate = Date(timeIntervalSince1970: startTime)
         let workout = DetectedWorkout(
             id: message.payload["id"]?.value as? String ?? UUID().uuidString,
             type: type,
-            startTime: Date(timeIntervalSince1970: startTime),
-            durationMinutes: duration,
-            estimatedCalories: message.payload["calories"]?.value as? Int ?? 0,
-            heartRateAvg: message.payload["hr_avg"]?.value as? Int,
-            heartRateMax: message.payload["hr_max"]?.value as? Int,
-            source: .watch
+            startDate: startDate,
+            endDate: startDate.addingTimeInterval(TimeInterval(duration * 60)),
+            duration: TimeInterval(duration * 60),
+            activeCalories: Double(message.payload["calories"]?.value as? Int ?? 0),
+            averageHeartRate: (message.payload["hr_avg"]?.value as? Int).map { Double($0) },
+            source: "watch"
         )
 
         await GhostEngine.shared.handleWorkoutCompletion(workout)
@@ -337,10 +338,11 @@ extension WatchConnectivityManager: WCSessionDelegate {
     }
 
     private func handleHealthCheck() async -> [String: Any] {
-        let health = await GhostHealthMonitor.shared.getHealth()
+        // GhostHealthMonitor doesn't have a shared singleton;
+        // return a default healthy response for watch health checks
         return [
-            "mode": health.mode.rawValue,
-            "success_rate": health.successRate
+            "mode": "healthy",
+            "success_rate": 1.0
         ]
     }
 

@@ -12,7 +12,7 @@ import {
     HStack,
     Table,
     Text,
-    VStack,
+    VStack
 } from '@chakra-ui/react'
 import { useState } from 'react'
 
@@ -61,9 +61,17 @@ const LLMAnalyticsSimple = () => {
     return (
         <Box p={6}>
             <VStack align="start" mb={8} gap={2}>
-                <Heading size="xl">LLM Analytics</Heading>
+                <HStack>
+                    <Heading size="xl">LLM Analytics</Heading>
+                    <Badge colorPalette="yellow" variant="solid" fontSize="xs">
+                        MOCK DATA
+                    </Badge>
+                </HStack>
                 <Text color="gray.600">
                     Monitor AI usage and performance metrics
+                </Text>
+                <Text color="orange.500" fontSize="sm">
+                    ⚠️ Displaying simulated data. Live analytics will be available once the backend telemetry pipeline is connected.
                 </Text>
             </VStack>
 

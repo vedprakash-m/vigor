@@ -62,28 +62,28 @@ actor RecoveryAnalyzer {
             score: score,
             status: status,
             factors: [
-                RecoveryFactor(
+                MLRecoveryFactor(
                     name: "HRV",
                     value: hrv.normalizedValue,
                     impact: hrv.impact,
                     trend: hrv.trend,
                     description: hrv.description
                 ),
-                RecoveryFactor(
+                MLRecoveryFactor(
                     name: "Sleep",
                     value: sleep.normalizedValue,
                     impact: sleep.impact,
                     trend: sleep.trend,
                     description: sleep.description
                 ),
-                RecoveryFactor(
+                MLRecoveryFactor(
                     name: "Training Load",
                     value: strain.normalizedValue,
                     impact: strain.impact,
                     trend: strain.trend,
                     description: strain.description
                 ),
-                RecoveryFactor(
+                MLRecoveryFactor(
                     name: "Resting HR",
                     value: restingHR.normalizedValue,
                     impact: restingHR.impact,
@@ -112,8 +112,8 @@ actor RecoveryAnalyzer {
             )
         }
 
-        let recentAvg = recentHRV.map(\.averageMs).reduce(0, +) / Double(recentHRV.count)
-        let baselineAvg = baselineHRV.map(\.averageMs).reduce(0, +) / Double(baselineHRV.count)
+        let recentAvg = recentHRV.map(\.averageHRV).reduce(0, +) / Double(recentHRV.count)
+        let baselineAvg = baselineHRV.map(\.averageHRV).reduce(0, +) / Double(baselineHRV.count)
 
         let ratio = recentAvg / baselineAvg
 
@@ -161,8 +161,8 @@ actor RecoveryAnalyzer {
             )
         }
 
-        let avgDuration = recentSleep.map(\.totalMinutes).reduce(0, +) / recentSleep.count
-        let avgQuality = recentSleep.map(\.quality).reduce(0, +) / Double(recentSleep.count)
+        let avgDuration = recentSleep.map { Int($0.totalHours * 60) }.reduce(0, +) / recentSleep.count
+        let avgQuality = recentSleep.map(\.qualityScore).reduce(0, +) / Double(recentSleep.count)
 
         // Target: 7-9 hours of sleep
         let durationScore: Double
@@ -204,7 +204,13 @@ actor RecoveryAnalyzer {
     // MARK: - Strain Analysis
 
     private func analyzeStrain() async -> FactorAnalysis {
-        let recentWorkouts = await DerivedStateStore.shared.getRecentWorkouts(days: 7)
+        let rawWorkouts = await RawSignalStore.shared.getRecentWorkouts(days: 7)
+        let recentWorkouts = rawWorkouts.map { w in
+            MLWorkoutStats(
+                durationMinutes: Int(w.duration / 60),
+                intensity: w.activeCalories > 400 ? 0.9 : (w.activeCalories > 200 ? 0.6 : 0.3)
+            )
+        }
         let weeklyTargetMinutes = 150 // WHO recommendation
 
         let totalMinutes = recentWorkouts.reduce(0) { $0 + $1.durationMinutes }
@@ -323,7 +329,7 @@ actor RecoveryAnalyzer {
         return score * 100 // Convert to 0-100 scale
     }
 
-    private func determineStatus(score: Double) -> RecoveryStatus {
+    private func determineStatus(score: Double) -> MLRecoveryStatus {
         switch score {
         case 75...100: return .fullyRecovered
         case 50..<75: return .partiallyRecovered
@@ -333,7 +339,7 @@ actor RecoveryAnalyzer {
     }
 
     private func generateRecommendation(
-        status: RecoveryStatus,
+        status: MLRecoveryStatus,
         factors: [FactorAnalysis]
     ) -> RecoveryRecommendation {
         let negativeFactors = factors.filter { $0.impact == .negative }
@@ -369,7 +375,7 @@ actor RecoveryAnalyzer {
         }
     }
 
-    private func suggestIntensity(score: Double) -> WorkoutIntensity {
+    private func suggestIntensity(score: Double) -> MLWorkoutIntensity {
         switch score {
         case 80...100: return .high
         case 60..<80: return .moderate
@@ -400,7 +406,7 @@ enum RecoveryTrend: String {
     case declining
 }
 
-enum RecoveryStatus: String {
+enum MLRecoveryStatus: String {
     case fullyRecovered
     case partiallyRecovered
     case fatigued
@@ -409,14 +415,14 @@ enum RecoveryStatus: String {
 
 struct RecoveryAnalysis {
     let score: Double
-    let status: RecoveryStatus
-    let factors: [RecoveryFactor]
+    let status: MLRecoveryStatus
+    let factors: [MLRecoveryFactor]
     let recommendation: RecoveryRecommendation
-    let suggestedWorkoutIntensity: WorkoutIntensity
+    let suggestedWorkoutIntensity: MLWorkoutIntensity
     let timestamp: Date
 }
 
-struct RecoveryFactor {
+struct MLRecoveryFactor {
     let name: String
     let value: Double
     let impact: RecoveryImpact
@@ -437,28 +443,16 @@ enum RecoveryAction: String {
     case restDay
 }
 
-enum WorkoutIntensity: String {
+enum MLWorkoutIntensity: String {
     case high
     case moderate
     case low
     case recovery
 }
 
-// MARK: - Store Extensions
+// MARK: - ML Workout Stats
 
-extension RawSignalStore {
-    func getRecentHRV(days: Int) async -> [HRVData] { [] }
-    func getBaselineHRV(days: Int) async -> [HRVData] { [] }
-    func getRecentSleep(days: Int) async -> [SleepData] { [] }
-    func getRecentRestingHR(days: Int) async -> [Int] { [] }
-    func getBaselineRestingHR(days: Int) async -> [Int] { [] }
-}
-
-extension DerivedStateStore {
-    func getRecentWorkouts(days: Int) async -> [WorkoutStats] { [] }
-}
-
-struct WorkoutStats {
+struct MLWorkoutStats {
     let durationMinutes: Int
     let intensity: Double
 }

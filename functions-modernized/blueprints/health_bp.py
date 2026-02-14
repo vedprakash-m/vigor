@@ -48,7 +48,7 @@ async def health_check(req: func.HttpRequest) -> func.HttpResponse:
         return success_response(
             {
                 "status": "unhealthy",
-                "error": str(e),
+                "error": "Internal health check failure",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             },
             status_code=503,

@@ -9,10 +9,14 @@
 //  to prevent colleagues from double-booking workout times.
 //
 //  Per Task 1.4b - Corporate Resilience
+//  Requires ENABLE_MSAL (paid Apple Developer membership) for MS Graph API access.
 //
 
 import Foundation
+
+#if ENABLE_MSAL
 import MSAL
+#endif
 
 actor CalendarShadowSync {
 
@@ -41,6 +45,10 @@ actor CalendarShadowSync {
     // MARK: - Sync Operations
 
     func syncToExchange(block: TrainingBlock) async {
+        #if !ENABLE_MSAL
+        // Shadow sync disabled - requires MSAL (paid membership)
+        return
+        #else
         guard isEnabled && !mdmFallbackActive else { return }
 
         do {
@@ -62,9 +70,13 @@ actor CalendarShadowSync {
             lastSyncError = error
             await handleSyncError(error)
         }
+        #endif
     }
 
     func removeFromExchange(blockId: String) async {
+        #if !ENABLE_MSAL
+        return
+        #else
         guard isEnabled && !mdmFallbackActive else { return }
 
         do {
@@ -79,10 +91,12 @@ actor CalendarShadowSync {
             lastSyncError = error
             // Silent failure for delete - not critical
         }
+        #endif
     }
 
     // MARK: - MS Graph API Calls
 
+    #if ENABLE_MSAL
     private func createEvent(_ event: MSGraphEvent, token: String) async throws {
         let url = URL(string: "https://graph.microsoft.com/v1.0/me/events")!
 
@@ -136,7 +150,7 @@ actor CalendarShadowSync {
     }
 
     private func findEventId(for blockId: String, token: String) async -> String? {
-        let url = URL(string: "https://graph.microsoft.com/v1.0/me/events?\$filter=categories/any(c:c eq 'Vigor')&\$select=id,body")!
+        let url = URL(string: "https://graph.microsoft.com/v1.0/me/events?$filter=categories/any(c:c eq 'Vigor')&$select=id,body")!
 
         var request = URLRequest(url: url)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -160,9 +174,11 @@ actor CalendarShadowSync {
 
         return nil
     }
+    #endif
 
     // MARK: - Token Management
 
+    #if ENABLE_MSAL
     private func getGraphToken() async throws -> String {
         if let token = accessToken {
             return token
@@ -173,10 +189,12 @@ actor CalendarShadowSync {
         accessToken = token
         return token
     }
+    #endif
 
     // MARK: - MDM Handling
 
     private func checkMDMStatus() async {
+        #if ENABLE_MSAL
         // Check if MDM blocks Graph API access
         do {
             let token = try await getGraphToken()
@@ -197,6 +215,7 @@ actor CalendarShadowSync {
         } catch {
             // Can't determine MDM status - assume not blocked
         }
+        #endif
     }
 
     private func activateMDMFallback() async {
@@ -208,6 +227,7 @@ actor CalendarShadowSync {
 
     // MARK: - Error Handling
 
+    #if ENABLE_MSAL
     private func handleSyncError(_ error: Error) async {
         if let syncError = error as? ShadowSyncError {
             switch syncError {
@@ -220,6 +240,7 @@ actor CalendarShadowSync {
             }
         }
     }
+    #endif
 
     // MARK: - Configuration
 

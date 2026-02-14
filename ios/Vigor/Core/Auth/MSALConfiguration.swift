@@ -6,9 +6,12 @@
 //  Copyright © 2026 Vigor. All rights reserved.
 //
 //  MSAL configuration for Microsoft Entra ID authentication.
+//  Compiled only when ENABLE_MSAL is set (paid Apple Developer membership).
 //
 
 import Foundation
+
+#if ENABLE_MSAL
 
 struct MSALConfiguration {
 
@@ -86,3 +89,5 @@ extension MSALConfiguration {
     }
 }
 #endif
+
+#endif // ENABLE_MSAL

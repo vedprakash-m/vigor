@@ -12,7 +12,8 @@ from uuid import uuid4
 import azure.functions as func
 
 from shared.auth import get_current_user_from_token
-from shared.helpers import error_response, parse_pagination, success_response
+from shared.helpers import error_response, parse_pagination, parse_request_body, success_response
+from shared.models import WorkoutGenerationRequest, WorkoutSessionRequest
 
 logger = logging.getLogger(__name__)
 
@@ -27,28 +28,19 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
     try:
         from shared.cosmos_db import get_global_client
         from shared.openai_client import OpenAIClient
-        from shared.rate_limiter import RateLimiter
+        from shared.rate_limiter import apply_ai_generation_limit
 
         current_user = await get_current_user_from_token(req)
         if not current_user:
             return error_response("Unauthorized", status_code=401, code="UNAUTHORIZED")
 
-        rate_limiter = RateLimiter()
-        if not await rate_limiter.check_rate_limit(
-            key=f"workout_gen:{current_user['email']}",
-            limit=50,
-            window=86400,
-        ):
-            return error_response(
-                "Rate limit exceeded. Please try again later.",
-                status_code=429,
-                code="RATE_LIMITED",
-            )
+        rate_response = await apply_ai_generation_limit(req, user_id=current_user["email"])
+        if rate_response:
+            return rate_response
 
-        try:
-            workout_request = req.get_json()
-        except ValueError:
-            return error_response("Invalid JSON", status_code=400, code="INVALID_JSON")
+        parsed, err = parse_request_body(req, WorkoutGenerationRequest)
+        if err:
+            return err
 
         client = await get_global_client()
 
@@ -73,8 +65,21 @@ async def generate_workout(req: func.HttpRequest) -> func.HttpResponse:
 
         ai_client = OpenAIClient()
         workout = await ai_client.generate_workout(
-            user_profile=user_profile, preferences=workout_request
+            user_profile=user_profile, preferences=parsed.model_dump()
         )
+
+        # Safety validation on AI-generated workout
+        from shared.models import WorkoutSafetyValidator
+
+        violations = WorkoutSafetyValidator.validate(workout)
+        if violations:
+            logger.warning(f"AI workout safety violations: {violations}")
+            return error_response(
+                "Generated workout failed safety checks",
+                status_code=422,
+                code="UNSAFE_WORKOUT",
+                details="; ".join(violations),
+            )
 
         saved_workout = await client.create_workout(
             user_id=current_user["email"], workout_data=workout
@@ -168,16 +173,15 @@ async def log_workout_session(req: func.HttpRequest) -> func.HttpResponse:
 
         workout_id = req.route_params.get("workout_id")
 
-        try:
-            session_data = req.get_json()
-        except ValueError:
-            return error_response("Invalid JSON", status_code=400, code="INVALID_JSON")
+        parsed, err = parse_request_body(req, WorkoutSessionRequest)
+        if err:
+            return err
 
         client = await get_global_client()
         workout_log = await client.create_workout_log(
             user_id=current_user["email"],
             workout_id=workout_id,
-            session_data=session_data,
+            session_data=parsed.model_dump(),
         )
         return success_response(workout_log, status_code=201)
 

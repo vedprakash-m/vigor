@@ -44,6 +44,18 @@ adminClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Handle 401 responses — mirror api.ts behaviour so expired tokens
+// trigger the same re-auth flow regardless of which client sent the request.
+adminClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      window.dispatchEvent(new CustomEvent('auth:expired'));
+    }
+    return Promise.reject(error);
+  }
+);
+
 // ============================================================================
 // Types
 // ============================================================================

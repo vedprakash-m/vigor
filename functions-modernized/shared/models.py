@@ -3,7 +3,7 @@ Data models for Vigor Functions
 Pydantic models for request/response validation and Cosmos DB documents
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -54,6 +54,21 @@ class UserPreferences(BaseModel):
     notifications: bool = True
 
 
+class UserProfileUpdate(BaseModel):
+    """Allowed fields for profile updates.
+
+    Blocks sensitive fields like ``tier``, ``email``, and ``id`` to prevent
+    privilege escalation via ``PUT /users/profile``.
+    """
+
+    username: Optional[str] = Field(default=None, max_length=100)
+    fitness_level: Optional[FitnessLevel] = None
+    fitness_goals: Optional[List[str]] = None
+    available_equipment: Optional[List[str]] = None
+    injury_history: Optional[List[str]] = None
+    preferences: Optional[UserPreferences] = None
+
+
 class UserProfile(BaseModel):
     """Complete user profile document"""
 
@@ -64,7 +79,7 @@ class UserProfile(BaseModel):
     profile: UserProfileData
     preferences: UserPreferences
     createdAt: datetime
-    updatedAt: datetime = Field(default_factory=datetime.utcnow)
+    updatedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class User(BaseModel):
@@ -118,7 +133,7 @@ class WorkoutPlan(BaseModel):
     description: Optional[str] = None
     exercises: List[Exercise]
     metadata: WorkoutMetadata
-    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ExerciseLog(BaseModel):
@@ -141,7 +156,7 @@ class WorkoutLog(BaseModel):
     durationMinutes: int
     intensity: int = Field(ge=1, le=10)  # User-rated intensity
     notes: Optional[str] = None
-    completedAt: datetime = Field(default_factory=datetime.utcnow)
+    completedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # =============================================================================
@@ -159,7 +174,7 @@ class AICoachMessage(BaseModel):
     providerUsed: str = "azure-openai-gpt-5-mini"
     tokensUsed: Optional[int] = None
     responseTimeMs: Optional[int] = None
-    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # =============================================================================
@@ -185,6 +200,18 @@ class CoachChatRequest(BaseModel):
     context: Optional[Dict[str, Any]] = None
 
 
+class WorkoutContextRequest(BaseModel):
+    """Request for workout recommendation (iOS WorkoutContext contract)"""
+
+    recentWorkouts: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    sleepData: Optional[Dict[str, Any]] = None
+    hrvData: Optional[Dict[str, Any]] = None
+    trustPhase: Optional[str] = None
+    availableWindows: List[Dict[str, Any]] = Field(default_factory=list)
+    suggestedDuration: int = Field(default=45, ge=15, le=120)
+    preferences: Optional[Dict[str, Any]] = None
+
+
 class WorkoutSessionRequest(BaseModel):
     """Request to log workout session"""
 
@@ -206,7 +233,7 @@ class ApiResponse(BaseModel):
     success: bool = True
     data: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class PaginatedResponse(BaseModel):
@@ -251,3 +278,58 @@ class CostMetrics(BaseModel):
     requestsToday: int
     requestsThisMonth: int
     averageCostPerRequest: float
+
+
+# =============================================================================
+# WORKOUT SAFETY VALIDATION
+# =============================================================================
+
+
+class WorkoutSafetyValidator:
+    """Validates AI-generated workouts before saving.
+
+    Enforces:
+      - Max 20 exercises per workout
+      - Max 10 sets per exercise
+      - Max 120 minutes total duration
+      - No banned / nonsensical exercises
+    """
+
+    MAX_EXERCISES = 20
+    MAX_SETS_PER_EXERCISE = 10
+    MAX_DURATION_MINUTES = 120
+    BANNED_TERMS = {"skull crusher on bosu ball", "behind the neck press to failure"}
+
+    @classmethod
+    def validate(cls, workout: dict) -> list[str]:
+        """Return a list of violation strings. Empty list = safe."""
+        violations: list[str] = []
+
+        exercises = workout.get("exercises", [])
+        if len(exercises) > cls.MAX_EXERCISES:
+            violations.append(
+                f"Too many exercises: {len(exercises)} (max {cls.MAX_EXERCISES})"
+            )
+
+        duration = workout.get("estimatedDuration") or workout.get("durationMinutes", 0)
+        if duration > cls.MAX_DURATION_MINUTES:
+            violations.append(
+                f"Duration too long: {duration}min (max {cls.MAX_DURATION_MINUTES})"
+            )
+
+        for idx, ex in enumerate(exercises):
+            sets = ex.get("sets", 1)
+            if sets > cls.MAX_SETS_PER_EXERCISE:
+                violations.append(
+                    f"Exercise #{idx + 1} ({ex.get('name', '?')}): "
+                    f"{sets} sets exceeds max {cls.MAX_SETS_PER_EXERCISE}"
+                )
+
+            name = (ex.get("name") or "").lower()
+            for banned in cls.BANNED_TERMS:
+                if banned in name:
+                    violations.append(
+                        f"Exercise #{idx + 1}: banned exercise '{name}'"
+                    )
+
+        return violations

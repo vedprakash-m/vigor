@@ -19,14 +19,14 @@ enum TriageItemType {
     case workoutFeedback(DetectedWorkout)
     case trustProgress(TrustPhase, Double)
     case weeklyReceipt(ValueReceipt)
-    case recoveryAlert(RecoveryStatus)
+    case recoveryAlert(TriageRecoveryStatus)
     case healthCheck
     case empty
 }
 
 // MARK: - Recovery Status
 
-enum RecoveryStatus {
+enum TriageRecoveryStatus {
     case fullyRecovered
     case partiallyRecovered
     case fatigued
@@ -96,6 +96,9 @@ enum TriageAction {
     case viewDetails
     case startWorkout
     case markComplete
+    case skip
+    case reschedule
+    case confirm
 }
 
 // MARK: - Block Proposal Card
@@ -208,7 +211,7 @@ struct BlockConfirmationCard: View {
                         .font(.title3)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
-                    Text(block.scheduledStart.formatted(date: .omitted, time: .shortened))
+                    Text(block.startTime.formatted(date: .omitted, time: .shortened))
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }
@@ -233,7 +236,7 @@ struct BlockConfirmationCard: View {
     }
 
     private var timeUntilBlock: String {
-        let interval = block.scheduledStart.timeIntervalSinceNow
+        let interval = block.startTime.timeIntervalSinceNow
         if interval < 0 { return "Starting now" }
         if interval < 60 { return "In less than a minute" }
         if interval < 3600 { return "In \(Int(interval / 60)) minutes" }
@@ -258,7 +261,7 @@ struct WorkoutFeedbackCard: View {
                     Text("Workout Logged")
                         .font(.headline)
                         .foregroundColor(.white)
-                    Text(workout.startTime.formatted(date: .omitted, time: .shortened))
+                    Text(workout.startDate.formatted(date: .omitted, time: .shortened))
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
@@ -275,7 +278,7 @@ struct WorkoutFeedbackCard: View {
                         .font(.title3)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
-                    Text("\(workout.durationMinutes) min · \(workout.estimatedCalories) cal")
+                    Text("\(workout.durationMinutes) min · \(Int(workout.activeCalories)) cal")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }
@@ -322,7 +325,7 @@ struct TrustProgressCard: View {
     var body: some View {
         VStack(spacing: 16) {
             HStack {
-                Image(systemName: phase.icon)
+                Image(systemName: phase.iconName)
                     .font(.title2)
                     .foregroundColor(.purple)
 
@@ -347,14 +350,14 @@ struct TrustProgressCard: View {
                             .frame(height: 8)
 
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(phase.color)
+                            .fill(phase.swiftUIColor)
                             .frame(width: geometry.size.width * CGFloat(score / 100), height: 8)
                     }
                 }
                 .frame(height: 8)
 
                 HStack {
-                    Text(phase.capabilities)
+                    Text(phase.capabilitySummary)
                         .font(.caption)
                         .foregroundColor(.gray)
 
@@ -374,7 +377,7 @@ struct TrustProgressCard: View {
 }
 
 extension TrustPhase {
-    var color: Color {
+    var swiftUIColor: Color {
         switch self {
         case .observer: return .gray
         case .scheduler: return .blue
@@ -384,7 +387,7 @@ extension TrustPhase {
         }
     }
 
-    var capabilities: String {
+    var capabilitySummary: String {
         switch self {
         case .observer: return "Learning your patterns"
         case .scheduler: return "Suggesting workouts"
@@ -456,7 +459,7 @@ struct StatView: View {
 // MARK: - Recovery Alert Card
 
 struct RecoveryAlertCard: View {
-    let status: RecoveryStatus
+    let status: TriageRecoveryStatus
 
     var body: some View {
         VStack(spacing: 16) {
@@ -557,11 +560,11 @@ struct WorkoutTypeIcon: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(type.color.opacity(0.2))
+                .fill(type.swiftUIColor.opacity(0.2))
 
             Image(systemName: type.icon)
                 .font(.title3)
-                .foregroundColor(type.color)
+                .foregroundColor(type.swiftUIColor)
         }
     }
 }
@@ -572,28 +575,22 @@ extension WorkoutType {
         case .strength: return "dumbbell.fill"
         case .cardio: return "figure.run"
         case .hiit: return "bolt.fill"
-        case .yoga: return "figure.mind.and.body"
         case .flexibility: return "figure.flexibility"
-        case .recovery: return "bed.double.fill"
-        case .swimming: return "figure.pool.swim"
-        case .cycling: return "bicycle"
-        case .walking: return "figure.walk"
-        case .custom: return "star.fill"
+        case .recoveryWalk: return "figure.walk"
+        case .lightCardio: return "figure.walk.motion"
+        case .other: return "star.fill"
         }
     }
 
-    var color: Color {
+    var swiftUIColor: Color {
         switch self {
         case .strength: return .orange
         case .cardio: return .red
         case .hiit: return .yellow
-        case .yoga: return .purple
         case .flexibility: return .mint
-        case .recovery: return .blue
-        case .swimming: return .cyan
-        case .cycling: return .green
-        case .walking: return .teal
-        case .custom: return .pink
+        case .recoveryWalk: return .teal
+        case .lightCardio: return .green
+        case .other: return .pink
         }
     }
 }

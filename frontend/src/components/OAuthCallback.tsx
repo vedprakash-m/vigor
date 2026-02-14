@@ -26,8 +26,8 @@ export const OAuthCallback = ({ provider }: OAuthCallbackProps) => {
                 await new Promise((resolve) => setTimeout(resolve, 1000))
 
                 if (isAuthenticated) {
-                    // Successfully authenticated, redirect to dashboard
-                    navigate('/app/dashboard', { replace: true })
+                    // Successfully authenticated, redirect to admin dashboard
+                    navigate('/admin', { replace: true })
                 } else if (!isLoading) {
                     // Not authenticated and not loading, something went wrong
                     setError('Authentication failed. Please try again.')

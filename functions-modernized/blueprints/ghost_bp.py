@@ -331,6 +331,7 @@ async def ghost_phenome_sync(req: func.HttpRequest) -> func.HttpResponse:
         server_version = server_data.get("version", 0) if server_data else 0
 
         if client_version > server_version:
+            # Client is ahead — accept client data
             await client.update_phenome_store(
                 user_id, store_type, client_data, client_version
             )
@@ -338,6 +339,7 @@ async def ghost_phenome_sync(req: func.HttpRequest) -> func.HttpResponse:
                 {"status": "updated", "version": client_version, "conflicts": []}
             )
         elif server_version > client_version:
+            # Server is ahead — send server data to client
             return success_response(
                 {
                     "status": "outdated",
@@ -347,6 +349,30 @@ async def ghost_phenome_sync(req: func.HttpRequest) -> func.HttpResponse:
                 }
             )
         else:
+            # Same version — check for field-level conflicts (concurrent edits)
+            conflicts = []
+            server_fields = (server_data.get("data", {}) if server_data else {})
+            for key, client_val in client_data.items():
+                server_val = server_fields.get(key)
+                if server_val is not None and server_val != client_val:
+                    conflicts.append({
+                        "field": key,
+                        "client_value": client_val,
+                        "server_value": server_val,
+                        "resolution": "client_wins",  # last-write-wins default
+                    })
+
+            if conflicts:
+                # Merge: client wins on conflicting fields (last-write-wins)
+                merged_data = {**server_fields, **client_data}
+                new_version = server_version + 1
+                await client.update_phenome_store(
+                    user_id, store_type, merged_data, new_version
+                )
+                return success_response(
+                    {"status": "merged", "version": new_version, "conflicts": conflicts}
+                )
+
             return success_response(
                 {"status": "synced", "version": server_version, "conflicts": []}
             )
@@ -481,19 +507,35 @@ async def ghost_device_token(req: func.HttpRequest) -> func.HttpResponse:
 
 
 @ghost_bp.timer_trigger(
-    schedule="0 55 5 * * *", arg_name="timer", run_on_startup=False
+    schedule="0 55 * * * *", arg_name="timer", run_on_startup=False
 )
 async def ghost_morning_wake_trigger(timer: func.TimerRequest) -> None:
-    """Morning Ghost wake cycle (5:55 AM UTC) — PRD §3.4"""
+    """Hourly Ghost wake scan — sends morning pushes to users whose local
+    time is 5:55 AM.  Replaces the old fixed 5:55 AM UTC trigger so that
+    users across time-zones are woken at **their** preferred hour.
+    Per PRD §3.4.
+    """
     try:
         from shared.cosmos_db import get_global_client
 
-        logger.info("Ghost morning wake trigger fired")
+        current_utc_hour = datetime.now(timezone.utc).hour
+        logger.info(
+            f"Ghost morning wake trigger fired (UTC hour={current_utc_hour})"
+        )
         client = await get_global_client()
         active_users = await client.get_active_users_for_morning_push()
 
         for user in active_users:
             try:
+                # Determine user's preferred wake hour (default 6 AM local)
+                user_tz_offset = user.get("timezone_offset_hours", 0)
+                user_local_hour = (current_utc_hour + user_tz_offset) % 24
+                preferred_wake_hour = user.get("preferred_wake_hour", 6)
+
+                # Only send if the user's local hour matches their preference
+                if user_local_hour != preferred_wake_hour:
+                    continue
+
                 push_payload = {
                     "user_id": user["id"],
                     "trigger_type": "morning_cycle",

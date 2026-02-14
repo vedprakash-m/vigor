@@ -101,6 +101,12 @@ final class TrustStateMachine: ObservableObject {
         // Check for retreat (handled by safety breaker)
     }
 
+    /// Apply trust state received from server sync
+    func applyRemoteState(score: Double, phase: TrustPhase) {
+        trustScore = max(0, min(100, score))
+        currentPhase = phase
+    }
+
     private func canAdvancePhase() -> Bool {
         guard let nextPhase = currentPhase.next else { return false }
         guard let threshold = phaseThresholds[nextPhase] else { return false }
@@ -170,18 +176,20 @@ final class TrustStateMachine: ObservableObject {
     // MARK: - Safety Breaker
 
     private func handleSafetyBreakerTrigger() async {
-        // CRITICAL: Immediate downgrade from Auto-Scheduler to Scheduler
-        if currentPhase == .autoScheduler || currentPhase == .transformer || currentPhase == .fullGhost {
-            await retreatToPhase(.scheduler)
+        // Per Tech Spec §2.3: Safety breaker retreats ONE phase, not all the way to scheduler
+        guard let targetPhase = currentPhase.previous else { return }
 
-            // Record decision
-            var receipt = DecisionReceipt(action: .safetyBreakerTriggered)
-            receipt.addInput("previous_phase", value: currentPhase.rawValue)
-            receipt.addInput("consecutive_deletes", value: 3)
-            receipt.confidence = 1.0
-            receipt.outcome = .success
-            await DecisionReceiptStore.shared.store(receipt)
-        }
+        let previousPhase = currentPhase
+        await retreatToPhase(targetPhase)
+
+        // Record decision receipt
+        var receipt = DecisionReceipt(action: .safetyBreakerTriggered)
+        receipt.addInput("previous_phase", value: previousPhase.rawValue)
+        receipt.addInput("retreated_to", value: targetPhase.rawValue)
+        receipt.addInput("consecutive_deletes", value: 3)
+        receipt.confidence = 1.0
+        receipt.outcome = .success
+        await DecisionReceiptStore.shared.store(receipt)
     }
 
     // MARK: - Manual Controls

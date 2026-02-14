@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional
 
 import azure.functions as func
 import jwt
+import aiohttp
 import requests
 
 from .config import get_settings
@@ -38,7 +39,7 @@ class AuthenticationError(Exception):
 
 
 def _get_jwks_keys() -> List[Dict[str, Any]]:
-    """Get Microsoft JWKS keys with caching (Task 7.0.10)"""
+    """Get Microsoft JWKS keys with caching (Task 7.0.10) — synchronous fallback"""
     global _jwks_cache, _jwks_cache_expiry
 
     now = time.time()
@@ -53,6 +54,27 @@ def _get_jwks_keys() -> List[Dict[str, Any]]:
     _jwks_cache = keys
     _jwks_cache_expiry = now + _JWKS_CACHE_TTL_SECONDS
     logger.info("JWKS keys cached (TTL: 24h)")
+    return keys
+
+
+async def _get_jwks_keys_async() -> List[Dict[str, Any]]:
+    """Get Microsoft JWKS keys with caching — async version to avoid blocking the event loop."""
+    global _jwks_cache, _jwks_cache_expiry
+
+    now = time.time()
+    if _jwks_cache is not None and now < _jwks_cache_expiry:
+        return _jwks_cache
+
+    jwks_url = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(jwks_url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            resp.raise_for_status()
+            data = await resp.json()
+            keys = data.get("keys", [])
+
+    _jwks_cache = keys
+    _jwks_cache_expiry = now + _JWKS_CACHE_TTL_SECONDS
+    logger.info("JWKS keys cached via async fetch (TTL: 24h)")
     return keys
 
 
@@ -100,8 +122,8 @@ async def validate_azure_entra_token(token: str) -> Optional[Dict[str, Any]]:
         # Decode token without verification first to get header info
         unverified_header = jwt.get_unverified_header(token)
 
-        # Get Microsoft's public keys for token validation (cached)
-        keys = _get_jwks_keys()
+        # Get Microsoft's public keys for token validation (cached, async)
+        keys = await _get_jwks_keys_async()
 
         # Find the key used to sign this token
         key_id = unverified_header.get("kid")
@@ -116,7 +138,7 @@ async def validate_azure_entra_token(token: str) -> Optional[Dict[str, Any]]:
             # Key not found in cache — force refresh in case keys were rotated
             global _jwks_cache_expiry
             _jwks_cache_expiry = 0.0
-            keys = _get_jwks_keys()
+            keys = await _get_jwks_keys_async()
             for key in keys:
                 if key["kid"] == key_id:
                     public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
@@ -239,11 +261,11 @@ async def ensure_user_exists_async(user_data: Dict[str, Any]) -> None:
 
 async def require_admin_user(req: func.HttpRequest) -> Optional[Dict[str, Any]]:
     """Require admin user authentication via email whitelist"""
-    # Admin email whitelist - keep in sync with frontend adminConfig.ts
-    ADMIN_EMAILS = [
-        "vedprakash.m@outlook.com",
-        # Add more admin emails as needed
-    ]
+    import os
+
+    # Admin email whitelist — loaded from environment, falls back to default.
+    admin_csv = os.environ.get("ADMIN_WHITELIST", "vedprakash.m@outlook.com")
+    admin_emails = [e.strip().lower() for e in admin_csv.split(",") if e.strip()]
 
     try:
         user = await get_current_user_from_token(req)
@@ -253,7 +275,7 @@ async def require_admin_user(req: func.HttpRequest) -> Optional[Dict[str, Any]]:
         email = user.get("email", "").lower()
 
         # Check if user email is in admin whitelist
-        if email not in [e.lower() for e in ADMIN_EMAILS]:
+        if email not in admin_emails:
             logger.warning(f"Non-admin user attempted admin access: {email}")
             return None
 
@@ -292,36 +314,8 @@ def extract_user_from_request(req: func.HttpRequest) -> Optional[Dict[str, Any]]
         return None
 
 
-# Rate limiting helpers
-_rate_limit_cache = {}
-
-
-def check_rate_limit(key: str, limit: int, window: int) -> bool:
-    """Simple in-memory rate limiting"""
-    try:
-        now = datetime.now(timezone.utc).timestamp()
-
-        if key not in _rate_limit_cache:
-            _rate_limit_cache[key] = []
-
-        # Clean old entries
-        _rate_limit_cache[key] = [
-            timestamp
-            for timestamp in _rate_limit_cache[key]
-            if now - timestamp < window
-        ]
-
-        # Check limit
-        if len(_rate_limit_cache[key]) >= limit:
-            return False
-
-        # Add current request
-        _rate_limit_cache[key].append(now)
-        return True
-
-    except Exception as e:
-        logger.error(f"Error in rate limiting: {str(e)}")
-        return True  # Allow request if rate limiting fails
+# Note: Rate limiting is handled by shared/rate_limiter.py
+# Use apply_rate_limit() / apply_ai_generation_limit() from there.
 
 
 def create_jwt_response_token(user_data: Dict[str, Any]) -> str:

@@ -212,6 +212,11 @@ struct TimeSlotKey: Hashable, Codable {
     let dayOfWeek: Int      // 1-7 (Sunday-Saturday)
     let hourOfDay: Int      // 0-23
 
+    init(dayOfWeek: Int, hourOfDay: Int) {
+        self.dayOfWeek = dayOfWeek
+        self.hourOfDay = hourOfDay
+    }
+
     init(from date: Date) {
         let calendar = Calendar.current
         self.dayOfWeek = calendar.component(.weekday, from: date)

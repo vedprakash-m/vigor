@@ -2,14 +2,13 @@
 //  DecisionReceiptStore.swift
 //  Vigor
 //
-//  Created by Vigor Team on January 27, 2026.
-//  Copyright © 2026 Vigor. All rights reserved.
-//
 //  Forensic logging for Ghost decisions.
 //  Records: action, inputs (hashed), alternatives, confidence, trust impact
 //  90-day TTL with rolling window.
 //
 //  Per Tech Spec §2.4
+//
+//  Backed by Core Data for persistence across app launches.
 //
 
 import Foundation
@@ -21,19 +20,14 @@ actor DecisionReceiptStore {
 
     static let shared = DecisionReceiptStore()
 
-    // MARK: - Storage
+    // MARK: - Core Data
 
-    private var receipts: [DecisionReceipt] = []
-    private let maxReceiptAge: TimeInterval = 90 * 24 * 60 * 60 // 90 days
+    private var stack: CoreDataStack { CoreDataStack.shared }
+
+    // MARK: - Write Buffer
+
     private var pendingReceipts: [DecisionReceipt] = []
-
-    // MARK: - Initialization
-
-    private init() {
-        Task {
-            await loadFromDisk()
-        }
-    }
+    private let maxReceiptAge: TimeInterval = 90 * 24 * 60 * 60 // 90 days
 
     // MARK: - Storage Operations
 
@@ -41,13 +35,9 @@ actor DecisionReceiptStore {
         var mutableReceipt = receipt
         mutableReceipt.timestamp = Date()
 
-        receipts.append(mutableReceipt)
         pendingReceipts.append(mutableReceipt)
 
-        // Cleanup old receipts
-        await pruneOldReceipts()
-
-        // Persist if we have enough pending
+        // Flush when buffer is big enough
         if pendingReceipts.count >= 10 {
             await flush()
         }
@@ -56,9 +46,16 @@ actor DecisionReceiptStore {
     func flush() async {
         guard !pendingReceipts.isEmpty else { return }
 
-        // Persist to Core Data
-        await persistToCoreData(pendingReceipts)
+        let toWrite = pendingReceipts
         pendingReceipts.removeAll()
+
+        let ctx = stack.newBackgroundContext()
+        ctx.performAndWait {
+            for r in toWrite {
+                _ = DecisionReceiptEntity.from(r, context: ctx)
+            }
+            CoreDataStack.save(ctx)
+        }
     }
 
     // MARK: - Query Operations
@@ -69,81 +66,84 @@ actor DecisionReceiptStore {
         to endDate: Date? = nil,
         limit: Int = 100
     ) async -> [DecisionReceipt] {
-        var filtered = receipts
+        // Include any un-flushed pending receipts
+        await flush()
 
-        if let action = action {
-            filtered = filtered.filter { $0.action == action }
+        let ctx = stack.viewContext
+        var result: [DecisionReceipt] = []
+        ctx.performAndWait {
+            let req = DecisionReceiptEntity.fetchRequest()
+            var predicates: [NSPredicate] = []
+
+            if let action = action {
+                predicates.append(NSPredicate(format: "action == %@", action.rawValue))
+            }
+            if let start = startDate {
+                predicates.append(NSPredicate(format: "timestamp >= %@", start as NSDate))
+            }
+            if let end = endDate {
+                predicates.append(NSPredicate(format: "timestamp <= %@", end as NSDate))
+            }
+
+            if !predicates.isEmpty {
+                req.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+            }
+            req.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
+            req.fetchLimit = limit
+
+            result = ((try? ctx.fetch(req)) ?? []).map { $0.toDomain() }
         }
-
-        if let start = startDate {
-            filtered = filtered.filter { $0.timestamp >= start }
-        }
-
-        if let end = endDate {
-            filtered = filtered.filter { $0.timestamp <= end }
-        }
-
-        return Array(filtered.suffix(limit))
+        return result
     }
 
     func getRecentReceipts(days: Int) async -> [DecisionReceipt] {
         let cutoff = Date().addingTimeInterval(-Double(days) * 24 * 60 * 60)
-        return receipts.filter { $0.timestamp >= cutoff }
+        return await getReceipts(from: cutoff)
     }
 
     func getReceiptsForExplainability(blockId: String) async -> [DecisionReceipt] {
-        return receipts.filter { receipt in
-            receipt.inputs.contains { $0.key == "block_id" && $0.value == blockId }
+        // Flush first so nothing is missed
+        await flush()
+
+        let ctx = stack.viewContext
+        var result: [DecisionReceipt] = []
+        ctx.performAndWait {
+            let req = DecisionReceiptEntity.fetchRequest()
+            // inputsJSON is a text column – search for the block_id substring
+            req.predicate = NSPredicate(format: "inputsJSON CONTAINS %@", blockId)
+            req.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
+            result = ((try? ctx.fetch(req)) ?? []).map { $0.toDomain() }
         }
+        return result
     }
 
     // MARK: - Analytics
 
     func getSuccessRate(for action: DecisionAction, days: Int) async -> Double {
-        let cutoff = Date().addingTimeInterval(-Double(days) * 24 * 60 * 60)
-        let actionReceipts = receipts.filter {
-            $0.action == action && $0.timestamp >= cutoff
-        }
-
-        guard !actionReceipts.isEmpty else { return 0 }
-
-        let successCount = actionReceipts.filter {
-            if case .success = $0.outcome { return true }
-            return false
-        }.count
-
-        return Double(successCount) / Double(actionReceipts.count)
+        let recent = await getReceipts(for: action, from: Date().addingTimeInterval(-Double(days) * 86400))
+        guard !recent.isEmpty else { return 0 }
+        let successes = recent.filter { $0.outcome.isSuccess }.count
+        return Double(successes) / Double(recent.count)
     }
 
     func getAverageConfidence(for action: DecisionAction, days: Int) async -> Double {
-        let cutoff = Date().addingTimeInterval(-Double(days) * 24 * 60 * 60)
-        let actionReceipts = receipts.filter {
-            $0.action == action && $0.timestamp >= cutoff
+        let recent = await getReceipts(for: action, from: Date().addingTimeInterval(-Double(days) * 86400))
+        guard !recent.isEmpty else { return 0 }
+        return recent.reduce(0.0) { $0 + $1.confidence } / Double(recent.count)
+    }
+
+    // MARK: - Cleanup (90-day TTL)
+
+    func pruneExpiredReceipts() {
+        let now = Date() as NSDate
+        let ctx = stack.newBackgroundContext()
+        ctx.performAndWait {
+            CoreDataStack.batchDelete(
+                entityName: "DecisionReceiptEntity",
+                predicate: NSPredicate(format: "ttlDate <= %@", now),
+                in: ctx
+            )
         }
-
-        guard !actionReceipts.isEmpty else { return 0 }
-
-        let totalConfidence = actionReceipts.reduce(0.0) { $0 + $1.confidence }
-        return totalConfidence / Double(actionReceipts.count)
-    }
-
-    // MARK: - Cleanup
-
-    private func pruneOldReceipts() async {
-        let cutoff = Date().addingTimeInterval(-maxReceiptAge)
-        receipts.removeAll { $0.timestamp < cutoff }
-    }
-
-    // MARK: - Persistence
-
-    private func loadFromDisk() async {
-        // Load from Core Data
-        // Implementation depends on Core Data model setup
-    }
-
-    private func persistToCoreData(_ receipts: [DecisionReceipt]) async {
-        // Persist to Core Data
-        // Implementation depends on Core Data model setup
     }
 }
 

@@ -19,24 +19,34 @@ struct ContentView: View {
     @State private var triageRequest: MissedBlockTriageRequest?
 
     var body: some View {
-        Group {
+        ZStack {
+            #if ENABLE_MSAL
             if !authManager.isAuthenticated {
-                // Not authenticated - show sign in
                 SignInView()
             } else if showOnboarding {
-                // First time user - show onboarding flow
-                OnboardingView(isComplete: $showOnboarding)
+                OnboardingFlowView(isComplete: $showOnboarding)
             } else if let triage = triageRequest {
-                // Missed workout needs disambiguation
-                TriageCardView(request: triage) { reason in
+                TriageCardView(card: triage.toCardData()) { action in
                     Task {
-                        await handleTriageResponse(reason: reason)
+                        await handleTriageAction(action)
                     }
                 }
             } else {
-                // Main app experience - Today View
                 MainTabView()
             }
+            #else
+            if showOnboarding {
+                OnboardingFlowView(isComplete: $showOnboarding)
+            } else if let triage = triageRequest {
+                TriageCardView(card: triage.toCardData()) { action in
+                    Task {
+                        await handleTriageAction(action)
+                    }
+                }
+            } else {
+                MainTabView()
+            }
+            #endif
         }
         .onAppear {
             checkOnboardingStatus()
@@ -50,13 +60,26 @@ struct ContentView: View {
     }
 
     private func checkOnboardingStatus() {
-        // Check if user has completed onboarding
-        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+        // Check if user has completed onboarding (OnboardingFlow writes "onboarding_completed")
+        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "onboarding_completed")
         showOnboarding = !hasCompletedOnboarding
     }
 
-    private func handleTriageResponse(reason: MissedWorkoutReason) async {
+    private func handleTriageAction(_ action: TriageAction) async {
         guard let request = triageRequest else { return }
+
+        // Map TriageAction to MissedWorkoutReason
+        let reason: MissedWorkoutReason
+        switch action {
+        case .reject, .dismiss, .skip:
+            reason = .tooTired
+        case .accept, .startWorkout, .markComplete, .confirm:
+            reason = .unknown
+        case .correct:
+            reason = .wrongWorkout
+        case .viewDetails, .reschedule:
+            reason = .badTimeSlot
+        }
 
         await FailureDisambiguator.shared.recordTriageResponse(
             blockId: request.blockId,
@@ -65,6 +88,23 @@ struct ContentView: View {
 
         triageRequest = nil
         ghostEngine.clearPendingTriageRequest()
+    }
+}
+
+// MARK: - MissedBlockTriageRequest Extension
+
+extension MissedBlockTriageRequest {
+    func toCardData() -> TriageCardData {
+        TriageCardData(
+            id: id,
+            workoutType: workoutType,
+            scheduledTime: blockTime,
+            duration: 45,
+            recoveryScore: 75,
+            recoveryReason: nil,
+            ghostInsight: nil,
+            alternativeSlots: []
+        )
     }
 }
 
@@ -92,6 +132,7 @@ struct MainTabView: View {
 
 // MARK: - Sign In View
 
+#if ENABLE_MSAL
 struct SignInView: View {
     @EnvironmentObject var authManager: AuthManager
     @State private var isSigningIn = false
@@ -166,6 +207,7 @@ struct SignInView: View {
         }
     }
 }
+#endif // ENABLE_MSAL
 
 #Preview {
     ContentView()

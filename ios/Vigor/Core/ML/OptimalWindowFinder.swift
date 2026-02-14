@@ -93,7 +93,7 @@ actor OptimalWindowFinder {
         dayEnd = calendar.date(byAdding: .hour, value: 22, to: dayEnd) ?? dayEnd
 
         // Get all calendar events
-        let busySlots = await CalendarScheduler.shared.getBusySlots(for: date)
+        let busySlots = await CalendarScheduler.shared.getBusySlots(from: dayStart, to: dayEnd)
 
         // Get sacred times
         let sacredTimes = await BehavioralMemoryStore.shared.getSacredTimes(for: date)
@@ -179,10 +179,13 @@ actor OptimalWindowFinder {
         let hour = Calendar.current.component(.hour, from: window.start)
         let dayOfWeek = Calendar.current.component(.weekday, from: window.start)
 
-        let timeSlotKey = TimeSlotKey(dayOfWeek: dayOfWeek, hourOfDay: hour)
+        let timeSlotKey = SkipTimeSlotKey(dayOfWeek: dayOfWeek, hourOfDay: hour)
         let stats = await BehavioralMemoryStore.shared.getTimeSlotStats(for: timeSlotKey)
 
-        let completionRate = stats?.completionRate ?? 0.5
+        let completionRate: Double = {
+            guard let s = stats, s.totalAttempts > 0 else { return 0.5 }
+            return Double(s.completedCount) / Double(s.totalAttempts)
+        }()
 
         return WindowScoreFactor(
             name: "Historical Success",
@@ -315,24 +318,7 @@ struct WindowScoreFactor {
     let description: String
 }
 
-// MARK: - Time Window Extension
-
-extension TimeWindow {
-    var duration: TimeInterval {
-        end.timeIntervalSince(start)
-    }
-}
-
-// MARK: - Time Slot Stats Extension
-
-extension TimeSlotStats {
-    var completionRate: Double {
-        guard totalAttempts > 0 else { return 0.5 }
-        return Double(completedCount) / Double(totalAttempts)
-    }
-}
-
-// MARK: - Behavioral Memory Extension
+// MARK: - Time Window Extension\n// duration already defined in TimeWindow struct\n\n// MARK: - Behavioral Memory Extension
 
 struct WorkoutTimePreferences {
     let preferredMorning: Bool

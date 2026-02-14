@@ -1,0 +1,18 @@
+// Dev.xcconfig
+// Development configuration for Vigor
+//
+// Feature flags for free Apple Developer provisioning:
+// - MSAL, Push, CloudKit disabled (require paid $99/yr membership)
+
+// API Configuration
+API_BASE_URL = http:/$()/localhost:7071
+AZURE_AD_CLIENT_ID = dev-placeholder
+AZURE_AD_TENANT_ID = dev-placeholder
+
+// Feature Flags (0 = disabled for free provisioning)
+ENABLE_MSAL = 0
+ENABLE_PUSH_NOTIFICATIONS = 0
+ENABLE_CLOUDKIT = 0
+
+// Build Settings
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG FREE_PROVISIONING

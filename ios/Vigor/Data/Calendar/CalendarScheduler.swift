@@ -32,7 +32,7 @@ final class CalendarScheduler: ObservableObject {
 
     // MARK: - EventKit Store
 
-    private let eventStore = EKEventStore()
+    let eventStore = EKEventStore()
 
     // MARK: - Constants
 

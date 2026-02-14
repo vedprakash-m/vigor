@@ -39,10 +39,11 @@
  <!-- Background Task Identifiers -->
  <key>BGTaskSchedulerPermittedIdentifiers</key>
  <array>
-     <string>com.vigor.ghost.morning-wake</string>
-     <string>com.vigor.ghost.evening-cycle</string>
-     <string>com.vigor.ghost.phenome-sync</string>
-     <string>com.vigor.ghost.calendar-scan</string>
+     <string>com.vigor.ghost.morningCycle</string>
+     <string>com.vigor.ghost.eveningCycle</string>
+     <string>com.vigor.ghost.healthKitDelivery</string>
+     <string>com.vigor.ghost.phenomeSync</string>
+     <string>com.vigor.ghost.calendarScan</string>
  </array>
 
  <!-- Push Notification Entitlement -->
@@ -211,13 +212,14 @@ enum UsageDescriptions {
 
 /// BGTaskScheduler task identifiers
 enum BackgroundTaskIdentifiers {
-    static let morningWake = "com.vigor.ghost.morning-wake"
-    static let eveningCycle = "com.vigor.ghost.evening-cycle"
-    static let phenomeSync = "com.vigor.ghost.phenome-sync"
-    static let calendarScan = "com.vigor.ghost.calendar-scan"
+    static let morningCycle = "com.vigor.ghost.morningCycle"
+    static let eveningCycle = "com.vigor.ghost.eveningCycle"
+    static let healthKitDelivery = "com.vigor.ghost.healthKitDelivery"
+    static let phenomeSync = "com.vigor.ghost.phenomeSync"
+    static let calendarScan = "com.vigor.ghost.calendarScan"
 
     static var all: [String] {
-        [morningWake, eveningCycle, phenomeSync, calendarScan]
+        [morningCycle, eveningCycle, healthKitDelivery, phenomeSync, calendarScan]
     }
 }
 

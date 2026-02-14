@@ -122,22 +122,21 @@ class HomeViewModel: ObservableObject {
 
     func refresh() async {
         // Get current trust state
-        let trustState = await TrustStateMachine.shared.getState()
-        trustPhase = trustState.phase
-        trustScore = trustState.score
+        trustPhase = TrustStateMachine.shared.currentPhase
+        trustScore = TrustStateMachine.shared.trustScore
 
         // Get health mode
-        let health = await GhostHealthMonitor.shared.getHealth()
+        let health = GhostHealthMonitor.shared.getHealth()
         healthMode = health.mode
 
         // Get week blocks
         let startOfWeek = Calendar.current.startOfWeek(for: Date())
         let endOfWeek = Calendar.current.date(byAdding: .day, value: 7, to: startOfWeek)!
-        weekBlocks = await CalendarScheduler.shared.getBlocks(from: startOfWeek, to: endOfWeek)
-        allBlocks = await CalendarScheduler.shared.getBlocks(
+        weekBlocks = (try? await CalendarScheduler.shared.fetchBlocks(from: startOfWeek, to: endOfWeek)) ?? []
+        allBlocks = (try? await CalendarScheduler.shared.fetchBlocks(
             from: Date(),
             to: Calendar.current.date(byAdding: .month, value: 1, to: Date())!
-        )
+        )) ?? []
 
         // Count completed
         completedThisWeek = weekBlocks.filter { $0.status == .completed }.count
@@ -157,19 +156,19 @@ class HomeViewModel: ObservableObject {
         // 2. Upcoming workout in next 30 minutes
         if let upcomingBlock = weekBlocks.first(where: { block in
             block.status == .scheduled &&
-            block.scheduledStart > Date() &&
-            block.scheduledStart < Date().addingTimeInterval(30 * 60)
+            block.startTime > Date() &&
+            block.startTime < Date().addingTimeInterval(30 * 60)
         }) {
             return .blockConfirmation(upcomingBlock)
         }
 
         // 3. Pending proposal
-        if let proposal = await GhostEngine.shared.getPendingProposal() {
+        if let proposal = await GhostEngine.shared.getPendingBlockProposal() {
             return .blockProposal(proposal.workout, proposal.window)
         }
 
         // 4. Recent workout needing confirmation
-        if let recentWorkout = await GhostEngine.shared.getUnconfirmedWorkout() {
+        if let recentWorkout = await GhostEngine.shared.getUnconfirmedDetectedWorkout() {
             return .workoutFeedback(recentWorkout)
         }
 
@@ -213,7 +212,7 @@ class HomeViewModel: ObservableObject {
 
         let totalMinutes = weekBlocks
             .filter { $0.status == .completed }
-            .reduce(0) { $0 + Int($1.scheduledEnd.timeIntervalSince($1.scheduledStart) / 60) }
+            .reduce(0) { $0 + Int($1.endTime.timeIntervalSince($1.startTime) / 60) }
 
         return ValueReceipt(
             weekStartDate: startOfWeek,
@@ -230,15 +229,34 @@ class HomeViewModel: ObservableObject {
     }
 
     private func calculateStreak() async -> Int {
-        // Calculate consecutive days with completed workouts
-        return 0 // Placeholder
+        // Calculate consecutive weeks with ≥1 completed workout (per PRD §4.5)
+        let calendar = Calendar.current
+        var streak = 0
+        var weekStart = calendar.startOfWeek(for: Date())
+
+        for _ in 0..<52 { // Check up to a year back
+            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart)!
+            let blocks = (try? await CalendarScheduler.shared.fetchBlocks(from: weekStart, to: weekEnd)) ?? []
+            let hasCompleted = blocks.contains { $0.status == .completed }
+
+            if hasCompleted {
+                streak += 1
+            } else {
+                break
+            }
+
+            guard let previousWeek = calendar.date(byAdding: .day, value: -7, to: weekStart) else { break }
+            weekStart = previousWeek
+        }
+
+        return streak
     }
 
     func handleTriageAction(_ action: TriageAction) async {
         switch action {
         case .accept:
             if case .blockProposal(let workout, let window) = currentTriageItem {
-                try? await CalendarScheduler.shared.createBlock(workout, in: window)
+                try? await CalendarScheduler.shared.createBlock(workout: workout, window: window)
                 await TrustStateMachine.shared.recordEvent(.proposalAccepted)
             }
 
@@ -248,15 +266,19 @@ class HomeViewModel: ObservableObject {
             }
 
         case .correct:
-            // Open workout correction UI
-            break
+            // Open workout correction — user provides feedback on detected workout
+            if case .workoutFeedback(let workout) = currentTriageItem {
+                await PhenomeCoordinator.shared.recordWorkoutCorrection(workout)
+                await TrustStateMachine.shared.recordEvent(.workoutCorrected)
+            }
 
         case .dismiss:
+            // Explicit dismiss — no trust impact, just move to next item
             break
 
         case .viewDetails:
-            // Open Ghost health details
-            break
+            // Open Ghost health details view
+            showCalendarView = true
 
         case .startWorkout:
             if case .blockConfirmation(let block) = currentTriageItem {
@@ -264,7 +286,30 @@ class HomeViewModel: ObservableObject {
             }
 
         case .markComplete:
-            break
+            if case .blockConfirmation(let block) = currentTriageItem {
+                try? await CalendarScheduler.shared.markBlockComplete(block)
+                await TrustStateMachine.shared.recordEvent(.workoutCompleted(block.asDetectedWorkout))
+            }
+
+        case .skip:
+            if case .blockConfirmation(let block) = currentTriageItem {
+                try? await CalendarScheduler.shared.markBlockSkipped(block)
+                await TrustStateMachine.shared.recordEvent(.workoutSkipped)
+            }
+
+        case .reschedule:
+            if case .blockConfirmation(let block) = currentTriageItem {
+                // Move block to next available window
+                if let nextWindow = await GhostEngine.shared.findNextAvailableWindow(after: block.startTime) {
+                    try? await CalendarScheduler.shared.rescheduleBlock(block, to: nextWindow)
+                }
+            }
+
+        case .confirm:
+            if case .workoutFeedback(let workout) = currentTriageItem {
+                await PhenomeCoordinator.shared.confirmDetectedWorkout(workout)
+                await TrustStateMachine.shared.recordEvent(.workoutCompleted(workout))
+            }
         }
 
         // Refresh to get next triage item
@@ -332,7 +377,7 @@ struct GhostStatusHeader: View {
 
                 Circle()
                     .trim(from: 0, to: score / 100)
-                    .stroke(phase.color, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                    .stroke(phase.swiftUIColor, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                     .frame(width: 44, height: 44)
                     .rotationEffect(.degrees(-90))
 
@@ -411,7 +456,7 @@ struct WeekOverviewView: View {
         let targetDate = calendar.date(byAdding: .day, value: offset, to: startOfWeek)!
 
         return blocks.filter { block in
-            calendar.isDate(block.scheduledStart, inSameDayAs: targetDate)
+            calendar.isDate(block.startTime, inSameDayAs: targetDate)
         }
     }
 }
@@ -525,12 +570,68 @@ extension Calendar {
     }
 }
 
-// MARK: - Placeholder Views
+// MARK: - Settings View
 
 struct SettingsView: View {
+    @StateObject private var healthKit = HealthKitObserver.shared
+    @EnvironmentObject private var trustState: TrustStateMachine
+
+    @AppStorage("notifications_enabled") private var notificationsEnabled = true
+    @AppStorage("haptics_enabled") private var hapticsEnabled = true
+
     var body: some View {
-        Text("Settings")
-            .foregroundColor(.white)
+        List {
+            // Trust
+            Section("Ghost Trust Level") {
+                HStack {
+                    Image(systemName: trustState.currentPhase.iconName)
+                    VStack(alignment: .leading) {
+                        Text(trustState.currentPhase.displayName)
+                            .font(.headline)
+                        Text(trustState.currentPhase.description)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            // Health & Permissions
+            Section("Health & Permissions") {
+                LabeledContent("HealthKit") {
+                    Text(healthKit.isAuthorized ? "Connected" : "Not Connected")
+                        .foregroundStyle(healthKit.isAuthorized ? .green : .red)
+                }
+                if let lastSync = healthKit.lastSyncDate {
+                    LabeledContent("Last Sync") {
+                        Text(lastSync, style: .relative)
+                    }
+                }
+            }
+
+            // Preferences
+            Section("Notifications & Feedback") {
+                Toggle("Notifications", isOn: $notificationsEnabled)
+                Toggle("Haptic Feedback", isOn: $hapticsEnabled)
+            }
+
+            // About
+            Section("About Vigor") {
+                LabeledContent("Version") {
+                    Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")
+                }
+                LabeledContent("Build") {
+                    Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1")
+                }
+            }
+
+            // Data
+            Section {
+                Button("Reset Onboarding", role: .destructive) {
+                    UserDefaults.standard.removeObject(forKey: "onboarding_completed")
+                }
+            }
+        }
+        .navigationTitle("Settings")
     }
 }
 
@@ -547,7 +648,7 @@ struct WorkoutPickerSheet: View {
                 } label: {
                     HStack {
                         Image(systemName: type.icon)
-                            .foregroundColor(type.color)
+                            .foregroundColor(type.swiftUIColor)
                         Text(type.displayName)
                     }
                 }
@@ -571,11 +672,11 @@ struct CalendarDetailView: View {
             List(blocks, id: \.id) { block in
                 HStack {
                     Image(systemName: block.workoutType.icon)
-                        .foregroundColor(block.workoutType.color)
+                        .foregroundColor(block.workoutType.swiftUIColor)
 
                     VStack(alignment: .leading) {
                         Text(block.workoutType.displayName)
-                        Text(block.scheduledStart.formatted())
+                        Text(block.startTime.formatted())
                             .font(.caption)
                             .foregroundColor(.gray)
                     }

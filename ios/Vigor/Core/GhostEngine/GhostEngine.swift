@@ -31,10 +31,12 @@ final class GhostEngine: ObservableObject {
     @Published private(set) var lastMorningCycle: Date?
     @Published private(set) var lastEveningCycle: Date?
     @Published var pendingTriageRequest: MissedBlockTriageRequest?
+    @Published private(set) var pendingProposal: (workout: GeneratedWorkout, window: TimeWindow)?
+    @Published private(set) var unconfirmedWorkout: DetectedWorkout?
 
     // MARK: - Components
 
-    let healthMonitor = GhostHealthMonitor()
+    let healthMonitor = GhostHealthMonitor.shared
     private let decisionReceiptStore = DecisionReceiptStore.shared
     private let failureDisambiguator = FailureDisambiguator.shared
 
@@ -99,6 +101,11 @@ final class GhostEngine: ObservableObject {
         isRunning = false
     }
 
+    /// Called after onboarding to start the initial observer/learning phase
+    func startLearningPhase() async {
+        await start()
+    }
+
     // MARK: - Morning Cycle
 
     /// Morning cycle - runs around 6 AM
@@ -141,7 +148,7 @@ final class GhostEngine: ObservableObject {
                         recoveryScore: recoveryScore
                     )
 
-                    if transformation != .none {
+                    if case .none = transformation {} else {
                         try await applyBlockTransformation(
                             block: block,
                             transformation: transformation,
@@ -192,10 +199,13 @@ final class GhostEngine: ObservableObject {
             receipt.addInput("trust_phase", value: trustPhase.rawValue)
 
             // 3. Find optimal workout window
-            let optimalWindow = await OptimalWindowFinder.shared.findOptimalWindow(
-                busySlots: tomorrowBusySlots,
-                userPreferences: phenomeCoordinator.workoutPreferences
+            let preferredDuration = TimeInterval(await phenomeCoordinator.workoutPreferences.sessionDurationMinutes * 60)
+            let windows = await OptimalWindowFinder.shared.findOptimalWindows(
+                for: Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date(),
+                workoutDuration: preferredDuration,
+                count: 1
             )
+            let optimalWindow = windows.first.map { TimeWindow(start: $0.window.start, end: $0.window.end) }
 
             guard let window = optimalWindow else {
                 // No available window tomorrow
@@ -217,6 +227,7 @@ final class GhostEngine: ObservableObject {
 
             case .scheduler:
                 // Phase 2: Propose with notification
+                pendingProposal = (workout: workout, window: window)
                 try await notificationOrchestrator.sendBlockProposal(
                     workout: workout,
                     window: window
@@ -268,6 +279,9 @@ final class GhostEngine: ObservableObject {
 
         // 1. Auto-log the workout
         await phenomeCoordinator.logWorkout(workout)
+
+        // 2. Track as unconfirmed until user acknowledges
+        unconfirmedWorkout = workout
 
         // 2. Update trust (positive signal)
         await trustStateMachine.recordEvent(.workoutCompleted(workout))
@@ -365,13 +379,35 @@ final class GhostEngine: ObservableObject {
         pendingTriageRequest = nil
     }
 
+    // MARK: - Pending Proposals & Unconfirmed Workouts
+
+    /// Returns a pending block proposal (workout + window) if one exists
+    func getPendingBlockProposal() async -> (workout: GeneratedWorkout, window: TimeWindow)? {
+        return pendingProposal
+    }
+
+    /// Clears the pending proposal after user acts on it.
+    func clearPendingProposal() {
+        pendingProposal = nil
+    }
+
+    /// Returns a recently detected workout that hasn't been confirmed by the user
+    func getUnconfirmedDetectedWorkout() async -> DetectedWorkout? {
+        return unconfirmedWorkout
+    }
+
+    /// Clears the unconfirmed workout after user confirms or dismisses.
+    func clearUnconfirmedWorkout() {
+        unconfirmedWorkout = nil
+    }
+
     // MARK: - Workout Generation
 
     private func generateWorkout(for window: TimeWindow) async throws -> GeneratedWorkout {
         // Use local template engine for most cases
         // Fall back to API for complex/edge cases
 
-        let preferences = phenomeCoordinator.workoutPreferences
+        let preferences = await phenomeCoordinator.workoutPreferences
         let recentHistory = await phenomeCoordinator.getRecentWorkoutHistory(days: 7)
 
         // Try local generation first
@@ -387,7 +423,7 @@ final class GhostEngine: ObservableObject {
         return try await VigorAPIClient.shared.generateWorkout(
             window: window,
             preferences: preferences,
-            phenomeSnapshot: phenomeCoordinator.anonymizedSnapshot()
+            phenomeSnapshot: await phenomeCoordinator.anonymizedSnapshot()
         )
     }
 
@@ -424,7 +460,7 @@ final class GhostEngine: ObservableObject {
     }
 
     private func scheduleMorningCycleTask() {
-        let request = BGProcessingTaskRequest(identifier: "com.vigor.ghost.morningCycle")
+        let request = BGProcessingTaskRequest(identifier: BackgroundTaskIdentifiers.morningCycle)
 
         // Schedule for 6 AM tomorrow
         var components = calendar.dateComponents([.year, .month, .day], from: Date())
@@ -452,7 +488,7 @@ final class GhostEngine: ObservableObject {
     }
 
     private func scheduleEveningCycleTask() {
-        let request = BGProcessingTaskRequest(identifier: "com.vigor.ghost.eveningCycle")
+        let request = BGProcessingTaskRequest(identifier: BackgroundTaskIdentifiers.eveningCycle)
 
         var components = calendar.dateComponents([.year, .month, .day], from: Date())
         components.hour = 21

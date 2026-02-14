@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Bundle Configuration -->
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleDisplayName</key>
+    <string>Vigor</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+
+    <!-- App Category -->
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.healthcare-fitness</string>
+
+    <!-- HealthKit Usage Descriptions -->
+    <key>NSHealthShareUsageDescription</key>
+    <string>The Ghost reads your health data to understand your recovery status and optimize workout scheduling. Better recovery data means smarter scheduling that adapts to how you're feeling.</string>
+
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>The Ghost records your workouts to track your training history and improve future scheduling recommendations.</string>
+
+    <!-- Calendar Usage Descriptions -->
+    <key>NSCalendarsUsageDescription</key>
+    <string>The Ghost reads your calendars to find the best workout times that don't conflict with your existing commitments. It only writes to its own "Vigor Training" calendar.</string>
+
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>The Ghost needs calendar access to schedule training blocks and detect conflicts with your existing events. It reads all calendars but only writes to its own "Vigor Training" calendar.</string>
+
+    <!-- Background Modes -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>fetch</string>
+        <string>processing</string>
+    </array>
+
+    <!-- Background Task Identifiers -->
+    <key>BGTaskSchedulerPermittedIdentifiers</key>
+    <array>
+        <string>com.vigor.ghost.morningCycle</string>
+        <string>com.vigor.ghost.eveningCycle</string>
+        <string>com.vigor.ghost.healthKitDelivery</string>
+        <string>com.vigor.ghost.refresh</string>
+        <string>com.vigor.ghost.processing</string>
+    </array>
+
+    <!-- Required Device Capabilities -->
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>arm64</string>
+        <string>healthkit</string>
+    </array>
+
+    <!-- App Transport Security -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>localhost</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+            </dict>
+        </dict>
+    </dict>
+
+    <!-- Azure AD Configuration (populated from xcconfig) -->
+    <key>AZURE_AD_CLIENT_ID</key>
+    <string>$(AZURE_AD_CLIENT_ID)</string>
+    <key>AZURE_AD_TENANT_ID</key>
+    <string>$(AZURE_AD_TENANT_ID)</string>
+    <key>API_BASE_URL</key>
+    <string>$(API_BASE_URL)</string>
+
+    <!-- Supported Interface Orientations -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    </array>
+
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+
+    <!-- Watch Companion -->
+    <key>WKCompanionAppBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+
+    <!-- Privacy Manifest -->
+    <key>NSPrivacyManifestPath</key>
+    <string>PrivacyInfo.xcprivacy</string>
+</dict>
+</plist>

@@ -244,7 +244,7 @@ struct ValueReceiptView: View {
 
                     Spacer()
 
-                    if let nextPhase = receipt.currentPhase.nextPhase {
+                    if let nextPhase = receipt.currentPhase.next {
                         Text("\(Int((receipt.nextPhaseThreshold - receipt.currentTrustLevel) * 100))% to \(nextPhase.displayName)")
                             .font(.caption)
                             .foregroundColor(.secondary)
@@ -374,29 +374,7 @@ struct GhostContribution {
     let icon: String
 }
 
-// MARK: - TrustPhase Extension
-
-extension TrustPhase {
-    var displayName: String {
-        switch self {
-        case .observer: return "Observer"
-        case .scheduler: return "Scheduler"
-        case .autoScheduler: return "Auto-Scheduler"
-        case .transformer: return "Transformer"
-        case .fullGhost: return "Full Ghost"
-        }
-    }
-
-    var nextPhase: TrustPhase? {
-        switch self {
-        case .observer: return .scheduler
-        case .scheduler: return .autoScheduler
-        case .autoScheduler: return .transformer
-        case .transformer: return .fullGhost
-        case .fullGhost: return nil
-        }
-    }
-}
+// MARK: - TrustPhase Extension\n// displayName and next already defined in TrustPhase.swift
 
 // MARK: - Preview
 

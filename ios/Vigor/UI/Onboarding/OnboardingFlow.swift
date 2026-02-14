@@ -18,6 +18,8 @@ import WatchConnectivity
 
 enum OnboardingStep: Int, CaseIterable {
     case welcome = 0
+    case philosophy
+    case trustExplanation
     case watchPairing
     case healthPermissions
     case calendarPermissions
@@ -27,6 +29,8 @@ enum OnboardingStep: Int, CaseIterable {
     var title: String {
         switch self {
         case .welcome: return "Welcome to Vigor"
+        case .philosophy: return "Meet The Ghost"
+        case .trustExplanation: return "Earning Your Trust"
         case .watchPairing: return "Connect Your Watch"
         case .healthPermissions: return "Health Access"
         case .calendarPermissions: return "Calendar Access"
@@ -39,6 +43,10 @@ enum OnboardingStep: Int, CaseIterable {
         switch self {
         case .welcome:
             return "Your invisible fitness coach"
+        case .philosophy:
+            return "An AI that works silently in the background"
+        case .trustExplanation:
+            return "Ghost earns autonomy through results — not promises"
         case .watchPairing:
             return "Apple Watch is required for Vigor"
         case .healthPermissions:
@@ -183,7 +191,7 @@ class OnboardingViewModel: ObservableObject {
 
             // Trigger initial HealthKit import
             Task {
-                try? await HealthKitObserver.shared.startQuickImport()
+                try? await HealthKitObserver.shared.performInitialImport()
             }
         }
     }
@@ -326,6 +334,10 @@ struct OnboardingFlowView: View {
         switch viewModel.currentStep {
         case .welcome:
             WelcomeStepView()
+        case .philosophy:
+            PhilosophyStepView()
+        case .trustExplanation:
+            TrustExplanationStepView()
         case .watchPairing:
             WatchPairingStepView(viewModel: viewModel)
         case .healthPermissions:
@@ -384,7 +396,7 @@ struct OnboardingFlowView: View {
 
     private var canProceed: Bool {
         switch viewModel.currentStep {
-        case .welcome:
+        case .welcome, .philosophy, .trustExplanation:
             return true
         case .watchPairing:
             return viewModel.watchPaired && viewModel.watchAppInstalled
@@ -461,6 +473,94 @@ struct FeatureRow: View {
                 Text(subtitle)
                     .font(.caption)
                     .foregroundColor(.gray)
+            }
+        }
+    }
+}
+
+// MARK: - Philosophy & Trust Steps
+
+struct PhilosophyStepView: View {
+    var body: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "eye.slash")
+                .font(.system(size: 80))
+                .foregroundColor(.purple)
+
+            Text("How The Ghost Works")
+                .font(.title2).fontWeight(.bold)
+                .foregroundColor(.white)
+
+            VStack(alignment: .leading, spacing: 16) {
+                PhilosophyRow(icon: "moon.stars", text: "Runs silently in the background — no constant nagging")
+                PhilosophyRow(icon: "waveform.path.ecg", text: "Reads your biometrics to understand readiness")
+                PhilosophyRow(icon: "calendar.badge.clock", text: "Finds workout windows that fit your real schedule")
+                PhilosophyRow(icon: "brain", text: "Gets smarter the more you use it")
+            }
+            .padding(.horizontal, 8)
+
+            Text("The best workout plan is one you actually do.")
+                .font(.callout).italic()
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 24)
+    }
+}
+
+struct TrustExplanationStepView: View {
+    var body: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "lock.shield")
+                .font(.system(size: 80))
+                .foregroundColor(.green)
+
+            Text("Five Levels of Trust")
+                .font(.title2).fontWeight(.bold)
+                .foregroundColor(.white)
+
+            VStack(alignment: .leading, spacing: 12) {
+                TrustLevelRow(phase: "Observer", desc: "Watches and learns your patterns", number: 1)
+                TrustLevelRow(phase: "Scheduler", desc: "Suggests times — you approve", number: 2)
+                TrustLevelRow(phase: "Auto-Scheduler", desc: "Creates blocks — you can delete", number: 3)
+                TrustLevelRow(phase: "Transformer", desc: "Adapts workouts to biometrics", number: 4)
+                TrustLevelRow(phase: "Full Ghost", desc: "Full autonomy, minimal intervention", number: 5)
+            }
+
+            Text("Ghost starts at Level 1 and earns its way up through results.")
+                .font(.caption)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 24)
+    }
+}
+
+private struct PhilosophyRow: View {
+    let icon: String
+    let text: String
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).foregroundColor(.purple).frame(width: 28)
+            Text(text).font(.subheadline).foregroundColor(.white)
+        }
+    }
+}
+
+private struct TrustLevelRow: View {
+    let phase: String
+    let desc: String
+    let number: Int
+    var body: some View {
+        HStack(spacing: 12) {
+            Text("\(number)")
+                .font(.caption).fontWeight(.bold)
+                .frame(width: 24, height: 24)
+                .background(Circle().fill(Color.green.opacity(0.3)))
+                .foregroundColor(.green)
+            VStack(alignment: .leading) {
+                Text(phase).font(.subheadline).fontWeight(.semibold).foregroundColor(.white)
+                Text(desc).font(.caption2).foregroundColor(.gray)
             }
         }
     }

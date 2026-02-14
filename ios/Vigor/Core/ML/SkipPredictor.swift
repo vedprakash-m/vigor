@@ -199,9 +199,9 @@ actor SkipPredictor {
         for block: TrainingBlock,
         weekContext: WeekContext
     ) async -> SkipPredictionContext {
-        let timeSlotKey = TimeSlotKey(
-            dayOfWeek: Calendar.current.component(.weekday, from: block.scheduledStart),
-            hourOfDay: Calendar.current.component(.hour, from: block.scheduledStart)
+        let timeSlotKey = SkipTimeSlotKey(
+            dayOfWeek: Calendar.current.component(.weekday, from: block.startTime),
+            hourOfDay: Calendar.current.component(.hour, from: block.startTime)
         )
 
         let timeSlotStats = await BehavioralMemoryStore.shared.getTimeSlotStats(for: timeSlotKey)
@@ -211,7 +211,7 @@ actor SkipPredictor {
             timeSlotMissRate: timeSlotStats?.missRate ?? 0.3,
             workoutTypeCompletionRate: workoutPattern?.completionRate ?? 0.7,
             recoveryScore: weekContext.currentRecoveryScore,
-            calendarDensity: weekContext.dayDensities[block.scheduledStart] ?? 0.5,
+            calendarDensity: weekContext.dayDensities[block.startTime] ?? 0.5,
             dayOfWeekMissRate: weekContext.dayOfWeekMissRates[timeSlotKey.dayOfWeek] ?? 0.3,
             currentStreak: weekContext.currentStreak,
             historicalDataPoints: timeSlotStats?.totalAttempts ?? 0
@@ -275,7 +275,7 @@ protocol SkipPredictionModel {
 
 // MARK: - TimeSlotKey
 
-struct TimeSlotKey: Hashable, Codable {
+struct SkipTimeSlotKey: Hashable, Codable {
     let dayOfWeek: Int // 1-7
     let hourOfDay: Int // 0-23
 
@@ -290,18 +290,18 @@ struct TimeSlotKey: Hashable, Codable {
 // MARK: - Extensions for Integration
 
 extension BehavioralMemoryStore {
-    func getTimeSlotStats(for key: TimeSlotKey) async -> TimeSlotStats? {
+    func getTimeSlotStats(for key: SkipTimeSlotKey) async -> SkipTimeSlotStats? {
         // Return stats for the time slot
         nil // Placeholder
     }
 
-    func getWorkoutPattern(for type: WorkoutType) async -> WorkoutPattern? {
+    func getWorkoutPattern(for type: WorkoutType) async -> SkipWorkoutPattern? {
         // Return pattern for workout type
         nil // Placeholder
     }
 }
 
-struct TimeSlotStats {
+struct SkipTimeSlotStats {
     let completedCount: Int
     let missedCount: Int
     let totalAttempts: Int
@@ -312,7 +312,7 @@ struct TimeSlotStats {
     }
 }
 
-struct WorkoutPattern {
+struct SkipWorkoutPattern {
     let workoutType: WorkoutType
     let completedCount: Int
     let scheduledCount: Int

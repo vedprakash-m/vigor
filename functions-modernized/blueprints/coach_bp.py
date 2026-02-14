@@ -9,7 +9,8 @@ from datetime import datetime, timezone
 import azure.functions as func
 
 from shared.auth import get_current_user_from_token
-from shared.helpers import error_response, parse_pagination, success_response
+from shared.helpers import error_response, parse_pagination, parse_request_body, success_response
+from shared.models import CoachChatRequest, WorkoutContextRequest
 
 logger = logging.getLogger(__name__)
 
@@ -24,33 +25,19 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
     try:
         from shared.cosmos_db import get_global_client
         from shared.openai_client import OpenAIClient
-        from shared.rate_limiter import RateLimiter
+        from shared.rate_limiter import apply_ai_generation_limit
 
         current_user = await get_current_user_from_token(req)
         if not current_user:
             return error_response("Unauthorized", status_code=401, code="UNAUTHORIZED")
 
-        rate_limiter = RateLimiter()
-        if not await rate_limiter.check_rate_limit(
-            key=f"coach_chat:{current_user['email']}",
-            limit=50,
-            window=86400,
-        ):
-            return error_response(
-                "Rate limit exceeded", status_code=429, code="RATE_LIMITED"
-            )
+        rate_response = await apply_ai_generation_limit(req, user_id=current_user["email"])
+        if rate_response:
+            return rate_response
 
-        try:
-            message_data = req.get_json()
-        except ValueError:
-            return error_response("Invalid JSON", status_code=400, code="INVALID_JSON")
-
-        if not message_data or "message" not in message_data:
-            return error_response(
-                "Missing required field: message",
-                status_code=400,
-                code="MISSING_FIELD",
-            )
+        parsed, err = parse_request_body(req, CoachChatRequest)
+        if err:
+            return err
 
         client = await get_global_client()
 
@@ -73,7 +60,7 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
 
         ai_client = OpenAIClient()
         ai_response = await ai_client.coach_chat(
-            message=message_data["message"],
+            message=parsed.message,
             history=conversation_history,
             user_context=user_profile,
         )
@@ -83,7 +70,7 @@ async def coach_chat(req: func.HttpRequest) -> func.HttpResponse:
             [
                 {
                     "role": "user",
-                    "content": message_data["message"],
+                    "content": parsed.message,
                     "userId": current_user["email"],
                     "createdAt": now,
                 },
@@ -155,26 +142,21 @@ async def coach_recommend(req: func.HttpRequest) -> func.HttpResponse:
     try:
         from shared.cosmos_db import get_global_client
         from shared.openai_client import OpenAIClient
-        from shared.rate_limiter import RateLimiter
+        from shared.rate_limiter import apply_ai_generation_limit
 
         current_user = await get_current_user_from_token(req)
         if not current_user:
             return error_response("Unauthorized", status_code=401, code="UNAUTHORIZED")
 
-        rate_limiter = RateLimiter()
-        if not await rate_limiter.check_rate_limit(
-            key=f"coach_recommend:{current_user['email']}",
-            limit=30,
-            window=86400,
-        ):
-            return error_response(
-                "Rate limit exceeded", status_code=429, code="RATE_LIMITED"
-            )
+        rate_response = await apply_ai_generation_limit(req, user_id=current_user["email"])
+        if rate_response:
+            return rate_response
 
-        try:
-            context = req.get_json()
-        except ValueError:
-            return error_response("Invalid JSON", status_code=400, code="INVALID_JSON")
+        parsed, err = parse_request_body(req, WorkoutContextRequest)
+        if err:
+            return err
+
+        context = parsed.model_dump()
 
         if not context:
             return error_response(
@@ -256,27 +238,65 @@ async def coach_recovery(req: func.HttpRequest) -> func.HttpResponse:
         # Get recent workout logs
         logs = await client.get_user_workout_logs(user_id, limit=14)
 
-        # Simple heuristic: score based on rest days & volume
+        # Get HRV and sleep data from phenome store if available
+        hrv_trend = None
+        sleep_quality = None
+        try:
+            phenome_data = await client.get_phenome_store(user_id, "raw_signal")
+            if phenome_data and isinstance(phenome_data, dict) and isinstance(phenome_data.get("data"), dict):
+                pd = phenome_data["data"]
+                hrv_trend = pd.get("hrv_trend")
+                raw_sleep = pd.get("sleep_quality")
+                if isinstance(raw_sleep, (int, float)):
+                    sleep_quality = raw_sleep
+        except Exception:
+            pass  # Gracefully degrade if phenome store unavailable
+
+        # Multi-factor recovery scoring
         total_workouts = len(logs)
+
+        # Base score from workout volume
         if total_workouts == 0:
-            score = 100.0
-            status = "recovered"
-            suggestion = "You're fully rested! Time to start your fitness journey."
-            rest_days = 0
+            volume_score = 100.0
         elif total_workouts <= 3:
-            score = 85.0
+            volume_score = 85.0
+        elif total_workouts <= 6:
+            volume_score = 60.0
+        else:
+            volume_score = 35.0
+
+        # HRV modifier (±15 points)
+        hrv_modifier = 0.0
+        if hrv_trend == "improving":
+            hrv_modifier = 10.0
+        elif hrv_trend == "declining":
+            hrv_modifier = -15.0
+        elif hrv_trend == "stable":
+            hrv_modifier = 5.0
+
+        # Sleep modifier (±10 points)
+        sleep_modifier = 0.0
+        if sleep_quality is not None:
+            if sleep_quality >= 80:
+                sleep_modifier = 10.0
+            elif sleep_quality >= 60:
+                sleep_modifier = 0.0
+            else:
+                sleep_modifier = -10.0
+
+        score = max(0.0, min(100.0, volume_score + hrv_modifier + sleep_modifier))
+
+        if score >= 75:
             status = "recovered"
             suggestion = "Good recovery. You're ready for your next workout."
             rest_days = 0
-        elif total_workouts <= 6:
-            score = 60.0
+        elif score >= 50:
             status = "recovering"
             suggestion = "Consider a lighter session or active recovery today."
             rest_days = 1
         else:
-            score = 35.0
             status = "fatigued"
-            suggestion = "High training volume detected. A rest day is recommended."
+            suggestion = "High training load or low recovery signals. A rest day is recommended."
             rest_days = 2
 
         factors = [
@@ -287,6 +307,22 @@ async def coach_recovery(req: func.HttpRequest) -> func.HttpResponse:
                 "description": f"{total_workouts} workouts in last 14 days",
             },
         ]
+
+        if hrv_trend:
+            factors.append({
+                "name": "HRV Trend",
+                "value": hrv_modifier,
+                "impact": "negative" if hrv_modifier < 0 else "positive",
+                "description": f"HRV trend: {hrv_trend}",
+            })
+
+        if sleep_quality is not None:
+            factors.append({
+                "name": "Sleep Quality",
+                "value": float(sleep_quality),
+                "impact": "negative" if sleep_quality < 60 else "positive",
+                "description": f"Recent sleep quality: {sleep_quality}%",
+            })
 
         # Get trust state for additional context
         trust_state = await client.get_trust_state(user_id)

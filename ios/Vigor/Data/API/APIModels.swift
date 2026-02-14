@@ -220,12 +220,12 @@ struct PhaseTransition: Codable {
 struct RecoveryAssessment: Codable {
     let score: Double // 0-100
     let status: String // "recovered", "recovering", "fatigued", "overtrained"
-    let factors: [RecoveryFactor]
+    let factors: [RecoveryFactorDTO]
     let recommendation: String
     let suggestedRestDays: Int
 }
 
-struct RecoveryFactor: Codable {
+struct RecoveryFactorDTO: Codable {
     let name: String
     let value: Double
     let impact: String // "positive", "neutral", "negative"
@@ -250,7 +250,7 @@ struct PushTokenRequest: Codable {
 
 // MARK: - Ghost Health
 
-struct GhostHealth: Codable {
+struct GhostHealthDTO: Codable {
     let mode: String
     let successRate: Double
     let lastCycleTime: Date?

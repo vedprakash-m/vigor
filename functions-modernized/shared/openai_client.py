@@ -11,10 +11,45 @@ import time
 from typing import Any, Dict, List, Optional
 
 from openai import AsyncOpenAI
+from pydantic import BaseModel, Field, ValidationError
 
 from .config import get_settings
 
 logger = logging.getLogger(__name__)
+
+
+# ── Response validation schemas ──────────────────────────────────────────────
+
+
+class WorkoutExerciseSchema(BaseModel):
+    """Schema for a single exercise in an AI-generated workout."""
+    name: str
+    sets: int = Field(ge=1, le=10, default=3)
+    reps: Optional[str] = None
+    rest: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class WorkoutResponseSchema(BaseModel):
+    """Schema for validating AI-generated workout JSON responses."""
+    name: str = "Custom Workout"
+    description: str = "AI-generated workout plan"
+    exercises: List[WorkoutExerciseSchema] = Field(default_factory=list, max_length=20)
+    warmup: Optional[str] = None
+    cooldown: Optional[str] = None
+    tips: List[str] = Field(default_factory=list)
+    durationMinutes: int = Field(ge=5, le=120, default=45)
+    difficulty: str = "moderate"
+    equipment: List[str] = Field(default_factory=list)
+
+
+class WorkoutAnalysisSchema(BaseModel):
+    """Schema for validating AI workout analysis responses."""
+    summary: str = ""
+    positives: List[str] = Field(default_factory=list)
+    improvements: List[str] = Field(default_factory=list)
+    recommendations: List[str] = Field(default_factory=list)
+    motivationalMessage: str = ""
 
 
 class OpenAIClient:
@@ -114,13 +149,34 @@ class OpenAIClient:
                 max_completion_tokens=2000,
             )
 
-            # Parse response
+            # Parse and validate response through schema
             logger.info(f"OpenAI response: {response}")
             content = response.choices[0].message.content
             logger.info(f"Response content: {content}")
             if not content:
                 raise ValueError("Empty response from OpenAI")
-            workout_data = json.loads(content)
+
+            # Strip markdown fences if LLM wraps JSON
+            stripped = content.strip()
+            if stripped.startswith("```"):
+                stripped = stripped.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+
+            raw_data = json.loads(stripped)
+
+            # Validate through Pydantic schema
+            try:
+                validated = WorkoutResponseSchema(**raw_data)
+                workout_data = validated.model_dump()
+            except ValidationError as ve:
+                logger.warning(f"Workout response failed schema validation: {ve}")
+                # Fall back to raw data with safety defaults
+                workout_data = raw_data
+                workout_data.setdefault("name", "Custom Workout")
+                workout_data.setdefault("description", "AI-generated workout plan")
+                workout_data.setdefault("exercises", [])
+                workout_data.setdefault("durationMinutes", duration)
+                workout_data.setdefault("difficulty", difficulty)
+                workout_data.setdefault("equipment", equipment)
 
             # Add metadata
             workout_data["metadata"] = {
@@ -133,13 +189,6 @@ class OpenAIClient:
                 + (goals if isinstance(goals, list) else [goals]),
             }
 
-            # Ensure required fields exist
-            workout_data.setdefault("name", "Custom Workout")
-            workout_data.setdefault("description", "AI-generated workout plan")
-            workout_data.setdefault("exercises", [])
-            workout_data.setdefault("durationMinutes", duration)
-            workout_data.setdefault("difficulty", difficulty)
-            workout_data.setdefault("equipment", equipment)
             workout_data.setdefault("aiGenerated", True)
 
             return workout_data
@@ -299,7 +348,21 @@ Provide a JSON response with:
             content = response.choices[0].message.content
             if not content:
                 raise ValueError("Empty response from OpenAI")
-            return json.loads(content)
+
+            # Strip markdown fences if LLM wraps JSON
+            stripped = content.strip()
+            if stripped.startswith("```"):
+                stripped = stripped.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+
+            raw_data = json.loads(stripped)
+
+            # Validate through Pydantic schema
+            try:
+                validated = WorkoutAnalysisSchema(**raw_data)
+                return validated.model_dump()
+            except ValidationError as ve:
+                logger.warning(f"Workout analysis failed schema validation: {ve}")
+                return raw_data
 
         except Exception as e:
             logger.error(f"Error analyzing workout: {type(e).__name__}: {str(e)}")

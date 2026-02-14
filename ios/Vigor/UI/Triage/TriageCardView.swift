@@ -56,12 +56,12 @@ struct TriageCardView: View {
             // Workout type icon
             ZStack {
                 Circle()
-                    .fill(card.workoutType.color.opacity(0.15))
+                    .fill(card.workoutType.swiftUIColor.opacity(0.15))
                     .frame(width: 44, height: 44)
 
                 Image(systemName: card.workoutType.iconName)
                     .font(.title3)
-                    .foregroundColor(card.workoutType.color)
+                    .foregroundColor(card.workoutType.swiftUIColor)
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -379,29 +379,8 @@ struct AlternativeSlot {
     }
 }
 
-extension WorkoutType {
-    var color: Color {
-        switch self {
-        case .strength: return .orange
-        case .cardio: return .red
-        case .hiit: return .purple
-        case .mobility: return .green
-        case .recovery: return .blue
-        case .custom: return .gray
-        }
-    }
-
-    var iconName: String {
-        switch self {
-        case .strength: return "dumbbell.fill"
-        case .cardio: return "figure.run"
-        case .hiit: return "bolt.fill"
-        case .mobility: return "figure.flexibility"
-        case .recovery: return "heart.fill"
-        case .custom: return "star.fill"
-        }
-    }
-}
+// WorkoutType.iconName defined in HealthKitTypes.swift
+// WorkoutType.swiftUIColor defined in TriageCard.swift
 
 // MARK: - Preview
 

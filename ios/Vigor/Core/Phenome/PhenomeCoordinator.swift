@@ -2,9 +2,6 @@
 //  PhenomeCoordinator.swift
 //  Vigor
 //
-//  Created by Vigor Team on January 27, 2026.
-//  Copyright © 2026 Vigor. All rights reserved.
-//
 //  Phenome storage coordinator managing three physical stores:
 //  - RawSignalStore: HealthKit data, calendar events
 //  - DerivedStateStore: Recovery scores, patterns, predictions
@@ -30,45 +27,20 @@ final class PhenomeCoordinator: ObservableObject {
     @Published private(set) var lastSyncTimestamp: Date?
     @Published private(set) var currentRecoveryScore: Double = 0.0
 
-    // MARK: - Stores
+    // MARK: - Stores (shared singletons backed by Core Data)
 
-    private let rawSignalStore = RawSignalStore()
-    private let derivedStateStore = DerivedStateStore()
-    private let behavioralMemoryStore = BehavioralMemoryStore()
+    private let rawSignalStore = RawSignalStore.shared
+    private let derivedStateStore = DerivedStateStore.shared
+    private let behavioralMemoryStore = BehavioralMemoryStore.shared
 
     // MARK: - Metric Registry
 
     private let metricRegistry = MetricRegistry()
 
-    // MARK: - Core Data Stack
-
-    private lazy var persistentContainer: NSPersistentCloudKitContainer = {
-        let container = NSPersistentCloudKitContainer(name: "Phenome")
-
-        // Configure for CloudKit sync
-        let description = container.persistentStoreDescriptions.first!
-        description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
-            containerIdentifier: "iCloud.com.vigor.phenome"
-        )
-
-        // Enable history tracking for CloudKit sync
-        description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
-        description.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
-
-        container.loadPersistentStores { description, error in
-            if let error = error {
-                fatalError("Failed to load Phenome store: \(error)")
-            }
-        }
-
-        container.viewContext.automaticallyMergesChangesFromParent = true
-        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
-
-        return container
-    }()
+    // MARK: - Core Data (delegated to CoreDataStack)
 
     var viewContext: NSManagedObjectContext {
-        persistentContainer.viewContext
+        CoreDataStack.shared.viewContext
     }
 
     // MARK: - Initialization
@@ -100,7 +72,9 @@ final class PhenomeCoordinator: ObservableObject {
     // MARK: - Workout Preferences
 
     var workoutPreferences: WorkoutPreferences {
-        behavioralMemoryStore.workoutPreferences
+        get async {
+            await behavioralMemoryStore.workoutPreferences
+        }
     }
 
     // MARK: - Recovery Score Calculation
@@ -174,6 +148,10 @@ final class PhenomeCoordinator: ObservableObject {
         await derivedStateStore.updateBlockType(blockId, newType: newType)
     }
 
+    func updateBlockTime(_ blockId: String, newStart: Date, newEnd: Date) async {
+        await derivedStateStore.updateBlockTime(blockId, newStart: newStart, newEnd: newEnd)
+    }
+
     func recordMissedBlock(_ block: TrainingBlock) async {
         await derivedStateStore.recordMissedBlock(block)
         await behavioralMemoryStore.recordMissedWorkout(
@@ -215,27 +193,31 @@ final class PhenomeCoordinator: ObservableObject {
 
     // MARK: - Anonymized Snapshot
 
-    func anonymizedSnapshot() -> PhenomeSnapshot {
-        PhenomeSnapshot(
+    func anonymizedSnapshot() async -> PhenomeSnapshot {
+        let avgSleep = await rawSignalStore.averageSleepHours
+        let avgHRV = await rawSignalStore.averageHRV
+        let workoutsPerWeek = await derivedStateStore.averageWorkoutsPerWeek
+        let preferredTime = await behavioralMemoryStore.preferredWorkoutTime
+        let equipment = await behavioralMemoryStore.availableEquipment
+
+        return PhenomeSnapshot(
             recoveryScore: currentRecoveryScore,
-            averageSleepHours: rawSignalStore.averageSleepHours,
-            averageHRV: rawSignalStore.averageHRV,
-            workoutsPerWeek: derivedStateStore.averageWorkoutsPerWeek,
-            preferredWorkoutTime: behavioralMemoryStore.preferredWorkoutTime,
-            equipmentAvailable: behavioralMemoryStore.availableEquipment
+            averageSleepHours: avgSleep,
+            averageHRV: avgHRV,
+            workoutsPerWeek: workoutsPerWeek,
+            preferredWorkoutTime: preferredTime,
+            equipmentAvailable: equipment
         )
     }
 
     // MARK: - Persistence
 
     func savePendingChanges() async {
-        do {
-            if viewContext.hasChanges {
-                try viewContext.save()
-            }
-        } catch {
-            // Log error but don't throw - this is a cleanup operation
-        }
+        // Flush any buffered decision receipts
+        await DecisionReceiptStore.shared.flush()
+
+        // Save Core Data view context
+        CoreDataStack.shared.saveViewContext()
 
         UserDefaults.standard.set(lastSyncTimestamp, forKey: "phenomeLastSync")
     }

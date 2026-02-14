@@ -18,6 +18,9 @@ import Combine
 @MainActor
 final class GhostHealthMonitor: ObservableObject {
 
+    // MARK: - Singleton
+    static let shared = GhostHealthMonitor()
+
     // MARK: - Published State
 
     @Published private(set) var currentMode: GhostHealthMode = .healthy
@@ -253,6 +256,29 @@ final class GhostHealthMonitor: ObservableObject {
 
         await recalculateHealth()
     }
+
+    // MARK: - System Failure Recording
+
+    func recordSystemFailure(_ message: String) async {
+        issues.append(GhostHealthIssue(
+            type: .cycleFailure,
+            description: message,
+            timestamp: Date(),
+            severity: .critical
+        ))
+        await recalculateHealth()
+    }
+
+    // MARK: - Health Snapshot
+
+    func getHealth() -> GhostHealthSnapshot {
+        GhostHealthSnapshot(
+            mode: currentMode,
+            score: healthScore,
+            issueCount: issues.count,
+            lastCheck: lastHealthCheck
+        )
+    }
 }
 
 // MARK: - Supporting Types
@@ -313,4 +339,13 @@ struct GhostHealthIssue: Identifiable {
         case warning
         case critical
     }
+}
+
+// MARK: - Ghost Health Snapshot
+
+struct GhostHealthSnapshot: Codable {
+    let mode: GhostHealthMode
+    let score: Double
+    let issueCount: Int
+    let lastCheck: Date?
 }

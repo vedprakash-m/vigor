@@ -10,6 +10,7 @@
 //
 
 import Foundation
+import UIKit
 
 actor VigorAPIClient {
 
@@ -74,6 +75,40 @@ actor VigorAPIClient {
         return response
     }
 
+    #if ENABLE_MSAL
+    func getUserProfile(token: String) async throws -> VigorUser {
+        setAuthToken(token)
+        let profile = try await fetchUserProfile()
+        return VigorUser(
+            id: profile.id,
+            email: profile.email,
+            displayName: profile.displayName,
+            tier: .free,
+            createdAt: profile.createdAt,
+            lastActiveAt: profile.updatedAt,
+            preferences: nil
+        )
+    }
+
+    func createUser(token: String) async throws -> VigorUser {
+        setAuthToken(token)
+        let profile: UserProfile = try await request(
+            endpoint: "user/profile",
+            method: .post,
+            body: UserProfileUpdate(displayName: nil, preferences: nil)
+        )
+        return VigorUser(
+            id: profile.id,
+            email: profile.email,
+            displayName: profile.displayName,
+            tier: .free,
+            createdAt: profile.createdAt,
+            lastActiveAt: profile.updatedAt,
+            preferences: nil
+        )
+    }
+    #endif
+
     func updateUserProfile(_ profile: UserProfileUpdate) async throws {
         let _: EmptyResponse = try await request(
             endpoint: "user/profile",
@@ -102,7 +137,7 @@ actor VigorAPIClient {
         }
     }
 
-    func reportHealthStatus(_ health: GhostHealth) async throws {
+    func reportHealthStatus(_ health: GhostHealthSnapshot) async throws {
         let _: EmptyResponse = try await request(
             endpoint: "ghost/health",
             method: .post,
@@ -192,6 +227,29 @@ actor VigorAPIClient {
         let response: RecoveryAssessment = try await request(
             endpoint: "coach/recovery",
             method: .get
+        )
+        return response
+    }
+
+    func generateWorkout(
+        window: TimeWindow,
+        preferences: WorkoutPreferences,
+        phenomeSnapshot: PhenomeSnapshot
+    ) async throws -> GeneratedWorkout {
+        struct GenerateWorkoutRequest: Codable {
+            let startTime: Date
+            let endTime: Date
+            let durationMinutes: Int
+        }
+        let req = GenerateWorkoutRequest(
+            startTime: window.start,
+            endTime: window.end,
+            durationMinutes: Int(window.duration / 60)
+        )
+        let response: GeneratedWorkout = try await request(
+            endpoint: "coach/generate-workout",
+            method: .post,
+            body: req
         )
         return response
     }
@@ -312,15 +370,18 @@ actor VigorAPIClient {
     // MARK: - Helper Methods
 
     private func collectLocalGhostState() async -> GhostStateDTO {
-        let trustState = await TrustStateMachine.shared.getState()
-        let health = await GhostHealthMonitor.shared.getHealth()
+        let trustMachine = await TrustStateMachine.shared
+        let trustScore = await trustMachine.trustScore
+        let trustPhase = await trustMachine.currentPhase
+        let wakeStats = await SilentPushReceiver.shared.getWakeStatistics()
+        let deviceId = await UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
 
         return GhostStateDTO(
-            trustScore: trustState.score,
-            trustPhase: trustState.phase.rawValue,
-            healthMode: health.mode.rawValue,
-            lastWakeTime: await SilentPushReceiver.shared.getWakeStatistics().lastWakeTime,
-            deviceId: UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
+            trustScore: trustScore,
+            trustPhase: String(trustPhase.rawValue),
+            healthMode: "healthy",
+            lastWakeTime: wakeStats.lastWakeTime,
+            deviceId: deviceId
         )
     }
 }

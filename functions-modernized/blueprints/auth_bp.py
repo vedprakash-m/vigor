@@ -8,7 +8,7 @@ import logging
 import azure.functions as func
 
 from shared.auth import get_current_user_from_token
-from shared.helpers import error_response, success_response
+from shared.helpers import error_response, parse_request_body, success_response
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,6 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
     """Get or update user profile"""
     try:
         from shared.cosmos_db import get_global_client
-        from shared.rate_limiter import RateLimiter
 
         current_user = await get_current_user_from_token(req)
         if not current_user:
@@ -71,23 +70,29 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
             return success_response(profile)
 
         elif req.method == "PUT":
-            rate_limiter = RateLimiter()
-            if not await rate_limiter.check_rate_limit(
-                key=f"profile_update:{current_user['email']}",
-                limit=10,
-                window=3600,
-            ):
-                return error_response(
-                    "Rate limit exceeded", status_code=429, code="RATE_LIMITED"
-                )
+            from shared.rate_limiter import apply_rate_limit
+            from shared.models import UserProfileUpdate
 
-            try:
-                profile_data = req.get_json()
-            except ValueError:
+            rate_response = await apply_rate_limit(
+                req,
+                limit=10,
+                window_seconds=3600,
+                user_id=current_user["email"],
+            )
+            if rate_response:
+                return rate_response
+
+            parsed, err = parse_request_body(req, UserProfileUpdate)
+            if err:
+                return err
+
+            # Only send non-None fields to Cosmos
+            profile_data = parsed.model_dump(exclude_none=True)
+            if not profile_data:
                 return error_response(
-                    "Invalid JSON in request body",
+                    "No valid fields to update",
                     status_code=400,
-                    code="INVALID_JSON",
+                    code="EMPTY_UPDATE",
                 )
 
             updated_profile = await client.update_user_profile(

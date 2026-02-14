@@ -6,11 +6,14 @@
 //  Copyright © 2026 Vigor. All rights reserved.
 //
 //  Microsoft Entra ID (MSAL) authentication for iOS.
+//  When ENABLE_MSAL is not defined (free provisioning), a dev-mode stub is used instead.
 //  Per Task 1.2
 //
 
 import Foundation
+#if ENABLE_MSAL
 import MSAL
+#endif
 import Combine
 
 @MainActor
@@ -27,6 +30,7 @@ final class AuthManager: ObservableObject {
     @Published private(set) var isLoading = false
     @Published var error: AuthError?
 
+#if ENABLE_MSAL
     // MARK: - MSAL Client
 
     private var msalClient: MSALPublicClientApplication?
@@ -224,6 +228,41 @@ final class AuthManager: ObservableObject {
             sourceApplication: nil
         )
     }
+
+#else
+    // MARK: - Dev Mode Stub (Free Provisioning - no MSAL)
+
+    private init() {
+        // Auto-authenticate in dev mode for local testing
+        self.isAuthenticated = true
+        self.currentUser = VigorUser(
+            id: "dev-user-\(UUID().uuidString.prefix(8))",
+            email: "dev@vigor.local",
+            displayName: "Dev Tester",
+            tier: .free,
+            createdAt: Date(),
+            lastActiveAt: Date(),
+            preferences: nil
+        )
+    }
+
+    func signIn() async throws {
+        isAuthenticated = true
+    }
+
+    func signOut() async {
+        isAuthenticated = false
+        currentUser = nil
+    }
+
+    func getAccessToken() async throws -> String {
+        return "dev-token-free-provisioning"
+    }
+
+    func handleAuthCallback(url: URL) -> Bool {
+        return false
+    }
+#endif
 }
 
 // MARK: - Auth Errors
@@ -278,7 +317,7 @@ struct VigorUser: Codable, Identifiable {
     let tier: UserTier
     let createdAt: Date
     var lastActiveAt: Date
-    var preferences: UserPreferences?
+    var preferences: VigorUserPreferences?
 
     enum UserTier: String, Codable {
         case free = "free"
@@ -287,7 +326,7 @@ struct VigorUser: Codable, Identifiable {
     }
 }
 
-struct UserPreferences: Codable {
+struct VigorUserPreferences: Codable {
     var preferredWorkoutDays: [Int]       // 1-7 (Sun-Sat)
     var preferredWorkoutTime: String      // "morning", "afternoon", "evening"
     var availableEquipment: [String]

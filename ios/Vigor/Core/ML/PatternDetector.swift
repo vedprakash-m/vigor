@@ -83,9 +83,9 @@ actor PatternDetector {
         }
 
         for workout in workouts {
-            let day = Calendar.current.component(.weekday, from: workout.date)
+            let day = Calendar.current.component(.weekday, from: workout.startTime)
             dayStats[day]?.totalScheduled += 1
-            if workout.completed {
+            if workout.wasCompleted {
                 dayStats[day]?.completed += 1
             }
         }
@@ -131,17 +131,17 @@ actor PatternDetector {
         var eveningTotal = 0
 
         for workout in workouts {
-            let hour = Calendar.current.component(.hour, from: workout.date)
+            let hour = Calendar.current.component(.hour, from: workout.startTime)
 
             if morningHours.contains(hour) {
                 morningTotal += 1
-                if workout.completed { morningSuccess += 1 }
+                if workout.wasCompleted { morningSuccess += 1 }
             } else if middayHours.contains(hour) {
                 middayTotal += 1
-                if workout.completed { middaySuccess += 1 }
+                if workout.wasCompleted { middaySuccess += 1 }
             } else if eveningHours.contains(hour) {
                 eveningTotal += 1
-                if workout.completed { eveningSuccess += 1 }
+                if workout.wasCompleted { eveningSuccess += 1 }
             }
         }
 
@@ -156,11 +156,15 @@ actor PatternDetector {
         let preferredPeriod = significantRates.max { $0.1 < $1.1 }?.0
 
         // Find peak hours from slot data
-        let peakHours = slots
-            .filter { $0.value.totalAttempts >= minDataPointsForPattern }
-            .sorted { ($0.value.completedCount / max(1, $0.value.totalAttempts)) > ($1.value.completedCount / max(1, $1.value.totalAttempts)) }
-            .prefix(3)
-            .map { $0.key.hourOfDay }
+        let filteredSlots = slots.filter { ($0.value.completedCount + $0.value.missedCount) >= minDataPointsForPattern }
+        let sortedSlots = filteredSlots.sorted { lhs, rhs in
+            let lhsTotal = max(1, lhs.value.completedCount + lhs.value.missedCount)
+            let rhsTotal = max(1, rhs.value.completedCount + rhs.value.missedCount)
+            let lhsRate = Double(lhs.value.completedCount) / Double(lhsTotal)
+            let rhsRate = Double(rhs.value.completedCount) / Double(rhsTotal)
+            return lhsRate > rhsRate
+        }
+        let peakHours = sortedSlots.prefix(3).map { $0.key.hourOfDay }
 
         return TimeOfDayPatterns(
             preferredPeriod: preferredPeriod,
@@ -177,10 +181,10 @@ actor PatternDetector {
         var typeStats: [String: (completed: Int, total: Int)] = [:]
 
         for workout in workouts {
-            let type = workout.workoutType
+            let type = workout.type
             var stats = typeStats[type] ?? (0, 0)
             stats.total += 1
-            if workout.completed {
+            if workout.wasCompleted {
                 stats.completed += 1
             }
             typeStats[type] = stats
@@ -208,7 +212,7 @@ actor PatternDetector {
     // MARK: - Skip Patterns
 
     private func analyzeSkipPatterns(from workouts: [WorkoutRecord]) -> SkipPatterns {
-        let skippedWorkouts = workouts.filter { !$0.completed }
+        let skippedWorkouts = workouts.filter { !$0.wasCompleted }
 
         guard skippedWorkouts.count >= minDataPointsForPattern else {
             return SkipPatterns(
@@ -225,8 +229,8 @@ actor PatternDetector {
         var skipHourCount: [Int: Int] = [:]
 
         for workout in skippedWorkouts {
-            let day = Calendar.current.component(.weekday, from: workout.date)
-            let hour = Calendar.current.component(.hour, from: workout.date)
+            let day = Calendar.current.component(.weekday, from: workout.startTime)
+            let hour = Calendar.current.component(.hour, from: workout.startTime)
             skipDayCount[day, default: 0] += 1
             skipHourCount[hour, default: 0] += 1
         }
@@ -245,8 +249,8 @@ actor PatternDetector {
         var totalStreaks = 0
         var streakCount = 0
 
-        for workout in workouts.sorted(by: { $0.date < $1.date }) {
-            if workout.completed {
+        for workout in workouts.sorted(by: { $0.startTime < $1.startTime }) {
+            if workout.wasCompleted {
                 if currentStreak > 0 {
                     totalStreaks += currentStreak
                     streakCount += 1
@@ -271,14 +275,14 @@ actor PatternDetector {
     // MARK: - Streak Patterns
 
     private func analyzeStreakPatterns(from workouts: [WorkoutRecord]) -> StreakPatterns {
-        let sortedWorkouts = workouts.sorted { $0.date < $1.date }
+        let sortedWorkouts = workouts.sorted { $0.startTime < $1.startTime }
 
         var currentStreak = 0
         var longestStreak = 0
         var streakLengths: [Int] = []
 
         for workout in sortedWorkouts {
-            if workout.completed {
+            if workout.wasCompleted {
                 currentStreak += 1
                 longestStreak = max(longestStreak, currentStreak)
             } else {
@@ -299,7 +303,7 @@ actor PatternDetector {
         // Calculate current streak
         var activeStreak = 0
         for workout in sortedWorkouts.reversed() {
-            if workout.completed {
+            if workout.wasCompleted {
                 activeStreak += 1
             } else {
                 break
@@ -506,6 +510,15 @@ private struct DayStats {
 struct RecoveryRecord {
     let date: Date
     let score: Double
+}
+
+// MARK: - WorkoutRecord Convenience
+
+extension WorkoutRecord {
+    /// Whether this workout was completed (a recorded workout with an end time is considered completed).
+    var wasCompleted: Bool {
+        endTime > startTime
+    }
 }
 
 // MARK: - Store Extensions

@@ -24,6 +24,8 @@ sys.modules.setdefault("shared.openai_client", _mock_openai_mod)
 
 _mock_rl_mod = types.ModuleType("shared.rate_limiter")
 _mock_rl_mod.RateLimiter = MagicMock  # type: ignore[attr-defined]
+_mock_rl_mod.apply_ai_generation_limit = AsyncMock(return_value=None)  # type: ignore[attr-defined]
+_mock_rl_mod.apply_rate_limit = AsyncMock(return_value=None)  # type: ignore[attr-defined]
 sys.modules.setdefault("shared.rate_limiter", _mock_rl_mod)
 
 
@@ -114,7 +116,7 @@ class TestCoachChat:
             req = _make_request(method="POST", body={"not_message": "oops"})
             resp = await coach_chat(req)
 
-        assert resp.status_code == 400
+        assert resp.status_code == 422  # Pydantic validation error (missing required field)
 
     @pytest.mark.asyncio
     async def test_unauthenticated_returns_401(self):

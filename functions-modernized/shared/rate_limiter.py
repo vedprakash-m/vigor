@@ -1,6 +1,18 @@
 """
 Rate limiting module for Vigor Functions
 Provides rate limiting functionality for Azure Functions endpoints
+
+DESIGN NOTE (Phase 10.7):
+This rate limiter uses an in-memory dictionary, which means:
+  • Limits are per-instance: each Azure Functions worker has its own counters.
+    Under the Consumption plan a single warm instance usually handles most
+    traffic, so this is an acceptable "best-effort" throttle.
+  • Counters are lost on cold starts and scale-out events.
+  • For strict global rate limiting, switch to a Redis or Cosmos DB–backed
+    store (e.g. Azure Cache for Redis with sliding-window counters).
+    This is documented but deferred — the current approach is sufficient for
+    the projected user base (single-tenant iOS app, <100 daily active users
+    at launch).
 """
 
 import json

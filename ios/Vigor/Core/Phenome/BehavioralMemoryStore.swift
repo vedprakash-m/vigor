@@ -11,8 +11,12 @@
 //
 
 import Foundation
+import CoreData
 
 actor BehavioralMemoryStore {
+
+    // MARK: - Singleton
+    static let shared = BehavioralMemoryStore()
 
     // MARK: - Storage
 
@@ -39,6 +43,18 @@ actor BehavioralMemoryStore {
 
     func updatePreferences(_ preferences: WorkoutPreferences) {
         _workoutPreferences = preferences
+        persistPreferences()
+    }
+
+    /// Convenience overload for updating from raw dictionary (e.g. onboarding)
+    func updatePreferences(_ dict: [String: Any]) {
+        // Apply known keys to the current preferences
+        if let days = dict["workout_days_per_week"] as? Int {
+            _workoutPreferences.preferredDays = Array(2...(min(days + 1, 7)))
+        }
+        if let duration = dict["preferred_duration"] as? Int {
+            _workoutPreferences.sessionDurationMinutes = duration
+        }
         persistPreferences()
     }
 
@@ -170,16 +186,75 @@ actor BehavioralMemoryStore {
 
     // MARK: - Persistence
 
+    private var stack: CoreDataStack { CoreDataStack.shared }
+
     private func persistPreferences() {
         if let data = try? JSONEncoder().encode(_workoutPreferences) {
             UserDefaults.standard.set(data, forKey: "workoutPreferences")
         }
     }
 
+    /// Save all behavioral data to Core Data (sacred times, time slots, patterns).
+    func saveAll() {
+        let ctx = stack.newBackgroundContext()
+        ctx.performAndWait {
+            // --- Sacred Times: delete all, re-insert ---
+            let deleteSacred = NSFetchRequest<NSFetchRequestResult>(entityName: "SacredTimeEntity")
+            if let deleteReq = try? NSBatchDeleteRequest(fetchRequest: deleteSacred) as NSPersistentStoreRequest {
+                _ = try? ctx.execute(deleteReq as! NSPersistentStoreRequest)
+            }
+            for sacred in sacredTimes {
+                _ = SacredTimeEntity.from(sacred, context: ctx)
+            }
+
+            // --- Time Slot Stats: delete all, re-insert ---
+            let deleteSlots = NSFetchRequest<NSFetchRequestResult>(entityName: "TimeSlotStatsEntity")
+            if let deleteReq = try? NSBatchDeleteRequest(fetchRequest: deleteSlots) as NSPersistentStoreRequest {
+                _ = try? ctx.execute(deleteReq as! NSPersistentStoreRequest)
+            }
+            for (key, stats) in timeSlotHistory {
+                _ = TimeSlotStatsEntity.from(key: key, stats: stats, context: ctx)
+            }
+
+            // --- Workout Patterns: delete all, re-insert ---
+            let deletePatterns = NSFetchRequest<NSFetchRequestResult>(entityName: "WorkoutPatternEntity")
+            if let deleteReq = try? NSBatchDeleteRequest(fetchRequest: deletePatterns) as NSPersistentStoreRequest {
+                _ = try? ctx.execute(deleteReq as! NSPersistentStoreRequest)
+            }
+            for pattern in workoutPatterns {
+                _ = WorkoutPatternEntity.from(pattern, context: ctx)
+            }
+
+            CoreDataStack.save(ctx)
+        }
+    }
+
+    /// Load all behavioral data from Core Data + UserDefaults.
     func loadPersistedData() {
+        // Load preferences from UserDefaults
         if let data = UserDefaults.standard.data(forKey: "workoutPreferences"),
            let preferences = try? JSONDecoder().decode(WorkoutPreferences.self, from: data) {
             _workoutPreferences = preferences
+        }
+
+        // Load sacred times from Core Data
+        let ctx = stack.viewContext
+        ctx.performAndWait {
+            let sacredReq = SacredTimeEntity.fetchRequest()
+            sacredTimes = ((try? ctx.fetch(sacredReq)) ?? []).map { $0.toDomain() }
+
+            // Load time slot history
+            let slotReq = TimeSlotStatsEntity.fetchRequest()
+            let slotEntities = (try? ctx.fetch(slotReq)) ?? []
+            timeSlotHistory = [:]
+            for entity in slotEntities {
+                let (key, stats) = entity.toDomain()
+                timeSlotHistory[key] = stats
+            }
+
+            // Load workout patterns
+            let patternReq = WorkoutPatternEntity.fetchRequest()
+            workoutPatterns = ((try? ctx.fetch(patternReq)) ?? []).map { $0.toDomain() }
         }
     }
 }
