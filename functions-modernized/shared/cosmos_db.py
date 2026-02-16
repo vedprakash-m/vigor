@@ -77,6 +77,158 @@ class CosmosDBClient:
             await self.initialize()
 
     # =============================================================================
+    # WS-15D: SCHEMA NORMALIZATION HELPERS
+    # =============================================================================
+
+    _PHASE_ALIASES = {
+        "observer": "observer",
+        "scheduler": "scheduler",
+        "auto_scheduler": "auto_scheduler",
+        "auto-scheduler": "auto_scheduler",
+        "autoscheduler": "auto_scheduler",
+        "transformer": "transformer",
+        "full_ghost": "full_ghost",
+        "full-ghost": "full_ghost",
+        "full ghost": "full_ghost",
+    }
+
+    _PHASE_DISPLAY = {
+        "observer": "Observer",
+        "scheduler": "Scheduler",
+        "auto_scheduler": "Auto-Scheduler",
+        "transformer": "Transformer",
+        "full_ghost": "Full Ghost",
+    }
+
+    def _normalize_phase(self, raw_phase: Any) -> str:
+        """Normalize trust phase to canonical snake_case value."""
+        if raw_phase is None:
+            return "observer"
+        key = str(raw_phase).strip().lower()
+        return self._PHASE_ALIASES.get(key, "observer")
+
+    def _phase_display_name(self, canonical_phase: str) -> str:
+        """Return frontend display name for canonical phase."""
+        return self._PHASE_DISPLAY.get(canonical_phase, "Observer")
+
+    def _normalize_trust_score(self, payload: Dict[str, Any]) -> float:
+        """Normalize trust score to 0-100 from mixed historical fields."""
+        if "trust_score" in payload and isinstance(payload.get("trust_score"), (int, float)):
+            score = float(payload["trust_score"])
+        elif "trustScore" in payload and isinstance(payload.get("trustScore"), (int, float)):
+            score = float(payload["trustScore"])
+        elif "confidence" in payload and isinstance(payload.get("confidence"), (int, float)):
+            confidence = float(payload["confidence"])
+            score = confidence * 100.0 if confidence <= 1.0 else confidence
+        else:
+            score = 0.0
+        return max(0.0, min(100.0, score))
+
+    def _get_first_present(self, payload: Dict[str, Any], keys: List[str], default: Any = None) -> Any:
+        """Get first non-empty value from keys."""
+        for key in keys:
+            value = payload.get(key)
+            if value is not None and value != "":
+                return value
+        return default
+
+    def _safe_iso_timestamp(self, payload: Dict[str, Any]) -> str:
+        """Get best-effort timestamp from mixed historical fields."""
+        candidate = self._get_first_present(
+            payload,
+            ["updatedAt", "updated_at", "last_updated", "createdAt", "created_at", "timestamp"],
+            None,
+        )
+        return str(candidate) if candidate else datetime.now(timezone.utc).isoformat()
+
+    def _normalize_trust_state_document(
+        self,
+        state_doc: Optional[Dict[str, Any]],
+        *,
+        user_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Normalize trust state document to canonical backend shape."""
+        source = state_doc or {}
+        resolved_user = self._get_first_present(source, ["userId", "user_id", "email", "id"], user_id)
+        canonical_phase = self._normalize_phase(
+            self._get_first_present(source, ["phase", "trust_phase", "trustPhase"], "observer")
+        )
+        canonical = dict(source)
+        canonical["id"] = str(self._get_first_present(source, ["id"], str(uuid4())))
+        canonical["userId"] = str(resolved_user or "")
+        canonical["phase"] = canonical_phase
+        canonical["trust_score"] = self._normalize_trust_score(source)
+        canonical["consecutive_deletes"] = int(source.get("consecutive_deletes", 0) or 0)
+        canonical["last_updated"] = self._safe_iso_timestamp(source)
+        canonical.pop("confidence", None)
+        return canonical
+
+    def _normalize_admin_user(self, user_doc: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalize user document to admin dashboard contract shape."""
+        source = user_doc or {}
+        profile = source.get("profile") if isinstance(source.get("profile"), dict) else {}
+        canonical_phase = self._normalize_phase(
+            self._get_first_present(source, ["trust_phase", "phase", "trustPhase"], "observer")
+        )
+        tier_raw = self._get_first_present(
+            source,
+            ["subscription_tier", "tier", "subscriptionTier"],
+            profile.get("tier", "free"),
+        )
+        tier = str(tier_raw).strip().lower()
+        if tier not in {"free", "premium", "enterprise"}:
+            tier = "free"
+
+        status_raw = self._get_first_present(source, ["status"], "active")
+        status = str(status_raw).strip().lower()
+        if status not in {"active", "inactive", "suspended"}:
+            status = "active"
+
+        watch_connected = bool(
+            self._get_first_present(source, ["watch_connected", "watchConnected"], False)
+        )
+        watch_status_raw = self._get_first_present(source, ["watch_status", "watchStatus"], None)
+        if watch_status_raw:
+            watch_status = str(watch_status_raw).upper()
+        else:
+            watch_status = "CONNECTED" if watch_connected else "DISCONNECTED"
+
+        phenome_sync = self._get_first_present(
+            source,
+            ["phenome_last_sync", "phenomeLastSync", "ghost_health_updated_at"],
+            None,
+        )
+
+        email = str(self._get_first_present(source, ["email", "user_email", "id"], ""))
+        fallback_name = email.split("@")[0] if "@" in email else "User"
+        name = str(
+            self._get_first_present(source, ["display_name", "name", "username"], fallback_name)
+        )
+
+        return {
+            "id": str(self._get_first_present(source, ["id", "userId", "user_id"], email)),
+            "email": email,
+            "name": name,
+            "tier": tier,
+            "status": status,
+            "trustPhase": self._phase_display_name(canonical_phase),
+            "trustScore": round(self._normalize_trust_score(source), 1),
+            "watchStatus": watch_status,
+            "phenomeFreshness": {
+                "status": "HEALTHY" if phenome_sync else "MISSING",
+                "lastSync": str(phenome_sync) if phenome_sync else "",
+            },
+            "lastGhostDecision": None,
+            "createdAt": str(
+                self._get_first_present(source, ["created_at", "createdAt"], datetime.now(timezone.utc).isoformat())
+            ),
+            "lastLogin": str(
+                self._get_first_present(source, ["last_active", "lastLogin", "updatedAt"], datetime.now(timezone.utc).isoformat())
+            ),
+            "workoutCount": int(self._get_first_present(source, ["workout_count", "workoutCount"], 0) or 0),
+        }
+
+    # =============================================================================
     # USER OPERATIONS
     # =============================================================================
 
@@ -698,8 +850,15 @@ class CosmosDBClient:
         container_name: str,
         query: str,
         parameters: Optional[List[Dict[str, Any]]] = None,
+        enable_cross_partition: bool = True,
     ) -> List[Dict[str, Any]]:
-        """Query documents from a container"""
+        """Query documents from a container.
+
+        Args:
+            enable_cross_partition: If True (default), enables cross-partition
+                queries. Required for admin analytics queries that don't filter
+                by partition key (userId).
+        """
         await self.ensure_initialized()
 
         try:
@@ -708,6 +867,7 @@ class CosmosDBClient:
             items = container.query_items(
                 query=query,
                 parameters=parameters or [],
+                enable_cross_partition_query=enable_cross_partition,
             )
 
             results = []
@@ -777,35 +937,43 @@ class CosmosDBClient:
             parameters = [{"name": "@userId", "value": user_id}]
 
             results = await self.query_documents("trust_states", query, parameters)
-            return results[0] if results else None
+            return self._normalize_trust_state_document(results[0], user_id=user_id) if results else None
         except Exception as e:
             logger.warning(f"Error getting trust state: {e}")
             return None
+
+    # Valid trust event types (Tech Spec §2.2.2)
+    VALID_TRUST_EVENT_TYPES = {
+        "completed_workout",
+        "missed_workout",
+        "missed_workout_excuse",
+        "user_deleted_block",
+        "suggestion_accepted",
+        "auto_scheduled_completed",
+        "transformed_schedule_accepted",
+    }
 
     async def record_trust_event(self, user_id: str, event_data: Dict[str, Any]) -> Dict[str, Any]:
         """Record a trust event and update trust state"""
         await self.ensure_initialized()
 
+        # Validate event_type against allowed enum values
+        event_type = event_data.get("event_type", "unknown")
+        if event_type not in self.VALID_TRUST_EVENT_TYPES:
+            raise ValueError(f"Invalid trust event type: {event_type}. "
+                           f"Must be one of: {', '.join(sorted(self.VALID_TRUST_EVENT_TYPES))}")
+
         try:
             # Get current state
-            current_state = await self.get_trust_state(user_id)
+            current_state = self._normalize_trust_state_document(
+                await self.get_trust_state(user_id), user_id=user_id
+            )
 
-            if not current_state:
-                current_state = {
-                    "id": str(uuid4()),
-                    "userId": user_id,
-                    "phase": "observer",
-                    "confidence": 0.0,
-                    "consecutive_deletes": 0,
-                    "events": []
-                }
-
-            # Calculate delta based on event type
-            event_type = event_data.get("event_type", "unknown")
+            # Calculate delta based on event type (0-100 scale)
             delta = self._calculate_trust_delta(event_type, current_state["phase"])
 
-            # Update state
-            current_state["confidence"] = max(0.0, min(1.0, current_state["confidence"] + delta))
+            # Update trust_score on 0-100 scale (matching iOS)
+            current_state["trust_score"] = max(0.0, min(100.0, current_state.get("trust_score", 0.0) + delta))
             current_state["last_updated"] = datetime.now(timezone.utc).isoformat()
 
             # Handle Safety Breaker
@@ -817,17 +985,17 @@ class CosmosDBClient:
             elif event_type in ["completed_workout", "suggestion_accepted"]:
                 current_state["consecutive_deletes"] = 0
 
-            # Check for phase progression
-            current_state["phase"] = self._check_phase_progression(
-                current_state["phase"],
-                current_state["confidence"]
-            )
+            # Phase is authoritative from iOS — backend does NOT independently
+            # compute phase progression.  If iOS sends a phase in event_data,
+            # accept it; otherwise keep current phase unchanged.
+            if event_data.get("phase"):
+                current_state["phase"] = self._normalize_phase(event_data["phase"])
 
             # Persist updated trust state back to Cosmos DB
             await self.upsert_document("trust_states", current_state)
             logger.info(
                 f"Trust state persisted for {user_id}: "
-                f"phase={current_state['phase']}, confidence={current_state['confidence']:.2f}"
+                f"phase={current_state['phase']}, trust_score={current_state['trust_score']:.1f}"
             )
 
             return current_state
@@ -837,15 +1005,15 @@ class CosmosDBClient:
             raise
 
     def _calculate_trust_delta(self, event_type: str, current_phase: str) -> float:
-        """Calculate trust delta based on event type"""
+        """Calculate trust delta based on event type (0-100 scale, matching iOS)"""
         deltas = {
-            "completed_workout": 0.05,
-            "missed_workout": -0.08,
-            "missed_workout_excuse": -0.02,
-            "user_deleted_block": -0.15,
-            "suggestion_accepted": 0.03,
-            "auto_scheduled_completed": 0.07,
-            "transformed_schedule_accepted": 0.08,
+            "completed_workout": 5.0,
+            "missed_workout": -8.0,
+            "missed_workout_excuse": -2.0,
+            "user_deleted_block": -15.0,
+            "suggestion_accepted": 3.0,
+            "auto_scheduled_completed": 7.0,
+            "transformed_schedule_accepted": 8.0,
         }
         return deltas.get(event_type, 0.0)
 
@@ -856,21 +1024,8 @@ class CosmosDBClient:
         new_idx = max(0, current_idx - 1)
         return phase_order[new_idx]
 
-    def _check_phase_progression(self, phase: str, confidence: float) -> str:
-        """Check if confidence warrants phase change"""
-        thresholds = {
-            "observer": (0.0, 0.25),
-            "scheduler": (0.25, 0.50),
-            "auto_scheduler": (0.50, 0.70),
-            "transformer": (0.70, 0.85),
-            "full_ghost": (0.85, 1.0)
-        }
-
-        for phase_name, (min_conf, max_conf) in thresholds.items():
-            if min_conf <= confidence < max_conf:
-                return phase_name
-
-        return "full_ghost" if confidence >= 0.85 else phase
+    # _check_phase_progression removed — iOS is the authority for phase transitions.
+    # Backend stores phase from iOS sync, does not independently compute.
 
     async def get_trust_history(self, user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
         """Get trust event history for a user (for iOS trust/history endpoint)"""
@@ -1030,20 +1185,38 @@ class CosmosDBClient:
             logger.error(f"Error updating phenome store: {e}")
             raise
 
+    # Maximum field lengths for decision receipts
+    _MAX_RECEIPT_FIELD_LEN = 10_000  # generous cap for inputs/output JSON
+
     async def store_decision_receipt(
         self, user_id: str, receipt_data: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Store a Ghost decision receipt with 90-day TTL"""
         await self.ensure_initialized()
 
+        # Input length validation — prevent unbounded storage
+        explanation = str(receipt_data.get("explanation", ""))[:1000]
+        decision_type = str(receipt_data.get("decision_type", ""))[:100]
+        inputs_raw = receipt_data.get("inputs", {})
+        output_raw = receipt_data.get("output", {})
+
+        # Truncate serialized inputs/output if oversize
+        import json as _json
+        inputs_str = _json.dumps(inputs_raw) if isinstance(inputs_raw, (dict, list)) else str(inputs_raw)
+        output_str = _json.dumps(output_raw) if isinstance(output_raw, (dict, list)) else str(output_raw)
+        if len(inputs_str) > self._MAX_RECEIPT_FIELD_LEN:
+            inputs_raw = {"_truncated": True, "length": len(inputs_str)}
+        if len(output_str) > self._MAX_RECEIPT_FIELD_LEN:
+            output_raw = {"_truncated": True, "length": len(output_str)}
+
         try:
             receipt = {
                 "id": str(uuid4()),
                 "userId": user_id,
-                "decision_type": receipt_data["decision_type"],
-                "inputs": receipt_data["inputs"],
-                "output": receipt_data["output"],
-                "explanation": receipt_data["explanation"],
+                "decision_type": decision_type,
+                "inputs": inputs_raw,
+                "output": output_raw,
+                "explanation": explanation,
                 "timestamp": receipt_data["timestamp"],
                 "ttl": 90 * 24 * 3600  # 90 days in seconds
             }
@@ -1206,16 +1379,6 @@ class CosmosDBClient:
         await self.ensure_initialized()
 
         try:
-            query = """
-                SELECT c.trust_phase, COUNT(1) as count
-                FROM c
-                WHERE c.type = 'user'
-                GROUP BY c.trust_phase
-            """
-
-            results = await self.query_documents("users", query, [])
-
-            # Initialize with all phases
             distribution = {
                 "observer": 0,
                 "scheduler": 0,
@@ -1224,10 +1387,39 @@ class CosmosDBClient:
                 "full_ghost": 0
             }
 
-            for item in results:
-                phase = item.get("trust_phase", "observer")
+            # Prefer trust_states (authoritative), then fill from users for missing user IDs.
+            trust_states = await self.query_documents(
+                "trust_states",
+                "SELECT c.userId, c.phase, c.trust_phase, c.trustScore, c.trust_score, c.confidence FROM c",
+                [],
+            )
+            users = await self.query_documents(
+                "users",
+                "SELECT c.id, c.userId, c.email, c.phase, c.trust_phase, c.trustScore, c.trust_score, c.confidence FROM c",
+                [],
+            )
+
+            phase_by_user: Dict[str, str] = {}
+
+            for row in trust_states:
+                user_key = str(self._get_first_present(row, ["userId", "email", "id"], "")).strip()
+                if not user_key:
+                    continue
+                phase_by_user[user_key] = self._normalize_phase(
+                    self._get_first_present(row, ["phase", "trust_phase", "trustPhase"], "observer")
+                )
+
+            for row in users:
+                user_key = str(self._get_first_present(row, ["userId", "email", "id"], "")).strip()
+                if not user_key or user_key in phase_by_user:
+                    continue
+                phase_by_user[user_key] = self._normalize_phase(
+                    self._get_first_present(row, ["phase", "trust_phase", "trustPhase"], "observer")
+                )
+
+            for phase in phase_by_user.values():
                 if phase in distribution:
-                    distribution[phase] = item.get("count", 0)
+                    distribution[phase] += 1
 
             return distribution
 
@@ -1247,12 +1439,10 @@ class CosmosDBClient:
 
         try:
             query = """
-                SELECT c.id, c.email, c.display_name, c.subscription_tier,
-                       c.trust_phase, c.trust_score, c.watch_connected,
-                       c.phenome_last_sync, c.created_at, c.last_active
+                SELECT *
                 FROM c
-                WHERE c.type = 'user'
-                ORDER BY c.created_at DESC
+                WHERE IS_DEFINED(c.email)
+                ORDER BY c._ts DESC
                 OFFSET @offset LIMIT @limit
             """
             parameters = [
@@ -1261,15 +1451,7 @@ class CosmosDBClient:
             ]
 
             users = await self.query_documents("users", query, parameters)
-
-            # Ensure all Ghost fields have defaults
-            for user in users:
-                user.setdefault("trust_phase", "observer")
-                user.setdefault("trust_score", 0.0)
-                user.setdefault("watch_connected", False)
-                user.setdefault("phenome_last_sync", None)
-
-            return users
+            return [self._normalize_admin_user(user) for user in users]
 
         except Exception as e:
             logger.error(f"Error getting all users for admin: {e}")
@@ -1343,69 +1525,70 @@ class CosmosDBClient:
             logger.error(f"Error getting safety breaker events: {e}")
             return []
 
-    async def get_ghost_analytics(self, period: str = "7d") -> Dict[str, Any]:
+    async def get_ghost_analytics(self, days: int = 7) -> Dict[str, Any]:
         """Get Ghost analytics for admin dashboard"""
         await self.ensure_initialized()
 
         try:
-            # Calculate date range
-            if period == "24h":
-                since = datetime.now(timezone.utc) - timedelta(hours=24)
-            elif period == "7d":
-                since = datetime.now(timezone.utc) - timedelta(days=7)
-            elif period == "30d":
-                since = datetime.now(timezone.utc) - timedelta(days=30)
-            else:
-                since = datetime.now(timezone.utc) - timedelta(days=7)
+            days = max(1, min(int(days), 90))
+            since = datetime.now(timezone.utc) - timedelta(days=days)
 
             since_iso = since.isoformat()
 
-            # Get decision counts and outcomes
-            decision_query = """
-                SELECT c.outcome, COUNT(1) as count
-                FROM c
-                WHERE c.type = 'decision_receipt'
-                AND c.timestamp >= @since
-                GROUP BY c.outcome
-            """
-            decision_results = await self.query_documents(
-                "decision_receipts", decision_query,
-                [{"name": "@since", "value": since_iso}],
+            receipts = await self.query_documents(
+                "decision_receipts",
+                "SELECT * FROM c",
+                [],
             )
 
-            total_decisions = 0
+            def _is_recent(item: Dict[str, Any]) -> bool:
+                stamp = self._get_first_present(item, ["timestamp", "createdAt", "created_at"], None)
+                if not stamp:
+                    return False
+                try:
+                    parsed = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+                except ValueError:
+                    return False
+                return parsed >= since
+
+            recent_receipts = [r for r in receipts if _is_recent(r)]
+
+            total_decisions = len(recent_receipts)
             accept_count = 0
             modify_count = 0
             reject_count = 0
 
-            for item in decision_results:
-                count = item.get("count", 0)
-                total_decisions += count
-                outcome = item.get("outcome", "")
-                if outcome == "accepted":
-                    accept_count = count
-                elif outcome == "modified":
-                    modify_count = count
-                elif outcome == "rejected":
-                    reject_count = count
+            for item in recent_receipts:
+                outcome = str(self._get_first_present(item, ["outcome", "decisionOutcome", "result"], "")).strip().lower()
+                if outcome in {"accepted", "accept"}:
+                    accept_count += 1
+                elif outcome in {"modified", "overridden", "modify"}:
+                    modify_count += 1
+                elif outcome in {"rejected", "reject"}:
+                    reject_count += 1
 
             # Calculate rates
             accept_rate = (accept_count / total_decisions * 100) if total_decisions > 0 else 0
             modify_rate = (modify_count / total_decisions * 100) if total_decisions > 0 else 0
             reject_rate = (reject_count / total_decisions * 100) if total_decisions > 0 else 0
 
-            # Get workout mutation count
-            mutation_query = """
-                SELECT VALUE COUNT(1)
-                FROM c
-                WHERE c.type = 'workout_mutation'
-                AND c.timestamp >= @since
-            """
-            mutation_results = await self.query_documents(
-                "workouts", mutation_query,
-                [{"name": "@since", "value": since_iso}],
-            )
-            total_mutations = mutation_results[0] if mutation_results else 0
+            # Infer mutation count from receipt decision types + workout mutation docs.
+            mutation_types = {
+                "transform", "remove", "reschedule", "workout_mutation", "schedule_change", "intensity_adjustment", "rest_day"
+            }
+            total_mutations = 0
+            for item in recent_receipts:
+                decision_type = str(self._get_first_present(item, ["decision_type", "decisionType", "type"], "")).strip().lower()
+                if decision_type in mutation_types:
+                    total_mutations += 1
+
+            workout_docs = await self.query_documents("workouts", "SELECT * FROM c", [])
+            for item in workout_docs:
+                if not _is_recent(item):
+                    continue
+                item_type = str(self._get_first_present(item, ["type"], "")).strip().lower()
+                if item_type == "workout_mutation":
+                    total_mutations += 1
 
             # Get safety breaker count
             safety_query = """
@@ -1421,20 +1604,15 @@ class CosmosDBClient:
             trust_distribution = await self.get_trust_distribution()
 
             # Compute avg_confidence from decision receipts
-            conf_query = """
-                SELECT VALUE AVG(c.confidence)
-                FROM c
-                WHERE c.timestamp >= @since
-                AND IS_DEFINED(c.confidence)
-            """
-            conf_results = await self.query_documents(
-                "decision_receipts", conf_query,
-                [{"name": "@since", "value": since_iso}],
-            )
-            avg_confidence = round(conf_results[0], 2) if conf_results and conf_results[0] is not None else 0.0
+            confidence_values: List[float] = []
+            for item in recent_receipts:
+                value = self._get_first_present(item, ["confidence"], None)
+                if isinstance(value, (int, float)):
+                    confidence_values.append(float(value))
+            avg_confidence = round(sum(confidence_values) / len(confidence_values), 2) if confidence_values else 0.0
 
             return {
-                "period": period,
+                "period": f"{days}d",
                 "total_decisions": total_decisions,
                 "total_mutations": total_mutations if isinstance(total_mutations, int) else 0,
                 "accept_rate": round(accept_rate, 1),
@@ -1448,7 +1626,7 @@ class CosmosDBClient:
         except Exception as e:
             logger.error(f"Error getting ghost analytics: {e}")
             return {
-                "period": period,
+                "period": f"{days}d",
                 "total_decisions": 0,
                 "total_mutations": 0,
                 "accept_rate": 0,

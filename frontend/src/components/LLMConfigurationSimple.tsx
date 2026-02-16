@@ -50,6 +50,9 @@ const LLMConfigurationManagement = () => {
     const [pipelineStats, setPipelineStats] = useState<AIPipelineStats | null>(null)
     const [loading, setLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
+    const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(
+        null
+    )
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -71,13 +74,14 @@ const LLMConfigurationManagement = () => {
 
     const handleSave = async () => {
         setIsSaving(true)
+        setSaveStatus(null)
         try {
             // TODO: Call AdminAPI.savePipelineConfig when backend ready
             await new Promise((resolve) => setTimeout(resolve, 1000))
-            alert('Configuration saved successfully!')
+            setSaveStatus({ type: 'success', message: 'Configuration saved successfully.' })
         } catch (error) {
             console.error('Failed to save config:', error)
-            alert('Failed to save configuration')
+            setSaveStatus({ type: 'error', message: 'Failed to save configuration.' })
         } finally {
             setIsSaving(false)
         }
@@ -113,6 +117,22 @@ const LLMConfigurationManagement = () => {
                     Ghost AI configuration using gpt-5-mini with Structured Outputs
                 </Text>
             </VStack>
+
+            {saveStatus && (
+                <Card.Root
+                    bg={saveStatus.type === 'success' ? 'green.50' : 'red.50'}
+                    borderColor={saveStatus.type === 'success' ? 'green.200' : 'red.200'}
+                    border="1px"
+                    borderRadius="lg"
+                    mb={6}
+                >
+                    <Card.Body p={4}>
+                        <Text color={saveStatus.type === 'success' ? 'green.700' : 'red.700'}>
+                            {saveStatus.message}
+                        </Text>
+                    </Card.Body>
+                </Card.Root>
+            )}
 
             {/* Model Info Card */}
             <Card.Root bg="blue.50" borderColor="blue.200" border="1px" borderRadius="lg" mb={6}>

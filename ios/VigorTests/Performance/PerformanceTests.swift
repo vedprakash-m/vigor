@@ -17,30 +17,21 @@ final class PerformanceTests: XCTestCase {
     // MARK: - Background Task Performance
 
     func testMorningCycleCompletesFast() async throws {
-        // Background tasks must complete within 30 seconds
-        // Morning cycle should complete well under that
-
-        let metrics = try await XCTContext.runActivity(named: "Morning Cycle Performance") { _ in
-            await measureGhostCycle(.morning)
-        }
+        let metrics = await measureGhostCycle(.morning)
 
         XCTAssertLessThan(metrics.duration, 5.0, "Morning cycle must complete in <5s")
         XCTAssertLessThan(metrics.peakMemoryMB, 50, "Peak memory should be <50MB")
     }
 
     func testEveningCycleCompletesFast() async throws {
-        let metrics = try await XCTContext.runActivity(named: "Evening Cycle Performance") { _ in
-            await measureGhostCycle(.evening)
-        }
+        let metrics = await measureGhostCycle(.evening)
 
         XCTAssertLessThan(metrics.duration, 5.0, "Evening cycle must complete in <5s")
         XCTAssertLessThan(metrics.peakMemoryMB, 50, "Peak memory should be <50MB")
     }
 
     func testSilentPushHandlingFast() async throws {
-        let metrics = try await XCTContext.runActivity(named: "Silent Push Performance") { _ in
-            await measureSilentPush()
-        }
+        let metrics = await measureSilentPush()
 
         // Silent push must respond before system kills us (~30s)
         XCTAssertLessThan(metrics.duration, 10.0, "Silent push handling must complete in <10s")
@@ -91,7 +82,16 @@ final class PerformanceTests: XCTestCase {
             Task {
                 let machine = await MockTrustMachine()
                 for _ in 0..<100 {
-                    await machine.handleEvent(.completedWorkout)
+                    await machine.handleEvent(.workoutCompleted(DetectedWorkout(
+                        id: UUID().uuidString,
+                        type: .cardio,
+                        startDate: Date(),
+                        endDate: Date().addingTimeInterval(3600),
+                        duration: 3600,
+                        activeCalories: 300,
+                        averageHeartRate: 140,
+                        source: "Apple Watch"
+                    )))
                 }
                 expectation.fulfill()
             }

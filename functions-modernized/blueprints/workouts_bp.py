@@ -5,7 +5,7 @@ Endpoints: workouts/generate, workouts, workouts/{id}, workouts/{id}/sessions,
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 from uuid import uuid4
 
@@ -103,8 +103,42 @@ async def get_user_workouts(req: func.HttpRequest) -> func.HttpResponse:
         if not current_user:
             return error_response("Unauthorized", status_code=401, code="UNAUTHORIZED")
 
+        # Compatibility path for iOS client:
+        # GET /workouts?days=30 should return workout logs (history),
+        # while canonical /workouts returns workout plans.
+        days_param = req.params.get("days")
+
         limit, offset = parse_pagination(req)
         client = await get_global_client()
+
+        if days_param is not None:
+            try:
+                days = max(1, min(int(days_param), 365))
+            except (ValueError, TypeError):
+                days = 30
+
+            logs = await client.get_user_workout_logs(
+                user_id=current_user["email"], limit=max(limit, 200)
+            )
+            cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+            filtered_logs = []
+            for item in logs:
+                completed_at_raw = item.get("completedAt") or item.get("completed_at")
+                if not completed_at_raw:
+                    continue
+                try:
+                    completed_at = datetime.fromisoformat(
+                        str(completed_at_raw).replace("Z", "+00:00")
+                    )
+                except ValueError:
+                    continue
+
+                if completed_at >= cutoff:
+                    filtered_logs.append(item)
+
+            return success_response(filtered_logs)
+
         workouts = await client.get_user_workouts(
             user_id=current_user["email"], limit=limit, offset=offset
         )
@@ -212,6 +246,57 @@ async def get_workout_history(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logger.error(f"Error getting workout history: {str(e)}")
         return error_response("Failed to retrieve workout history", status_code=500)
+
+
+@workouts_bp.route(
+    route="workouts/log", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS
+)
+async def log_workout_compat(req: func.HttpRequest) -> func.HttpResponse:
+    """Compatibility alias for frontend `/workouts/log` endpoint.
+
+    Canonical route is `/workouts/{workout_id}/sessions` or `/workouts` (record).
+    """
+    try:
+        from shared.cosmos_db import get_global_client
+
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return error_response("Unauthorized", status_code=401, code="UNAUTHORIZED")
+
+        try:
+            body = req.get_json()
+        except ValueError:
+            return error_response("Invalid JSON", status_code=400, code="INVALID_JSON")
+
+        workout_id = body.get("workoutId") if isinstance(body, dict) else None
+        duration = (body or {}).get("actualDuration") or (body or {}).get("durationMinutes")
+        rating = (body or {}).get("rating")
+
+        if not duration:
+            return error_response(
+                "Missing required field: actualDuration",
+                status_code=400,
+                code="MISSING_FIELD",
+            )
+
+        session_payload: Dict[str, Any] = {
+            "exercises": (body or {}).get("exercisesCompleted", []),
+            "durationMinutes": int(duration),
+            "intensity": int(rating) if isinstance(rating, (int, float)) else 5,
+            "notes": (body or {}).get("notes"),
+        }
+
+        client = await get_global_client()
+        workout_log = await client.create_workout_log(
+            user_id=current_user["email"],
+            workout_id=workout_id,
+            session_data=session_payload,
+        )
+        return success_response(workout_log, status_code=201)
+
+    except Exception as e:
+        logger.error(f"Error in workouts/log compatibility endpoint: {str(e)}")
+        return error_response("Failed to log workout", status_code=500)
 
 
 # =============================================================================

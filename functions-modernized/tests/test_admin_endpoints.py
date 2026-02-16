@@ -136,6 +136,9 @@ class TestAdminTrustDistribution:
         assert resp.status_code == 200
         data = _json(resp)
         assert "phases" in data
+        assert isinstance(data["phases"], list)
+        assert "avgTimeToPhase2" in data
+        assert "avgTimeToPhase5" in data
 
 
 # ===========================================================================

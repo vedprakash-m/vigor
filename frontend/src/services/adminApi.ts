@@ -19,6 +19,7 @@ import {
 
 // API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+const ENABLE_ADMIN_MOCKS = import.meta.env.VITE_ENABLE_ADMIN_MOCKS === 'true';
 
 // Create axios instance for admin API
 const adminClient = axios.create({
@@ -277,7 +278,7 @@ export const AdminAPI = {
       return response.data;
     } catch (error) {
       console.error('Failed to fetch Ghost health:', error);
-      if (import.meta.env.DEV) return getMockGhostHealth();
+      if (ENABLE_ADMIN_MOCKS) return getMockGhostHealth();
       throw error;
     }
   },
@@ -291,7 +292,7 @@ export const AdminAPI = {
       return response.data;
     } catch (error) {
       console.error('Failed to fetch trust distribution:', error);
-      if (import.meta.env.DEV) return getMockTrustDistribution();
+      if (ENABLE_ADMIN_MOCKS) return getMockTrustDistribution();
       throw error;
     }
   },
@@ -316,7 +317,7 @@ export const AdminAPI = {
       return response.data.receipts;
     } catch (error) {
       console.error('Failed to fetch decision receipts:', error);
-      if (import.meta.env.DEV) return getMockDecisionReceipts();
+      if (ENABLE_ADMIN_MOCKS) return getMockDecisionReceipts();
       throw error;
     }
   },
@@ -330,7 +331,7 @@ export const AdminAPI = {
       return response.data.events;
     } catch (error) {
       console.error('Failed to fetch safety breaker events:', error);
-      if (import.meta.env.DEV) return getMockSafetyBreakerEvents();
+      if (ENABLE_ADMIN_MOCKS) return getMockSafetyBreakerEvents();
       throw error;
     }
   },
@@ -355,7 +356,7 @@ export const AdminAPI = {
       return response.data.users;
     } catch (error) {
       console.error('Failed to fetch users:', error);
-      if (import.meta.env.DEV) return getMockAdminUsers();
+      if (ENABLE_ADMIN_MOCKS) return getMockAdminUsers();
       throw error;
     }
   },
@@ -369,7 +370,7 @@ export const AdminAPI = {
       return response.data;
     } catch (error) {
       console.error('Failed to fetch AI pipeline stats:', error);
-      if (import.meta.env.DEV) return getMockAIPipelineStats();
+      if (ENABLE_ADMIN_MOCKS) return getMockAIPipelineStats();
       throw error;
     }
   },
@@ -379,12 +380,12 @@ export const AdminAPI = {
    */
   async getGhostAnalytics(days = 7): Promise<GhostAnalytics> {
     try {
-      const period = days <= 1 ? '24h' : days <= 7 ? '7d' : '30d';
-      const response = await adminClient.get(`/api/admin/ghost/analytics?period=${period}`);
+      const normalizedDays = Math.max(1, Math.min(days, 90));
+      const response = await adminClient.get(`/api/admin/ghost/analytics?days=${normalizedDays}`);
       return response.data;
     } catch (error) {
       console.error('Failed to fetch Ghost analytics:', error);
-      if (import.meta.env.DEV) return getMockGhostAnalytics();
+      if (ENABLE_ADMIN_MOCKS) return getMockGhostAnalytics();
       throw error;
     }
   },

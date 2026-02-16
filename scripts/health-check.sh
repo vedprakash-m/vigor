@@ -96,7 +96,7 @@ else
 fi
 
 # Check main API endpoints are accessible
-check_endpoint "${ENDPOINT_URL}/docs" 200 "API Documentation" 3 5
+check_endpoint "${ENDPOINT_URL}/health-simple" 200 "API basic liveness" 3 5
 
 # Check auth endpoints are accessible (should return unauthorized for GET without token)
 check_endpoint "${ENDPOINT_URL}/auth/me" 401 "Authentication service" 3 5

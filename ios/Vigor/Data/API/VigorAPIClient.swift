@@ -28,8 +28,6 @@ actor VigorAPIClient {
     // MARK: - State
 
     private var authToken: String?
-    private var pendingOperations: [PendingOperation] = []
-    private var isOnline: Bool = true
 
     // MARK: - Initialization
 
@@ -148,12 +146,6 @@ actor VigorAPIClient {
     // MARK: - Workouts
 
     func recordWorkout(_ workout: WorkoutRecord) async throws {
-        let operation = PendingOperation(
-            type: .recordWorkout,
-            payload: try encoder.encode(workout),
-            timestamp: Date()
-        )
-
         do {
             let _: EmptyResponse = try await request(
                 endpoint: "workouts",
@@ -162,7 +154,9 @@ actor VigorAPIClient {
             )
         } catch {
             // Queue for later sync
-            pendingOperations.append(operation)
+            let payload = try? encoder.encode(workout)
+            let op = QueuedOperation(endpoint: "workouts", method: "POST", body: payload)
+            await OfflineAPIQueue.shared.enqueue(op)
             throw error
         }
     }
@@ -197,11 +191,18 @@ actor VigorAPIClient {
     // MARK: - Trust Events
 
     func recordTrustEvent(_ event: TrustEventDTO) async throws {
-        let _: EmptyResponse = try await request(
-            endpoint: "trust/event",
-            method: .post,
-            body: event
-        )
+        do {
+            let _: EmptyResponse = try await request(
+                endpoint: "trust/event",
+                method: .post,
+                body: event
+            )
+        } catch {
+            let payload = try? encoder.encode(event)
+            let op = QueuedOperation(endpoint: "trust/event", method: "POST", body: payload)
+            await OfflineAPIQueue.shared.enqueue(op)
+            throw error
+        }
     }
 
     func getTrustHistory() async throws -> TrustHistoryResponse {
@@ -275,40 +276,23 @@ actor VigorAPIClient {
     // MARK: - Pending Operations
 
     func processPendingOperations() async throws {
-        let operations = pendingOperations
-        pendingOperations.removeAll()
-
-        for operation in operations {
-            do {
-                try await processOperation(operation)
-            } catch {
-                // Re-queue if still failing
-                pendingOperations.append(operation)
+        await OfflineAPIQueue.shared.flush { [weak self] op in
+            guard let self else { return }
+            var url = self.baseURL.appendingPathComponent(op.endpoint)
+            var request = URLRequest(url: url)
+            request.httpMethod = op.method
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            if let token = await self.authToken {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             }
-        }
-    }
+            request.httpBody = op.body
 
-    private func processOperation(_ operation: PendingOperation) async throws {
-        switch operation.type {
-        case .recordWorkout:
-            let workout = try decoder.decode(WorkoutRecord.self, from: operation.payload)
-            let _: EmptyResponse = try await request(
-                endpoint: "workouts",
-                method: .post,
-                body: workout
-            )
-
-        case .recordTrustEvent:
-            let event = try decoder.decode(TrustEventDTO.self, from: operation.payload)
-            let _: EmptyResponse = try await request(
-                endpoint: "trust/event",
-                method: .post,
-                body: event
-            )
-
-        case .syncBlocks:
-            let blocks = try decoder.decode([TrainingBlockDTO].self, from: operation.payload)
-            let _ = try await syncTrainingBlocks(blocks)
+            let (_, response) = try await self.session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200..<300).contains(httpResponse.statusCode) else {
+                throw NetworkError.invalidResponse
+            }
         }
     }
 
@@ -436,17 +420,3 @@ enum NetworkError: LocalizedError {
 // MARK: - Empty Response
 
 struct EmptyResponse: Decodable {}
-
-// MARK: - Pending Operation
-
-struct PendingOperation {
-    enum OperationType: String {
-        case recordWorkout
-        case recordTrustEvent
-        case syncBlocks
-    }
-
-    let type: OperationType
-    let payload: Data
-    let timestamp: Date
-}

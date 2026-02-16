@@ -393,12 +393,13 @@ extension GhostEngine {
 
         for block in blocks where block.status == .scheduled && block.startTime > Date() {
             // Check if recovery data suggests modification
-            let recovery = await PhenomeCoordinator.shared.getCurrentRecoveryScore()
+            let recovery = await PhenomeCoordinator.shared.currentRecoveryScore
             if recovery < 40 {
-                // Low recovery — reduce intensity
-                var modified = block
-                modified.intensity = max(1, block.intensity - 1)
-                try? await CalendarScheduler.shared.updateBlock(modified)
+                // Low recovery — transform to a lighter workout type
+                let lighterType = block.workoutType.downgradedType
+                if lighterType != block.workoutType {
+                    try? await CalendarScheduler.shared.transformBlock(block, to: lighterType)
+                }
 
                 var receipt = DecisionReceipt(action: .blockTransformed)
                 receipt.addInput("reason", value: "low_recovery")
@@ -418,7 +419,7 @@ extension GhostEngine {
         let endOfWeek = calendar.date(byAdding: .day, value: 7, to: Date())!
         if let blocks = try? await CalendarScheduler.shared.fetchBlocks(from: Date(), to: endOfWeek) {
             for block in blocks where block.wasAutoScheduled && block.status == .scheduled {
-                try? await CalendarScheduler.shared.cancelBlock(block)
+                try? await CalendarScheduler.shared.removeBlock(block)
             }
         }
 
@@ -436,7 +437,7 @@ extension GhostEngine {
         // Cancel upcoming auto-scheduled blocks within vacation period
         if let blocks = try? await CalendarScheduler.shared.fetchBlocks(from: Date(), to: vacationEnd) {
             for block in blocks where block.wasAutoScheduled && block.status == .scheduled {
-                try? await CalendarScheduler.shared.cancelBlock(block)
+                try? await CalendarScheduler.shared.removeBlock(block)
             }
         }
 
@@ -458,12 +459,12 @@ extension HealthKitObserver {
     func checkRecentWorkout() async -> DetectedWorkout? {
         // Quick check for workouts completed in the last hour
         // Used during background refresh with 30-second budget
+        let recentWorkouts = await PhenomeCoordinator.shared.getRecentWorkoutHistory(days: 1)
         let oneHourAgo = Date().addingTimeInterval(-60 * 60)
-        let recentWorkouts = await fetchWorkouts(since: oneHourAgo)
 
-        // Return the most recent unprocessed workout
+        // Return the most recent workout from the last hour
         return recentWorkouts.first { workout in
-            !workout.hasBeenProcessed
+            workout.startDate >= oneHourAgo
         }
     }
 }
@@ -472,40 +473,17 @@ extension HealthKitObserver {
 
 extension BehavioralMemoryStore {
 
-    func recordVacation(days: Int) async {
-        // Mark vacation period in behavioral memory
+    func recordVacation(days: Int) {
+        // Mark vacation period in behavioral memory via UserDefaults
         let vacationEnd = Calendar.current.date(byAdding: .day, value: days, to: Date())!
-        let memory = BehavioralMemory(
-            type: .vacation,
-            startDate: Date(),
-            endDate: vacationEnd,
-            metadata: ["days": days]
-        )
-        await store(memory)
+        UserDefaults.standard.set(Date(), forKey: "vacationStart")
+        UserDefaults.standard.set(vacationEnd, forKey: "vacationEnd")
     }
 
-    func consolidatePatterns() async {
+    func consolidatePatterns() {
         // Long-running pattern consolidation for BGProcessingTask
-        // Analyze workout history to identify preferred times, durations, types
-        let memories = await fetchAll(ofType: .workoutPattern)
-
-        // Group by day of week to find preferred workout days
-        var dayFrequency: [Int: Int] = [:]
-        for memory in memories {
-            let weekday = Calendar.current.component(.weekday, from: memory.startDate)
-            dayFrequency[weekday, default: 0] += 1
-        }
-
-        // Store consolidated pattern as a derived memory
-        if !dayFrequency.isEmpty {
-            let consolidated = BehavioralMemory(
-                type: .consolidatedPattern,
-                startDate: Date(),
-                endDate: Date(),
-                metadata: ["preferredDays": dayFrequency]
-            )
-            await store(consolidated)
-        }
+        // Persist current in-memory behavioral data to Core Data
+        saveAll()
     }
 }
 

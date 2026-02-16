@@ -52,7 +52,7 @@ async def get_current_user(req: func.HttpRequest) -> func.HttpResponse:
 
 
 @auth_bp.route(
-    route="users/profile", methods=["GET", "PUT"], auth_level=func.AuthLevel.ANONYMOUS
+    route="users/profile", methods=["GET", "PUT", "POST"], auth_level=func.AuthLevel.ANONYMOUS
 )
 async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
     """Get or update user profile"""
@@ -68,6 +68,23 @@ async def user_profile(req: func.HttpRequest) -> func.HttpResponse:
         if req.method == "GET":
             profile = await client.get_user_profile(current_user["email"])
             return success_response(profile)
+
+        elif req.method == "POST":
+            # Compatibility path for iOS createUser flow.
+            existing = await client.get_user_profile(current_user["email"])
+            if existing:
+                return success_response(existing)
+
+            created = await client.create_user_profile(
+                {
+                    "userId": current_user["email"],
+                    "email": current_user["email"],
+                    "username": current_user.get(
+                        "username", current_user["email"].split("@")[0]
+                    ),
+                }
+            )
+            return success_response(created, status_code=201)
 
         elif req.method == "PUT":
             from shared.rate_limiter import apply_rate_limit

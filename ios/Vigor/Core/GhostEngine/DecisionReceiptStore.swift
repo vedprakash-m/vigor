@@ -204,6 +204,7 @@ enum DecisionAction: String, Codable {
     case trustRetreated = "trust_retreated"
     case safetyBreakerTriggered = "safety_breaker_triggered"
     case triageRecorded = "triage_recorded"
+    case healthModeChanged = "health_mode_changed"
 }
 
 enum DecisionOutcome: Codable, Equatable {

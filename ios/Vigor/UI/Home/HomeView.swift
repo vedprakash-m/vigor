@@ -266,10 +266,10 @@ class HomeViewModel: ObservableObject {
             }
 
         case .correct:
-            // Open workout correction — user provides feedback on detected workout
+            // User provides correction on a detected workout — log it
             if case .workoutFeedback(let workout) = currentTriageItem {
-                await PhenomeCoordinator.shared.recordWorkoutCorrection(workout)
-                await TrustStateMachine.shared.recordEvent(.workoutCorrected)
+                await PhenomeCoordinator.shared.logWorkout(workout)
+                await TrustStateMachine.shared.recordEvent(.workoutCompleted(workout))
             }
 
         case .dismiss:
@@ -277,7 +277,7 @@ class HomeViewModel: ObservableObject {
             break
 
         case .viewDetails:
-            // Open Ghost health details view
+            // Open calendar detail view
             showCalendarView = true
 
         case .startWorkout:
@@ -287,27 +287,26 @@ class HomeViewModel: ObservableObject {
 
         case .markComplete:
             if case .blockConfirmation(let block) = currentTriageItem {
-                try? await CalendarScheduler.shared.markBlockComplete(block)
-                await TrustStateMachine.shared.recordEvent(.workoutCompleted(block.asDetectedWorkout))
+                await CalendarScheduler.shared.markBlockCompleted(block)
+                await TrustStateMachine.shared.recordEvent(.blockAccepted(block))
             }
 
         case .skip:
             if case .blockConfirmation(let block) = currentTriageItem {
-                try? await CalendarScheduler.shared.markBlockSkipped(block)
-                await TrustStateMachine.shared.recordEvent(.workoutSkipped)
+                await PhenomeCoordinator.shared.updateBlockStatus(block.id, status: .missed)
+                await TrustStateMachine.shared.recordEvent(.blockMissed(block))
             }
 
         case .reschedule:
             if case .blockConfirmation(let block) = currentTriageItem {
-                // Move block to next available window
-                if let nextWindow = await GhostEngine.shared.findNextAvailableWindow(after: block.startTime) {
-                    try? await CalendarScheduler.shared.rescheduleBlock(block, to: nextWindow)
-                }
+                // Remove current block and let Ghost propose a new one
+                try? await CalendarScheduler.shared.removeBlock(block)
+                await TrustStateMachine.shared.recordEvent(.blockModified(block))
             }
 
         case .confirm:
             if case .workoutFeedback(let workout) = currentTriageItem {
-                await PhenomeCoordinator.shared.confirmDetectedWorkout(workout)
+                await PhenomeCoordinator.shared.logWorkout(workout)
                 await TrustStateMachine.shared.recordEvent(.workoutCompleted(workout))
             }
         }
@@ -570,70 +569,7 @@ extension Calendar {
     }
 }
 
-// MARK: - Settings View
-
-struct SettingsView: View {
-    @StateObject private var healthKit = HealthKitObserver.shared
-    @EnvironmentObject private var trustState: TrustStateMachine
-
-    @AppStorage("notifications_enabled") private var notificationsEnabled = true
-    @AppStorage("haptics_enabled") private var hapticsEnabled = true
-
-    var body: some View {
-        List {
-            // Trust
-            Section("Ghost Trust Level") {
-                HStack {
-                    Image(systemName: trustState.currentPhase.iconName)
-                    VStack(alignment: .leading) {
-                        Text(trustState.currentPhase.displayName)
-                            .font(.headline)
-                        Text(trustState.currentPhase.description)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            // Health & Permissions
-            Section("Health & Permissions") {
-                LabeledContent("HealthKit") {
-                    Text(healthKit.isAuthorized ? "Connected" : "Not Connected")
-                        .foregroundStyle(healthKit.isAuthorized ? .green : .red)
-                }
-                if let lastSync = healthKit.lastSyncDate {
-                    LabeledContent("Last Sync") {
-                        Text(lastSync, style: .relative)
-                    }
-                }
-            }
-
-            // Preferences
-            Section("Notifications & Feedback") {
-                Toggle("Notifications", isOn: $notificationsEnabled)
-                Toggle("Haptic Feedback", isOn: $hapticsEnabled)
-            }
-
-            // About
-            Section("About Vigor") {
-                LabeledContent("Version") {
-                    Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")
-                }
-                LabeledContent("Build") {
-                    Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1")
-                }
-            }
-
-            // Data
-            Section {
-                Button("Reset Onboarding", role: .destructive) {
-                    UserDefaults.standard.removeObject(forKey: "onboarding_completed")
-                }
-            }
-        }
-        .navigationTitle("Settings")
-    }
-}
+// MARK: - Settings View (now in UI/Settings/SettingsView.swift)
 
 struct WorkoutPickerSheet: View {
     let onSelect: (WorkoutType) -> Void

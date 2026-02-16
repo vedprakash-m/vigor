@@ -34,6 +34,14 @@ final class GhostHealthMonitor: ObservableObject {
     private let safeModeThreshold: Double = 40.0
     private let suspendedThreshold: Double = 20.0
 
+    // MARK: - Onboarding Awareness
+
+    /// During onboarding, permission states are expected to be unavailable.
+    /// We must not penalize health score or send notifications before onboarding completes.
+    private var isOnboardingComplete: Bool {
+        UserDefaults.standard.bool(forKey: "onboarding_completed")
+    }
+
     // MARK: - Failure Tracking
 
     private var backgroundFailures: [Date] = []
@@ -152,17 +160,22 @@ final class GhostHealthMonitor: ObservableObject {
         }.count
         score -= Double(recentCalendarFailures) * 10.0
 
-        // Deduct for missing capabilities
-        if pushUnavailable {
-            score -= 10.0 // Push is nice-to-have, not critical
-        }
+        // Deduct for missing capabilities — but ONLY after onboarding is complete.
+        // Before onboarding, permissions haven't been requested yet, so
+        // penalizing their absence would immediately drop score to safeMode
+        // and trigger useless "Minimal operations only" notifications.
+        if isOnboardingComplete {
+            if pushUnavailable {
+                score -= 10.0 // Push is nice-to-have, not critical
+            }
 
-        if healthKitUnavailable {
-            score -= 40.0 // HealthKit is critical
-        }
+            if healthKitUnavailable {
+                score -= 40.0 // HealthKit is critical
+            }
 
-        if calendarUnavailable {
-            score -= 30.0 // Calendar is important
+            if calendarUnavailable {
+                score -= 30.0 // Calendar is important
+            }
         }
 
         // Clamp to 0-100
@@ -191,12 +204,14 @@ final class GhostHealthMonitor: ObservableObject {
             currentMode = .suspended
         }
 
-        // Notify if mode changed
+        // Health mode changes are internal system state — only log, don't notify user.
+        // Per PRD §4.3: notifications are for actionable workout decisions, not system diagnostics.
+        // Previously this sent "Minimal operations only" notifications which confused users.
         if previousMode != currentMode {
+            // Log for Decision Receipt / debugging only
             Task {
-                await NotificationOrchestrator.shared.sendHealthModeChange(
-                    from: previousMode,
-                    to: currentMode
+                await DecisionReceiptStore.shared.store(
+                    DecisionReceipt(action: .healthModeChanged)
                 )
             }
         }
@@ -254,6 +269,24 @@ final class GhostHealthMonitor: ObservableObject {
             calendarUnavailable = !CalendarScheduler.shared.isAuthorized
         }
 
+        await recalculateHealth()
+    }
+
+    /// Called when a permission is detected as re-granted (e.g., HealthKit approved in Settings).
+    /// Automatically clears the corresponding issue and recalculates health.
+    func onPermissionGranted(_ permissionType: GhostHealthIssue.IssueType) async {
+        switch permissionType {
+        case .healthKitUnavailable:
+            healthKitUnavailable = false
+        case .calendarUnavailable:
+            calendarUnavailable = false
+        case .pushUnavailable:
+            pushUnavailable = false
+        default:
+            break
+        }
+        issues.removeAll { $0.type == permissionType }
+        recoveryAttempts = 0
         await recalculateHealth()
     }
 

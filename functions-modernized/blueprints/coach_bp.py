@@ -345,3 +345,62 @@ async def coach_recovery(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logger.error(f"Error in coach recovery: {str(e)}")
         return error_response("Failed to assess recovery", status_code=500)
+
+
+@coach_bp.route(
+    route="coach/generate-workout",
+    methods=["POST"],
+    auth_level=func.AuthLevel.ANONYMOUS,
+)
+async def coach_generate_workout(req: func.HttpRequest) -> func.HttpResponse:
+    """Compatibility endpoint for iOS `generateWorkout` flow.
+
+    Reuses OpenAI generation and returns a GeneratedWorkout-compatible payload.
+    """
+    try:
+        from shared.cosmos_db import get_global_client
+        from shared.openai_client import OpenAIClient
+        from shared.rate_limiter import apply_ai_generation_limit
+
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return error_response("Unauthorized", status_code=401, code="UNAUTHORIZED")
+
+        rate_response = await apply_ai_generation_limit(
+            req, user_id=current_user["email"]
+        )
+        if rate_response:
+            return rate_response
+
+        try:
+            body = req.get_json()
+        except ValueError:
+            body = {}
+
+        duration = (body or {}).get("durationMinutes", 45)
+
+        client = await get_global_client()
+        user_profile = await client.get_user_profile(current_user["email"])
+        if not user_profile:
+            user_profile = {
+                "email": current_user["email"],
+                "fitness_level": "beginner",
+                "fitness_goals": ["general_fitness"],
+                "available_equipment": ["bodyweight"],
+            }
+
+        ai_client = OpenAIClient()
+        workout = await ai_client.generate_workout(
+            user_profile=user_profile,
+            preferences={
+                "durationMinutes": int(duration),
+                "focusAreas": [],
+                "difficulty": "moderate",
+            },
+        )
+
+        return success_response(workout)
+
+    except Exception as e:
+        logger.error(f"Error in coach/generate-workout: {str(e)}")
+        return error_response("Failed to generate workout", status_code=500)

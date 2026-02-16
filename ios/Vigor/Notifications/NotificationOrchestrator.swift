@@ -12,6 +12,22 @@
 import Foundation
 import UserNotifications
 
+// MARK: - Notification Priority
+
+/// Priority levels for notification queueing.
+/// When the daily limit is reached, a higher-priority notification can
+/// replace a queued lower-priority one.
+enum NotificationPriority: Int, Comparable {
+    case low = 0       // badge-only updates (workout confirmations)
+    case normal = 1    // informational (value receipts, MDM fallback)
+    case high = 2      // trust changes, health mode
+    case critical = 3  // actionable (block proposals, transformations, removals)
+
+    static func < (lhs: NotificationPriority, rhs: NotificationPriority) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+}
+
 actor NotificationOrchestrator {
 
     // MARK: - Singleton
@@ -23,6 +39,9 @@ actor NotificationOrchestrator {
     private var notificationsSentToday: Int = 0
     private var lastNotificationDate: Date?
     private let maxNotificationsPerDay = 1
+
+    /// Pending notification waiting for the daily slot (replaced if a higher-priority one arrives).
+    private var pendingNotification: (content: UNMutableNotificationContent, priority: NotificationPriority)?
 
     // MARK: - Initialization
 
@@ -116,7 +135,17 @@ actor NotificationOrchestrator {
 
     // MARK: - Rate Limiting
 
+    /// Gate: No notifications before onboarding completes.
+    /// Per PRD §4.3 — notifications are for actionable Ghost decisions,
+    /// not system setup status.
+    private var isOnboardingComplete: Bool {
+        UserDefaults.standard.bool(forKey: "onboarding_completed")
+    }
+
     private func canSendNotification() -> Bool {
+        // Never send notifications before onboarding completes
+        guard isOnboardingComplete else { return false }
+
         guard let lastDate = lastNotificationDate else { return true }
 
         let calendar = Calendar.current
@@ -134,11 +163,74 @@ actor NotificationOrchestrator {
         lastNotificationDate = Date()
     }
 
+    // MARK: - Universal Send
+
+    /// Universal notification delivery — ALL notification types go through here.
+    /// Enforces the 1/day rate limit (PRD §4.3).
+    /// If the daily slot is taken, queues the notification; a higher-priority
+    /// notification will replace a queued lower-priority one.
+    ///
+    /// - Parameters:
+    ///   - content: The notification content.
+    ///   - priority: Determines whether this can bump a pending notification.
+    ///   - badgeOnly: If true, only updates badge count (no alert/sound); these
+    ///     always go through without consuming the daily slot.
+    private func send(
+        _ content: UNMutableNotificationContent,
+        priority: NotificationPriority,
+        badgeOnly: Bool = false
+    ) async {
+        guard isOnboardingComplete else { return }
+
+        // Badge-only notifications bypass the daily limit entirely
+        if badgeOnly {
+            content.sound = nil
+            // Deliver silently — appears only in Notification Center
+            content.interruptionLevel = .passive
+            let request = UNNotificationRequest(
+                identifier: UUID().uuidString,
+                content: content,
+                trigger: nil
+            )
+            try? await UNUserNotificationCenter.current().add(request)
+            VigorLogger.notifications.debug("Badge-only notification sent: \(content.title)")
+            return
+        }
+
+        // Check daily slot
+        if canSendNotification() {
+            let request = UNNotificationRequest(
+                identifier: UUID().uuidString,
+                content: content,
+                trigger: nil
+            )
+            do {
+                try await UNUserNotificationCenter.current().add(request)
+                recordNotificationSent()
+                VigorLogger.notifications.info("Notification sent [p\(priority.rawValue)]: \(content.title)")
+            } catch {
+                VigorLogger.notifications.error("Notification delivery failed: \(error.localizedDescription)")
+            }
+        } else {
+            // Daily limit reached — queue if higher priority than pending
+            if let pending = pendingNotification {
+                if priority > pending.priority {
+                    pendingNotification = (content, priority)
+                    VigorLogger.notifications.info("Notification queued (replaced lower priority): \(content.title)")
+                } else {
+                    VigorLogger.notifications.info("Notification dropped (rate limited): \(content.title)")
+                }
+                // else: lower or equal priority — drop it
+            } else {
+                pendingNotification = (content, priority)
+                VigorLogger.notifications.info("Notification queued (daily limit reached): \(content.title)")
+            }
+        }
+    }
+
     // MARK: - Block Proposal
 
     func sendBlockProposal(workout: GeneratedWorkout, window: TimeWindow) async {
-        guard canSendNotification() else { return }
-
         let content = UNMutableNotificationContent()
         content.title = "Workout Tomorrow"
         content.body = "\(window.start.formatted(date: .omitted, time: .shortened)) \(workout.name)?"
@@ -151,24 +243,13 @@ actor NotificationOrchestrator {
         ]
         content.sound = .default
 
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: nil
-        )
-
-        do {
-            try await UNUserNotificationCenter.current().add(request)
-            recordNotificationSent()
-        } catch {
-            // Notification failed
-        }
+        await send(content, priority: .critical)
     }
 
     // MARK: - Workout Confirmation
 
     func sendWorkoutConfirmation(_ workout: DetectedWorkout) async {
-        // This is a passive confirmation - doesn't count against daily limit
+        // Badge-only — no alert, no sound, doesn't consume daily slot
         let content = UNMutableNotificationContent()
         content.title = "Logged"
         content.body = "\(workout.durationMinutes) min \(workout.type.displayName)"
@@ -177,15 +258,8 @@ actor NotificationOrchestrator {
             "type": "workout_confirmation",
             "workout_id": workout.id
         ]
-        content.sound = nil // Silent
 
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: nil
-        )
-
-        try? await UNUserNotificationCenter.current().add(request)
+        await send(content, priority: .low, badgeOnly: true)
     }
 
     // MARK: - Block Transformation
@@ -195,8 +269,6 @@ actor NotificationOrchestrator {
         newType: WorkoutType,
         reason: String
     ) async {
-        guard canSendNotification() else { return }
-
         let content = UNMutableNotificationContent()
         content.title = "Adjusted"
         content.body = "\(original.workoutType.displayName) → \(newType.displayName)"
@@ -209,48 +281,23 @@ actor NotificationOrchestrator {
         ]
         content.sound = .default
 
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: nil
-        )
-
-        do {
-            try await UNUserNotificationCenter.current().add(request)
-            recordNotificationSent()
-        } catch {
-            // Notification failed
-        }
+        await send(content, priority: .critical)
     }
 
     // MARK: - Block Removal
 
     func sendBlockRemovalNotice(_ block: TrainingBlock, reason: String) async {
-        guard canSendNotification() else { return }
-
         let content = UNMutableNotificationContent()
         content.title = "Rest Day"
         content.body = "Today's workout removed for recovery"
         content.sound = nil // Gentle - no sound
 
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: nil
-        )
-
-        do {
-            try await UNUserNotificationCenter.current().add(request)
-            recordNotificationSent()
-        } catch {
-            // Notification failed
-        }
+        await send(content, priority: .critical)
     }
 
     // MARK: - Value Receipt
 
     func sendValueReceipt(_ receipt: ValueReceipt) async {
-        // Weekly summary - special case, always allowed
         let content = UNMutableNotificationContent()
         content.title = "Your Week"
         content.body = "\(receipt.completedWorkouts) workouts, \(receipt.totalMinutes) minutes"
@@ -260,13 +307,7 @@ actor NotificationOrchestrator {
             "receipt_id": receipt.id.uuidString
         ]
 
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: nil
-        )
-
-        try? await UNUserNotificationCenter.current().add(request)
+        await send(content, priority: .normal)
     }
 
     // MARK: - Trust Changes
@@ -277,13 +318,7 @@ actor NotificationOrchestrator {
         content.body = "Now: \(to.displayName)"
         content.sound = .default
 
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: nil
-        )
-
-        try? await UNUserNotificationCenter.current().add(request)
+        await send(content, priority: .high)
     }
 
     func sendTrustRetreat(from: TrustPhase, to: TrustPhase) async {
@@ -292,13 +327,7 @@ actor NotificationOrchestrator {
         content.body = "I'll suggest instead of schedule for now"
         content.sound = nil // Silent - apologetic
 
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: nil
-        )
-
-        try? await UNUserNotificationCenter.current().add(request)
+        await send(content, priority: .high)
     }
 
     // MARK: - Health Mode Changes
@@ -311,13 +340,7 @@ actor NotificationOrchestrator {
         content.body = to.description
         content.sound = nil
 
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: nil
-        )
-
-        try? await UNUserNotificationCenter.current().add(request)
+        await send(content, priority: .high)
     }
 
     // MARK: - MDM Fallback
@@ -328,13 +351,7 @@ actor NotificationOrchestrator {
         content.body = "Corporate calendar sync unavailable. Workouts will only appear in Vigor calendar."
         content.sound = nil
 
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: nil
-        )
-
-        try? await UNUserNotificationCenter.current().add(request)
+        await send(content, priority: .normal)
     }
 
     // MARK: - Response Handling

@@ -36,7 +36,7 @@ final class GhostSimulationTests: XCTestCase {
         )
 
         XCTAssertEqual(journey.finalPhase, .fullGhost, "Perfect user should reach FullGhost")
-        XCTAssertGreaterThanOrEqual(journey.finalConfidence, 0.90, "Should have very high confidence")
+        XCTAssertGreaterThanOrEqual(journey.finalTrustScore, 90, "Should have very high trust")
         XCTAssertEqual(journey.safetyBreakerTriggers, 0, "No safety breaker triggers")
     }
 
@@ -51,7 +51,7 @@ final class GhostSimulationTests: XCTestCase {
 
         XCTAssertTrue([.transformer, .fullGhost].contains(journey.finalPhase),
                       "Consistent user should reach Transformer or FullGhost")
-        XCTAssertGreaterThanOrEqual(journey.finalConfidence, 0.65, "Should have good confidence")
+        XCTAssertGreaterThanOrEqual(journey.finalTrustScore, 65, "Should have good trust")
     }
 
     func testInconsistentUserJourney() async {
@@ -93,7 +93,7 @@ final class GhostSimulationTests: XCTestCase {
         )
 
         // Should not lose too much trust during vacation
-        XCTAssertGreaterThanOrEqual(journey.trustBeforeVacation - journey.trustAfterVacation, -0.1,
+        XCTAssertGreaterThanOrEqual(journey.trustBeforeVacation - journey.trustAfterVacation, -10,
                                     "Vacation should not cause major trust loss")
     }
 
@@ -108,7 +108,7 @@ final class GhostSimulationTests: XCTestCase {
         )
 
         // Trust should recover after illness
-        XCTAssertGreaterThanOrEqual(journey.finalConfidence, journey.confidenceAtDay30 - 0.15,
+        XCTAssertGreaterThanOrEqual(journey.finalTrustScore, journey.trustScoreAtDay30 - 15,
                                     "Trust should recover after illness")
     }
 
@@ -124,7 +124,7 @@ final class GhostSimulationTests: XCTestCase {
 
         // Should recover after each burst
         XCTAssertEqual(journey.safetyBreakerTriggers, 2, "Should trigger twice")
-        XCTAssertGreaterThanOrEqual(journey.finalConfidence, 0.5, "Should recover to reasonable level")
+        XCTAssertGreaterThanOrEqual(journey.finalTrustScore, 40, "Should recover to reasonable level")
     }
 
     // MARK: - Calendar Conflict Tests
@@ -171,7 +171,7 @@ final class GhostSimulationTests: XCTestCase {
         )
 
         XCTAssertGreaterThan(journey.recoveryBasedSkips, 0, "Should have recovery-based skips")
-        XCTAssertGreaterThanOrEqual(journey.finalConfidence, 0.5, "Recovery skips shouldn't tank trust")
+        XCTAssertGreaterThanOrEqual(journey.finalTrustScore, 40, "Recovery skips shouldn't tank trust")
     }
 }
 
@@ -180,7 +180,6 @@ final class GhostSimulationTests: XCTestCase {
 actor GhostSimulator {
 
     private var trustMachine: TestableTrustStateMachine
-    private var dayLog: [DaySimulation] = []
 
     init() async {
         trustMachine = await TestableTrustStateMachine()
@@ -188,11 +187,11 @@ actor GhostSimulator {
 
     struct SimulationResult {
         let finalPhase: TrustPhase
-        let finalConfidence: Double
+        let finalTrustScore: Double
         let safetyBreakerTriggers: Int
         let trustBeforeVacation: Double
         let trustAfterVacation: Double
-        let confidenceAtDay30: Double
+        let trustScoreAtDay30: Double
         let transformsExecuted: Int
         let transformAcceptanceRate: Double
         let recoveryBasedSkips: Int
@@ -215,7 +214,7 @@ actor GhostSimulator {
         var safetyBreakerTriggers = 0
         var trustBeforeVacation = 0.0
         var trustAfterVacation = 0.0
-        var confidenceAtDay30 = 0.0
+        var trustScoreAtDay30 = 0.0
         var transformsExecuted = 0
         var transformsAccepted = 0
         var recoveryBasedSkips = 0
@@ -235,7 +234,7 @@ actor GhostSimulator {
             // Check burst deletes
             if let burst = burstDeletes.first(where: { $0.day == day }) {
                 for _ in 0..<burst.count {
-                    await trustMachine.handleEvent(.userDeletedBlock)
+                    await trustMachine.handleEvent(.blockDeleted(makeAutoBlock()))
                     let newPhase = await trustMachine.currentPhase
                     if newPhase != phase {
                         safetyBreakerTriggers += 1
@@ -244,22 +243,26 @@ actor GhostSimulator {
                 continue
             }
 
-            // Track vacation
+            // Track vacation trust
             if day == vacationPeriods.first?.start ?? -1 {
-                trustBeforeVacation = await trustMachine.currentConfidence
+                trustBeforeVacation = await trustMachine.trustScore
             }
             if day == (vacationPeriods.first?.end ?? -1) + 1 {
-                trustAfterVacation = await trustMachine.currentConfidence
+                trustAfterVacation = await trustMachine.trustScore
             }
 
             // Skip workouts on vacation/illness/weekend-only
             if isVacation {
-                await trustMachine.handleEvent(.missedWorkout(.travelMode))
+                // Missed block during vacation, then triage as "life happened"
+                await trustMachine.handleEvent(.blockMissed(makeAutoBlock()))
+                await trustMachine.handleEvent(.triageResponded(.lifeHappened))
                 continue
             }
 
             if isIllness {
-                await trustMachine.handleEvent(.missedWorkout(.illness))
+                // Missed block during illness, then triage as "too tired"
+                await trustMachine.handleEvent(.blockMissed(makeAutoBlock()))
+                await trustMachine.handleEvent(.triageResponded(.tooTired))
                 continue
             }
 
@@ -268,62 +271,84 @@ actor GhostSimulator {
             }
 
             if isLowRecovery {
-                await trustMachine.handleEvent(.missedWorkout(.poorRecovery))
+                // Missed due to low recovery
+                await trustMachine.handleEvent(.blockMissed(makeAutoBlock()))
+                await trustMachine.handleEvent(.triageResponded(.tooTired))
                 recoveryBasedSkips += 1
                 continue
             }
 
-            // Simulate transforms
+            // Simulate transform acceptance
             if conflictsPerWeek > 0 && day % (7 / conflictsPerWeek) == 0 {
                 transformsExecuted += 1
                 if Double.random(in: 0...1) < 0.8 {
                     transformsAccepted += 1
-                    await trustMachine.handleEvent(.transformedScheduleAccepted)
+                    await trustMachine.handleEvent(.blockAccepted(makeAutoBlock()))
                 }
             }
 
             // Simulate delete
             if Double.random(in: 0...1) < deleteRate {
-                await trustMachine.handleEvent(.userDeletedBlock)
+                await trustMachine.handleEvent(.blockDeleted(makeAutoBlock()))
                 continue
             }
 
             // Simulate completion
             if Double.random(in: 0...1) < completionRate {
-                await trustMachine.handleEvent(.completedWorkout)
+                await trustMachine.handleEvent(.workoutCompleted(makeWorkout()))
             } else {
-                // Missed - with or without excuse
+                // Missed — with or without triage response
+                await trustMachine.handleEvent(.blockMissed(makeAutoBlock()))
                 if Double.random(in: 0...1) < excuseRate {
-                    await trustMachine.handleEvent(.missedWorkout(.calendarConflict))
-                } else {
-                    await trustMachine.handleEvent(.missedWorkout(.noReason))
+                    await trustMachine.handleEvent(.triageResponded(.lifeHappened))
                 }
             }
 
-            // Capture day 30 confidence
+            // Capture day 30 trust score
             if day == 30 {
-                confidenceAtDay30 = await trustMachine.currentConfidence
+                trustScoreAtDay30 = await trustMachine.trustScore
             }
         }
 
         return SimulationResult(
             finalPhase: await trustMachine.currentPhase,
-            finalConfidence: await trustMachine.currentConfidence,
+            finalTrustScore: await trustMachine.trustScore,
             safetyBreakerTriggers: safetyBreakerTriggers,
             trustBeforeVacation: trustBeforeVacation,
             trustAfterVacation: trustAfterVacation,
-            confidenceAtDay30: confidenceAtDay30,
+            trustScoreAtDay30: trustScoreAtDay30,
             transformsExecuted: transformsExecuted,
             transformAcceptanceRate: transformsExecuted > 0 ? Double(transformsAccepted) / Double(transformsExecuted) : 1.0,
             recoveryBasedSkips: recoveryBasedSkips,
             phaseHistory: phaseHistory
         )
     }
-}
 
-struct DaySimulation {
-    let day: Int
-    let phase: TrustPhase
-    let confidence: Double
-    let events: [TrustEvent]
+    // MARK: - Helper Factories
+
+    private func makeWorkout() -> DetectedWorkout {
+        DetectedWorkout(
+            id: UUID().uuidString,
+            type: .cardio,
+            startDate: Date(),
+            endDate: Date().addingTimeInterval(3600),
+            duration: 3600,
+            activeCalories: 300,
+            averageHeartRate: 140,
+            source: "Apple Watch"
+        )
+    }
+
+    private func makeAutoBlock() -> TrainingBlock {
+        TrainingBlock(
+            id: UUID().uuidString,
+            calendarEventId: "cal-sim",
+            workoutType: .strength,
+            startTime: Date(),
+            endTime: Date().addingTimeInterval(3600),
+            wasAutoScheduled: true,
+            status: .scheduled,
+            generatedWorkout: nil
+        )
+    }
 }

@@ -18,7 +18,7 @@ final class AccessibilityTests: XCTestCase {
     // MARK: - VoiceOver Label Tests
 
     func testTriageCardHasAccessibilityLabels() {
-        let card = TriageCardView.mock()
+        let card = MockTriageCardView.mock()
 
         XCTAssertNotNil(card.accessibilityLabel, "Triage card needs accessibility label")
         XCTAssertFalse(card.accessibilityLabel?.isEmpty ?? true)
@@ -117,7 +117,7 @@ final class AccessibilityTests: XCTestCase {
     }
 
     func testWorkoutTypeIconsHaveContrast() {
-        let workoutTypes: [WorkoutType] = [.strength, .cardio, .hiit, .mobility, .recovery]
+        let workoutTypes: [WorkoutType] = [.strength, .cardio, .hiit, .flexibility, .recoveryWalk]
 
         for type in workoutTypes {
             let icon = MockWorkoutIcon(type: type)
@@ -347,9 +347,10 @@ struct MockWorkoutIcon {
         case .strength: return .orange
         case .cardio: return .red
         case .hiit: return .purple
-        case .mobility: return .green
-        case .recovery: return .blue
-        case .custom: return .gray
+        case .flexibility: return .green
+        case .recoveryWalk: return .blue
+        case .lightCardio: return .teal
+        case .other: return .gray
         }
     }
 

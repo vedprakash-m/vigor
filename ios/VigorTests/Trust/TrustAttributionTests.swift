@@ -5,8 +5,8 @@
 //  Created by Vigor Team on January 27, 2026.
 //  Copyright © 2026 Vigor. All rights reserved.
 //
-//  Test suite for Trust Attribution Engine - validates weighted deltas
-//  and excuse recognition per PRD §2.2.2.
+//  Test suite for Trust Attribution Engine — validates weighted deltas
+//  and modifier calculations per Tech Spec §2.3.
 //
 
 import XCTest
@@ -14,262 +14,276 @@ import XCTest
 
 final class TrustAttributionTests: XCTestCase {
 
-    // MARK: - Positive Event Delta Tests
+    var sut: TestableTrustAttribution!
 
-    func testCompletedWorkoutHasPositiveDelta() {
-        let delta = TrustAttributionEngine.shared.calculateDelta(
-            for: .completedWorkout,
-            currentPhase: .observer
+    override func setUp() async throws {
+        sut = TestableTrustAttribution()
+    }
+
+    override func tearDown() async throws {
+        sut = nil
+    }
+
+    // MARK: - Event Weight Lookup
+
+    func testWorkoutCompletedHasPositiveWeight() async {
+        let workout = makeWorkout(duration: 3600)
+        let delta = await sut.calculateTrustDelta(
+            event: .workoutCompleted(workout),
+            currentPhase: .observer,
+            trustScore: 20
         )
-
         XCTAssertGreaterThan(delta, 0, "Completed workout should have positive delta")
     }
 
-    func testSuggestedSlotAcceptedHasPositiveDelta() {
-        let delta = TrustAttributionEngine.shared.calculateDelta(
-            for: .suggestedSlotAccepted,
-            currentPhase: .scheduler
+    func testBlockDeletedHasNegativeWeight() async {
+        let block = makeBlock(autoScheduled: false)
+        let delta = await sut.calculateTrustDelta(
+            event: .blockDeleted(block),
+            currentPhase: .scheduler,
+            trustScore: 40
         )
-
-        XCTAssertGreaterThan(delta, 0, "Accepting suggested slot should have positive delta")
+        XCTAssertLessThan(delta, 0, "Deleting a block should have negative delta")
     }
 
-    func testAutoScheduledWorkoutCompletedHasLargePositiveDelta() {
-        let delta = TrustAttributionEngine.shared.calculateDelta(
-            for: .autoScheduledWorkoutCompleted,
-            currentPhase: .autoScheduler
+    func testBlockMissedHasNegativeWeight() async {
+        let block = makeBlock(autoScheduled: true)
+        let delta = await sut.calculateTrustDelta(
+            event: .blockMissed(block),
+            currentPhase: .autoScheduler,
+            trustScore: 60
         )
-
-        let regularDelta = TrustAttributionEngine.shared.calculateDelta(
-            for: .completedWorkout,
-            currentPhase: .autoScheduler
-        )
-
-        XCTAssertGreaterThan(delta, regularDelta,
-                            "Completing auto-scheduled workout should have larger delta than regular")
+        XCTAssertLessThan(delta, 0, "Missed block should have negative delta")
     }
 
-    // MARK: - Negative Event Delta Tests
-
-    func testMissedWorkoutWithoutExcuseHasNegativeDelta() {
-        let delta = TrustAttributionEngine.shared.calculateDelta(
-            for: .missedWorkout(.noReason),
-            currentPhase: .scheduler
+    func testProposalAcceptedHasPositiveWeight() async {
+        let delta = await sut.calculateTrustDelta(
+            event: .proposalAccepted,
+            currentPhase: .scheduler,
+            trustScore: 30
         )
-
-        XCTAssertLessThan(delta, 0, "Missed workout without excuse should have negative delta")
+        XCTAssertGreaterThan(delta, 0)
     }
 
-    func testUserDeletedBlockHasLargeNegativeDelta() {
-        let deleteDelta = TrustAttributionEngine.shared.calculateDelta(
-            for: .userDeletedBlock,
-            currentPhase: .autoScheduler
+    func testProposalRejectedHasNegativeWeight() async {
+        let delta = await sut.calculateTrustDelta(
+            event: .proposalRejected,
+            currentPhase: .scheduler,
+            trustScore: 30
         )
-
-        let missedDelta = TrustAttributionEngine.shared.calculateDelta(
-            for: .missedWorkout(.noReason),
-            currentPhase: .autoScheduler
-        )
-
-        XCTAssertLessThan(deleteDelta, missedDelta,
-                         "Deleting block should have larger negative impact than missing workout")
+        XCTAssertLessThan(delta, 0)
     }
 
-    // MARK: - Excuse Recognition Tests
-
-    func testCalendarConflictReducesNegativeImpact() {
-        let noExcuseDelta = TrustAttributionEngine.shared.calculateDelta(
-            for: .missedWorkout(.noReason),
-            currentPhase: .scheduler
+    func testPermissionRevokedHasLargeNegativeWeight() async {
+        let delta = await sut.calculateTrustDelta(
+            event: .permissionRevoked("HealthKit"),
+            currentPhase: .autoScheduler,
+            trustScore: 50
         )
-
-        let excusedDelta = TrustAttributionEngine.shared.calculateDelta(
-            for: .missedWorkout(.calendarConflict),
-            currentPhase: .scheduler
-        )
-
-        XCTAssertGreaterThan(excusedDelta, noExcuseDelta,
-                            "Calendar conflict excuse should reduce negative impact")
+        XCTAssertLessThan(delta, -5, "Permission revocation should have large negative impact")
     }
 
-    func testIllnessExcuseHasMinimalImpact() {
-        let delta = TrustAttributionEngine.shared.calculateDelta(
-            for: .missedWorkout(.illness),
-            currentPhase: .autoScheduler
-        )
+    // MARK: - Phase Modifier Tests
 
-        XCTAssertGreaterThan(delta, -0.02, "Illness excuse should have minimal negative impact")
+    func testObserverPhaseHasHigherMultiplier() async {
+        let workout = makeWorkout(duration: 3600)
+        let observerDelta = await sut.calculateTrustDelta(
+            event: .workoutCompleted(workout),
+            currentPhase: .observer,
+            trustScore: 10
+        )
+        let fullGhostDelta = await sut.calculateTrustDelta(
+            event: .workoutCompleted(workout),
+            currentPhase: .fullGhost,
+            trustScore: 10
+        )
+        XCTAssertGreaterThan(observerDelta, fullGhostDelta,
+                            "Observer phase should amplify positive events more than Full Ghost")
     }
 
-    func testTravelModeExcuseIsNeutral() {
-        let delta = TrustAttributionEngine.shared.calculateDelta(
-            for: .missedWorkout(.travelMode),
-            currentPhase: .transformer
-        )
+    // MARK: - Confidence Modifier Tests
 
-        XCTAssertGreaterThan(delta, -0.01, "Travel mode should be nearly neutral")
+    func testLongWorkoutHasHigherConfidenceModifier() async {
+        let longWorkout = makeWorkout(duration: 60 * 60)   // 60 min
+        let shortWorkout = makeWorkout(duration: 10 * 60)  // 10 min
+
+        let longDelta = await sut.calculateTrustDelta(
+            event: .workoutCompleted(longWorkout),
+            currentPhase: .scheduler,
+            trustScore: 30
+        )
+        let shortDelta = await sut.calculateTrustDelta(
+            event: .workoutCompleted(shortWorkout),
+            currentPhase: .scheduler,
+            trustScore: 30
+        )
+        XCTAssertGreaterThan(longDelta, shortDelta,
+                            "Longer workout should earn more trust")
     }
 
-    func testPoorRecoveryExcuseReducesImpact() {
-        let noExcuseDelta = TrustAttributionEngine.shared.calculateDelta(
-            for: .missedWorkout(.noReason),
-            currentPhase: .scheduler
-        )
+    func testAutoScheduledBlockDeleteHasHigherImpact() async {
+        let autoBlock = makeBlock(autoScheduled: true)
+        let manualBlock = makeBlock(autoScheduled: false)
 
-        let recoveryDelta = TrustAttributionEngine.shared.calculateDelta(
-            for: .missedWorkout(.poorRecovery),
-            currentPhase: .scheduler
+        let autoDelta = await sut.calculateTrustDelta(
+            event: .blockDeleted(autoBlock),
+            currentPhase: .autoScheduler,
+            trustScore: 50
         )
-
-        XCTAssertGreaterThan(recoveryDelta, noExcuseDelta,
-                            "Poor recovery should reduce negative impact")
+        let manualDelta = await sut.calculateTrustDelta(
+            event: .blockDeleted(manualBlock),
+            currentPhase: .autoScheduler,
+            trustScore: 50
+        )
+        XCTAssertLessThan(autoDelta, manualDelta,
+                         "Deleting auto-scheduled block should hurt more")
     }
 
-    // MARK: - Phase-Specific Delta Tests
+    // MARK: - Diminishing Returns at High Trust
 
-    func testDeltasAreSmallerAtHigherPhases() {
-        // At higher phases, system should be more stable (smaller swings)
-        let observerDelta = TrustAttributionEngine.shared.calculateDelta(
-            for: .completedWorkout,
-            currentPhase: .observer
+    func testPositiveDeltaDiminishesAtHighTrust() async {
+        let workout = makeWorkout(duration: 3600)
+        let lowTrustDelta = await sut.calculateTrustDelta(
+            event: .workoutCompleted(workout),
+            currentPhase: .fullGhost,
+            trustScore: 50
         )
-
-        let fullGhostDelta = TrustAttributionEngine.shared.calculateDelta(
-            for: .completedWorkout,
-            currentPhase: .fullGhost
+        let highTrustDelta = await sut.calculateTrustDelta(
+            event: .workoutCompleted(workout),
+            currentPhase: .fullGhost,
+            trustScore: 95
         )
-
-        // Higher phases should have dampened positive swings (already trusted)
-        XCTAssertLessThanOrEqual(fullGhostDelta, observerDelta,
-                                 "Positive deltas should be equal or smaller at higher phases")
+        XCTAssertGreaterThan(lowTrustDelta, highTrustDelta,
+                            "Positive delta should diminish at high trust scores")
     }
 
-    func testNegativeEventsHaveLargerImpactAtHigherPhases() {
-        // Betraying trust at higher phases should hurt more
-        let observerDelta = TrustAttributionEngine.shared.calculateDelta(
-            for: .missedWorkout(.noReason),
-            currentPhase: .observer
+    func testNegativeDeltaAmplifiedAtHighTrust() async {
+        let block = makeBlock(autoScheduled: true)
+        let lowTrustDelta = await sut.calculateTrustDelta(
+            event: .blockMissed(block),
+            currentPhase: .fullGhost,
+            trustScore: 50
         )
-
-        let transformerDelta = TrustAttributionEngine.shared.calculateDelta(
-            for: .missedWorkout(.noReason),
-            currentPhase: .transformer
+        let highTrustDelta = await sut.calculateTrustDelta(
+            event: .blockMissed(block),
+            currentPhase: .fullGhost,
+            trustScore: 90
         )
-
-        // This is a design decision - could go either way
-        // Currently testing that they're both negative
-        XCTAssertLessThan(observerDelta, 0)
-        XCTAssertLessThan(transformerDelta, 0)
+        XCTAssertLessThan(highTrustDelta, lowTrustDelta,
+                         "Negative delta should be amplified at high trust")
     }
 
-    // MARK: - Delta Magnitude Tests
+    // MARK: - Triage Modifier Tests
 
-    func testDeltaMagnitudesAreReasonable() {
+    func testTriageResponseIsPositive() async {
+        let delta = await sut.calculateTrustDelta(
+            event: .triageResponded(.lifeHappened),
+            currentPhase: .scheduler,
+            trustScore: 30
+        )
+        XCTAssertGreaterThan(delta, 0, "Responding to triage should be positive")
+    }
+
+    // MARK: - Streak Bonus
+
+    func testStreakBonusZeroForShortStreaks() async {
+        let bonus = await sut.calculateStreakBonus(consecutiveWorkouts: 1)
+        XCTAssertEqual(bonus, 0)
+    }
+
+    func testStreakBonusIncreasesWithStreak() async {
+        let bonus3 = await sut.calculateStreakBonus(consecutiveWorkouts: 3)
+        let bonus7 = await sut.calculateStreakBonus(consecutiveWorkouts: 7)
+        let bonus14 = await sut.calculateStreakBonus(consecutiveWorkouts: 14)
+
+        XCTAssertGreaterThan(bonus3, 0)
+        XCTAssertGreaterThan(bonus7, bonus3)
+        XCTAssertGreaterThan(bonus14, bonus7)
+    }
+
+    // MARK: - Consistency
+
+    func testSameEventProducesSameDelta() async {
+        let workout = makeWorkout(duration: 3600)
+        let delta1 = await sut.calculateTrustDelta(
+            event: .workoutCompleted(workout),
+            currentPhase: .scheduler,
+            trustScore: 40
+        )
+        let delta2 = await sut.calculateTrustDelta(
+            event: .workoutCompleted(workout),
+            currentPhase: .scheduler,
+            trustScore: 40
+        )
+        XCTAssertEqual(delta1, delta2, accuracy: 0.0001)
+    }
+
+    // MARK: - Delta Magnitude Bounds
+
+    func testDeltaMagnitudesAreReasonable() async {
         let events: [TrustEvent] = [
-            .completedWorkout,
-            .missedWorkout(.noReason),
-            .missedWorkout(.calendarConflict),
-            .missedWorkout(.illness),
-            .missedWorkout(.travelMode),
-            .userDeletedBlock,
-            .suggestedSlotAccepted,
-            .autoScheduledWorkoutCompleted
+            .workoutCompleted(makeWorkout(duration: 3600)),
+            .blockDeleted(makeBlock(autoScheduled: false)),
+            .blockMissed(makeBlock(autoScheduled: true)),
+            .proposalAccepted,
+            .proposalRejected,
+            .appOpened,
+            .triageResponded(.lifeHappened)
         ]
 
         for event in events {
-            let delta = TrustAttributionEngine.shared.calculateDelta(
-                for: event,
-                currentPhase: .scheduler
+            let delta = await sut.calculateTrustDelta(
+                event: event,
+                currentPhase: .scheduler,
+                trustScore: 40
             )
-
-            XCTAssertGreaterThanOrEqual(delta, -0.3, "Delta should not be too negative: \(event)")
-            XCTAssertLessThanOrEqual(delta, 0.2, "Delta should not be too positive: \(event)")
+            XCTAssertGreaterThanOrEqual(delta, -30, "Delta should not be unreasonably negative: \(event)")
+            XCTAssertLessThanOrEqual(delta, 20, "Delta should not be unreasonably positive: \(event)")
         }
     }
+}
 
-    // MARK: - Consistency Tests
+// MARK: - Testable Wrapper
 
-    func testDeltasAreConsistentAcrossCalls() {
-        let delta1 = TrustAttributionEngine.shared.calculateDelta(
-            for: .completedWorkout,
-            currentPhase: .scheduler
+/// Thin wrapper to instantiate TrustAttributionEngine (actor) for testing.
+actor TestableTrustAttribution {
+    private let engine = TrustAttributionEngine()
+
+    func calculateTrustDelta(event: TrustEvent, currentPhase: TrustPhase, trustScore: Double) async -> Double {
+        await engine.calculateTrustDelta(event: event, currentPhase: currentPhase, trustScore: trustScore)
+    }
+
+    func calculateStreakBonus(consecutiveWorkouts: Int) async -> Double {
+        await engine.calculateStreakBonus(consecutiveWorkouts: consecutiveWorkouts)
+    }
+}
+
+// MARK: - Test Helpers
+
+extension TrustAttributionTests {
+    func makeWorkout(duration: TimeInterval) -> DetectedWorkout {
+        DetectedWorkout(
+            id: UUID().uuidString,
+            type: .cardio,
+            startDate: Date(),
+            endDate: Date().addingTimeInterval(duration),
+            duration: duration,
+            activeCalories: 300,
+            averageHeartRate: 140,
+            source: "Apple Watch"
         )
+    }
 
-        let delta2 = TrustAttributionEngine.shared.calculateDelta(
-            for: .completedWorkout,
-            currentPhase: .scheduler
+    func makeBlock(autoScheduled: Bool) -> TrainingBlock {
+        TrainingBlock(
+            id: UUID().uuidString,
+            calendarEventId: "cal-1",
+            workoutType: .strength,
+            startTime: Date(),
+            endTime: Date().addingTimeInterval(3600),
+            wasAutoScheduled: autoScheduled,
+            status: .scheduled,
+            generatedWorkout: nil
         )
-
-        XCTAssertEqual(delta1, delta2, "Same event should always produce same delta")
-    }
-
-    func testAllExcuseTypesHaveSmallerImpactThanNoReason() {
-        let noReasonDelta = TrustAttributionEngine.shared.calculateDelta(
-            for: .missedWorkout(.noReason),
-            currentPhase: .autoScheduler
-        )
-
-        let excuseTypes: [MissedWorkoutReason] = [
-            .calendarConflict,
-            .illness,
-            .travelMode,
-            .poorRecovery,
-            .emergencyConflict
-        ]
-
-        for excuse in excuseTypes {
-            let excusedDelta = TrustAttributionEngine.shared.calculateDelta(
-                for: .missedWorkout(excuse),
-                currentPhase: .autoScheduler
-            )
-
-            XCTAssertGreaterThanOrEqual(excusedDelta, noReasonDelta,
-                                        "Excuse \(excuse) should reduce negative impact")
-        }
-    }
-
-    // MARK: - Integration Tests
-
-    func testCumulativeDeltasProgressThroughPhases() {
-        // Simulate progression through phases
-        var confidence = 0.0
-
-        // Simulate 20 completed workouts
-        for _ in 0..<20 {
-            let delta = TrustAttributionEngine.shared.calculateDelta(
-                for: .completedWorkout,
-                currentPhase: .observer
-            )
-            confidence += delta
-        }
-
-        XCTAssertGreaterThan(confidence, TrustPhase.scheduler.confidenceThreshold,
-                            "20 completed workouts should get past Scheduler threshold")
-    }
-
-    func testMixedEventsResultInReasonableConfidence() {
-        var confidence = 0.5
-
-        // Mix of positive and negative events
-        let events: [(TrustEvent, Int)] = [
-            (.completedWorkout, 5),
-            (.missedWorkout(.calendarConflict), 2),
-            (.suggestedSlotAccepted, 3),
-            (.userDeletedBlock, 1),
-            (.completedWorkout, 4)
-        ]
-
-        for (event, count) in events {
-            for _ in 0..<count {
-                let delta = TrustAttributionEngine.shared.calculateDelta(
-                    for: event,
-                    currentPhase: .scheduler
-                )
-                confidence = max(0, min(1, confidence + delta))
-            }
-        }
-
-        XCTAssertGreaterThan(confidence, 0, "Mixed events should result in positive confidence")
-        XCTAssertLessThan(confidence, 1, "Should not hit max confidence")
     }
 }

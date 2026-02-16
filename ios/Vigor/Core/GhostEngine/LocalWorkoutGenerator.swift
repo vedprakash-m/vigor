@@ -47,6 +47,15 @@ final class LocalWorkoutGenerator {
 
     private func pickType(preferences: WorkoutPreferences, recent: [DetectedWorkout]) -> WorkoutType {
         let recentTypes = recent.prefix(3).map { $0.type }
+
+        // If the user has had many intense workouts recently, suggest recovery
+        let recentIntenseCount = recentTypes.filter { $0 == .strength || $0 == .hiit }.count
+        if recentIntenseCount >= 2 {
+            let recoveryCandidates: [WorkoutType] = [.recoveryWalk, .lightCardio, .flexibility]
+            let notRecent = recoveryCandidates.filter { !recentTypes.contains($0) }
+            if let pick = notRecent.randomElement() { return pick }
+        }
+
         let candidates: [WorkoutType] = [.strength, .cardio, .hiit, .flexibility]
 
         // Prefer types NOT done recently for variety
@@ -59,11 +68,13 @@ final class LocalWorkoutGenerator {
 
     private func buildExercises(for type: WorkoutType, minutes: Int, equipment: [String]) -> [Exercise] {
         switch type {
-        case .strength:  return strengthExercises(minutes: minutes, equipment: equipment)
-        case .cardio:    return cardioExercises(minutes: minutes)
-        case .hiit:      return hiitExercises(minutes: minutes)
-        case .flexibility: return flexibilityExercises(minutes: minutes)
-        default:         return strengthExercises(minutes: minutes, equipment: equipment)
+        case .strength:     return strengthExercises(minutes: minutes, equipment: equipment)
+        case .cardio:       return cardioExercises(minutes: minutes)
+        case .hiit:         return hiitExercises(minutes: minutes)
+        case .flexibility:  return flexibilityExercises(minutes: minutes)
+        case .recoveryWalk: return recoveryWalkExercises(minutes: minutes)
+        case .lightCardio:  return lightCardioExercises(minutes: minutes)
+        case .other:        return strengthExercises(minutes: minutes, equipment: equipment)
         }
     }
 
@@ -110,6 +121,28 @@ final class LocalWorkoutGenerator {
         ]
     }
 
+    private func recoveryWalkExercises(minutes: Int) -> [Exercise] {
+        let walkMinutes = max(10, minutes - 5)
+        return [
+            Exercise(id: "rw-0", name: "Easy Walk", sets: nil, reps: nil, duration: walkMinutes * 60, restSeconds: nil,
+                     notes: "Keep a relaxed pace. Heart rate should stay below zone 2. Focus on breathing and posture."),
+            Exercise(id: "rw-1", name: "Gentle Calf Stretch", sets: nil, reps: nil, duration: 30, restSeconds: nil, notes: "30s each side"),
+            Exercise(id: "rw-2", name: "Standing Quad Stretch", sets: nil, reps: nil, duration: 30, restSeconds: nil, notes: "30s each side")
+        ]
+    }
+
+    private func lightCardioExercises(minutes: Int) -> [Exercise] {
+        let roundMinutes = max(5, (minutes - 5) / 3)
+        return [
+            Exercise(id: "lc-0", name: "Light Jog / Power Walk", sets: nil, reps: nil, duration: roundMinutes * 60, restSeconds: 60,
+                     notes: "Stay at conversational pace; HR zone 1-2"),
+            Exercise(id: "lc-1", name: "Marching in Place", sets: nil, reps: nil, duration: roundMinutes * 60, restSeconds: 60,
+                     notes: "High knees at a comfortable tempo"),
+            Exercise(id: "lc-2", name: "Lateral Shuffle", sets: nil, reps: nil, duration: roundMinutes * 60, restSeconds: nil,
+                     notes: "Easy side-to-side movement, 30s each direction")
+        ]
+    }
+
     // MARK: - Warmup / Cooldown
 
     private func buildWarmup(for type: WorkoutType) -> [Exercise] {
@@ -137,7 +170,8 @@ final class LocalWorkoutGenerator {
         case .hiit:         return "HIIT Blast"
         case .flexibility:  return "Mobility Flow"
         case .recoveryWalk: return "Recovery Walk"
-        default:            return "General Workout"
+        case .lightCardio:  return "Light Cardio"
+        case .other:        return "General Workout"
         }
     }
 
@@ -147,7 +181,9 @@ final class LocalWorkoutGenerator {
         case .cardio:       return "A \(minutes)-minute steady-state cardio session to build aerobic base."
         case .hiit:         return "A \(minutes)-minute high-intensity interval session for maximum efficiency."
         case .flexibility:  return "A \(minutes)-minute mobility and flexibility flow to aid recovery."
-        default:            return "A \(minutes)-minute workout tailored to your schedule."
+        case .recoveryWalk: return "A gentle \(minutes)-minute walk to promote active recovery and circulation."
+        case .lightCardio:  return "A \(minutes)-minute low-intensity cardio session to maintain movement without stress."
+        case .other:        return "A \(minutes)-minute workout tailored to your schedule."
         }
     }
 }

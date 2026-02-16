@@ -13,7 +13,9 @@
 		1341DE522DBA0A5A962DF5C9 /* SkipPredictor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE1A1D668F1E5EB5341A954 /* SkipPredictor.swift */; };
 		1942233D070C34019A6FAA91 /* SafetyBreakerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0260D4ABF8202E13DB8990 /* SafetyBreakerTests.swift */; };
 		19F17AF2A2073F8DCA64F47B /* GhostHealthMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B3BE560E565B3D60A704E9F /* GhostHealthMonitor.swift */; };
+		1A078604EB10071F8BD17FF5 /* FirstInsightGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C265C3F0BEBD5BF5DDE8E281 /* FirstInsightGeneratorTests.swift */; };
 		1A17D18BEE08C620DB1FB26F /* BehavioralMemoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429D966F103F58E0B763600C /* BehavioralMemoryStore.swift */; };
+		1C599ED3F1A8F2F8C5F4F3BD /* ExerciseDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = E010847C0424CA43F74EE139 /* ExerciseDatabase.swift */; };
 		203E4E3944D2E881C13DB325 /* TrustAttributionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4964EAF1C1B030F26C069831 /* TrustAttributionTests.swift */; };
 		2587FC0FA59E35BFF63E1564 /* AuthorityConflictResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 633C0875A92D8B162F5DB7D2 /* AuthorityConflictResolver.swift */; };
 		261FB841BC0F151E55B51140 /* PatternDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E56114EF1A782F631D781BE /* PatternDetector.swift */; };
@@ -21,9 +23,11 @@
 		2FB7BE71B1A576D000DE0997 /* LocalWorkoutGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E593D90E10B1B694332086 /* LocalWorkoutGenerator.swift */; };
 		30E035F0691DA805CDDCA502 /* TriageCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C53F9D565123D030A60BEE40 /* TriageCard.swift */; };
 		3C22D0E54A2532DE5CEC9A12 /* OnboardingFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EA854F3B9A7959EA7C2AC41 /* OnboardingFlow.swift */; };
+		3C586B188350A3170C1C6090 /* VigorLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC8B7912489B2FAB6F34A435 /* VigorLogger.swift */; };
 		404BD3E7CEF20E2601F129A2 /* VigorHaptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F140F67E396AB1AF17C4860 /* VigorHaptics.swift */; };
 		408499887EBCE448D013F914 /* AccessibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F4846F82936B471B1C953C /* AccessibilityTests.swift */; };
 		431687AE023B6754B313F848 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8935CAA93E4F9BDF09FC0FB5 /* ContentView.swift */; };
+		43F30E18BAFEA525F48A069F /* VigorLoggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB639CB65A30164842EF06A1 /* VigorLoggerTests.swift */; };
 		4479CD43AB1BFC8FDB6381DC /* GhostEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E099E9CFFA14C1A989D63AE /* GhostEngine.swift */; };
 		46A47B25A7C46B725C278503 /* PerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 634857E27B1F7BBB146F1F2E /* PerformanceTests.swift */; };
 		4D61BE5E81060153D96CB4F1 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E504570659DF119A091AC9 /* AuthManager.swift */; };
@@ -32,18 +36,24 @@
 		61F1F76CA3899E0AD2B6B8AE /* CalendarScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A7496624EB4CC414FF74CEC /* CalendarScheduler.swift */; };
 		65B0B8C48F4F2BF42EE85A66 /* TrustPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92B21DEF349E94F8411A8392 /* TrustPhase.swift */; };
 		65E46B392A5AC29015369B55 /* TriageCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B2F7697D112282FCE0C749 /* TriageCardView.swift */; };
+		6900DCA5467172BAE78EE020 /* NotificationOrchestratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A810B5C29EF1C0AD972C03AB /* NotificationOrchestratorTests.swift */; };
 		72480C4C867CD4F4EAEA4877 /* GhostCycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42FBC6A69CDC3CB2B6BD369B /* GhostCycleTests.swift */; };
 		748411472FBEB21D36F6597E /* RecoveryAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5E4D9F2E03C023A504CDAEE /* RecoveryAnalyzer.swift */; };
 		7DC6C456BE0EBECECBD06BF0 /* VigorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A876DBE177741D3ACEDF9 /* VigorApp.swift */; };
+		85B9D52A1074F9E034900FDD /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AE5506A7B37D052263BD26E /* KeychainHelper.swift */; };
 		85BD524F2C5181F90997435E /* OptimalWindowFinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B946D42D1A7DD9379B14B1 /* OptimalWindowFinder.swift */; };
+		8DADC64965BA7652CC74C6E9 /* OfflineAPIQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 099FE02B81776BA61FA84A92 /* OfflineAPIQueue.swift */; };
 		95D1660BEB75A2C6AD41D03E /* RawSignalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206F932C079F5096E112038C /* RawSignalStore.swift */; };
 		99D404113158D777CD792AE4 /* HealthKitTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F2214E85DEB048C2005CD2 /* HealthKitTypes.swift */; };
 		9C80935D21529FE348C18480 /* GhostSimulationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA1EA85EBE18A1D8EF2B2B /* GhostSimulationTests.swift */; };
 		9F6B7BF45D8FA84206847BFF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E88F10102A3AD13B7826B5F /* AppDelegate.swift */; };
+		A303C3A01CAFCF0E9684260B /* FirstInsightGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25027BDF251F7E416EE06258 /* FirstInsightGenerator.swift */; };
 		A3A97E1553B5C98BA53B1FF3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 56F26B3397D63FC44F0F05B0 /* PrivacyInfo.xcprivacy */; };
+		A7B5C1C3D715939983EE80C8 /* OfflineAPIQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50D887F8CD8DF9C0D972277A /* OfflineAPIQueueTests.swift */; };
 		AA85EA5A2663B4B48B6272EE /* PhenomeCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79BBCEE976CEE2A53015BF5F /* PhenomeCoordinator.swift */; };
 		AAB998E5181CBBA700D7E063 /* MSALConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A816FC2884A25E9FDBC7443F /* MSALConfiguration.swift */; };
 		AB48FE588E51B32F39349F7D /* WatchConnectivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B39014DFCEFCE4D75E3BAE0 /* WatchConnectivityManager.swift */; };
+		ABF65E53190FA2D68069A18D /* GhostRetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 728231B32E3D22129ACBFF02 /* GhostRetryTests.swift */; };
 		AC95DC57CC84BC90F72B412F /* ValueReceiptGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9908D0EC7ED84B52AC8829 /* ValueReceiptGenerator.swift */; };
 		B0FD6047EF85E6149892BA78 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA025CB3BDC1376C37D8F4D /* HomeView.swift */; };
 		B224AC72A336964EBB7AA153 /* TrustStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E6668AE3D8217BF41E06B93 /* TrustStateMachineTests.swift */; };
@@ -58,6 +68,7 @@
 		DBB3D9ECE299C66798D5E49F /* ValueReceiptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464960809CD8F699C0364A26 /* ValueReceiptView.swift */; };
 		DDF11242046669334C6F1975 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 451BF40FEF365DE6797E8934 /* Assets.xcassets */; };
 		E7561922C5E4E746736D9C85 /* PhenomeEntities.swift in Sources */ = {isa = PBXBuildFile; fileRef = BACC6A31151662720B757861 /* PhenomeEntities.swift */; };
+		E9A1FF2B0C80645474AC916F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD00DA1AF7A7E1EF771060D6 /* SettingsView.swift */; };
 		EFDE8091E6EC21341A706AFE /* FailureDisambiguator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1755B699F44B2BC1A687ABF2 /* FailureDisambiguator.swift */; };
 		F104C520767E55F0C25BDE6E /* CalendarShadowSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5779B96B9D6736874EF3A /* CalendarShadowSync.swift */; };
 		F2AFD341E04177163CBFE547 /* TrustStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5796F9808BEE3CD59097A02C /* TrustStateMachine.swift */; };
@@ -77,12 +88,14 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		099FE02B81776BA61FA84A92 /* OfflineAPIQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineAPIQueue.swift; sourceTree = "<group>"; };
 		0CC8F0DA47CEEB49DCEBB73C /* NotificationOrchestrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationOrchestrator.swift; sourceTree = "<group>"; };
 		0E6668AE3D8217BF41E06B93 /* TrustStateMachineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrustStateMachineTests.swift; sourceTree = "<group>"; };
 		135A876DBE177741D3ACEDF9 /* VigorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VigorApp.swift; sourceTree = "<group>"; };
 		1755B699F44B2BC1A687ABF2 /* FailureDisambiguator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FailureDisambiguator.swift; sourceTree = "<group>"; };
 		1C8774F4D37AC3BF612D6588 /* Vigor.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Vigor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		206F932C079F5096E112038C /* RawSignalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawSignalStore.swift; sourceTree = "<group>"; };
+		25027BDF251F7E416EE06258 /* FirstInsightGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstInsightGenerator.swift; sourceTree = "<group>"; };
 		27B946D42D1A7DD9379B14B1 /* OptimalWindowFinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptimalWindowFinder.swift; sourceTree = "<group>"; };
 		2C0B3D8840C5F567436B8AAF /* HealthKitObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitObserver.swift; sourceTree = "<group>"; };
 		31B5779B96B9D6736874EF3A /* CalendarShadowSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarShadowSync.swift; sourceTree = "<group>"; };
@@ -95,6 +108,7 @@
 		491AA39E038414D86CFF7175 /* CoreDataStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataStack.swift; sourceTree = "<group>"; };
 		4964EAF1C1B030F26C069831 /* TrustAttributionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrustAttributionTests.swift; sourceTree = "<group>"; };
 		4DE1A1D668F1E5EB5341A954 /* SkipPredictor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkipPredictor.swift; sourceTree = "<group>"; };
+		50D887F8CD8DF9C0D972277A /* OfflineAPIQueueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineAPIQueueTests.swift; sourceTree = "<group>"; };
 		516DC190ADEA2BA3A8661DC3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		53F2214E85DEB048C2005CD2 /* HealthKitTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitTypes.swift; sourceTree = "<group>"; };
 		56F26B3397D63FC44F0F05B0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -107,6 +121,7 @@
 		66E593D90E10B1B694332086 /* LocalWorkoutGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalWorkoutGenerator.swift; sourceTree = "<group>"; };
 		6D31F2F1E243D72DC2F36ED2 /* VigorTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VigorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E88F10102A3AD13B7826B5F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		728231B32E3D22129ACBFF02 /* GhostRetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhostRetryTests.swift; sourceTree = "<group>"; };
 		74B2F7697D112282FCE0C749 /* TriageCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TriageCardView.swift; sourceTree = "<group>"; };
 		79BBCEE976CEE2A53015BF5F /* PhenomeCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhenomeCoordinator.swift; sourceTree = "<group>"; };
 		7DFCDC8A44540A250CF82A4D /* Vigor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Vigor.entitlements; sourceTree = "<group>"; };
@@ -119,12 +134,15 @@
 		8C317A9612806308FE8F1D18 /* WatchConnectivityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityTests.swift; sourceTree = "<group>"; };
 		92B21DEF349E94F8411A8392 /* TrustPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrustPhase.swift; sourceTree = "<group>"; };
 		96F4846F82936B471B1C953C /* AccessibilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityTests.swift; sourceTree = "<group>"; };
+		9AE5506A7B37D052263BD26E /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		9B07AC3173D740AD827E5F42 /* MetricRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricRegistry.swift; sourceTree = "<group>"; };
 		9E56114EF1A782F631D781BE /* PatternDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternDetector.swift; sourceTree = "<group>"; };
 		9EA854F3B9A7959EA7C2AC41 /* OnboardingFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlow.swift; sourceTree = "<group>"; };
+		A810B5C29EF1C0AD972C03AB /* NotificationOrchestratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationOrchestratorTests.swift; sourceTree = "<group>"; };
 		A816FC2884A25E9FDBC7443F /* MSALConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MSALConfiguration.swift; sourceTree = "<group>"; };
 		A8F93544FFFFA9DE37F33870 /* TrustAttributionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrustAttributionEngine.swift; sourceTree = "<group>"; };
 		AB187A64F662E68171BE3F68 /* BlockTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockTransformer.swift; sourceTree = "<group>"; };
+		AD00DA1AF7A7E1EF771060D6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B3BA1EA85EBE18A1D8EF2B2B /* GhostSimulationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhostSimulationTests.swift; sourceTree = "<group>"; };
 		B5CA4F06FA84D27461D0069A /* VigorAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VigorAPIClient.swift; sourceTree = "<group>"; };
 		B5EF4F4D45018A31B39D1B96 /* Dev.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Dev.xcconfig; sourceTree = "<group>"; };
@@ -133,13 +151,17 @@
 		BEA025CB3BDC1376C37D8F4D /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		C1C1E41605E54490E6D537F9 /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIModels.swift; sourceTree = "<group>"; };
 		C2075D371382B445C3D89F69 /* SilentPushReceiver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentPushReceiver.swift; sourceTree = "<group>"; };
+		C265C3F0BEBD5BF5DDE8E281 /* FirstInsightGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstInsightGeneratorTests.swift; sourceTree = "<group>"; };
 		C53F9D565123D030A60BEE40 /* TriageCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TriageCard.swift; sourceTree = "<group>"; };
 		CC0260D4ABF8202E13DB8990 /* SafetyBreakerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyBreakerTests.swift; sourceTree = "<group>"; };
 		CF7968CBB6BF2324D050F1D9 /* Prod.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Prod.xcconfig; sourceTree = "<group>"; };
 		CFFE8FFB6FA41941284A37C6 /* DerivedStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DerivedStateStore.swift; sourceTree = "<group>"; };
 		D4FDCD64D30401BF0F54C3E4 /* CalendarIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarIntegrationTests.swift; sourceTree = "<group>"; };
 		DB9908D0EC7ED84B52AC8829 /* ValueReceiptGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueReceiptGenerator.swift; sourceTree = "<group>"; };
+		E010847C0424CA43F74EE139 /* ExerciseDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDatabase.swift; sourceTree = "<group>"; };
+		EB639CB65A30164842EF06A1 /* VigorLoggerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VigorLoggerTests.swift; sourceTree = "<group>"; };
 		F5E4D9F2E03C023A504CDAEE /* RecoveryAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryAnalyzer.swift; sourceTree = "<group>"; };
+		FC8B7912489B2FAB6F34A435 /* VigorLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VigorLogger.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -217,6 +239,7 @@
 				DECFD147B7AB00FA3DD120C6 /* GhostEngine */,
 				BB2F8B0B986060C5B4459201 /* Haptics */,
 				5E096F8CF9B5343B81F21B70 /* Health */,
+				7BA053F193A62CA2A4131239 /* Logging */,
 				90F8B546FBF46BBD7D207C4D /* ML */,
 				071C6B7E25475A9F7EF4262D /* Onboarding */,
 				FDCBBBC909BD63AF5559FCF8 /* Phenome */,
@@ -267,6 +290,14 @@
 				8B39014DFCEFCE4D75E3BAE0 /* WatchConnectivityManager.swift */,
 			);
 			path = WatchConnectivity;
+			sourceTree = "<group>";
+		};
+		460F98FDF8D241671D907396 /* Logging */ = {
+			isa = PBXGroup;
+			children = (
+				EB639CB65A30164842EF06A1 /* VigorLoggerTests.swift */,
+			);
+			path = Logging;
 			sourceTree = "<group>";
 		};
 		54650A8B4C1BBABDCB3CF32A /* ValueReceipt */ = {
@@ -391,6 +422,7 @@
 		7610E89024CEA63445AA7001 /* Ghost */ = {
 			isa = PBXGroup;
 			children = (
+				728231B32E3D22129ACBFF02 /* GhostRetryTests.swift */,
 			);
 			path = Ghost;
 			sourceTree = "<group>";
@@ -408,6 +440,7 @@
 			isa = PBXGroup;
 			children = (
 				C1C1E41605E54490E6D537F9 /* APIModels.swift */,
+				099FE02B81776BA61FA84A92 /* OfflineAPIQueue.swift */,
 				B5CA4F06FA84D27461D0069A /* VigorAPIClient.swift */,
 			);
 			path = API;
@@ -434,6 +467,14 @@
 			path = Phenome;
 			sourceTree = "<group>";
 		};
+		7BA053F193A62CA2A4131239 /* Logging */ = {
+			isa = PBXGroup;
+			children = (
+				FC8B7912489B2FAB6F34A435 /* VigorLogger.swift */,
+			);
+			path = Logging;
+			sourceTree = "<group>";
+		};
 		84306B64D410D435A4CAA179 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -452,6 +493,7 @@
 		8A4BF78C4047C2FAD385D05A /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				AD00DA1AF7A7E1EF771060D6 /* SettingsView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -472,6 +514,14 @@
 			children = (
 			);
 			path = CloudKit;
+			sourceTree = "<group>";
+		};
+		9A025F1FD89AB5909E65FF5F /* Insights */ = {
+			isa = PBXGroup;
+			children = (
+				C265C3F0BEBD5BF5DDE8E281 /* FirstInsightGeneratorTests.swift */,
+			);
+			path = Insights;
 			sourceTree = "<group>";
 		};
 		9B722DE2DA73C954F27C43C8 /* Context */ = {
@@ -609,7 +659,9 @@
 			isa = PBXGroup;
 			children = (
 				3B92FB921D1E15C8C26C22EA /* DecisionReceiptStore.swift */,
+				E010847C0424CA43F74EE139 /* ExerciseDatabase.swift */,
 				1755B699F44B2BC1A687ABF2 /* FailureDisambiguator.swift */,
+				25027BDF251F7E416EE06258 /* FirstInsightGenerator.swift */,
 				5E099E9CFFA14C1A989D63AE /* GhostEngine.swift */,
 				5B3BE560E565B3D60A704E9F /* GhostHealthMonitor.swift */,
 				66E593D90E10B1B694332086 /* LocalWorkoutGenerator.swift */,
@@ -630,6 +682,7 @@
 			isa = PBXGroup;
 			children = (
 				36E504570659DF119A091AC9 /* AuthManager.swift */,
+				9AE5506A7B37D052263BD26E /* KeychainHelper.swift */,
 				A816FC2884A25E9FDBC7443F /* MSALConfiguration.swift */,
 			);
 			path = Auth;
@@ -651,6 +704,10 @@
 				7610E89024CEA63445AA7001 /* Ghost */,
 				AD1ECC47018B87412E47E1F1 /* Haptics */,
 				ECC6F68F2FBACF2AE5B5EE84 /* Health */,
+				9A025F1FD89AB5909E65FF5F /* Insights */,
+				460F98FDF8D241671D907396 /* Logging */,
+				F6C7D7D5C4C2C1055EE57519 /* Notifications */,
+				F268C8002DE7CDEC63841F30 /* Offline */,
 				100E90A4F5A8EDC3936F301B /* Onboarding */,
 				5D4B73EE26ACEF0CB1257C75 /* Performance */,
 				79E2E0835F6599480589CE4D /* Phenome */,
@@ -679,12 +736,28 @@
 			path = Simulation;
 			sourceTree = "<group>";
 		};
+		F268C8002DE7CDEC63841F30 /* Offline */ = {
+			isa = PBXGroup;
+			children = (
+				50D887F8CD8DF9C0D972277A /* OfflineAPIQueueTests.swift */,
+			);
+			path = Offline;
+			sourceTree = "<group>";
+		};
 		F44CEEE61AA47AE0642B63DA /* WatchConnectivity */ = {
 			isa = PBXGroup;
 			children = (
 				8C317A9612806308FE8F1D18 /* WatchConnectivityTests.swift */,
 			);
 			path = WatchConnectivity;
+			sourceTree = "<group>";
+		};
+		F6C7D7D5C4C2C1055EE57519 /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				A810B5C29EF1C0AD972C03AB /* NotificationOrchestratorTests.swift */,
+			);
+			path = Notifications;
 			sourceTree = "<group>";
 		};
 		FDCBBBC909BD63AF5559FCF8 /* Phenome */ = {
@@ -806,17 +879,21 @@
 				FE55E298F78B648221459AB7 /* CoreDataStack.swift in Sources */,
 				5FC8FC331C42BBFC31009216 /* DecisionReceiptStore.swift in Sources */,
 				BE520B9C3EF9B8091391779B /* DerivedStateStore.swift in Sources */,
+				1C599ED3F1A8F2F8C5F4F3BD /* ExerciseDatabase.swift in Sources */,
 				EFDE8091E6EC21341A706AFE /* FailureDisambiguator.swift in Sources */,
+				A303C3A01CAFCF0E9684260B /* FirstInsightGenerator.swift in Sources */,
 				4479CD43AB1BFC8FDB6381DC /* GhostEngine.swift in Sources */,
 				19F17AF2A2073F8DCA64F47B /* GhostHealthMonitor.swift in Sources */,
 				60D4E32FF55425650E743534 /* HealthKitObserver.swift in Sources */,
 				99D404113158D777CD792AE4 /* HealthKitTypes.swift in Sources */,
 				B0FD6047EF85E6149892BA78 /* HomeView.swift in Sources */,
 				BB6066248097E6FE97A223A5 /* InfoPlist.swift in Sources */,
+				85B9D52A1074F9E034900FDD /* KeychainHelper.swift in Sources */,
 				2FB7BE71B1A576D000DE0997 /* LocalWorkoutGenerator.swift in Sources */,
 				AAB998E5181CBBA700D7E063 /* MSALConfiguration.swift in Sources */,
 				BEE1315D49B80F13291B2838 /* MetricRegistry.swift in Sources */,
 				DA12AC8D02B9C9C99D4DA46A /* NotificationOrchestrator.swift in Sources */,
+				8DADC64965BA7652CC74C6E9 /* OfflineAPIQueue.swift in Sources */,
 				3C22D0E54A2532DE5CEC9A12 /* OnboardingFlow.swift in Sources */,
 				85BD524F2C5181F90997435E /* OptimalWindowFinder.swift in Sources */,
 				261FB841BC0F151E55B51140 /* PatternDetector.swift in Sources */,
@@ -825,6 +902,7 @@
 				95D1660BEB75A2C6AD41D03E /* RawSignalStore.swift in Sources */,
 				748411472FBEB21D36F6597E /* RecoveryAnalyzer.swift in Sources */,
 				2704C042D28DA7ACD17B8AD3 /* SacredTimeDetector.swift in Sources */,
+				E9A1FF2B0C80645474AC916F /* SettingsView.swift in Sources */,
 				F80332FDBAA470BD4479467D /* SilentPushReceiver.swift in Sources */,
 				1341DE522DBA0A5A962DF5C9 /* SkipPredictor.swift in Sources */,
 				DAAA160832CCACD10BF9D0AD /* TodayView.swift in Sources */,
@@ -839,6 +917,7 @@
 				D3E2466D6BB1DC4B92887955 /* VigorAPIClient.swift in Sources */,
 				7DC6C456BE0EBECECBD06BF0 /* VigorApp.swift in Sources */,
 				404BD3E7CEF20E2601F129A2 /* VigorHaptics.swift in Sources */,
+				3C586B188350A3170C1C6090 /* VigorLogger.swift in Sources */,
 				AB48FE588E51B32F39349F7D /* WatchConnectivityManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -849,12 +928,17 @@
 			files = (
 				408499887EBCE448D013F914 /* AccessibilityTests.swift in Sources */,
 				027F812AEE8B382577AED13A /* CalendarIntegrationTests.swift in Sources */,
+				1A078604EB10071F8BD17FF5 /* FirstInsightGeneratorTests.swift in Sources */,
 				72480C4C867CD4F4EAEA4877 /* GhostCycleTests.swift in Sources */,
+				ABF65E53190FA2D68069A18D /* GhostRetryTests.swift in Sources */,
 				9C80935D21529FE348C18480 /* GhostSimulationTests.swift in Sources */,
+				6900DCA5467172BAE78EE020 /* NotificationOrchestratorTests.swift in Sources */,
+				A7B5C1C3D715939983EE80C8 /* OfflineAPIQueueTests.swift in Sources */,
 				46A47B25A7C46B725C278503 /* PerformanceTests.swift in Sources */,
 				1942233D070C34019A6FAA91 /* SafetyBreakerTests.swift in Sources */,
 				203E4E3944D2E881C13DB325 /* TrustAttributionTests.swift in Sources */,
 				B224AC72A336964EBB7AA153 /* TrustStateMachineTests.swift in Sources */,
+				43F30E18BAFEA525F48A069F /* VigorLoggerTests.swift in Sources */,
 				0BC9658F56D7E53DCACEA2DD /* WatchConnectivityTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

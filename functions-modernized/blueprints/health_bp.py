@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 import azure.functions as func
 
-from shared.helpers import success_response
+from shared.helpers import bind_request_context, error_response, success_response
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,7 @@ health_bp = func.Blueprint()
 async def health_check(req: func.HttpRequest) -> func.HttpResponse:
     """Health check with dependency verification"""
     try:
+        bind_request_context(req)
         from shared.cosmos_db import get_global_client
         from shared.openai_client import OpenAIClient
 
@@ -45,12 +46,8 @@ async def health_check(req: func.HttpRequest) -> func.HttpResponse:
 
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
-        return success_response(
-            {
-                "status": "unhealthy",
-                "error": "Internal health check failure",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
+        return error_response(
+            "Internal health check failure",
             status_code=503,
         )
 
@@ -60,6 +57,7 @@ async def health_check(req: func.HttpRequest) -> func.HttpResponse:
 )
 async def health_simple(req: func.HttpRequest) -> func.HttpResponse:
     """Simple health check — no external dependencies"""
+    bind_request_context(req)
     return success_response(
         {
             "status": "healthy",

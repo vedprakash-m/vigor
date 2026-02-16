@@ -30,6 +30,17 @@ print_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
+check_path_exists() {
+    local path="$1"
+    local description="$2"
+    if [ -e "$path" ]; then
+        print_success "$description"
+    else
+        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+        print_error "$description"
+    fi
+}
+
 VALIDATION_ERRORS=0
 
 check_error() {
@@ -41,24 +52,27 @@ check_error() {
     fi
 }
 
-# 1. Code Quality Validation
-print_step "Running enhanced local validation"
-bash scripts/enhanced-local-validation.sh --check-only --skip-e2e
-check_error "Code quality checks passed"
+# 1. Repository topology validation
+print_step "Validating repository structure"
+check_path_exists "functions-modernized" "Functions workspace exists"
+check_path_exists "frontend" "Frontend workspace exists"
+check_path_exists ".github/workflows/ci-cd-pipeline.yml" "Main CI/CD workflow exists"
+check_path_exists ".github/workflows/ios-build.yml" "iOS build workflow exists"
+check_path_exists ".github/workflows/ios-deploy.yml" "iOS deploy workflow exists"
 
-# 3. Build Validation
+# 2. Build Validation
 print_step "Validating production builds"
 
 # Backend build validation
-cd backend
-if [ -f "venv/bin/activate" ]; then
-    source venv/bin/activate
-fi
+cd functions-modernized
+python -m venv .venv >/dev/null 2>&1 || true
+source .venv/bin/activate
 pip install -r requirements.txt > /dev/null 2>&1
-check_error "Backend dependencies install successfully"
+check_error "Functions dependencies install successfully"
+cd ..
 
 # Frontend build validation
-cd ../frontend
+cd frontend
 npm ci > /dev/null 2>&1
 check_error "Frontend dependencies install successfully"
 
@@ -66,36 +80,7 @@ npm run build > /dev/null 2>&1
 check_error "Frontend builds successfully for production"
 cd ..
 
-# 2.5. CI/CD Environment Validation (NEW)
-print_step "Validating CI/CD environment parity"
-
-# Ensure backend tools match CI/CD expectations
-cd backend
-if [ -f "venv/bin/activate" ]; then
-    source venv/bin/activate
-fi
-
-# Check that all CI/CD tools are available
-CI_TOOLS=("black" "isort" "ruff" "mypy" "bandit" "safety" "pytest")
-for tool in "${CI_TOOLS[@]}"; do
-    if ! command -v "$tool" &> /dev/null; then
-        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
-        print_error "CI/CD tool '$tool' not available"
-    fi
-done
-
-# Validate requirements-dev.txt has all tools
-REQUIRED_IN_DEV_DEPS=("black" "isort" "ruff" "mypy" "bandit" "safety")
-for tool in "${REQUIRED_IN_DEV_DEPS[@]}"; do
-    if ! grep -q "^$tool==" requirements-dev.txt; then
-        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
-        print_error "Tool '$tool' missing from requirements-dev.txt"
-    fi
-done
-
-cd ..
-
-# 4. Azure Authentication Check
+# 3. Azure Authentication Check
 print_step "Validating Azure authentication"
 
 if command -v az &> /dev/null; then
@@ -110,7 +95,7 @@ else
     print_error "Azure CLI not installed"
 fi
 
-# 5. GitHub Authentication Check
+# 4. GitHub Authentication Check
 print_step "Validating GitHub authentication"
 
 if command -v gh &> /dev/null; then
@@ -125,11 +110,11 @@ else
     print_error "GitHub CLI not installed"
 fi
 
-# 6. GitHub Secrets Validation
+# 5. GitHub Secrets Validation
 print_step "Validating GitHub repository secrets"
 
 if command -v gh &> /dev/null && gh auth status &> /dev/null; then
-    REQUIRED_SECRETS=("AZURE_CLIENT_ID" "AZURE_TENANT_ID" "AZURE_SUBSCRIPTION_ID" "DATABASE_URL" "SECRET_KEY" "OPENAI_API_KEY")
+    REQUIRED_SECRETS=("AZURE_CLIENT_ID" "AZURE_TENANT_ID" "AZURE_SUBSCRIPTION_ID")
 
     for secret in "${REQUIRED_SECRETS[@]}"; do
         if gh secret list | grep -q "^$secret"; then
@@ -143,7 +128,7 @@ else
     print_warning "Skipping secret validation (GitHub CLI not available)"
 fi
 
-# 7. Azure Resources Check
+# 6. Azure Resources Check
 print_step "Validating Azure resources"
 
 if command -v az &> /dev/null && az account show &> /dev/null; then
@@ -164,19 +149,18 @@ if command -v az &> /dev/null && az account show &> /dev/null; then
         print_warning "Create with: az group create --name vigor-db-rg --location 'Central US'"
     fi
 
-    # Check App Service
-    if az webapp show --name vigor-backend --resource-group vigor-rg &> /dev/null; then
-        print_success "App Service 'vigor-backend' exists"
+    # Check Function App
+    if az functionapp show --name vigor-functions --resource-group vigor-rg &> /dev/null; then
+        print_success "Function App 'vigor-functions' exists"
     else
         VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
-        print_error "App Service 'vigor-backend' not found"
-        print_warning "Deploy infrastructure: cd infrastructure/bicep && ./deploy.sh"
+        print_error "Function App 'vigor-functions' not found"
     fi
 else
     print_warning "Skipping Azure resource validation (Azure CLI not available)"
 fi
 
-# 8. Git Status Check
+# 7. Git Status Check
 print_step "Checking Git status"
 
 if [ -n "$(git status --porcelain)" ]; then
@@ -187,7 +171,7 @@ else
     print_success "Working directory clean"
 fi
 
-# 9. Branch Check
+# 8. Branch Check
 print_step "Checking current branch"
 
 CURRENT_BRANCH=$(git branch --show-current)
@@ -198,15 +182,15 @@ else
     print_warning "CI/CD only runs on main branch"
 fi
 
-# 10. CI/CD Workflow Validation
+# 9. CI/CD Workflow Validation
 print_step "Validating CI/CD workflow"
 
-if [ -f ".github/workflows/simple-deploy.yml" ]; then
+if [ -f ".github/workflows/ci-cd-pipeline.yml" ]; then
     print_success "CI/CD workflow file exists"
 
     # Check for actionlint
     if command -v actionlint &> /dev/null; then
-        if actionlint .github/workflows/simple-deploy.yml &> /dev/null; then
+        if actionlint .github/workflows/ci-cd-pipeline.yml &> /dev/null; then
             print_success "CI/CD workflow syntax valid"
         else
             VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))

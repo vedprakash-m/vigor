@@ -6,6 +6,7 @@ POST /blocks/sync, POST /blocks/outcome
 
 import json
 import sys
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import azure.functions as func
@@ -128,6 +129,30 @@ class TestGetUserWorkouts:
         assert resp.status_code == 200
         data = _json(resp)
         assert len(data) == 2
+
+    @pytest.mark.asyncio
+    async def test_days_query_returns_filtered_workout_logs(self):
+        from blueprints.workouts_bp import get_user_workouts
+
+        now = datetime.now(timezone.utc)
+        mock_client = AsyncMock()
+        mock_client.get_user_workout_logs = AsyncMock(
+            return_value=[
+                {"id": "recent", "completedAt": now.isoformat()},
+                {
+                    "id": "old",
+                    "completedAt": (now - timedelta(days=40)).isoformat(),
+                },
+            ]
+        )
+
+        auth_p, cosmos_p = _auth_and_cosmos(mock_client)
+        with auth_p, cosmos_p:
+            resp = await get_user_workouts(_make_request(params={"days": "30"}))
+
+        assert resp.status_code == 200
+        data = _json(resp)
+        assert [item["id"] for item in data] == ["recent"]
 
 
 # ===========================================================================
@@ -273,5 +298,53 @@ class TestRecordBlockOutcome:
                 body={"blockId": "b-1"},
             )
             resp = await record_block_outcome(req)
+
+        assert resp.status_code == 400
+
+
+# ===========================================================================
+# POST /workouts/log — compatibility alias
+# ===========================================================================
+
+
+class TestWorkoutLogCompat:
+    @pytest.mark.asyncio
+    async def test_logs_workout_with_compat_payload(self):
+        from blueprints.workouts_bp import log_workout_compat
+
+        mock_client = AsyncMock()
+        mock_client.create_workout_log = AsyncMock(return_value={"id": "w-log"})
+
+        auth_p, cosmos_p = _auth_and_cosmos(mock_client)
+        with auth_p, cosmos_p:
+            req = _make_request(
+                method="POST",
+                url="https://vigor-functions.azurewebsites.net/api/workouts/log",
+                body={
+                    "workoutId": "w-1",
+                    "actualDuration": 35,
+                    "rating": 4,
+                    "exercisesCompleted": ["run"],
+                },
+            )
+            resp = await log_workout_compat(req)
+
+        assert resp.status_code == 201
+        mock_client.create_workout_log.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_missing_actual_duration_returns_400(self):
+        from blueprints.workouts_bp import log_workout_compat
+
+        mock_client = AsyncMock()
+        auth_p, cosmos_p = _auth_and_cosmos(mock_client)
+
+        with auth_p, cosmos_p:
+            req = _make_request(
+                method="POST",
+                url="https://vigor-functions.azurewebsites.net/api/workouts/log",
+                body={"workoutId": "w-1"},
+            )
+            resp = await log_workout_compat(req)
 
         assert resp.status_code == 400

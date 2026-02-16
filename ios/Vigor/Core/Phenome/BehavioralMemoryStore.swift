@@ -184,6 +184,16 @@ actor BehavioralMemoryStore {
         return matchingPatterns.max(by: { $0.successRate < $1.successRate })?.preferredHour
     }
 
+    /// Look up time slot stats for a given key.
+    func statsForTimeSlot(_ key: TimeSlotKey) -> TimeSlotStats? {
+        timeSlotHistory[key]
+    }
+
+    /// Get all workout patterns matching a workout type.
+    func patternsFor(workoutType: WorkoutType) -> [WorkoutPattern] {
+        workoutPatterns.filter { $0.workoutType == workoutType }
+    }
+
     // MARK: - Persistence
 
     private var stack: CoreDataStack { CoreDataStack.shared }

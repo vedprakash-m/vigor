@@ -115,7 +115,13 @@ class VigorAPI {
      * Log completed workout
      */
     log: (data: WorkoutLogData) =>
-      this.client.post<WorkoutLog>('/api/workouts/log', data),
+      this.client.post<WorkoutLog>('/api/workouts', {
+        id: data.workoutId,
+        type: 'completed_workout',
+        durationMinutes: data.actualDuration,
+        notes: data.notes,
+        exercisesCompleted: data.exercisesCompleted,
+      }),
 
     /**
      * Get workout history/logs

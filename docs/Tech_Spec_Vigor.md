@@ -519,8 +519,8 @@ final class GhostEngine: ObservableObject {
 import Foundation
 
 enum TrustPhase: Int, Codable, CaseIterable {
-    case observer = 1       // Day 1: Suggest only
-    case scheduler = 2      // Day 7+: Propose calendar blocks
+    case observer = 1       // Day 1: Suggest AND propose (requires explicit approval). NOT silent.
+    case scheduler = 2      // Day 7+: Propose calendar blocks with notification
     case autoScheduler = 3  // Day 14+: Auto-add blocks
     case transformer = 4    // Day 30+: Transform blocks automatically
     case fullGhost = 5      // Day 60+: Complete autonomy

@@ -281,7 +281,7 @@ actor TestableGhostEngine {
     private let phenome: MockPhenomeStore
     private var mockDay: Weekday = .monday
     private var scheduledTasks: [ScheduledTask] = []
-    private var trustEventsToday: [TrustEvent] = []
+    private var trustEventsToday: [TrustEventType] = []
 
     init(healthKit: MockHealthKitService, calendar: MockCalendarService, phenome: MockPhenomeStore) async {
         self.healthKit = healthKit
@@ -337,7 +337,7 @@ actor TestableGhostEngine {
 
         // Check if adjustment needed
         let todayBlocks = await calendar.getTodayBlocks()
-        let hasHardWorkout = todayBlocks.contains { $0.type == .hiit || $0.type == .strength }
+        let hasHardWorkout = todayBlocks.contains { $0.workoutType == .hiit || $0.workoutType == .strength }
         let shouldAdjust = recoveryScore < 50 && hasHardWorkout
 
         // Generate triage card if there's a workout
@@ -378,7 +378,7 @@ actor TestableGhostEngine {
                     trustEventsToday.append(.completedWorkout)
                 } else {
                     trustEventType = .missedWorkout
-                    trustEventsToday.append(.missedWorkout(.noReason))
+                    trustEventsToday.append(.missedWorkout)
                 }
             }
         }
@@ -448,11 +448,11 @@ actor TestableGhostEngine {
         scheduledTasks
     }
 
-    func getTrustEventsToday() -> [TrustEvent] {
+    func getTrustEventsToday() -> [TrustEventType] {
         trustEventsToday
     }
 
-    private func calculateRecovery(sleep: SleepData, hrv: HRVData, restingHR: RestingHRData) -> Int {
+    private func calculateRecovery(sleep: MockSleepData, hrv: MockHRVData, restingHR: MockRestingHRData) -> Int {
         var score = 50
 
         // Sleep component (40%)
@@ -485,12 +485,12 @@ actor TestableGhostEngine {
 // MARK: - Mock Services
 
 class MockHealthKitService {
-    private var sleepData: SleepData?
-    private var hrvData: HRVData?
-    private var restingHRData: RestingHRData?
+    private var sleepData: MockSleepData?
+    private var hrvData: MockHRVData?
+    private var restingHRData: MockRestingHRData?
 
-    func setSleepData(sleepStart: Date? = nil, sleepEnd: Date? = nil, quality: SleepQuality) {
-        sleepData = SleepData(
+    func setSleepData(sleepStart: Date? = nil, sleepEnd: Date? = nil, quality: MockSleepQuality) {
+        sleepData = MockSleepData(
             start: sleepStart ?? Date().addingTimeInterval(-28800),
             end: sleepEnd ?? Date(),
             quality: quality
@@ -498,11 +498,11 @@ class MockHealthKitService {
     }
 
     func setHRV(current: Int, baseline: Int) {
-        hrvData = HRVData(current: current, baseline: baseline)
+        hrvData = MockHRVData(current: current, baseline: baseline)
     }
 
     func setRestingHR(current: Int, baseline: Int) {
-        restingHRData = RestingHRData(current: current, baseline: baseline)
+        restingHRData = MockRestingHRData(current: current, baseline: baseline)
     }
 
     func clearAllData() {
@@ -511,9 +511,9 @@ class MockHealthKitService {
         restingHRData = nil
     }
 
-    func getSleepData() async -> SleepData? { sleepData }
-    func getHRV() async -> HRVData? { hrvData }
-    func getRestingHR() async -> RestingHRData? { restingHRData }
+    func getSleepData() async -> MockSleepData? { sleepData }
+    func getHRV() async -> MockHRVData? { hrvData }
+    func getRestingHR() async -> MockRestingHRData? { restingHRData }
 }
 
 class MockCalendarService {
@@ -521,11 +521,14 @@ class MockCalendarService {
     private var tomorrowBlocks: [TrainingBlock] = []
 
     func addBlock(type: WorkoutType, startTime: Date = Date(), duration: Int = 45, status: BlockStatus = .scheduled) {
+        let endTime = startTime.addingTimeInterval(TimeInterval(duration * 60))
         todayBlocks.append(TrainingBlock(
-            id: UUID(),
-            type: type,
+            id: UUID().uuidString,
+            calendarEventId: "cal-mock",
+            workoutType: type,
             startTime: startTime,
-            duration: duration,
+            endTime: endTime,
+            wasAutoScheduled: false,
             status: status
         ))
     }
@@ -563,28 +566,28 @@ class MockPhenomeStore {
 
 // MARK: - Supporting Types
 
-struct SleepData {
+struct MockSleepData {
     let start: Date
     let end: Date
-    let quality: SleepQuality
+    let quality: MockSleepQuality
 }
 
-enum SleepQuality {
+enum MockSleepQuality {
     case excellent, good, fair, poor
 }
 
-struct HRVData {
+struct MockHRVData {
     let current: Int
     let baseline: Int
 }
 
-struct RestingHRData {
+struct MockRestingHRData {
     let current: Int
     let baseline: Int
 }
 
 struct TriageCard {
-    let blockId: UUID
+    let blockId: String
     let options: [TriageOption]
 }
 

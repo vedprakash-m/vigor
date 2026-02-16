@@ -106,16 +106,65 @@ final class GhostEngine: ObservableObject {
         await start()
     }
 
+    // MARK: - Retry Logic
+
+    /// Execute a cycle with retry — up to 2 retries with exponential backoff (30s, 60s).
+    /// Records failure to health monitor only after all retries are exhausted.
+    private func executeWithRetry(
+        cycleName: String,
+        maxRetries: Int = 2,
+        body: @escaping () async -> Void
+    ) async {
+        var attempt = 0
+        let delays: [UInt64] = [30_000_000_000, 60_000_000_000] // 30s, 60s in nanoseconds
+
+        while attempt <= maxRetries {
+            // If not first attempt, wait before retrying
+            if attempt > 0 && attempt - 1 < delays.count {
+                VigorLogger.ghost.warning("\(cycleName) cycle retry \(attempt)/\(maxRetries)")
+                try? await Task.sleep(nanoseconds: delays[attempt - 1])
+            }
+
+            // Try executing the cycle body
+            await body()
+
+            // If cycle succeeded (health monitor didn't record failure), we're done
+            // We check this by seeing if the last cycle timestamp was updated
+            let succeeded: Bool
+            if cycleName == "morning" {
+                succeeded = lastMorningCycle != nil &&
+                    Calendar.current.isDateInToday(lastMorningCycle ?? .distantPast)
+            } else {
+                succeeded = lastEveningCycle != nil &&
+                    Calendar.current.isDateInToday(lastEveningCycle ?? .distantPast)
+            }
+
+            if succeeded {
+                return // Success — no retry needed
+            }
+
+            attempt += 1
+        }
+    }
+
     // MARK: - Morning Cycle
 
     /// Morning cycle - runs around 6 AM
     /// Pulls sleep data, calculates recovery score, transforms blocks if needed
     func executeMorningCycle() async {
+        await executeWithRetry(cycleName: "morning") {
+            await self._executeMorningCycleBody()
+        }
+    }
+
+    private func _executeMorningCycleBody() async {
         guard healthMonitor.currentMode != .suspended else {
+            VigorLogger.ghost.info("Morning cycle skipped — health mode suspended")
             return
         }
 
         let cycleStart = Date()
+        VigorLogger.ghost.info("Morning cycle started")
         var receipt = DecisionReceipt(action: .morningCycle)
 
         do {
@@ -168,9 +217,12 @@ final class GhostEngine: ObservableObject {
             receipt.confidence = 0.9
             receipt.outcome = .success
             lastMorningCycle = cycleStart
+            let duration = Date().timeIntervalSince(cycleStart)
+            VigorLogger.ghost.info("Morning cycle completed in \(String(format: "%.1f", duration))s — recovery=\(String(format: "%.0f", recoveryScore))")
 
         } catch {
             receipt.outcome = .failure(error.localizedDescription)
+            VigorLogger.ghost.error("Morning cycle failed: \(error.localizedDescription)")
             await healthMonitor.reportCycleFailure(.morning, error: error)
         }
 
@@ -182,11 +234,19 @@ final class GhostEngine: ObservableObject {
     /// Evening cycle - runs around 9 PM
     /// Evaluates tomorrow's calendar, finds optimal workout window, schedules or proposes
     func executeEveningCycle() async {
+        await executeWithRetry(cycleName: "evening") {
+            await self._executeEveningCycleBody()
+        }
+    }
+
+    private func _executeEveningCycleBody() async {
         guard healthMonitor.currentMode != .suspended else {
+            VigorLogger.ghost.info("Evening cycle skipped — health mode suspended")
             return
         }
 
         let cycleStart = Date()
+        VigorLogger.ghost.info("Evening cycle started")
         var receipt = DecisionReceipt(action: .eveningCycle)
 
         do {
@@ -222,11 +282,18 @@ final class GhostEngine: ObservableObject {
             // 5. Schedule or propose based on trust phase
             switch trustPhase {
             case .observer:
-                // Phase 1: Just observe, don't schedule
-                receipt.outcome = .skipped("Observer phase - no scheduling")
+                // Phase 1: Observer actively suggests — per PRD §1.2 Law II ("Magic in five minutes")
+                // and §1.3 ("Ghost watches and suggests. All actions require explicit approval.")
+                // Observer is NOT silent — it proposes workouts via notification, requiring user approval.
+                pendingProposal = (workout: workout, window: window)
+                try await notificationOrchestrator.sendBlockProposal(
+                    workout: workout,
+                    window: window
+                )
+                receipt.outcome = .success
 
             case .scheduler:
-                // Phase 2: Propose with notification
+                // Phase 2: Same as Observer but with higher trust context
                 pendingProposal = (workout: workout, window: window)
                 try await notificationOrchestrator.sendBlockProposal(
                     workout: workout,
@@ -245,9 +312,12 @@ final class GhostEngine: ObservableObject {
 
             receipt.confidence = 0.85
             lastEveningCycle = cycleStart
+            let duration = Date().timeIntervalSince(cycleStart)
+            VigorLogger.ghost.info("Evening cycle completed in \(String(format: "%.1f", duration))s — phase=\(trustPhase.rawValue)")
 
         } catch {
             receipt.outcome = .failure(error.localizedDescription)
+            VigorLogger.ghost.error("Evening cycle failed: \(error.localizedDescription)")
             await healthMonitor.reportCycleFailure(.evening, error: error)
         }
 

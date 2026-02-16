@@ -291,13 +291,30 @@ struct SkipTimeSlotKey: Hashable, Codable {
 
 extension BehavioralMemoryStore {
     func getTimeSlotStats(for key: SkipTimeSlotKey) async -> SkipTimeSlotStats? {
-        // Return stats for the time slot
-        nil // Placeholder
+        // Convert SkipTimeSlotKey → TimeSlotKey and look up real history
+        let slotKey = TimeSlotKey(dayOfWeek: key.dayOfWeek, hourOfDay: key.hourOfDay)
+        guard let stats = statsForTimeSlot(slotKey) else { return nil }
+
+        return SkipTimeSlotStats(
+            completedCount: stats.completedCount,
+            missedCount: stats.missedCount,
+            totalAttempts: stats.completedCount + stats.missedCount
+        )
     }
 
     func getWorkoutPattern(for type: WorkoutType) async -> SkipWorkoutPattern? {
-        // Return pattern for workout type
-        nil // Placeholder
+        // Aggregate all workout patterns for this type across all days
+        let matching = patternsFor(workoutType: type)
+        guard !matching.isEmpty else { return nil }
+
+        let totalSuccess = matching.reduce(0) { $0 + $1.successCount }
+        let totalFailure = matching.reduce(0) { $0 + $1.failureCount }
+
+        return SkipWorkoutPattern(
+            workoutType: type,
+            completedCount: totalSuccess,
+            scheduledCount: totalSuccess + totalFailure
+        )
     }
 }
 

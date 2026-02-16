@@ -11,11 +11,20 @@ from datetime import datetime, timezone
 import azure.functions as func
 
 from shared.auth import get_current_user_from_token
-from shared.helpers import error_response, success_response
+from shared.helpers import (
+    bind_request_context,
+    error_response,
+    new_operation_id,
+    success_response,
+)
 
 logger = logging.getLogger(__name__)
 
 ghost_bp = func.Blueprint()
+
+
+def _trace_prefix(correlation_id: str, operation_id: str) -> str:
+    return f"[corr={correlation_id} op={operation_id}]"
 
 
 # =============================================================================
@@ -71,6 +80,9 @@ async def ghost_sync(req: func.HttpRequest) -> func.HttpResponse:
     server time).
     """
     try:
+        correlation_id = bind_request_context(req)
+        operation_id = new_operation_id("ghost-sync")
+        trace = _trace_prefix(correlation_id, operation_id)
         from shared.cosmos_db import get_global_client
 
         current_user = await get_current_user_from_token(req)
@@ -97,7 +109,7 @@ async def ghost_sync(req: func.HttpRequest) -> func.HttpResponse:
 
         # Get current trust state
         trust_state = await client.get_trust_state(user_id)
-        trust_score = (trust_state or {}).get("confidence", 0.0)
+        trust_score = (trust_state or {}).get("trust_score", (trust_state or {}).get("confidence", 0.0) * 100.0)
         trust_phase = (trust_state or {}).get("phase", "observer")
 
         # Get pending actions
@@ -117,11 +129,17 @@ async def ghost_sync(req: func.HttpRequest) -> func.HttpResponse:
             "trustPhase": trust_phase,
             "pendingActions": actions_out,
             "serverTime": datetime.now(timezone.utc).isoformat(),
+            "operation_id": operation_id,
         })
 
     except Exception as e:
-        logger.error(f"Ghost sync error: {str(e)}")
-        return error_response("Internal server error", status_code=500)
+        logger.error("%s Ghost sync error: %s", trace, str(e))
+        return error_response(
+            "Internal server error",
+            status_code=500,
+            code="INTERNAL_ERROR",
+            details={"operation_id": operation_id},
+        )
 
 
 @ghost_bp.route(
@@ -130,6 +148,9 @@ async def ghost_sync(req: func.HttpRequest) -> func.HttpResponse:
 async def ghost_silent_push(req: func.HttpRequest) -> func.HttpResponse:
     """Silent Push Trigger — P0 for Ghost survival (PRD §3.4)"""
     try:
+        correlation_id = bind_request_context(req)
+        operation_id = new_operation_id("ghost-push")
+        trace = _trace_prefix(correlation_id, operation_id)
         from shared.cosmos_db import get_global_client
 
         current_user = await get_current_user_from_token(req)
@@ -158,12 +179,18 @@ async def ghost_silent_push(req: func.HttpRequest) -> func.HttpResponse:
                 "delivery": delivery.get("status", "unknown"),
                 "actions_count": len(pending_actions or []),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
+                "operation_id": operation_id,
             }
         )
 
     except Exception as e:
-        logger.error(f"Ghost silent push error: {str(e)}")
-        return error_response("Internal server error", status_code=500)
+        logger.error("%s Ghost silent push error: %s", trace, str(e))
+        return error_response(
+            "Internal server error",
+            status_code=500,
+            code="INTERNAL_ERROR",
+            details={"operation_id": operation_id},
+        )
 
 
 @ghost_bp.route(
@@ -174,6 +201,9 @@ async def ghost_silent_push(req: func.HttpRequest) -> func.HttpResponse:
 async def ghost_trust(req: func.HttpRequest) -> func.HttpResponse:
     """Trust State API — 5-phase state machine (PRD §2.2.2)"""
     try:
+        correlation_id = bind_request_context(req)
+        operation_id = new_operation_id("ghost-trust")
+        trace = _trace_prefix(correlation_id, operation_id)
         from shared.cosmos_db import get_global_client
 
         current_user = await get_current_user_from_token(req)
@@ -189,7 +219,7 @@ async def ghost_trust(req: func.HttpRequest) -> func.HttpResponse:
                 trust_state = {
                     "user_id": user_id,
                     "phase": "observer",
-                    "confidence": 0.0,
+                    "trust_score": 0.0,
                     "consecutive_deletes": 0,
                     "last_updated": datetime.now(timezone.utc).isoformat(),
                 }
@@ -213,13 +243,20 @@ async def ghost_trust(req: func.HttpRequest) -> func.HttpResponse:
                 )
 
             updated_state = await client.record_trust_event(user_id, event_data)
+            if isinstance(updated_state, dict):
+                updated_state.setdefault("operation_id", operation_id)
             return success_response(updated_state)
 
         return error_response("Method not allowed", status_code=405)
 
     except Exception as e:
-        logger.error(f"Ghost trust API error: {str(e)}")
-        return error_response("Internal server error", status_code=500)
+        logger.error("%s Ghost trust API error: %s", trace, str(e))
+        return error_response(
+            "Internal server error",
+            status_code=500,
+            code="INTERNAL_ERROR",
+            details={"operation_id": operation_id},
+        )
 
 
 @ghost_bp.route(
@@ -230,6 +267,9 @@ async def ghost_trust(req: func.HttpRequest) -> func.HttpResponse:
 async def ghost_schedule(req: func.HttpRequest) -> func.HttpResponse:
     """Schedule Sync API — calendar-centric training blocks (PRD §3.1)"""
     try:
+        correlation_id = bind_request_context(req)
+        operation_id = new_operation_id("ghost-schedule")
+        trace = _trace_prefix(correlation_id, operation_id)
         from shared.cosmos_db import get_global_client
 
         current_user = await get_current_user_from_token(req)
@@ -245,7 +285,11 @@ async def ghost_schedule(req: func.HttpRequest) -> func.HttpResponse:
             except (ValueError, TypeError):
                 week_offset = 0
             blocks = await client.get_training_blocks(user_id, week_offset)
-            return success_response({"blocks": blocks, "week_offset": week_offset})
+            return success_response({
+                "blocks": blocks,
+                "week_offset": week_offset,
+                "operation_id": operation_id,
+            })
 
         elif req.method == "POST":
             try:
@@ -265,6 +309,8 @@ async def ghost_schedule(req: func.HttpRequest) -> func.HttpResponse:
                 )
 
             created_block = await client.create_training_block(user_id, block_data)
+            if isinstance(created_block, dict):
+                created_block.setdefault("operation_id", operation_id)
             return success_response(created_block, status_code=201)
 
         elif req.method == "PUT":
@@ -285,13 +331,20 @@ async def ghost_schedule(req: func.HttpRequest) -> func.HttpResponse:
             updated_block = await client.update_training_block(
                 user_id, block_data["block_id"], block_data
             )
+            if isinstance(updated_block, dict):
+                updated_block.setdefault("operation_id", operation_id)
             return success_response(updated_block)
 
         return error_response("Method not allowed", status_code=405)
 
     except Exception as e:
-        logger.error(f"Ghost schedule API error: {str(e)}")
-        return error_response("Internal server error", status_code=500)
+        logger.error("%s Ghost schedule API error: %s", trace, str(e))
+        return error_response(
+            "Internal server error",
+            status_code=500,
+            code="INTERNAL_ERROR",
+            details={"operation_id": operation_id},
+        )
 
 
 @ghost_bp.route(
@@ -302,6 +355,9 @@ async def ghost_schedule(req: func.HttpRequest) -> func.HttpResponse:
 async def ghost_phenome_sync(req: func.HttpRequest) -> func.HttpResponse:
     """Phenome Sync API — 3-store architecture (Tech Spec §2.3)"""
     try:
+        correlation_id = bind_request_context(req)
+        operation_id = new_operation_id("ghost-phenome")
+        trace = _trace_prefix(correlation_id, operation_id)
         from shared.cosmos_db import get_global_client
 
         current_user = await get_current_user_from_token(req)
@@ -336,7 +392,12 @@ async def ghost_phenome_sync(req: func.HttpRequest) -> func.HttpResponse:
                 user_id, store_type, client_data, client_version
             )
             return success_response(
-                {"status": "updated", "version": client_version, "conflicts": []}
+                {
+                    "status": "updated",
+                    "version": client_version,
+                    "conflicts": [],
+                    "operation_id": operation_id,
+                }
             )
         elif server_version > client_version:
             # Server is ahead — send server data to client
@@ -346,6 +407,7 @@ async def ghost_phenome_sync(req: func.HttpRequest) -> func.HttpResponse:
                     "version": server_version,
                     "data": server_data.get("data", {}) if server_data else {},
                     "conflicts": [],
+                    "operation_id": operation_id,
                 }
             )
         else:
@@ -370,16 +432,31 @@ async def ghost_phenome_sync(req: func.HttpRequest) -> func.HttpResponse:
                     user_id, store_type, merged_data, new_version
                 )
                 return success_response(
-                    {"status": "merged", "version": new_version, "conflicts": conflicts}
+                    {
+                        "status": "merged",
+                        "version": new_version,
+                        "conflicts": conflicts,
+                        "operation_id": operation_id,
+                    }
                 )
 
             return success_response(
-                {"status": "synced", "version": server_version, "conflicts": []}
+                {
+                    "status": "synced",
+                    "version": server_version,
+                    "conflicts": [],
+                    "operation_id": operation_id,
+                }
             )
 
     except Exception as e:
-        logger.error(f"Ghost phenome sync error: {str(e)}")
-        return error_response("Internal server error", status_code=500)
+        logger.error("%s Ghost phenome sync error: %s", trace, str(e))
+        return error_response(
+            "Internal server error",
+            status_code=500,
+            code="INTERNAL_ERROR",
+            details={"operation_id": operation_id},
+        )
 
 
 @ghost_bp.route(
@@ -390,6 +467,9 @@ async def ghost_phenome_sync(req: func.HttpRequest) -> func.HttpResponse:
 async def ghost_decision_receipt(req: func.HttpRequest) -> func.HttpResponse:
     """Decision Receipt API — forensic log (PRD §4.2)"""
     try:
+        correlation_id = bind_request_context(req)
+        operation_id = new_operation_id("ghost-receipt")
+        trace = _trace_prefix(correlation_id, operation_id)
         from shared.cosmos_db import get_global_client
 
         current_user = await get_current_user_from_token(req)
@@ -420,11 +500,64 @@ async def ghost_decision_receipt(req: func.HttpRequest) -> func.HttpResponse:
             )
 
         stored_receipt = await client.store_decision_receipt(user_id, receipt_data)
+        if isinstance(stored_receipt, dict):
+            stored_receipt.setdefault("operation_id", operation_id)
         return success_response(stored_receipt, status_code=201)
 
     except Exception as e:
-        logger.error(f"Ghost decision receipt error: {str(e)}")
-        return error_response("Internal server error", status_code=500)
+        logger.error("%s Ghost decision receipt error: %s", trace, str(e))
+        return error_response(
+            "Internal server error",
+            status_code=500,
+            code="INTERNAL_ERROR",
+            details={"operation_id": operation_id},
+        )
+
+
+@ghost_bp.route(
+    route="ghost/health",
+    methods=["POST"],
+    auth_level=func.AuthLevel.ANONYMOUS,
+)
+async def ghost_health(req: func.HttpRequest) -> func.HttpResponse:
+    """Ghost health snapshot endpoint used by iOS background reporting."""
+    try:
+        correlation_id = bind_request_context(req)
+        operation_id = new_operation_id("ghost-health")
+        trace = _trace_prefix(correlation_id, operation_id)
+        from shared.cosmos_db import get_global_client
+
+        current_user = await get_current_user_from_token(req)
+        if not current_user:
+            return error_response("Unauthorized", status_code=401, code="UNAUTHORIZED")
+
+        try:
+            body = req.get_json()
+        except ValueError:
+            return error_response("Invalid JSON", status_code=400, code="INVALID_JSON")
+
+        client = await get_global_client()
+        user_id = current_user["email"]
+        user_profile = await client.get_user_profile(user_id) or {
+            "id": user_id,
+            "userId": user_id,
+            "email": user_id,
+        }
+
+        user_profile["ghost_health_snapshot"] = body or {}
+        user_profile["ghost_health_updated_at"] = datetime.now(timezone.utc).isoformat()
+        await client.upsert_document("users", user_profile)
+
+        return success_response({"status": "ok", "operation_id": operation_id})
+
+    except Exception as e:
+        logger.error("%s Ghost health endpoint error: %s", trace, str(e))
+        return error_response(
+            "Internal server error",
+            status_code=500,
+            code="INTERNAL_ERROR",
+            details={"operation_id": operation_id},
+        )
 
 
 # =============================================================================
@@ -442,6 +575,9 @@ _DEVICE_TOKEN_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 async def ghost_device_token(req: func.HttpRequest) -> func.HttpResponse:
     """Device Token API — register/remove APNs token for push delivery"""
     try:
+        correlation_id = bind_request_context(req)
+        operation_id = new_operation_id("ghost-token")
+        trace = _trace_prefix(correlation_id, operation_id)
         from shared.cosmos_db import get_global_client
 
         current_user = await get_current_user_from_token(req)
@@ -479,9 +615,13 @@ async def ghost_device_token(req: func.HttpRequest) -> func.HttpResponse:
             ).isoformat()
             await client.upsert_document("users", user_profile)
 
-            logger.info(f"Device token registered for {user_id}")
+            logger.info("%s Device token registered for %s", trace, user_id)
             return success_response(
-                {"status": "registered", "token_prefix": device_token[:8] + "..."}
+                {
+                    "status": "registered",
+                    "token_prefix": device_token[:8] + "...",
+                    "operation_id": operation_id,
+                }
             )
 
         elif req.method == "DELETE":
@@ -491,14 +631,21 @@ async def ghost_device_token(req: func.HttpRequest) -> func.HttpResponse:
                 user_profile["apns_platform"] = None
                 await client.upsert_document("users", user_profile)
 
-            logger.info(f"Device token removed for {user_id}")
-            return success_response({"status": "removed"})
+            logger.info("%s Device token removed for %s", trace, user_id)
+            return success_response(
+                {"status": "removed", "operation_id": operation_id}
+            )
 
         return error_response("Method not allowed", status_code=405)
 
     except Exception as e:
-        logger.error(f"Ghost device token error: {str(e)}")
-        return error_response("Internal server error", status_code=500)
+        logger.error("%s Ghost device token error: %s", trace, str(e))
+        return error_response(
+            "Internal server error",
+            status_code=500,
+            code="INTERNAL_ERROR",
+            details={"operation_id": operation_id},
+        )
 
 
 # =============================================================================

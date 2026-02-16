@@ -120,6 +120,31 @@ final class CoreDataStack: @unchecked Sendable {
         }
     }
 
+    // MARK: - Delete All Data
+
+    func deleteAllData() {
+        let ctx = newBackgroundContext()
+        ctx.performAndWait {
+            for entity in container.managedObjectModel.entities {
+                guard let name = entity.name else { continue }
+                let fetch = NSFetchRequest<NSFetchRequestResult>(entityName: name)
+                let deleteReq = NSBatchDeleteRequest(fetchRequest: fetch)
+                deleteReq.resultType = .resultTypeObjectIDs
+                do {
+                    if let result = try ctx.execute(deleteReq) as? NSBatchDeleteResult,
+                       let ids = result.result as? [NSManagedObjectID] {
+                        let changes = [NSDeletedObjectsKey: ids]
+                        NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [viewContext])
+                    }
+                } catch {
+                    #if DEBUG
+                    print("⚠️ CoreDataStack: delete all failed for \(name) — \(error.localizedDescription)")
+                    #endif
+                }
+            }
+        }
+    }
+
     // MARK: - Programmatic Model Builder
 
     private static func buildModel() -> NSManagedObjectModel {

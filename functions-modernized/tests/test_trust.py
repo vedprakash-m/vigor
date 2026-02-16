@@ -1,6 +1,7 @@
 """
 Trust State Machine unit tests.
-Tests the 5-phase trust progression, Safety Breaker, and confidence logic.
+Tests the 5-phase trust progression, Safety Breaker, and trust_score logic.
+Trust score uses 0-100 scale matching iOS.
 
 We mock out the Cosmos SDK at import time to avoid the heavy azure-cosmos
 dependency chain during tests.
@@ -35,14 +36,14 @@ def _make_client() -> CosmosDBClient:
 
 def _default_state(
     phase: str = "observer",
-    confidence: float = 0.0,
+    trust_score: float = 0.0,
     consecutive_deletes: int = 0,
 ) -> dict:
     return {
         "id": "test-id",
         "userId": "user@test.com",
         "phase": phase,
-        "confidence": confidence,
+        "trust_score": trust_score,
         "consecutive_deletes": consecutive_deletes,
         "events": [],
     }
@@ -60,60 +61,29 @@ class TestCalculateTrustDelta:
         self.client = _make_client()
 
     def test_completed_workout_positive(self):
-        assert self.client._calculate_trust_delta("completed_workout", "observer") == 0.05
+        assert self.client._calculate_trust_delta("completed_workout", "observer") == 5.0
 
     def test_missed_workout_negative(self):
-        assert self.client._calculate_trust_delta("missed_workout", "observer") == -0.08
+        assert self.client._calculate_trust_delta("missed_workout", "observer") == -8.0
 
     def test_missed_workout_excuse_small_negative(self):
-        assert self.client._calculate_trust_delta("missed_workout_excuse", "scheduler") == -0.02
+        assert self.client._calculate_trust_delta("missed_workout_excuse", "scheduler") == -2.0
 
     def test_user_deleted_block_large_negative(self):
-        assert self.client._calculate_trust_delta("user_deleted_block", "auto_scheduler") == -0.15
+        assert self.client._calculate_trust_delta("user_deleted_block", "auto_scheduler") == -15.0
 
     def test_suggestion_accepted(self):
-        assert self.client._calculate_trust_delta("suggestion_accepted", "observer") == 0.03
+        assert self.client._calculate_trust_delta("suggestion_accepted", "observer") == 3.0
 
     def test_auto_scheduled_completed(self):
-        assert self.client._calculate_trust_delta("auto_scheduled_completed", "auto_scheduler") == 0.07
+        assert self.client._calculate_trust_delta("auto_scheduled_completed", "auto_scheduler") == 7.0
 
     def test_transformed_schedule_accepted(self):
-        assert self.client._calculate_trust_delta("transformed_schedule_accepted", "transformer") == 0.08
+        assert self.client._calculate_trust_delta("transformed_schedule_accepted", "transformer") == 8.0
 
     def test_unknown_event_zero(self):
+        """_calculate_trust_delta still returns 0.0 for unrecognised types."""
         assert self.client._calculate_trust_delta("something_random", "observer") == 0.0
-
-
-# =============================================================================
-# _check_phase_progression
-# =============================================================================
-
-
-class TestCheckPhaseProgression:
-    def setup_method(self):
-        self.client = _make_client()
-
-    def test_observer_at_zero(self):
-        assert self.client._check_phase_progression("observer", 0.0) == "observer"
-
-    def test_observer_to_scheduler_at_025(self):
-        assert self.client._check_phase_progression("observer", 0.25) == "scheduler"
-
-    def test_scheduler_to_auto_scheduler_at_050(self):
-        assert self.client._check_phase_progression("scheduler", 0.50) == "auto_scheduler"
-
-    def test_auto_scheduler_to_transformer_at_070(self):
-        assert self.client._check_phase_progression("auto_scheduler", 0.70) == "transformer"
-
-    def test_transformer_to_full_ghost_at_085(self):
-        assert self.client._check_phase_progression("transformer", 0.85) == "full_ghost"
-
-    def test_full_ghost_at_10(self):
-        assert self.client._check_phase_progression("full_ghost", 1.0) == "full_ghost"
-
-    def test_boundary_stays_in_lower_band(self):
-        """0.24 is still observer (threshold is 0.25)."""
-        assert self.client._check_phase_progression("observer", 0.24) == "observer"
 
 
 # =============================================================================
@@ -157,45 +127,45 @@ class TestRecordTrustEvent:
 
     @pytest.mark.asyncio
     async def test_new_user_gets_default_state(self):
-        """First event should create a new observer state at confidence 0.05."""
+        """First event should create a new observer state at trust_score 5.0."""
         result = await self.client.record_trust_event(
             "user@test.com", {"event_type": "completed_workout"}
         )
         assert result["phase"] == "observer"
-        assert result["confidence"] == 0.05
+        assert result["trust_score"] == 5.0
         # Verify persistence was called
         self.client.upsert_document.assert_called_once()
         args = self.client.upsert_document.call_args
         assert args[0][0] == "trust_states"
 
     @pytest.mark.asyncio
-    async def test_confidence_clamped_at_zero(self):
-        """Confidence should never go below 0.0."""
+    async def test_trust_score_clamped_at_zero(self):
+        """Trust score should never go below 0.0."""
         self.client.query_documents = AsyncMock(
-            return_value=[_default_state(confidence=0.01)]
+            return_value=[_default_state(trust_score=1.0)]
         )
         result = await self.client.record_trust_event(
-            "user@test.com", {"event_type": "missed_workout"}  # delta = -0.08
+            "user@test.com", {"event_type": "missed_workout"}  # delta = -8.0
         )
-        assert result["confidence"] == 0.0
+        assert result["trust_score"] == 0.0
 
     @pytest.mark.asyncio
-    async def test_confidence_clamped_at_one(self):
-        """Confidence should never exceed 1.0."""
+    async def test_trust_score_clamped_at_hundred(self):
+        """Trust score should never exceed 100.0."""
         self.client.query_documents = AsyncMock(
-            return_value=[_default_state(phase="full_ghost", confidence=0.99)]
+            return_value=[_default_state(phase="full_ghost", trust_score=99.0)]
         )
         result = await self.client.record_trust_event(
             "user@test.com",
-            {"event_type": "transformed_schedule_accepted"},  # delta = +0.08
+            {"event_type": "transformed_schedule_accepted"},  # delta = +8.0
         )
-        assert result["confidence"] == 1.0
+        assert result["trust_score"] == 100.0
 
     @pytest.mark.asyncio
     async def test_safety_breaker_on_three_deletes(self):
         """3 consecutive user_deleted_block events should downgrade phase."""
         state = _default_state(
-            phase="auto_scheduler", confidence=0.55, consecutive_deletes=2
+            phase="auto_scheduler", trust_score=55.0, consecutive_deletes=2
         )
         self.client.query_documents = AsyncMock(return_value=[state])
 
@@ -228,16 +198,52 @@ class TestRecordTrustEvent:
         assert result["consecutive_deletes"] == 0
 
     @pytest.mark.asyncio
-    async def test_phase_progression_across_boundary(self):
-        """Enough positive events should push from observer to scheduler."""
-        state = _default_state(phase="observer", confidence=0.22)
+    async def test_ios_phase_accepted(self):
+        """Backend accepts phase from iOS event_data when provided."""
+        state = _default_state(phase="observer", trust_score=22.0)
         self.client.query_documents = AsyncMock(return_value=[state])
 
         result = await self.client.record_trust_event(
-            "user@test.com", {"event_type": "completed_workout"}  # +0.05 → 0.27
+            "user@test.com",
+            {"event_type": "completed_workout", "phase": "scheduler"},
         )
-        assert result["confidence"] == pytest.approx(0.27, abs=1e-9)
-        assert result["phase"] == "scheduler"
+        assert result["trust_score"] == pytest.approx(27.0, abs=1e-9)
+        assert result["phase"] == "scheduler"  # accepted from iOS
+
+    @pytest.mark.asyncio
+    async def test_legacy_confidence_migrated(self):
+        """Legacy confidence (0-1) field should be migrated to trust_score (0-100)."""
+        legacy_state = {
+            "id": "test-id",
+            "userId": "user@test.com",
+            "phase": "observer",
+            "confidence": 0.25,
+            "consecutive_deletes": 0,
+            "events": [],
+        }
+        self.client.query_documents = AsyncMock(return_value=[legacy_state])
+
+        result = await self.client.record_trust_event(
+            "user@test.com", {"event_type": "completed_workout"}  # +5.0
+        )
+        assert result["trust_score"] == pytest.approx(30.0, abs=1e-9)
+        assert "confidence" not in result
+
+    @pytest.mark.asyncio
+    async def test_invalid_event_type_raises_value_error(self):
+        """record_trust_event rejects event types not in VALID_TRUST_EVENT_TYPES."""
+        self.client.query_documents = AsyncMock(return_value=[_default_state()])
+        with pytest.raises(ValueError, match="Invalid trust event type"):
+            await self.client.record_trust_event(
+                "user@test.com", {"event_type": "something_random"}
+            )
+
+    @pytest.mark.asyncio
+    async def test_missing_event_type_raises_value_error(self):
+        """record_trust_event rejects missing event_type (defaults to 'unknown')."""
+        self.client.query_documents = AsyncMock(return_value=[_default_state()])
+        with pytest.raises(ValueError, match="Invalid trust event type"):
+            await self.client.record_trust_event("user@test.com", {})
 
     @pytest.mark.asyncio
     async def test_state_is_persisted_via_upsert(self):

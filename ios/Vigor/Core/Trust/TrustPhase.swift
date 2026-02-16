@@ -12,7 +12,7 @@
 import Foundation
 
 enum TrustPhase: Int, Codable, CaseIterable {
-    case observer = 1        // Phase 1: Just watches, learns patterns
+    case observer = 1        // Phase 1: Suggest AND propose (requires explicit approval). NOT silent.
     case scheduler = 2       // Phase 2: Suggests blocks, needs confirmation
     case autoScheduler = 3   // Phase 3: Auto-creates blocks, can be deleted
     case transformer = 4     // Phase 4: Transforms blocks based on biometrics
@@ -33,7 +33,7 @@ enum TrustPhase: Int, Codable, CaseIterable {
     var description: String {
         switch self {
         case .observer:
-            return "Learning your patterns and preferences"
+            return "Learning your patterns and suggesting workouts"
         case .scheduler:
             return "Suggesting workout times for your approval"
         case .autoScheduler:
@@ -47,7 +47,7 @@ enum TrustPhase: Int, Codable, CaseIterable {
 
     var shortDescription: String {
         switch self {
-        case .observer: return "Learning"
+        case .observer: return "Suggesting"
         case .scheduler: return "Suggesting"
         case .autoScheduler: return "Scheduling"
         case .transformer: return "Adapting"
@@ -60,7 +60,7 @@ enum TrustPhase: Int, Codable, CaseIterable {
     var capabilities: [TrustCapability] {
         switch self {
         case .observer:
-            return [.readHealthKit, .readCalendar, .learnPatterns]
+            return [.readHealthKit, .readCalendar, .learnPatterns, .proposeBlocks]
         case .scheduler:
             return [.readHealthKit, .readCalendar, .learnPatterns, .proposeBlocks]
         case .autoScheduler:

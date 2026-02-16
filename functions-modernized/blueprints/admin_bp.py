@@ -116,7 +116,34 @@ async def get_trust_distribution(req: func.HttpRequest) -> func.HttpResponse:
         client = await get_global_client()
         distribution = await client.get_trust_distribution()
 
-        return success_response({"phases": distribution})
+        ordered_phases = [
+            ("observer", "Observer"),
+            ("scheduler", "Scheduler"),
+            ("auto_scheduler", "Auto-Scheduler"),
+            ("transformer", "Transformer"),
+            ("full_ghost", "Full Ghost"),
+        ]
+
+        total_users = sum(distribution.values())
+        total_users = total_users if total_users > 0 else 1
+        phase_items = []
+        for key, label in ordered_phases:
+            count = int(distribution.get(key, 0) or 0)
+            phase_items.append(
+                {
+                    "phase": label,
+                    "count": count,
+                    "percentage": round((count / total_users) * 100, 1),
+                }
+            )
+
+        return success_response(
+            {
+                "phases": phase_items,
+                "avgTimeToPhase2": 0,
+                "avgTimeToPhase5": 0,
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error getting trust distribution: {str(e)}")

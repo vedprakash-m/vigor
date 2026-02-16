@@ -68,7 +68,7 @@ class TestGhostTrustGet:
         assert resp.status_code == 200
         data = _json(resp)
         assert data["phase"] == "observer"
-        assert data["confidence"] == 0.0
+        assert data["trust_score"] == 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -83,7 +83,7 @@ class TestGhostTrustPost:
         updated = {
             "userId": "test@example.com",
             "phase": "observer",
-            "confidence": 0.05,
+            "trust_score": 5.0,
             "consecutive_deletes": 0,
         }
         mock_client = AsyncMock()
@@ -110,7 +110,7 @@ class TestGhostTrustPost:
 
         assert resp.status_code == 200
         data = _json(resp)
-        assert data["confidence"] == 0.05
+        assert data["trust_score"] == 5.0
         mock_client.record_trust_event.assert_awaited_once()
 
     @pytest.mark.asyncio
@@ -337,3 +337,59 @@ class TestGhostPhenomeSync:
         data = _json(resp)
         assert data["status"] == "updated"
         assert data["version"] == 5
+
+
+# ---------------------------------------------------------------------------
+# Test: POST /ghost/health
+# ---------------------------------------------------------------------------
+
+
+class TestGhostHealth:
+    @pytest.mark.asyncio
+    async def test_persists_health_snapshot(self):
+        from blueprints.ghost_bp import ghost_health
+
+        mock_client = AsyncMock()
+        mock_client.get_user_profile = AsyncMock(
+            return_value={"id": "test@example.com", "email": "test@example.com"}
+        )
+        mock_client.upsert_document = AsyncMock()
+
+        with (
+            patch(
+                "blueprints.ghost_bp.get_current_user_from_token",
+                new=AsyncMock(return_value={"email": "test@example.com"}),
+            ),
+            patch(
+                "shared.cosmos_db.get_global_client",
+                new=AsyncMock(return_value=mock_client),
+            ),
+        ):
+            req = _make_request(
+                method="POST",
+                url="https://vigor-functions.azurewebsites.net/api/ghost/health",
+                body={"mode": "LOW_POWER", "battery": 0.42},
+            )
+            resp = await ghost_health(req)
+
+        assert resp.status_code == 200
+        data = _json(resp)
+        assert data["status"] == "ok"
+        mock_client.upsert_document.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_unauthenticated_returns_401(self):
+        from blueprints.ghost_bp import ghost_health
+
+        with patch(
+            "blueprints.ghost_bp.get_current_user_from_token",
+            new=AsyncMock(return_value=None),
+        ):
+            req = _make_request(
+                method="POST",
+                url="https://vigor-functions.azurewebsites.net/api/ghost/health",
+                body={"mode": "NORMAL"},
+            )
+            resp = await ghost_health(req)
+
+        assert resp.status_code == 401

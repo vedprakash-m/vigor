@@ -20,6 +20,7 @@ import aiohttp
 import requests
 
 from .config import get_settings
+from .helpers import bind_request_context, get_correlation_id
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,8 @@ async def get_current_user_from_token(
 ) -> Optional[Dict[str, Any]]:
     """Extract and validate user from Microsoft Entra ID JWT token"""
     try:
+        bind_request_context(req)
+
         # Get token from Authorization header
         auth_header = req.headers.get("Authorization")
         if not auth_header:
@@ -106,7 +109,11 @@ async def get_current_user_from_token(
         return user_data
 
     except Exception as e:
-        logger.error(f"Error in get_current_user_from_token: {str(e)}")
+        logger.error(
+            "[corr=%s] Error in get_current_user_from_token: %s",
+            get_correlation_id(req),
+            str(e),
+        )
         return None
 
 
@@ -268,6 +275,7 @@ async def require_admin_user(req: func.HttpRequest) -> Optional[Dict[str, Any]]:
     admin_emails = [e.strip().lower() for e in admin_csv.split(",") if e.strip()]
 
     try:
+        bind_request_context(req)
         user = await get_current_user_from_token(req)
         if not user:
             return None
@@ -276,13 +284,21 @@ async def require_admin_user(req: func.HttpRequest) -> Optional[Dict[str, Any]]:
 
         # Check if user email is in admin whitelist
         if email not in admin_emails:
-            logger.warning(f"Non-admin user attempted admin access: {email}")
+            logger.warning(
+                "[corr=%s] Non-admin user attempted admin access: %s",
+                get_correlation_id(req),
+                email,
+            )
             return None
 
         return user
 
     except Exception as e:
-        logger.error(f"Error in require_admin_user: {str(e)}")
+        logger.error(
+            "[corr=%s] Error in require_admin_user: %s",
+            get_correlation_id(req),
+            str(e),
+        )
         return None
 
 

@@ -141,6 +141,62 @@ class TestUserProfileAlias:
 
         assert resp.status_code == 200
 
+    @pytest.mark.asyncio
+    async def test_post_profile_creates_user_when_missing(self):
+        from blueprints.auth_bp import user_profile
+
+        mock_client = AsyncMock()
+        mock_client.get_user_profile = AsyncMock(return_value=None)
+        mock_client.create_user_profile = AsyncMock(
+            return_value={"id": "u@e.com", "email": "u@e.com"}
+        )
+
+        with (
+            patch(
+                "blueprints.auth_bp.get_current_user_from_token",
+                new=AsyncMock(return_value={"email": "u@e.com"}),
+            ),
+            patch(
+                "shared.cosmos_db.get_global_client",
+                new=AsyncMock(return_value=mock_client),
+            ),
+        ):
+            req = _make_request(
+                method="POST",
+                url="https://vigor-functions.azurewebsites.net/api/users/profile",
+            )
+            resp = await user_profile(req)
+
+        assert resp.status_code == 201
+        mock_client.create_user_profile.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_post_profile_returns_existing_user(self):
+        from blueprints.auth_bp import user_profile
+
+        existing = {"id": "u@e.com", "email": "u@e.com", "tier": "free"}
+        mock_client = AsyncMock()
+        mock_client.get_user_profile = AsyncMock(return_value=existing)
+
+        with (
+            patch(
+                "blueprints.auth_bp.get_current_user_from_token",
+                new=AsyncMock(return_value={"email": "u@e.com"}),
+            ),
+            patch(
+                "shared.cosmos_db.get_global_client",
+                new=AsyncMock(return_value=mock_client),
+            ),
+        ):
+            req = _make_request(
+                method="POST",
+                url="https://vigor-functions.azurewebsites.net/api/users/profile",
+            )
+            resp = await user_profile(req)
+
+        assert resp.status_code == 200
+        mock_client.create_user_profile.assert_not_awaited()
+
 
 # ===========================================================================
 # POST /trust/event
@@ -152,7 +208,7 @@ class TestTrustEvent:
     async def test_records_event(self):
         from blueprints.trust_bp import trust_record_event
 
-        updated = {"phase": "observer", "confidence": 0.05}
+        updated = {"phase": "observer", "trust_score": 5.0}
         mock_client = AsyncMock()
         mock_client.record_trust_event = AsyncMock(return_value=updated)
 
@@ -216,7 +272,7 @@ class TestTrustHistory:
 
         mock_client = AsyncMock()
         mock_client.get_trust_state = AsyncMock(
-            return_value={"confidence": 0.35, "phase": "scheduler"}
+            return_value={"trust_score": 35.0, "phase": "scheduler"}
         )
         mock_client.get_trust_history = AsyncMock(
             return_value=[
@@ -242,7 +298,7 @@ class TestTrustHistory:
 
         assert resp.status_code == 200
         data = _json(resp)
-        assert data["currentScore"] == 0.35
+        assert data["currentScore"] == 35.0
         assert data["currentPhase"] == "scheduler"
         assert len(data["history"]) == 2
         assert len(data["phaseTransitions"]) == 1

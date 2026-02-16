@@ -71,6 +71,7 @@ const BulkUserOperations = () => {
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedAction, setSelectedAction] = useState<BulkAction | null>(null)
     const [notificationMessage, setNotificationMessage] = useState('')
+    const [actionStatus, setActionStatus] = useState<string | null>(null)
 
     const filteredUsers = users.filter(
         (user) =>
@@ -114,8 +115,8 @@ const BulkUserOperations = () => {
 
         if (confirm) {
             // In production, this would call the API
-            alert(
-                `Successfully executed "${selectedAction}" on ${selectedUsers.size} users. (Demo)`
+            setActionStatus(
+                `Executed "${selectedAction}" on ${selectedUsers.size} users. Demo mode (API integration pending).`
             )
             setSelectedUsers(new Set())
             setSelectedAction(null)
@@ -152,6 +153,14 @@ const BulkUserOperations = () => {
                     Perform batch operations on multiple users
                 </Text>
             </VStack>
+
+            {actionStatus && (
+                <Card.Root bg="blue.50" borderColor="blue.200" border="1px" borderRadius="lg" mb={6}>
+                    <Card.Body p={4}>
+                        <Text color="blue.700">{actionStatus}</Text>
+                    </Card.Body>
+                </Card.Root>
+            )}
 
             {/* Search and Actions */}
             <Card.Root bg="white" shadow="sm" borderRadius="lg" mb={6}>

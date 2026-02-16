@@ -61,11 +61,14 @@ final class WatchConnectivityTests: XCTestCase {
 
     func testPhoneIsAuthorityForPlanning() async throws {
         // Phone creates training block
+        let startTime = Date().addingTimeInterval(3600)
         let block = TrainingBlock(
-            id: UUID(),
-            type: .cardio,
-            startTime: Date().addingTimeInterval(3600),
-            duration: 30,
+            id: UUID().uuidString,
+            calendarEventId: UUID().uuidString,
+            workoutType: .cardio,
+            startTime: startTime,
+            endTime: startTime.addingTimeInterval(30 * 60),
+            wasAutoScheduled: false,
             status: .scheduled
         )
 
@@ -186,21 +189,27 @@ final class WatchConnectivityTests: XCTestCase {
 
     func testPhoneBlockOverridesWatch() async throws {
         // Watch has stale block
+        let staleStartTime = Date().addingTimeInterval(3600)
         let staleBlock = TrainingBlock(
-            id: UUID(),
-            type: .strength,
-            startTime: Date().addingTimeInterval(3600),
-            duration: 45,
+            id: UUID().uuidString,
+            calendarEventId: UUID().uuidString,
+            workoutType: .strength,
+            startTime: staleStartTime,
+            endTime: staleStartTime.addingTimeInterval(45 * 60),
+            wasAutoScheduled: false,
             status: .scheduled
         )
         await watchConnector.storeLocalBlock(staleBlock)
 
         // Phone sends updated version (rescheduled)
+        let phoneStartTime = Date().addingTimeInterval(7200)
         let phoneBlock = TrainingBlock(
             id: staleBlock.id,
-            type: .strength,
-            startTime: Date().addingTimeInterval(7200),  // Moved 1 hour later
-            duration: 45,
+            calendarEventId: staleBlock.calendarEventId,
+            workoutType: .strength,
+            startTime: phoneStartTime,  // Moved 1 hour later
+            endTime: phoneStartTime.addingTimeInterval(45 * 60),
+            wasAutoScheduled: false,
             status: .scheduled
         )
         await phoneConnector.scheduleBlock(phoneBlock)
@@ -216,28 +225,35 @@ final class WatchConnectivityTests: XCTestCase {
     func testQueuesMessagesWhenUnreachable() async throws {
         phoneSession.isReachable = false
 
+        let startTime = Date().addingTimeInterval(3600)
         let block = TrainingBlock(
-            id: UUID(),
-            type: .mobility,
-            startTime: Date().addingTimeInterval(3600),
-            duration: 20,
+            id: UUID().uuidString,
+            calendarEventId: UUID().uuidString,
+            workoutType: .flexibility,
+            startTime: startTime,
+            endTime: startTime.addingTimeInterval(20 * 60),
+            wasAutoScheduled: false,
             status: .scheduled
         )
 
         await phoneConnector.scheduleBlock(block)
 
-        XCTAssertEqual(phoneConnector.pendingMessages, 1, "Should queue message")
+        let pendingCount = await phoneConnector.pendingMessages
+        XCTAssertEqual(pendingCount, 1, "Should queue message")
         XCTAssertNil(phoneSession.lastSentMessage, "Should not send immediately")
     }
 
     func testSendsQueuedMessagesWhenReachable() async throws {
         phoneSession.isReachable = false
 
+        let startTime = Date().addingTimeInterval(3600)
         let block = TrainingBlock(
-            id: UUID(),
-            type: .mobility,
-            startTime: Date().addingTimeInterval(3600),
-            duration: 20,
+            id: UUID().uuidString,
+            calendarEventId: UUID().uuidString,
+            workoutType: .flexibility,
+            startTime: startTime,
+            endTime: startTime.addingTimeInterval(20 * 60),
+            wasAutoScheduled: false,
             status: .scheduled
         )
 
@@ -247,7 +263,8 @@ final class WatchConnectivityTests: XCTestCase {
         phoneSession.isReachable = true
         await phoneConnector.flushPendingMessages()
 
-        XCTAssertEqual(phoneConnector.pendingMessages, 0, "Queue should be empty")
+        let pendingCount = await phoneConnector.pendingMessages
+        XCTAssertEqual(pendingCount, 0, "Queue should be empty")
         XCTAssertNotNil(phoneSession.lastSentMessage, "Should have sent message")
     }
 
@@ -303,11 +320,14 @@ final class WatchConnectivityTests: XCTestCase {
     func testBatchesMultipleUpdates() async throws {
         // Multiple rapid updates should batch
         for i in 0..<10 {
+            let startTime = Date().addingTimeInterval(TimeInterval(i * 3600))
             let block = TrainingBlock(
-                id: UUID(),
-                type: .strength,
-                startTime: Date().addingTimeInterval(TimeInterval(i * 3600)),
-                duration: 45,
+                id: UUID().uuidString,
+                calendarEventId: UUID().uuidString,
+                workoutType: .strength,
+                startTime: startTime,
+                endTime: startTime.addingTimeInterval(45 * 60),
+                wasAutoScheduled: false,
                 status: .scheduled
             )
             await phoneConnector.scheduleBlock(block, debounce: true)
@@ -403,7 +423,9 @@ actor TestablePhoneConnector {
         session.updateApplicationContext(trustData)
 
         if session.isReachable {
-            session.sendMessage(["action": "trust_update"] + trustData)
+            var message = trustData
+            message["action"] = "trust_update"
+            session.sendMessage(message)
         } else {
             session.transferUserInfo(trustData)
         }
@@ -448,10 +470,10 @@ actor TestablePhoneConnector {
 
     private func blockToDict(_ block: TrainingBlock) -> [String: Any] {
         [
-            "id": block.id.uuidString,
-            "type": block.type.rawValue,
+            "id": block.id,
+            "type": block.workoutType.rawValue,
             "start": ISO8601DateFormatter().string(from: block.startTime),
-            "duration": block.duration,
+            "duration": block.durationMinutes,
             "status": block.status.rawValue
         ]
     }
@@ -501,13 +523,14 @@ actor TestableWatchConnector {
            let duration = blockData["duration"] as? Int {
 
             let formatter = ISO8601DateFormatter()
-            if let uuid = UUID(uuidString: id),
-               let start = formatter.date(from: startStr) {
+            if let start = formatter.date(from: startStr) {
                 let block = TrainingBlock(
-                    id: uuid,
-                    type: WorkoutType(rawValue: typeRaw) ?? .strength,
+                    id: id,
+                    calendarEventId: UUID().uuidString,
+                    workoutType: WorkoutType(rawValue: typeRaw) ?? .strength,
                     startTime: start,
-                    duration: duration,
+                    endTime: start.addingTimeInterval(TimeInterval(duration * 60)),
+                    wasAutoScheduled: false,
                     status: .scheduled
                 )
                 todayBlocks.append(block)
@@ -537,9 +560,10 @@ extension WorkoutType: RawRepresentable {
         case "strength": self = .strength
         case "cardio": self = .cardio
         case "hiit": self = .hiit
-        case "mobility": self = .mobility
-        case "recovery": self = .recovery
-        case "custom": self = .custom
+        case "flexibility": self = .flexibility
+        case "recoveryWalk": self = .recoveryWalk
+        case "lightCardio": self = .lightCardio
+        case "other": self = .other
         default: return nil
         }
     }
@@ -549,9 +573,10 @@ extension WorkoutType: RawRepresentable {
         case .strength: return "strength"
         case .cardio: return "cardio"
         case .hiit: return "hiit"
-        case .mobility: return "mobility"
-        case .recovery: return "recovery"
-        case .custom: return "custom"
+        case .flexibility: return "flexibility"
+        case .recoveryWalk: return "recoveryWalk"
+        case .lightCardio: return "lightCardio"
+        case .other: return "other"
         }
     }
 }

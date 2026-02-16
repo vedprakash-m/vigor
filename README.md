@@ -41,6 +41,30 @@ The system earns trust progressively, graduating from suggestions to autonomous 
 
 ---
 
+## 🆕 Latest Updates (2026-02-16)
+
+### Backend (Azure Functions)
+
+- Added request-level correlation propagation and response headers (`X-Correlation-ID`) in shared helpers/auth paths
+- Standardized structured error envelopes with timestamp + correlation metadata
+- Instrumented Ghost-critical endpoints with operation IDs for traceable logs and failure surfacing
+- Expanded/updated endpoint and Cosmos test coverage aligned to the modernized contracts
+
+### iOS / watchOS
+
+- Enhanced onboarding flow (merged trust/permissions steps, added absolution/first-insight experience)
+- Added offline API queue and keychain helper utilities for resilience across app lifecycle events
+- Improved Ghost health handling, trust progression logic, and notification orchestration behavior
+- Added/updated broad test coverage across trust, simulation, notifications, offline queue, logging, and insights
+
+### Frontend + DevOps
+
+- Updated admin dashboard surfaces and API integrations for Ghost/admin workflows
+- Refined smoke/health/pre-deployment scripts for current Functions + SWA topology
+- Updated CI/CD workflows and deployment validation paths to match repository structure
+
+---
+
 ## 🔐 Admin Dashboard
 
 The web dashboard provides administrative control over Ghost operations:

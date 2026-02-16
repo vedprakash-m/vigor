@@ -45,13 +45,17 @@ async def trust_record_event(req: func.HttpRequest) -> func.HttpResponse:
                 "Request body required", status_code=400, code="EMPTY_BODY"
             )
 
-        # Normalise iOS field names to internal format
+        # Include iOS phase in event data if provided
         event_data = {
             "event_type": body.get("event_type") or body.get("event", ""),
             "timestamp": body.get("timestamp", datetime.now(timezone.utc).isoformat()),
         }
         if body.get("context"):
             event_data["context"] = body["context"]
+        if body.get("phase"):
+            event_data["phase"] = body["phase"]
+        if body.get("trust_score") is not None:
+            event_data["trust_score"] = body["trust_score"]
 
         if not event_data["event_type"]:
             return error_response(
@@ -62,7 +66,10 @@ async def trust_record_event(req: func.HttpRequest) -> func.HttpResponse:
 
         client = await get_global_client()
         user_id = current_user["email"]
-        updated_state = await client.record_trust_event(user_id, event_data)
+        try:
+            updated_state = await client.record_trust_event(user_id, event_data)
+        except ValueError as ve:
+            return error_response(str(ve), status_code=400, code="INVALID_EVENT_TYPE")
         return success_response(updated_state)
 
     except Exception as e:
@@ -90,7 +97,9 @@ async def trust_get_history(req: func.HttpRequest) -> func.HttpResponse:
         user_id = current_user["email"]
 
         trust_state = await client.get_trust_state(user_id)
-        current_score = (trust_state or {}).get("confidence", 0.0)
+        # Use trust_score (0-100 scale) matching iOS; fall back to confidence (0-1) migrated
+        current_score = (trust_state or {}).get("trust_score",
+                         (trust_state or {}).get("confidence", 0.0) * 100.0)
         current_phase = (trust_state or {}).get("phase", "observer")
 
         # Get trust event history from trust_states container

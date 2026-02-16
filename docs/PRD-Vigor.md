@@ -74,13 +74,13 @@ You don't configure Vigor. You don't feed it. You don't check in with it. Vigor 
 
 We must earn authority before we take it. Users don't trust invisible systems with their bodies until authority is earned explicitly.
 
-| Phase | Name               | Behavior                                                                         | User Control              | Unlocks After                   |
-| ----- | ------------------ | -------------------------------------------------------------------------------- | ------------------------- | ------------------------------- |
-| 1     | **Observer**       | Ghost watches and suggests. All actions require explicit approval.               | Full control              | Day 1                           |
-| 2     | **Scheduler**      | Ghost proposes calendar blocks with preview. User confirms before blocks appear. | Approval required         | 7 days + 3 accepted suggestions |
-| 3     | **Auto-Scheduler** | Ghost adds calendar blocks automatically. User can undo.                         | Undo available            | 14 days + 5 completed workouts  |
-| 4     | **Transformer**    | Ghost auto-adjusts blocks based on real-time data (Heavy → Recovery).            | Revert available          | 30 days + trust score >80%      |
-| 5     | **Full Ghost**     | Complete autonomy. Calendar transforms silently. User rarely intervenes.         | Override always available | 60 days + trust score >90%      |
+| Phase | Name               | Behavior                                                                                                                          | User Control              | Unlocks After                   |
+| ----- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------------------------------- |
+| 1     | **Observer**       | Ghost watches, learns, AND suggests. Uses imported historical data for immediate insights. All actions require explicit approval. | Full control              | Day 1                           |
+| 2     | **Scheduler**      | Ghost proposes calendar blocks with preview. User confirms before blocks appear.                                                  | Approval required         | 7 days + 3 accepted suggestions |
+| 3     | **Auto-Scheduler** | Ghost adds calendar blocks automatically. User can undo.                                                                          | Undo available            | 14 days + 5 completed workouts  |
+| 4     | **Transformer**    | Ghost auto-adjusts blocks based on real-time data (Heavy → Recovery).                                                             | Revert available          | 30 days + trust score >80%      |
+| 5     | **Full Ghost**     | Complete autonomy. Calendar transforms silently. User rarely intervenes.                                                          | Override always available | 60 days + trust score >90%      |
 
 **Trust Score Factors:**
 
@@ -160,6 +160,8 @@ Other apps need 60 days to know you. Vigor needs 60 seconds.
 > _"I see you haven't worked out consistently since November. When you do exercise, your heart rate recovers slowly—you're deconditioned. Today: 15-minute walk. Tomorrow: we rebuild."_
 
 **No waiting. No earning insights. Magic on contact.**
+
+**Implementation Note:** The Observer phase (Phase 1) is NOT silent. It uses imported historical data to immediately generate suggestions and insights. The difference from Phase 2 (Scheduler) is that Observer suggestions are surfaced in-app and via notification, but never auto-create calendar blocks. "Observer" means "observing AND suggesting" — not "silent observation only."
 
 #### Advantage 3: The Silent Calendar
 

@@ -94,15 +94,50 @@ final class HealthKitObserver: ObservableObject {
 
         isAuthorized = true
         UserDefaults.standard.set(true, forKey: "healthKitAuthorized")
+        KeychainHelper.save(key: "healthKitAuthorized", data: Data("true".utf8))
 
         // Setup background delivery
         await setupBackgroundDelivery()
     }
 
     private func checkAuthorizationStatus() {
-        // HealthKit never reveals read authorization status for privacy.
-        // We track authorization via a UserDefaults flag set after successful requestAuthorization().
-        isAuthorized = UserDefaults.standard.bool(forKey: "healthKitAuthorized")
+        // Probe-based detection: attempt a lightweight HealthKit query.
+        // If data returns (even empty), authorization was previously granted.
+        // This survives re-installs and free provisioning re-signing, unlike UserDefaults.
+        // Also check Keychain as a fast cache.
+        if let keychainData = KeychainHelper.read(key: "healthKitAuthorized"),
+           String(data: keychainData, encoding: .utf8) == "true" {
+            isAuthorized = true
+            return
+        }
+
+        // Probe: query last 1 day of step count — fast and always available
+        guard HKHealthStore.isHealthDataAvailable(),
+              let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
+            isAuthorized = false
+            return
+        }
+
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+        let predicate = HKQuery.predicateForSamples(withStart: yesterday, end: Date())
+        let query = HKSampleQuery(
+            sampleType: stepType,
+            predicate: predicate,
+            limit: 1,
+            sortDescriptors: nil
+        ) { [weak self] _, results, error in
+            DispatchQueue.main.async {
+                // If we get results array (even empty but no auth error), auth was granted
+                if error == nil {
+                    self?.isAuthorized = true
+                    KeychainHelper.save(key: "healthKitAuthorized", data: Data("true".utf8))
+                } else {
+                    // Check UserDefaults as legacy fallback
+                    self?.isAuthorized = UserDefaults.standard.bool(forKey: "healthKitAuthorized")
+                }
+            }
+        }
+        healthStore.execute(query)
     }
 
     // MARK: - Background Delivery
@@ -196,21 +231,32 @@ final class HealthKitObserver: ObservableObject {
     }
 
     private func importData(startDate: Date, endDate: Date) async throws {
-        // Import sleep data
-        let sleepData = try await fetchSleepData(from: startDate, to: endDate)
+        VigorLogger.healthKit.info("Import chunk: \(startDate.formatted(.dateTime.month().day())) → \(endDate.formatted(.dateTime.month().day()))")
+
+        // Offload heavy HealthKit queries to background to avoid blocking MainActor
+        let healthStore = self.healthStore
+        let (sleepData, hrvData, workouts, restingHR) = try await Task.detached(priority: .utility) {
+            async let sleep = self.fetchSleepData(from: startDate, to: endDate)
+            async let hrv = self.fetchHRVData(from: startDate, to: endDate)
+            async let wk = self.fetchWorkouts(from: startDate, to: endDate)
+            async let hr = self.fetchRestingHR(from: startDate, to: endDate)
+            return try await (sleep, hrv, wk, hr)
+        }.value
+
+        VigorLogger.healthKit.info("Fetched \(sleepData.count) sleep, \(hrvData.count) HRV, \(workouts.count) workouts, \(restingHR.count) resting HR")
+
+        // Import into Phenome (back on MainActor)
         await PhenomeCoordinator.shared.importSleepData(sleepData)
-
-        // Import HRV data
-        let hrvData = try await fetchHRVData(from: startDate, to: endDate)
         await PhenomeCoordinator.shared.importHRVData(hrvData)
-
-        // Import workouts
-        let workouts = try await fetchWorkouts(from: startDate, to: endDate)
         await PhenomeCoordinator.shared.importWorkouts(workouts)
-
-        // Import resting heart rate
-        let restingHR = try await fetchRestingHR(from: startDate, to: endDate)
         await RawSignalStore.shared.storeRestingHR(restingHR)
+
+        // Track imported data counts for trust acceleration
+        // (TrustStateMachine uses these to allow faster phase advancement)
+        let currentWorkoutCount = UserDefaults.standard.integer(forKey: "importedWorkoutCount")
+        UserDefaults.standard.set(currentWorkoutCount + workouts.count, forKey: "importedWorkoutCount")
+        let currentSleepCount = UserDefaults.standard.integer(forKey: "importedSleepRecordCount")
+        UserDefaults.standard.set(currentSleepCount + sleepData.count, forKey: "importedSleepRecordCount")
 
         lastSyncDate = Date()
     }

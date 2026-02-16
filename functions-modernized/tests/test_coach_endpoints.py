@@ -306,3 +306,65 @@ class TestCoachRecovery:
         data = _json(resp)
         assert data["status"] == "fatigued"
         assert data["suggestedRestDays"] >= 2
+
+
+# ===========================================================================
+# POST /coach/generate-workout — compatibility alias
+# ===========================================================================
+
+
+class TestCoachGenerateWorkout:
+    @pytest.mark.asyncio
+    async def test_returns_generated_workout(self):
+        from blueprints.coach_bp import coach_generate_workout
+
+        mock_client = AsyncMock()
+        mock_client.get_user_profile = AsyncMock(return_value={"email": "t@e.com"})
+
+        mock_ai = MagicMock()
+        mock_ai.generate_workout = AsyncMock(
+            return_value={"name": "Intervals", "description": "Quality work"}
+        )
+
+        with (
+            patch(
+                "blueprints.coach_bp.get_current_user_from_token",
+                new=AsyncMock(return_value={"email": "t@e.com"}),
+            ),
+            patch(
+                "shared.cosmos_db.get_global_client",
+                new=AsyncMock(return_value=mock_client),
+            ),
+            patch(
+                "shared.rate_limiter.apply_ai_generation_limit",
+                new=AsyncMock(return_value=None),
+            ),
+            patch("shared.openai_client.OpenAIClient", return_value=mock_ai),
+        ):
+            req = _make_request(
+                method="POST",
+                url="https://vigor-functions.azurewebsites.net/api/coach/generate-workout",
+                body={"durationMinutes": 30},
+            )
+            resp = await coach_generate_workout(req)
+
+        assert resp.status_code == 200
+        data = _json(resp)
+        assert data["name"] == "Intervals"
+
+    @pytest.mark.asyncio
+    async def test_unauthenticated_returns_401(self):
+        from blueprints.coach_bp import coach_generate_workout
+
+        with patch(
+            "blueprints.coach_bp.get_current_user_from_token",
+            new=AsyncMock(return_value=None),
+        ):
+            req = _make_request(
+                method="POST",
+                url="https://vigor-functions.azurewebsites.net/api/coach/generate-workout",
+                body={"durationMinutes": 30},
+            )
+            resp = await coach_generate_workout(req)
+
+        assert resp.status_code == 401

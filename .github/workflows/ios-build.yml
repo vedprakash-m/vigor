@@ -83,16 +83,18 @@ jobs:
           path: ios/TestResults.xcresult
           retention-days: 7
 
-      - name: Build watchOS
-        working-directory: ios
-        run: |
-          xcodebuild build \
-            -project Vigor.xcodeproj \
-            -scheme "VigorWatch" \
-            -destination 'platform=watchOS Simulator,name=Apple Watch Series 9 (45mm),OS=10.2' \
-            -configuration Debug \
-            CODE_SIGNING_ALLOWED=NO \
-            | xcpretty
+      # NOTE: watchOS build disabled - VigorWatch target is commented out in project.yml
+      # Re-enable when watchOS target is ready
+      # - name: Build watchOS
+      #   working-directory: ios
+      #   run: |
+      #     xcodebuild build \
+      #       -project Vigor.xcodeproj \
+      #       -scheme "VigorWatch" \
+      #       -destination 'platform=watchOS Simulator,name=Apple Watch Series 9 (45mm),OS=10.2' \
+      #       -configuration Debug \
+      #       CODE_SIGNING_ALLOWED=NO \
+      #       | xcpretty
 
   lint:
     name: Swift Lint

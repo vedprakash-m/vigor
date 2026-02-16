@@ -35,13 +35,26 @@ final class TrustStateMachine: ObservableObject {
 
     // MARK: - Phase Thresholds
 
-    private let phaseThresholds: [TrustPhase: (min: Double, days: Int)] = [
-        .observer: (min: 0, days: 7),          // 7 days minimum in Observer
-        .scheduler: (min: 30, days: 14),       // 14 days minimum in Scheduler
-        .autoScheduler: (min: 60, days: 21),   // 21 days minimum in Auto-Scheduler
-        .transformer: (min: 80, days: 14),     // 14 days minimum in Transformer
-        .fullGhost: (min: 90, days: 0)         // No minimum in Full Ghost
-    ]
+    /// Minimum days can be reduced when sufficient historical data exists.
+    /// Per PRD §1.2: "Magic in five minutes" — if 90-day import provides
+    /// enough data, the user shouldn't wait 7 days for Day 1 to feel magical.
+    private var phaseThresholds: [TrustPhase: (min: Double, days: Int)] {
+        let hasRichHistory = hasRichHistoricalData
+        return [
+            .observer: (min: 0, days: hasRichHistory ? 3 : 7),           // Reduced from 7 to 3 with data
+            .scheduler: (min: 30, days: hasRichHistory ? 7 : 14),        // Reduced from 14 to 7 with data
+            .autoScheduler: (min: 60, days: 14),                          // Keep 14 — auto-scheduling needs real trust
+            .transformer: (min: 80, days: 14),                            // Keep 14
+            .fullGhost: (min: 90, days: 0)                                // No minimum
+        ]
+    }
+
+    /// Check if the user has sufficient imported historical data to accelerate trust.
+    /// Criteria: ≥10 historical workouts OR ≥30 sleep records in imported data.
+    private var hasRichHistoricalData: Bool {
+        UserDefaults.standard.integer(forKey: "importedWorkoutCount") >= 10 ||
+        UserDefaults.standard.integer(forKey: "importedSleepRecordCount") >= 30
+    }
 
     // MARK: - Initialization
 

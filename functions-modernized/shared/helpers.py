@@ -9,7 +9,10 @@ Task 7.1.4: parse_pagination — bounds-clamped limit/offset extraction
 
 import json
 import logging
+from contextvars import ContextVar
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Type, TypeVar
+from uuid import uuid4
 
 import azure.functions as func
 from pydantic import BaseModel, ValidationError
@@ -17,6 +20,49 @@ from pydantic import BaseModel, ValidationError
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
+
+_request_correlation_id: ContextVar[Optional[str]] = ContextVar(
+    "request_correlation_id", default=None
+)
+_CORRELATION_HEADER_CANDIDATES = (
+    "x-correlation-id",
+    "x-request-id",
+    "x-ms-request-id",
+)
+
+
+def bind_request_context(req: Optional[func.HttpRequest]) -> str:
+    """Bind request correlation ID to per-request context and return it."""
+    existing = _request_correlation_id.get()
+    if existing:
+        return existing
+
+    correlation_id: Optional[str] = None
+    if req is not None:
+        for header in _CORRELATION_HEADER_CANDIDATES:
+            value = req.headers.get(header) if req.headers else None
+            if value:
+                correlation_id = value
+                break
+
+    if not correlation_id:
+        correlation_id = str(uuid4())
+
+    _request_correlation_id.set(correlation_id)
+    return correlation_id
+
+
+def get_correlation_id(req: Optional[func.HttpRequest] = None) -> str:
+    """Get correlation ID from context or request headers, generating one if absent."""
+    existing = _request_correlation_id.get()
+    if existing:
+        return existing
+    return bind_request_context(req)
+
+
+def new_operation_id(prefix: str = "op") -> str:
+    """Create a short operation ID for log correlation in critical flows."""
+    return f"{prefix}-{uuid4().hex[:12]}"
 
 
 # =============================================================================
@@ -30,6 +76,7 @@ def error_response(
     *,
     details: Optional[Any] = None,
     code: Optional[str] = None,
+    req: Optional[func.HttpRequest] = None,
 ) -> func.HttpResponse:
     """Return a uniform JSON error response.
 
@@ -42,7 +89,12 @@ def error_response(
     Returns:
         func.HttpResponse with JSON body {"error": ..., "code": ..., "details": ...}
     """
-    body: Dict[str, Any] = {"error": message}
+    correlation_id = get_correlation_id(req)
+    body: Dict[str, Any] = {
+        "error": message,
+        "correlation_id": correlation_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
     if code:
         body["code"] = code
     if details is not None:
@@ -51,6 +103,7 @@ def error_response(
     return func.HttpResponse(
         json.dumps(body),
         status_code=status_code,
+        headers={"X-Correlation-ID": correlation_id},
         mimetype="application/json",
     )
 
@@ -58,11 +111,20 @@ def error_response(
 def success_response(
     data: Any,
     status_code: int = 200,
+    *,
+    req: Optional[func.HttpRequest] = None,
 ) -> func.HttpResponse:
     """Return a uniform JSON success response."""
+    correlation_id = get_correlation_id(req)
+    payload = data
+    if isinstance(data, dict):
+        payload = dict(data)
+        payload.setdefault("correlation_id", correlation_id)
+
     return func.HttpResponse(
-        json.dumps(data),
+        json.dumps(payload),
         status_code=status_code,
+        headers={"X-Correlation-ID": correlation_id},
         mimetype="application/json",
     )
 
@@ -81,6 +143,8 @@ def parse_request_body(
         (parsed_model, None) on success
         (None, error_response) on failure — caller should return the error response
     """
+    bind_request_context(req)
+
     try:
         raw = req.get_json()
     except ValueError:
@@ -88,6 +152,7 @@ def parse_request_body(
             "Invalid JSON in request body",
             status_code=400,
             code="INVALID_JSON",
+            req=req,
         )
 
     if not isinstance(raw, dict):
@@ -95,6 +160,7 @@ def parse_request_body(
             "Request body must be a JSON object",
             status_code=400,
             code="INVALID_BODY",
+            req=req,
         )
 
     try:
@@ -106,6 +172,7 @@ def parse_request_body(
             status_code=422,
             code="VALIDATION_ERROR",
             details=e.errors(),
+            req=req,
         )
 
 
@@ -135,6 +202,8 @@ def parse_pagination(
     Returns:
         (limit, offset) — both guaranteed non-negative, limit ≤ max_limit.
     """
+    bind_request_context(req)
+
     try:
         limit = int(req.params.get("limit", default_limit))
     except (ValueError, TypeError):

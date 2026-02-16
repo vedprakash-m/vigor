@@ -83,6 +83,7 @@ const UserManagement = () => {
     const [filterTier, setFilterTier] = useState<string>('all')
     const [filterStatus, setFilterStatus] = useState<string>('all')
     const [filterTrustPhase, setFilterTrustPhase] = useState<string>('all')
+    const [actionStatus, setActionStatus] = useState<string | null>(null)
 
     // Fetch users from API
     useEffect(() => {
@@ -115,7 +116,7 @@ const UserManagement = () => {
 
     const handleUserAction = (userId: string, action: string) => {
         // In production, this would call the API
-        alert(`Action "${action}" on user ${userId}. (Demo - API integration pending)`)
+        setActionStatus(`Action "${action}" on user ${userId}. Demo mode (API integration pending).`)
     }
 
     // Stats - Ghost-specific
@@ -159,6 +160,14 @@ const UserManagement = () => {
                     Manage user accounts, Trust phases, and Ghost subscriptions
                 </Text>
             </VStack>
+
+            {actionStatus && (
+                <Card.Root bg="blue.50" borderColor="blue.200" border="1px" borderRadius="lg" mb={6}>
+                    <Card.Body p={4}>
+                        <Text color="blue.700">{actionStatus}</Text>
+                    </Card.Body>
+                </Card.Root>
+            )}
 
             {/* Stats - Ghost-specific */}
             <HStack gap={4} mb={6} flexWrap="wrap">

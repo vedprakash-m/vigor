@@ -18,23 +18,21 @@ import WatchConnectivity
 
 enum OnboardingStep: Int, CaseIterable {
     case welcome = 0
-    case philosophy
-    case trustExplanation
+    case meetTheGhost        // Merged: philosophy + trust explanation
     case watchPairing
-    case healthPermissions
-    case calendarPermissions
+    case permissions         // Merged: health + calendar on one screen
     case workoutPreferences
+    case absolution
     case confirmation
 
     var title: String {
         switch self {
         case .welcome: return "Welcome to Vigor"
-        case .philosophy: return "Meet The Ghost"
-        case .trustExplanation: return "Earning Your Trust"
+        case .meetTheGhost: return "Meet The Ghost"
         case .watchPairing: return "Connect Your Watch"
-        case .healthPermissions: return "Health Access"
-        case .calendarPermissions: return "Calendar Access"
+        case .permissions: return "Connect Your Data"
         case .workoutPreferences: return "Your Preferences"
+        case .absolution: return "Your First Insight"
         case .confirmation: return "Ready to Go"
         }
     }
@@ -43,20 +41,18 @@ enum OnboardingStep: Int, CaseIterable {
         switch self {
         case .welcome:
             return "Your invisible fitness coach"
-        case .philosophy:
-            return "An AI that works silently in the background"
-        case .trustExplanation:
-            return "Ghost earns autonomy through results — not promises"
+        case .meetTheGhost:
+            return "An AI that earns your trust through results"
         case .watchPairing:
             return "Apple Watch is required for Vigor"
-        case .healthPermissions:
-            return "We'll learn your patterns to optimize your schedule"
-        case .calendarPermissions:
-            return "We'll find the perfect workout windows"
+        case .permissions:
+            return "Health data and calendar access in one step"
         case .workoutPreferences:
             return "Just a few quick questions"
+        case .absolution:
+            return "The Ghost already knows you"
         case .confirmation:
-            return "The Ghost will start learning"
+            return "The Ghost is ready to help"
         }
     }
 }
@@ -75,6 +71,8 @@ class OnboardingViewModel: ObservableObject {
     @Published var watchAppInstalled = false
     @Published var healthAuthorized = false
     @Published var calendarAuthorized = false
+    @Published var healthPermissionAttempted = false
+    @Published var calendarPermissionAttempted = false
 
     // User preferences
     @Published var workoutDaysPerWeek = 3
@@ -117,11 +115,12 @@ class OnboardingViewModel: ObservableObject {
             return
         }
 
-        let session = WCSession.default
-        #if os(iOS)
-        watchPaired = session.isPaired
-        watchAppInstalled = session.isWatchAppInstalled
-        #endif
+        // Use WatchConnectivityManager which properly activates the session
+        // and updates its published properties via the WCSessionDelegate.
+        // Reading WCSession.default directly without activation returns false.
+        let manager = WatchConnectivityManager.shared
+        watchPaired = manager.isPaired
+        watchAppInstalled = manager.isWatchAppInstalled
     }
 
     func openWatchApp() {
@@ -135,7 +134,16 @@ class OnboardingViewModel: ObservableObject {
 
     func requestHealthPermissions() async {
         isProcessing = true
-        defer { isProcessing = false }
+        defer {
+            isProcessing = false
+            healthPermissionAttempted = true
+        }
+
+        guard HKHealthStore.isHealthDataAvailable() else {
+            // HealthKit not available (e.g., iPad) — allow proceeding
+            healthAuthorized = false
+            return
+        }
 
         let readTypes: Set<HKObjectType> = [
             HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!,
@@ -148,9 +156,13 @@ class OnboardingViewModel: ObservableObject {
 
         do {
             try await healthStore.requestAuthorization(toShare: [], read: readTypes)
+            // Note: requestAuthorization succeeds even if user denies —
+            // it only throws on system-level failures
             healthAuthorized = true
         } catch {
-            self.error = .healthAuthorizationFailed
+            // Don't block onboarding — user can grant access later in Settings
+            print("HealthKit authorization error: \(error.localizedDescription)")
+            healthAuthorized = false
         }
     }
 
@@ -158,7 +170,10 @@ class OnboardingViewModel: ObservableObject {
 
     func requestCalendarPermissions() async {
         isProcessing = true
-        defer { isProcessing = false }
+        defer {
+            isProcessing = false
+            calendarPermissionAttempted = true
+        }
 
         if #available(iOS 17.0, *) {
             let granted = try? await eventStore.requestFullAccessToEvents()
@@ -167,10 +182,7 @@ class OnboardingViewModel: ObservableObject {
             let granted = try? await eventStore.requestAccess(to: .event)
             calendarAuthorized = granted ?? false
         }
-
-        if !calendarAuthorized {
-            error = .calendarAuthorizationFailed
-        }
+        // Don't set error — user can grant calendar access later in Settings
     }
 
     // MARK: - Complete Onboarding
@@ -334,18 +346,16 @@ struct OnboardingFlowView: View {
         switch viewModel.currentStep {
         case .welcome:
             WelcomeStepView()
-        case .philosophy:
-            PhilosophyStepView()
-        case .trustExplanation:
-            TrustExplanationStepView()
+        case .meetTheGhost:
+            MeetTheGhostStepView()
         case .watchPairing:
             WatchPairingStepView(viewModel: viewModel)
-        case .healthPermissions:
-            HealthPermissionsStepView(viewModel: viewModel)
-        case .calendarPermissions:
-            CalendarPermissionsStepView(viewModel: viewModel)
+        case .permissions:
+            PermissionsStepView(viewModel: viewModel)
         case .workoutPreferences:
             PreferencesStepView(viewModel: viewModel)
+        case .absolution:
+            AbsolutionStepView()
         case .confirmation:
             ConfirmationStepView()
         }
@@ -385,10 +395,16 @@ struct OnboardingFlowView: View {
 
     private var nextButtonTitle: String {
         switch viewModel.currentStep {
-        case .healthPermissions:
-            return viewModel.healthAuthorized ? "Continue" : "Grant Access"
-        case .calendarPermissions:
-            return viewModel.calendarAuthorized ? "Continue" : "Grant Access"
+        case .permissions:
+            let bothGranted = viewModel.healthAuthorized && viewModel.calendarAuthorized
+            let anyAttempted = viewModel.healthPermissionAttempted || viewModel.calendarPermissionAttempted
+            if bothGranted {
+                return "Continue"
+            } else if anyAttempted {
+                return "Continue Anyway"
+            } else {
+                return "Grant Access"
+            }
         default:
             return "Continue"
         }
@@ -396,15 +412,19 @@ struct OnboardingFlowView: View {
 
     private var canProceed: Bool {
         switch viewModel.currentStep {
-        case .welcome, .philosophy, .trustExplanation:
+        case .welcome, .meetTheGhost:
             return true
         case .watchPairing:
+            #if FREE_PROVISIONING
+            return true
+            #else
             return viewModel.watchPaired && viewModel.watchAppInstalled
-        case .healthPermissions:
-            return true // Can proceed after attempting
-        case .calendarPermissions:
+            #endif
+        case .permissions:
             return true // Can proceed after attempting
         case .workoutPreferences:
+            return true
+        case .absolution:
             return true
         case .confirmation:
             return false
@@ -413,10 +433,24 @@ struct OnboardingFlowView: View {
 
     private func handleNextButton() {
         switch viewModel.currentStep {
-        case .healthPermissions where !viewModel.healthAuthorized:
-            Task { await viewModel.requestHealthPermissions() }
-        case .calendarPermissions where !viewModel.calendarAuthorized:
-            Task { await viewModel.requestCalendarPermissions() }
+        case .permissions where !viewModel.healthAuthorized && !viewModel.healthPermissionAttempted:
+            Task {
+                await viewModel.requestHealthPermissions()
+                if viewModel.healthAuthorized {
+                    // Also request calendar in same flow
+                    await viewModel.requestCalendarPermissions()
+                    if viewModel.calendarAuthorized {
+                        viewModel.nextStep()
+                    }
+                }
+            }
+        case .permissions where viewModel.healthAuthorized && !viewModel.calendarAuthorized && !viewModel.calendarPermissionAttempted:
+            Task {
+                await viewModel.requestCalendarPermissions()
+                if viewModel.calendarAuthorized {
+                    viewModel.nextStep()
+                }
+            }
         default:
             viewModel.nextStep()
         }
@@ -480,61 +514,70 @@ struct FeatureRow: View {
 
 // MARK: - Philosophy & Trust Steps
 
-struct PhilosophyStepView: View {
+struct MeetTheGhostStepView: View {
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             Image(systemName: "eye.slash")
-                .font(.system(size: 80))
+                .font(.system(size: 60))
                 .foregroundColor(.purple)
 
             Text("How The Ghost Works")
                 .font(.title2).fontWeight(.bold)
                 .foregroundColor(.white)
 
-            VStack(alignment: .leading, spacing: 16) {
-                PhilosophyRow(icon: "moon.stars", text: "Runs silently in the background — no constant nagging")
-                PhilosophyRow(icon: "waveform.path.ecg", text: "Reads your biometrics to understand readiness")
-                PhilosophyRow(icon: "calendar.badge.clock", text: "Finds workout windows that fit your real schedule")
+            VStack(alignment: .leading, spacing: 12) {
+                PhilosophyRow(icon: "moon.stars", text: "Runs silently — no constant nagging")
+                PhilosophyRow(icon: "waveform.path.ecg", text: "Reads biometrics to understand readiness")
+                PhilosophyRow(icon: "calendar.badge.clock", text: "Finds windows that fit your real schedule")
                 PhilosophyRow(icon: "brain", text: "Gets smarter the more you use it")
             }
             .padding(.horizontal, 8)
 
-            Text("The best workout plan is one you actually do.")
-                .font(.callout).italic()
-                .foregroundColor(.gray)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.horizontal, 24)
-    }
-}
-
-struct TrustExplanationStepView: View {
-    var body: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "lock.shield")
-                .font(.system(size: 80))
-                .foregroundColor(.green)
+            Divider().background(Color.gray.opacity(0.3))
 
             Text("Five Levels of Trust")
-                .font(.title2).fontWeight(.bold)
+                .font(.subheadline).fontWeight(.semibold)
                 .foregroundColor(.white)
 
-            VStack(alignment: .leading, spacing: 12) {
-                TrustLevelRow(phase: "Observer", desc: "Watches and learns your patterns", number: 1)
-                TrustLevelRow(phase: "Scheduler", desc: "Suggests times — you approve", number: 2)
-                TrustLevelRow(phase: "Auto-Scheduler", desc: "Creates blocks — you can delete", number: 3)
-                TrustLevelRow(phase: "Transformer", desc: "Adapts workouts to biometrics", number: 4)
-                TrustLevelRow(phase: "Full Ghost", desc: "Full autonomy, minimal intervention", number: 5)
+            HStack(spacing: 4) {
+                ForEach(1...5, id: \.self) { level in
+                    VStack(spacing: 4) {
+                        Text("\(level)")
+                            .font(.caption2).fontWeight(.bold)
+                            .frame(width: 22, height: 22)
+                            .background(Circle().fill(Color.green.opacity(0.3)))
+                            .foregroundColor(.green)
+                        Text(trustLevelName(level))
+                            .font(.system(size: 9))
+                            .foregroundColor(.gray)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
             }
 
-            Text("Ghost starts at Level 1 and earns its way up through results.")
+            Text("Ghost starts at Level 1 and earns its way up.")
                 .font(.caption)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 24)
     }
+
+    private func trustLevelName(_ level: Int) -> String {
+        switch level {
+        case 1: return "Observer"
+        case 2: return "Scheduler"
+        case 3: return "Auto"
+        case 4: return "Transform"
+        case 5: return "Full Ghost"
+        default: return ""
+        }
+    }
 }
+
+// MARK: - Legacy views removed: PhilosophyStepView, TrustExplanationStepView
+// Merged into MeetTheGhostStepView above
 
 private struct PhilosophyRow: View {
     let icon: String
@@ -547,24 +590,7 @@ private struct PhilosophyRow: View {
     }
 }
 
-private struct TrustLevelRow: View {
-    let phase: String
-    let desc: String
-    let number: Int
-    var body: some View {
-        HStack(spacing: 12) {
-            Text("\(number)")
-                .font(.caption).fontWeight(.bold)
-                .frame(width: 24, height: 24)
-                .background(Circle().fill(Color.green.opacity(0.3)))
-                .foregroundColor(.green)
-            VStack(alignment: .leading) {
-                Text(phase).font(.subheadline).fontWeight(.semibold).foregroundColor(.white)
-                Text(desc).font(.caption2).foregroundColor(.gray)
-            }
-        }
-    }
-}
+// TrustLevelRow removed — trust levels now shown inline in MeetTheGhostStepView
 
 struct WatchPairingStepView: View {
     @ObservedObject var viewModel: OnboardingViewModel
@@ -575,6 +601,40 @@ struct WatchPairingStepView: View {
                 .font(.system(size: 80))
                 .foregroundColor(viewModel.watchPaired ? .green : .orange)
 
+            #if FREE_PROVISIONING
+            Text("Apple Watch")
+                .font(.title)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+
+            Text("Vigor works best with an Apple Watch to track workouts and recovery. The Watch companion app will be available in a future release.")
+                .font(.body)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+
+            VStack(spacing: 16) {
+                StatusRow(
+                    title: "Watch Paired",
+                    isComplete: viewModel.watchPaired,
+                    action: nil
+                )
+
+                if !viewModel.watchPaired {
+                    Text("No Apple Watch detected — you can still continue. Workout tracking will use iPhone sensors.")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding(.top, 20)
+
+            Button("Refresh Status") {
+                viewModel.checkWatchStatus()
+            }
+            .foregroundColor(.blue)
+
+            #else
             Text("Apple Watch Required")
                 .font(.title)
                 .fontWeight(.bold)
@@ -607,6 +667,7 @@ struct WatchPairingStepView: View {
                 viewModel.checkWatchStatus()
             }
             .foregroundColor(.blue)
+            #endif
         }
         .padding(.horizontal, 24)
         .onAppear {
@@ -643,103 +704,82 @@ struct StatusRow: View {
     }
 }
 
-struct HealthPermissionsStepView: View {
+struct PermissionsStepView: View {
     @ObservedObject var viewModel: OnboardingViewModel
 
     var body: some View {
         VStack(spacing: 24) {
-            Image(systemName: "heart.text.square.fill")
-                .font(.system(size: 80))
-                .foregroundColor(viewModel.healthAuthorized ? .green : .red)
+            Image(systemName: viewModel.healthAuthorized && viewModel.calendarAuthorized ? "checkmark.shield.fill" : "link.circle.fill")
+                .font(.system(size: 60))
+                .foregroundColor(viewModel.healthAuthorized && viewModel.calendarAuthorized ? .green : .blue)
 
-            Text("Health Access")
+            Text("Connect Your Data")
                 .font(.title)
                 .fontWeight(.bold)
                 .foregroundColor(.white)
 
-            Text("We'll read your sleep, heart rate variability, and workout data to understand your recovery and optimize scheduling.")
+            Text("The Ghost needs health data and calendar access to find optimal workout windows and track your recovery.")
                 .font(.body)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, 24)
 
-            VStack(alignment: .leading, spacing: 12) {
-                DataAccessRow(icon: "bed.double.fill", title: "Sleep Analysis")
-                DataAccessRow(icon: "heart.fill", title: "Heart Rate & HRV")
-                DataAccessRow(icon: "figure.walk", title: "Workouts & Activity")
+            // Health section
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "heart.text.square.fill")
+                        .foregroundColor(.red)
+                    Text("Health & Fitness")
+                        .font(.subheadline).fontWeight(.semibold)
+                        .foregroundColor(.white)
+                    Spacer()
+                    if viewModel.healthAuthorized {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                    }
+                }
+                Text("Sleep, HRV, workouts, activity")
+                    .font(.caption)
+                    .foregroundColor(.gray)
             }
-            .padding(.top, 16)
+            .padding(16)
+            .background(Color.white.opacity(0.05))
+            .cornerRadius(12)
 
-            if viewModel.healthAuthorized {
-                Label("Access Granted", systemImage: "checkmark.circle.fill")
+            // Calendar section
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "calendar.badge.clock")
+                        .foregroundColor(.blue)
+                    Text("Calendar")
+                        .font(.subheadline).fontWeight(.semibold)
+                        .foregroundColor(.white)
+                    Spacer()
+                    if viewModel.calendarAuthorized {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                    }
+                }
+                Text("Read all • Write only to Vigor calendar")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            .padding(16)
+            .background(Color.white.opacity(0.05))
+            .cornerRadius(12)
+
+            if viewModel.healthAuthorized && viewModel.calendarAuthorized {
+                Label("All permissions granted", systemImage: "checkmark.circle.fill")
                     .foregroundColor(.green)
+                    .font(.subheadline)
             }
         }
         .padding(.horizontal, 24)
     }
 }
 
-struct DataAccessRow: View {
-    let icon: String
-    let title: String
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundColor(.blue)
-                .frame(width: 24)
-
-            Text(title)
-                .foregroundColor(.white)
-        }
-    }
-}
-
-struct CalendarPermissionsStepView: View {
-    @ObservedObject var viewModel: OnboardingViewModel
-
-    var body: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "calendar.badge.clock")
-                .font(.system(size: 80))
-                .foregroundColor(viewModel.calendarAuthorized ? .green : .blue)
-
-            Text("Calendar Access")
-                .font(.title)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-
-            Text("We'll read your calendars to find available time slots and write workout blocks to a dedicated 'Vigor Training' calendar.")
-                .font(.body)
-                .foregroundColor(.gray)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: "eye")
-                        .foregroundColor(.blue)
-                    Text("Read ALL your calendars")
-                        .foregroundColor(.white)
-                }
-
-                HStack {
-                    Image(systemName: "pencil")
-                        .foregroundColor(.blue)
-                    Text("Write ONLY to Vigor calendar")
-                        .foregroundColor(.white)
-                }
-            }
-            .padding(.top, 16)
-
-            if viewModel.calendarAuthorized {
-                Label("Access Granted", systemImage: "checkmark.circle.fill")
-                    .foregroundColor(.green)
-            }
-        }
-        .padding(.horizontal, 24)
-    }
-}
+// MARK: - Legacy views removed: HealthPermissionsStepView, CalendarPermissionsStepView
+// Merged into PermissionsStepView above
 
 struct PreferencesStepView: View {
     @ObservedObject var viewModel: OnboardingViewModel
@@ -806,6 +846,144 @@ struct PreferencesStepView: View {
     }
 }
 
+// MARK: - Absolution Moment Step (PRD §5.1)
+
+struct AbsolutionStepView: View {
+    @State private var insightBundle: FirstInsightBundle?
+    @State private var isLoading = true
+    @State private var animationProgress: CGFloat = 0
+
+    var body: some View {
+        VStack(spacing: 24) {
+            if isLoading {
+                VStack(spacing: 16) {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .tint(.white)
+                    Text("Analyzing your data...")
+                        .font(.body)
+                        .foregroundColor(.gray)
+                }
+                .padding(.top, 40)
+            } else if let bundle = insightBundle {
+                // Primary insight card
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: iconFor(bundle.primaryInsight.category))
+                            .font(.title2)
+                            .foregroundColor(.blue)
+                        Text(bundle.primaryInsight.headline)
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                    }
+
+                    Text(bundle.primaryInsight.detail)
+                        .font(.body)
+                        .foregroundColor(.gray)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(bundle.primaryInsight.dataPoint)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.blue)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.blue.opacity(0.15))
+                        .cornerRadius(8)
+                }
+                .padding(20)
+                .background(Color.white.opacity(0.05))
+                .cornerRadius(16)
+                .opacity(Double(animationProgress))
+
+                // Supporting insights
+                ForEach(bundle.supportingInsights) { insight in
+                    HStack(spacing: 12) {
+                        Image(systemName: iconFor(insight.category))
+                            .font(.body)
+                            .foregroundColor(.blue)
+                            .frame(width: 24)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(insight.headline)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                            Text(insight.dataPoint)
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        Spacer()
+                    }
+                    .padding(16)
+                    .background(Color.white.opacity(0.03))
+                    .cornerRadius(12)
+                    .opacity(Double(animationProgress))
+                }
+
+                // First workout suggestion
+                if let window = bundle.suggestedWorkoutWindow {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("YOUR FIRST BLOCK")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundColor(.blue)
+                            .tracking(1.2)
+
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("\(window.formattedDay) at \(window.formattedTime)")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                Text("\(window.durationMinutes) min \(window.workoutType)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                            Spacer()
+                            Image(systemName: "calendar.badge.plus")
+                                .font(.title2)
+                                .foregroundColor(.green)
+                        }
+                    }
+                    .padding(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                    )
+                    .opacity(Double(animationProgress))
+                }
+
+                Text(bundle.summaryLine)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 8)
+                    .opacity(Double(animationProgress))
+            }
+        }
+        .padding(.horizontal, 24)
+        .task {
+            let bundle = await FirstInsightGenerator.shared.generateInsights()
+            withAnimation(.easeInOut(duration: 0.3)) {
+                insightBundle = bundle
+                isLoading = false
+            }
+            withAnimation(.easeInOut(duration: 1.0).delay(0.3)) {
+                animationProgress = 1.0
+            }
+        }
+    }
+
+    private func iconFor(_ category: FirstInsightCategory) -> String {
+        switch category {
+        case .sleep: return "moon.zzz.fill"
+        case .workout: return "figure.run"
+        case .recovery: return "heart.fill"
+        case .schedule: return "clock.fill"
+        }
+    }
+}
+
 struct ConfirmationStepView: View {
     @State private var animationProgress: CGFloat = 0
 
@@ -833,16 +1011,16 @@ struct ConfirmationStepView: View {
                 .fontWeight(.bold)
                 .foregroundColor(.white)
 
-            Text("The Ghost is now in Observer mode. Over the next week, it will learn your patterns without making any changes to your calendar.")
+            Text("The Ghost is already analyzing your data. Your first workout suggestion can arrive as early as today.")
                 .font(.body)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
             VStack(alignment: .leading, spacing: 8) {
-                InfoRow(icon: "eye", text: "Week 1-2: Observing your patterns")
-                InfoRow(icon: "lightbulb", text: "Week 3+: Suggesting workout times")
-                InfoRow(icon: "calendar", text: "Later: Automatic scheduling (with permission)")
+                InfoRow(icon: "sparkles", text: "Today: Your first smart suggestion")
+                InfoRow(icon: "hand.thumbsup", text: "You approve every workout — always in control")
+                InfoRow(icon: "calendar", text: "Over time: Ghost earns more autonomy")
             }
             .padding(.top, 16)
         }

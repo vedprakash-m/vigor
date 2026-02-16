@@ -17,6 +17,7 @@ import {
     Text,
     VStack,
 } from '@chakra-ui/react'
+import { useState } from 'react'
 import { TIER_PRICING } from '../config/adminConfig'
 import { useAuth } from '../contexts/useAuth'
 
@@ -174,13 +175,12 @@ const TierCard = ({
 const TierManagementPage = () => {
     const { user } = useAuth()
     const currentTier = user?.tier || 'free'
+    const [selectionStatus, setSelectionStatus] = useState<string | null>(null)
 
     const handleSelectTier = (tier: string) => {
         // In production, this would redirect to a payment flow
         console.log(`Selected tier: ${tier}`)
-        alert(
-            `Tier upgrade to ${tier} would redirect to payment. This is a demo.`
-        )
+        setSelectionStatus(`Tier ${tier} selected. Demo mode: payment flow is not wired yet.`)
     }
 
     return (
@@ -191,6 +191,14 @@ const TierManagementPage = () => {
                     Choose the plan that fits your fitness journey
                 </Text>
             </VStack>
+
+            {selectionStatus && (
+                <Card.Root bg="blue.50" borderColor="blue.200" border="1px" borderRadius="lg" mb={6} maxW="800px" mx="auto">
+                    <Card.Body p={4}>
+                        <Text color="blue.700">{selectionStatus}</Text>
+                    </Card.Body>
+                </Card.Root>
+            )}
 
             {/* Tier Cards - Free and Premium only per PRD */}
             <Grid
