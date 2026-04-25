@@ -20,7 +20,7 @@ requests>=2.31.0
 httpx>=0.25.0
 
 # Data Validation & Models
-pydantic>=2.4.0
+pydantic>=2.13.3
 pydantic-settings>=2.0.0
 email-validator>=2.0.0
 
