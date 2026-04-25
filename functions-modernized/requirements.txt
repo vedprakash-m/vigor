@@ -2,11 +2,11 @@
 # Single resource group: vigor-rg, Region: West US 2
 
 # Azure Functions Core
-azure-functions>=1.18.0
+azure-functions>=2.1.0
 
 # Database - Cosmos DB Serverless (with async support)
-azure-cosmos>=4.5.0
-azure-identity>=1.15.0
+azure-cosmos>=4.15.0
+azure-identity>=1.25.3
 aiohttp>=3.9.0
 
 # AI - Single Provider (OpenAI gpt-5-mini)
