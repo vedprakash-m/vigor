@@ -17,7 +17,7 @@ PyJWT[crypto]>=2.8.0
 bcrypt>=4.0.0
 cryptography>=41.0.0
 requests>=2.31.0
-httpx>=0.25.0
+httpx>=0.28.1
 
 # Data Validation & Models
 pydantic>=2.4.0
